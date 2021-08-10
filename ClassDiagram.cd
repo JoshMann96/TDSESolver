@@ -1,0 +1,368 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="AbsorptiveRegions::AbsorptiveRegion" Collapsed="true">
+    <Position X="2.75" Y="9.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>AbsorptiveRegions.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="AbsorptiveRegions::AbsorptiveRegionVel" Collapsed="true">
+    <Position X="0.5" Y="10.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AgAAAEAAAAAAAAAAAAAAAAgAAAAIAAAAABQAAAAAhAA=</HashCode>
+      <FileName>AbsorptiveRegions.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="AbsorptiveRegions::AbsorptiveRegionVelSmooth" Collapsed="true">
+    <Position X="2.75" Y="10.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AgAAAEAAAAJAAAAAAIAAAAgAAACIAAAAAAQAAAAAhAA=</HashCode>
+      <FileName>AbsorptiveRegions.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="AbsorptiveRegions::AbsorptiveRegionManager" Collapsed="true">
+    <Position X="5" Y="10.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAQAAAAAAACAAAAAAAkAgAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>AbsorptiveRegions.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Measurers::Measurer" Collapsed="true">
+    <Position X="25" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIABBAA=</HashCode>
+      <FileName>Measurers.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Measurers::DoubleConst" Collapsed="true">
+    <Position X="29.5" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAIAAAAAAEAAAABAAAAAAAACAAAAAAIABBAA=</HashCode>
+      <FileName>Measurers.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Measurers::Header" Collapsed="true">
+    <Position X="36.25" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>BAAQAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAgAIABBAA=</HashCode>
+      <FileName>Measurers.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Measurers::NPts" Collapsed="true">
+    <Position X="43" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAQAAAAAIAAAAAAAAAAAAAAAAIAAAAAAAAAAIIBBAA=</HashCode>
+      <FileName>Measurers.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Measurers::NSteps" Collapsed="true">
+    <Position X="2.5" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAQAAAAAYAAAAAAAAAAAAQAAAAAABAAAAAAAIABBAA=</HashCode>
+      <FileName>Measurers.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Measurers::DX" Collapsed="true">
+    <Position X="9.25" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAQAAAAAIAAQAAAAQAAAAAAAAAAAAAAAAAAAIABBAA=</HashCode>
+      <FileName>Measurers.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Measurers::DT" Collapsed="true">
+    <Position X="16" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQQAAAAAIAAAAAAAQAAAAAAAAAAAAAAAAAAAIABBAA=</HashCode>
+      <FileName>Measurers.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Measurers::XS" Collapsed="true">
+    <Position X="20.5" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAgQAAAAAIAAABAAAAAAAAAAAAAAAAAAAAAAAIABBAA=</HashCode>
+      <FileName>Measurers.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Measurers::TS" Collapsed="true">
+    <Position X="25" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAARAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAIABBIA=</HashCode>
+      <FileName>Measurers.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Measurers::OrigPot" Collapsed="true">
+    <Position X="31.75" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAQAAAAAIAAAAAAAAAAAAAAAABAAAAQEAAIAIABBAA=</HashCode>
+      <FileName>Measurers.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Measurers::Psi2t" Collapsed="true">
+    <Position X="38.5" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAQAACAIIAAAAAAAQAAIACIAAAAACAAEwAAAIABBRA=</HashCode>
+      <FileName>Measurers.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Measurers::WignerQPD" Collapsed="true">
+    <Position X="45.25" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQQAAAAIIgAIAIAAAQAIADACAAAACAgEwBQAIBRBRA=</HashCode>
+      <FileName>Measurers.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Measurers::ExpectE" Collapsed="true">
+    <Position X="4.75" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AgAUAAAAAIACAAAAAAAAAAAAAAAAAAAAAAQAAIABBAA=</HashCode>
+      <FileName>Measurers.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Measurers::ExpectX" Collapsed="true">
+    <Position X="11.5" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AgAQAAAAAIAAAAAAAAAAAAAAAAAAIAAAgABBAIABBAA=</HashCode>
+      <FileName>Measurers.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Measurers::ExpectP" Collapsed="true">
+    <Position X="18.25" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AgAUAAAAAIACAAAAAAAAAAAAAAAAACAAAAAAAIABBAE=</HashCode>
+      <FileName>Measurers.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Measurers::ExpectA" Collapsed="true">
+    <Position X="22.75" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AgAUAAAAAIACAAgAAAAAAAAAAAAAAAAAQAAAAIABBAA=</HashCode>
+      <FileName>Measurers.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Measurers::TotProb" Collapsed="true">
+    <Position X="27.25" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAQAAAAAIAACAAAAIAAAAAAAAAgAAAAEAAAAIABBAA=</HashCode>
+      <FileName>Measurers.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Measurers::VDProbCurrent" Collapsed="true">
+    <Position X="34" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAQAAAAAIAAAAAAAAAAAIQAAAAAAIAAEAAABIABBAA=</HashCode>
+      <FileName>Measurers.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Measurers::VDPsi" Collapsed="true">
+    <Position X="40.75" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAgQAAAAAIAAAAAAAAAAAIQAAAAAAAAAEAAAAYABBAA=</HashCode>
+      <FileName>Measurers.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Measurers::Vfunct" Collapsed="true">
+    <Position X="47.5" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAQAAAAAIAAAEAAAAAgIAiAAAAAACCAEwAAAIABBRA=</HashCode>
+      <FileName>Measurers.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Measurers::BasicMeasurers" Collapsed="true">
+    <Position X="7" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAACACAAAAAAAAAAAIAAAIAABAA=</HashCode>
+      <FileName>Measurers.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Measurers::MeasurementManager" Collapsed="true">
+    <Position X="13.75" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAQAAAAAIAAAAACAAAEACAAAAAAAAAAAAAAAIABBIA=</HashCode>
+      <FileName>Measurers.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ParallelSimParser" Collapsed="true">
+    <Position X="50" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>BAAAAIAgAIAAEAgACRAAgAEAAAAAAoAEAAAAAAEgAAA=</HashCode>
+      <FileName>ParallelSimParser.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ProgressTracker" Collapsed="true">
+    <Position X="51.75" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAEEAAAAAAAAQAAAAAAgAAAAAUAAA=</HashCode>
+      <FileName>ProgressTracker.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="SimulationManager" Collapsed="true">
+    <Position X="53.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>gwlEIgACgAMyAAAhIAIEgKAQJABgBICBBhQgCIARBwA=</HashCode>
+      <FileName>SimulationManager.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="TDSEIterator1D" Collapsed="true">
+    <Position X="50" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>QgAkAImJAAAahFAAIBEAAAAGAAAAIECkEQREAjGIDJA=</HashCode>
+      <FileName>TDSEIterator1D.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ThreadParser" Collapsed="true">
+    <Position X="51.75" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>FAAAKIIBAIsAAAQgCBQkAAEGACGAGQAEEAhAgAUgAAA=</HashCode>
+      <FileName>ThreadParser.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ElectricFieldProfiles::ElectricFieldProfile" Collapsed="true">
+    <Position X="5" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAA=</HashCode>
+      <FileName>Potentials.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ElectricFieldProfiles::ConstantFieldProfile" Collapsed="true">
+    <Position X="0.5" Y="7.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAIEAAAAAAAA=</HashCode>
+      <FileName>Potentials.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ElectricFieldProfiles::CylindricalToLinearProfile" Collapsed="true">
+    <Position X="2.75" Y="7.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAIEAAAAAAAA=</HashCode>
+      <FileName>Potentials.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ElectricFieldProfiles::CylindricalToCutoffProfile" Collapsed="true">
+    <Position X="5" Y="7.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIEAAAAAQAA=</HashCode>
+      <FileName>Potentials.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ElectricFieldProfiles::InMetalFieldProfile" Collapsed="true">
+    <Position X="7.25" Y="7.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAIEAAAAAAAA=</HashCode>
+      <FileName>Potentials.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ElectricFieldProfiles::FileFieldProfile" Collapsed="true">
+    <Position X="9.5" Y="7.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAoEAAAAAAAA=</HashCode>
+      <FileName>Potentials.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Envelopes::Envelope" Collapsed="true">
+    <Position X="9.5" Y="9.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Potentials.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Envelopes::GaussianEnvelope" Collapsed="true">
+    <Position X="8.25" Y="10.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAACAAAAAAACAAAAAAAACAAAAAAAAAAAAAAAACAAA=</HashCode>
+      <FileName>Potentials.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Envelopes::SmoothedInitialGaussianEnvelope" Collapsed="true">
+    <Position X="10.5" Y="10.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAACACAAAAACAAAAAAAACAAAAAQAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Potentials.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Potentials::Potential" Collapsed="true">
+    <Position X="12.5" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwAAA=</HashCode>
+      <FileName>Potentials.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Potentials::FilePotential" Collapsed="true">
+    <Position X="3.5" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQBAAAAAwAAA=</HashCode>
+      <FileName>Potentials.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Potentials::BiasFieldPotential" Collapsed="true">
+    <Position X="8" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AgAgBAAAAAAAAAAAAAAAABAAAAAAAAAAABAAAAAwAAA=</HashCode>
+      <FileName>Potentials.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Potentials::CoulombPotential" Collapsed="true">
+    <Position X="12.5" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AgAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAABAAAAAwAAA=</HashCode>
+      <FileName>Potentials.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Potentials::JelliumPotential" Collapsed="true">
+    <Position X="17" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AgAAAAAAAAAAAAAAAAAAAAAAAAAACAAAABAAAAAwAAA=</HashCode>
+      <FileName>Potentials.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Potentials::JelliumPotentialBacked" Collapsed="true">
+    <Position X="19.25" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAwAAA=</HashCode>
+      <FileName>Potentials.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Potentials::ShieldedAtomicPotential" Collapsed="true">
+    <Position X="21.5" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AgAAABAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAwAAA=</HashCode>
+      <FileName>Potentials.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Potentials::ElectricFieldProfileToPotential" Collapsed="true">
+    <Position X="23.75" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AgAAAAACAAAAACAAAABAAACAAAAAAAAAAAgEAAAwAAA=</HashCode>
+      <FileName>Potentials.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Potentials::WaveFunctionSelfPotentialJellPotMask" Collapsed="true">
+    <Position X="1.25" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AhQAAAAAAAoACAEAAACAAABAAAAAAAAAQAAQAAByhAA=</HashCode>
+      <FileName>Potentials.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Potentials::WaveFunctionSelfPotential" Collapsed="true">
+    <Position X="5.75" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AgQAAAAAAAgACAEAAACAAABAAAAAAAAAQAAQEAByhAA=</HashCode>
+      <FileName>Potentials.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Potentials::CompositePotential" Collapsed="true">
+    <Position X="10.25" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>EgEABAAAEAAAAAAAgIAAAAAAABAAAAAAAAAAAAA4QAA=</HashCode>
+      <FileName>Potentials.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Potentials::PotentialManager" Collapsed="true">
+    <Position X="14.75" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>EgBAIAAAEAAAAAAAAIAAAIAAAAAAAAAAAAQAAAAwAAA=</HashCode>
+      <FileName>Potentials.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

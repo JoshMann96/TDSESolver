@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2047
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TDSESolveLinux", "TDSESolveLinux.vcxproj", "{F7BEB1D6-8256-4D5E-AC22-6AAE1EBCED42}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|ARM = Debug|ARM
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|ARM = Release|ARM
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F7BEB1D6-8256-4D5E-AC22-6AAE1EBCED42}.Debug|ARM.ActiveCfg = Debug|ARM
+		{F7BEB1D6-8256-4D5E-AC22-6AAE1EBCED42}.Debug|ARM.Build.0 = Debug|ARM
+		{F7BEB1D6-8256-4D5E-AC22-6AAE1EBCED42}.Debug|x64.ActiveCfg = Debug|x64
+		{F7BEB1D6-8256-4D5E-AC22-6AAE1EBCED42}.Debug|x64.Build.0 = Debug|x64
+		{F7BEB1D6-8256-4D5E-AC22-6AAE1EBCED42}.Debug|x86.ActiveCfg = Debug|x86
+		{F7BEB1D6-8256-4D5E-AC22-6AAE1EBCED42}.Debug|x86.Build.0 = Debug|x86
+		{F7BEB1D6-8256-4D5E-AC22-6AAE1EBCED42}.Release|ARM.ActiveCfg = Release|ARM
+		{F7BEB1D6-8256-4D5E-AC22-6AAE1EBCED42}.Release|ARM.Build.0 = Release|ARM
+		{F7BEB1D6-8256-4D5E-AC22-6AAE1EBCED42}.Release|x64.ActiveCfg = Release|x64
+		{F7BEB1D6-8256-4D5E-AC22-6AAE1EBCED42}.Release|x64.Build.0 = Release|x64
+		{F7BEB1D6-8256-4D5E-AC22-6AAE1EBCED42}.Release|x86.ActiveCfg = Release|x86
+		{F7BEB1D6-8256-4D5E-AC22-6AAE1EBCED42}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0609094E-BBA0-4E90-81D0-00FE2B2EC98B}
+	EndGlobalSection
+EndGlobal
