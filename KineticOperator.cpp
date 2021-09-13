@@ -163,7 +163,7 @@ namespace KineticOperators {
 
 		vtlsPrnt::printArray(nelec, eigs);
 
-		psi[0] = new std::complex<double>[nPts * nelec];
+		*psi = new std::complex<double>[nPts * nelec];
 
 		vtls::copyArray(nPts * nelec, states, psi[0]);
 		for (int i = 0; i < nelec; i++)
