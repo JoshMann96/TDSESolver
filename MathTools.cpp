@@ -49,6 +49,11 @@ namespace vtls {
 			targ[i] = arr[i] * scalar;
 	}*/
 
+	void addArraysImag(int len, std::complex<double>* arr1, double* arr2targ) {
+		for (int i = 0; i < len; i++)
+			arr2targ[i] += std::imag(arr1[i]);
+	}
+
 	void scaMulArray(int len, std::complex<double> scalar, std::complex<double> *__restrict arr) {
 		/*for (int i = 0; i < len; i++)
 			arr[i] *= scalar;*/

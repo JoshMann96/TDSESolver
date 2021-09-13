@@ -118,10 +118,18 @@ int ThreadParser::addPotential(std::string input) {
 		Potentials::LinearBulkCylSectionFieldSpaceCharge* pot = new Potentials::LinearBulkCylSectionFieldSpaceCharge(n, x, sim->getDX(), p[0], p[1], p[3], nelec, sim->getPotPointer(), wght, dens, vtls::findValue(n, x, p[2]), vtls::findValue(n, x, p[4]));
 		sim->addPotential(pot);
 		spc->push_back(pot);
+		break;
 	}
 	case 16:
 	{
 		Potentials::DielectricBulkCylindricalFieldSpaceCharge* pot = new Potentials::DielectricBulkCylindricalFieldSpaceCharge(n, x, sim->getDX(), sim->getDT(), p[0], p[1], p[5], p[6], nelec, sim->getPotPointer(), wght, dens, vtls::findValue(n, x, p[3]), vtls::findValue(n, x, p[4]), vtls::findValue(n, x, p[2]), vtls::findValue(n, x, p[7]));
+		sim->addPotential(pot);
+		spc->push_back(pot);
+		break;
+	}
+	case 17:
+	{
+		Potentials::OhmicRetardingPotential* pot = new Potentials::OhmicRetardingPotential(n, sim->getDX(), p[1], p[2], nelec, sim->getPotPointer(), wght, dens, vtls::findValue(n, x, p[0]), vtls::findValue(n, x, p[3]));
 		sim->addPotential(pot);
 		spc->push_back(pot);
 		break;

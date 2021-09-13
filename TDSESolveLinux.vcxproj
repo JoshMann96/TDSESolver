@@ -120,6 +120,7 @@
       <UnrollLoops>true</UnrollLoops>
       <DebugInformationFormat>None</DebugInformationFormat>
       <Optimization>Full</Optimization>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
     </ClCompile>
     <Link>
       <AdditionalOptions> -L/opt/intel/mkl/lib/intel64 -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lgomp  -lpthread -lm -ldl -L/usr/local/lib -lboost_filesystem -lboost_system -lboost_math_c99 %(AdditionalOptions)</AdditionalOptions>

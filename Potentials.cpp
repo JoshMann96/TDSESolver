@@ -1209,6 +1209,72 @@ namespace Potentials {
 	}
 
 
+	OhmicRetardingPotential::OhmicRetardingPotential(int nPts, double dx, double transLen, double resistivity, int* nelec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int surfPos, int refPoint) : nPts(nPts), dx(dx), wght(wght), dens(dens), totPot(totPot), refPoint(refPoint), nelecPtr(nelec) {
+		probCur = new double[nPts];
+		mask = new double[nPts];
+		temp = new std::complex<double>[nPts];
+		origPot = new double[nPts];
+
+		for (int i = 0; i < nPts; i++)
+			mask[i] = -resistivity / (1.0 + std::exp((i - surfPos) * dx / transLen));
+	}
+
+	void OhmicRetardingPotential::calcProbCur(std::complex<double>* psi) {
+		if (first)
+			doFirst(psi);
+
+		std::fill_n(probCur, nPts, 0.0);
+		for (int i = 0; i < nelec; i++) {
+			vtls::firstDerivative(nPts, &psi[nPts * i], temp, dx*PhysCon::me/PhysCon::hbar/prefactor[i]);
+			vtls::seqMulArrays(nPts, &psi[nPts * i], temp);
+			vtls::addArraysImag(nPts, temp, probCur);
+		}
+	}
+
+	void OhmicRetardingPotential::calcPot(std::complex<double>* psi, double* targ) {
+		calcProbCur(psi);
+		vtls::seqMulArrays(nPts, mask, probCur);
+		vtlsInt::cumIntTrapz(nPts, probCur, -dx * PhysCon::qe * PhysCon::qe, targ);
+	}
+
+	void OhmicRetardingPotential::doFirst(std::complex<double>* psi) {
+		first = 0;
+		nelec = *nelecPtr;
+		prefactor = new double[nelec];
+		double* energies = new double[nelec];
+		double* v0w = new double[nPts];
+		totPot->getV(0, v0w);
+		WfcToRho::calcEnergies(nelec, nPts, dx, psi, v0w, energies);
+		wght->calcWeights(nelec, energies, prefactor);
+		delete[] energies, v0w;
+	}
+
+	void OhmicRetardingPotential::negateGroundEffects(std::complex<double>* psi) {
+		if (first) doFirst(psi);
+		calcPot(psi, origPot);
+	}
+
+	void OhmicRetardingPotential::getV(double t, double* targ) {
+		for (int i = 0; i < nPts; i++)
+			targ[i] = 0.0;
+	}
+
+	void OhmicRetardingPotential::getV(std::complex<double>* psi, double t, double* targ) {
+		if (first) {
+			doFirst(psi);
+			std::cout << "OhmicRetardingPotential potential should be negated after initial state is found." << std::endl;
+		}
+		calcPot(psi, targ);
+		double ref = targ[refPoint] - origPot[refPoint];
+		for (int i = 0; i < nPts; i++)
+			targ[i] -= origPot[i] + ref;
+	}
+
+	int OhmicRetardingPotential::isDynamic() {
+		return 2;
+	}
+
+
 	CompositePotential::CompositePotential(int nPts, int numSPots, int numDPots, int numWPots, Potential ** staticPots, Potential ** dynamicPots, Potential ** waveFuncDependentPots) {
 		CompositePotential::nPts = nPts;
 		CompositePotential::numSPots = numSPots;

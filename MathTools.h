@@ -122,6 +122,9 @@ namespace vtlsInt {
 };
 
 namespace vtls {
+	// Adds two arrays, taking only the imaginary component of the first
+	void addArraysImag(int len, std::complex<double>* arr1, double* arr2targ);
+
 	// Adds two arrays into a third array
 	template <typename T, typename U, typename V>
 	void addArrays(int len, T* __restrict arr1, U* __restrict arr2, V* __restrict targ) {

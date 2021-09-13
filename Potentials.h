@@ -367,6 +367,27 @@ namespace Potentials {
 		int isDynamic();
 	};
 
+	class OhmicRetardingPotential :
+		public WaveFunctionSelfPotential
+	{
+	private:
+		int nPts, refPoint, * nelecPtr, nelec, first=1;
+		double dx, * prefactor, * probCur, *mask, resistivity, *origPot;
+		std::complex<double>* temp;
+		void calcProbCur(std::complex<double>* psi);
+		void doFirst(std::complex<double>* psi);
+		void calcPot(std::complex<double>* psi, double* targ);
+		Potential* totPot;
+		WfcToRho::Weight* wght;
+		WfcToRho::Density* dens;
+	public:
+		OhmicRetardingPotential(int nPts, double dx, double transLen, double resistivity, int* nelec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int surfPos, int refPoint);
+		void negateGroundEffects(std::complex<double>* psi);
+		void getV(double t, double* targ);
+		void getV(std::complex<double>* psi, double t, double* targ);
+		int isDynamic();
+	};
+
 	// Combines multiple potentials of all kinds.
 	class CompositePotential :
 		public Potential {
