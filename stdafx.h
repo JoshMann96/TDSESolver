@@ -36,6 +36,7 @@
 #include "PhysCon.h"
 #include "AbsorptiveRegions.h"
 #include "MathTools.h"
+#include "KineticOperator.h"
 #include "WfcRhoTools.h"
 #include "Measurers.h"
 #include "Potentials.h"

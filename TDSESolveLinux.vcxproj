@@ -72,6 +72,7 @@
     <ClCompile Include="AbsorptiveRegions.cpp" />
     <ClCompile Include="ConfigParser.cpp" />
     <ClCompile Include="HHGFunctions.cpp" />
+    <ClCompile Include="KineticOperator.cpp" />
     <ClCompile Include="LinuxFuncs.cpp" />
     <ClCompile Include="main.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -91,6 +92,7 @@
     <ClInclude Include="AbsorptiveRegions.h" />
     <ClInclude Include="ConfigParser.h" />
     <ClInclude Include="HHGFunctions.h" />
+    <ClInclude Include="KineticOperator.h" />
     <ClInclude Include="LinuxFuncs.h" />
     <ClInclude Include="MathTools.h" />
     <ClInclude Include="Measurers.h" />
