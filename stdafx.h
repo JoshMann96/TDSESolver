@@ -11,6 +11,7 @@
 #include <chrono>
 #include <queue>
 #define NOMINMAX
+#include "matplotlibcpp.h"
 #include <iomanip>
 #include <future>
 #include <thread>

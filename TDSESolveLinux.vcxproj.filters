@@ -36,6 +36,7 @@
     <ClInclude Include="ThreadPool.h" />
     <ClInclude Include="WfcRhoTools.h" />
     <ClInclude Include="KineticOperator.h" />
+    <ClInclude Include="matplotlibcpp.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ClassDiagram.cd" />

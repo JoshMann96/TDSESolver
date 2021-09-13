@@ -3,7 +3,7 @@
 int main(int argc, char **argv)
 {
 	double dx = 1e-11;
-	double dt = 1e-18;
+	double dt = 1e-17;
 	double xmax = 1e-8;
 	int nPts = (int)(xmax / dx / 2.0) * 2;
 	std::cout << nPts << std::endl;
@@ -29,14 +29,29 @@ int main(int argc, char **argv)
 
 	double* spd = new double[nPts];
 	std::fill_n(spd, nPts, 1.0);
-	double* rho = new double[nPts];
+	double* rho_ptr = new double[nPts];
+	std::vector<double> rho(nPts);
+
+	//move center of potential
+	for (int i = 0; i < nPts; i++)
+		v0[i] = -e0 * std::exp(-std::pow(i * dx - xmax / 3.0, 2) / (2 * sig * sig));
+
+	namespace plt = matplotlibcpp;
 
 	for (int i = 0; i < 1000; i++) {
 		kin->stepOS_U2TU(psi, v0, spd, npsi, nelec);
-		vtls::copyArray(nPts, npsi, psi);
-		vtls::normSqr(nPts, &psi[nPts*2], rho);
-		vtlsPrnt::printGraph(nPts, rho);
-		std::cin.get();
+
+		vtls::copyArray(nPts*nelec, npsi, psi);
+
+		vtls::normSqr(nPts, &psi[nPts], rho_ptr);
+
+		std::copy(rho_ptr, rho_ptr+nPts, rho.begin());
+
+		plt::clf();
+		plt::plot(rho);
+		plt::title(std::to_string(i));
+		plt::draw();
+		plt::pause(0.05);
 	}
 
 
