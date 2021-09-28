@@ -84,13 +84,13 @@
     <ClCompile Include="ParallelSimParser.cpp" />
     <ClCompile Include="Potentials.cpp" />
     <ClCompile Include="ProgressTracker.cpp" />
-    <ClCompile Include="TDSEIterator1D.cpp" />
     <ClCompile Include="ThreadParser.cpp" />
     <ClCompile Include="WfcRhoTools.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AbsorptiveRegions.h" />
     <ClInclude Include="ConfigParser.h" />
+    <ClInclude Include="exprtk.hpp" />
     <ClInclude Include="HHGFunctions.h" />
     <ClInclude Include="KineticOperator.h" />
     <ClInclude Include="LinuxFuncs.h" />
@@ -104,7 +104,6 @@
     <ClInclude Include="ProgressTracker.h" />
     <ClInclude Include="SimulationManager.h" />
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="TDSEIterator1D.h" />
     <ClInclude Include="ThreadParser.h" />
     <ClInclude Include="ThreadPool.h" />
     <ClInclude Include="WfcRhoTools.h" />
@@ -118,7 +117,7 @@
     <Link />
     <Link />
     <ClCompile>
-      <AdditionalOptions>-fext-numeric-literals  -m64  -I/opt/intel/mkl/include -I/usr/local/boost_1_75_0 -DMKL_ILP32 -fopenmp -march=znver2 -mtune=znver2 -I/usr/include/python2.7 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-fext-numeric-literals  -m64  -I/opt/intel/mkl/include -I/usr/local/boost_1_75_0 -DMKL_ILP32  -march=znver2 -mtune=znver2 -I/usr/include/python2.7 -fstack-protector-strong -fopenmp %(AdditionalOptions)</AdditionalOptions>
       <LinkTimeOptimization>true</LinkTimeOptimization>
       <UnrollLoops>true</UnrollLoops>
       <DebugInformationFormat>None</DebugInformationFormat>

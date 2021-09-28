@@ -11,14 +11,18 @@
 #include <chrono>
 #include <queue>
 #define NOMINMAX
+#include "exprtk.hpp"
 #include "matplotlibcpp.h"
 #include <iomanip>
 #include <future>
 #include <thread>
 #include <cstring>
+#include <string>
 #include <mutex>
 #include <boost/filesystem.hpp>
 #include <boost/math/interpolators/cardinal_cubic_b_spline.hpp>
+#include <boost/math/tools/rational.hpp>
+#include <boost/math/special_functions/factorials.hpp>
 
 #define MKL_Complex16 std::complex<double>
 #include "mkl.h"
@@ -41,8 +45,8 @@
 #include "WfcRhoTools.h"
 #include "Measurers.h"
 #include "Potentials.h"
-#include "TDSEIterator1D.h"
-#include "SimulationManager.h"
+//#include "TDSEIterator1D.h"
+//#include "SimulationManager.h"
 //#include "SingleSimulationManager.h"
 #include "MultiSimulationManager.h"
 #include "HHGFunctions.h"

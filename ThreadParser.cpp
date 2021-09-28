@@ -27,7 +27,7 @@ int ThreadParser::addPotential(std::string input) {
 	//All other parameters are in the vector p, in the same order as they are listed in the header file.
 	//Once finished here, go add an example use to config_file_samples.cfg
 	int potIdx = parsingTools::findMatch(&input, &potNames);
-	std::vector<double> p = getPotBlockParameters(potIdx);
+	std::vector<double> p = getBlockParameters(potIdx, potFields);
 	switch (potIdx) {
 	case 1:
 		sim->addPotential(new Potentials::JelliumPotential(n, x, p[0], p[1], p[2], vtls::findValue(n, x, p[3])));
@@ -145,14 +145,14 @@ int ThreadParser::addAbsEdge(std::string input) {
 	//All other parameters are in the vector p, in the same order as they are listed in the header file.
 	//Once finished here, go add an example use to config_file_samples.cfg
 	int absIdx = parsingTools::findMatch(&input, &absNames);
-	std::vector<double> p = getAbsBlockParameters(absIdx);
+	std::vector<double> p = getBlockParameters(absIdx, absFields);
 	switch(absIdx) {
 	case 0:
-		sim->addTimeRotation(AbsorptiveRegions::getSmoothedTimePhaseDecay(n, (int)((x[n - 1] - p[0] - x[0]) / (x[n - 1] - x[0])*n), n, -p[1]));
+		//sim->addTimeRotation(AbsorptiveRegions::getSmoothedTimePhaseDecay(n, (int)((x[n - 1] - p[0] - x[0]) / (x[n - 1] - x[0])*n), n, -p[1]));
 		sim->addSpatialDamp(AbsorptiveRegions::getSmoothedSpatialDampDecay(n, (int)((x[n - 1] - p[0] - x[0]) / (x[n - 1] - x[0]) * n), n, p[1]));
 		break;
 	case 1:
-		sim->addTimeRotation(AbsorptiveRegions::getSmoothedTimePhaseDecay(n, (int)(p[0] / (x[n - 1] - x[0])*n), 0, -p[1]));
+		//sim->addTimeRotation(AbsorptiveRegions::getSmoothedTimePhaseDecay(n, (int)(p[0] / (x[n - 1] - x[0])*n), 0, -p[1]));
 		sim->addSpatialDamp(AbsorptiveRegions::getSmoothedSpatialDampDecay(n, (int)(p[0] / (x[n - 1] - x[0]) * n), 0, p[1]));
 		break;
 	}
@@ -161,7 +161,7 @@ int ThreadParser::addAbsEdge(std::string input) {
 
 int ThreadParser::setWghtCalc(std::string input) {
 	int denIdx = parsingTools::findMatch(&input, &denNames);
-	std::vector<double> p = getDenBlockParameters(denIdx);
+	std::vector<double> p = getBlockParameters(denIdx, denFields);
 	switch (denIdx) {
 	case 0:
 		wght = new WfcToRho::FermiGasDistro(p[0]);
@@ -175,13 +175,51 @@ int ThreadParser::setWghtCalc(std::string input) {
 
 int ThreadParser::setRhoCalc(std::string input) {
 	int rhoIdx = parsingTools::findMatch(&input, &rhoNames);
-	std::vector<double> p = getRhoBlockParameters(rhoIdx);
+	std::vector<double> p = getBlockParameters(rhoIdx, rhoFields);
 	switch (rhoIdx) {
 	case 0:
 		dens = new WfcToRho::DirectDensity();
 		break;
 	case 1:
 		dens = new WfcToRho::GaussianSmoothedDensity(p[0]);
+		break;
+	}
+	return 1;
+}
+
+int ThreadParser::setKin(std::string input) {
+	int kinIdx = parsingTools::findMatch(&input, &kinNames);
+	std::vector<double> p = getBlockParameters(kinIdx, kinFields);
+	switch (kinIdx) {
+	case 0:
+		sim->setKineticOperator_PSM(new KineticOperators::GenDisp_PSM_FreeElec(n, sim->getDX(), sim->getDT(), p[0]));
+		break;
+	case 1:
+		sim->setKineticOperator_PSM(new KineticOperators::GenDisp_PSM_MathExpr(n, sim->getDX(), sim->getDT(), inputText));
+		break;
+	case 2:
+		sim->setKineticOperator_PSM(new KineticOperators::NonUnifGenDisp_PSM_EffMassBoundary(n, sim->getDX(), sim->getDT(), (int)(p[4]+0.5), (int)(p[5] + 0.5), p[0], p[1], p[2], vtls::findValue(n, x, p[3])));
+		break;
+	case 3:
+		std::vector<std::string> elems;
+		parsingTools::split(inputText, &elems, '~');
+
+		int nd = (elems.size() + 2) / 3;
+
+		int* transPos = new int[nd - 1];
+		double* transRate = new double[nd - 1];
+
+		for (int i = 0; i < nd - 1; i++) {
+			transPos[i] = vtls::findValue(n, x, parseVal(elems[i * 3 + 1]));
+			transRate[i] = parseVal(elems[i * 3 + 2]);
+		}
+
+		for (int i = (nd - 1) * 3; i > 0; i -= 3) {
+			elems.erase(elems.begin() + i - 1);
+			elems.erase(elems.begin() + i - 2);
+		}
+
+		sim->setKineticOperator_PSM(new KineticOperators::NonUnifGenDisp_PSM_MathExprBoundary(n, sim->getDX(), sim->getDT(), (int)(p[1]+0.5), (int)(p[2] + 0.5), nd, elems, transRate, transPos));
 		break;
 	}
 	return 1;
@@ -194,7 +232,7 @@ int ThreadParser::addMeasurer(std::string input) {
 	//All other parameters are in the vector p, in the same order as they are listed in the header file.
 	//Once finished here, go add an example use to config_file_samples.cfg
 	int meaIdx = parsingTools::findMatch(&input, &meaNames);
-	std::vector<double> p = getMeaBlockParameters(meaIdx);
+	std::vector<double> p = getBlockParameters(meaIdx, meaFields);
 	switch (meaIdx) {
 	case 0:
 		sim->addMeasurer(new Measurers::BasicMeasurers(inputText.c_str(), n, sim->getDX(), sim->getDT(), x, fol));
@@ -303,8 +341,6 @@ int ThreadParser::readCommand() {
 		return setSaveLoc(flds->at(1));
 	else if (std::strstr(flds->at(0).c_str(), "NEW_GEN_SIM"))
 		return generalSimInit();
-	else if (std::strstr(flds->at(0).c_str(), "NEW_HHG_BASED_SIM"))
-		return hhgSimInit();
 	else if (std::strstr(flds->at(0).c_str(), "DEN_CAL"))
 		return setWghtCalc(flds->at(1));
 	else if (std::strstr(flds->at(0).c_str(), "RHO_CAL"))
@@ -315,57 +351,25 @@ int ThreadParser::readCommand() {
 		return addMeasurer(flds->at(1));
 	else if (std::strstr(flds->at(0).c_str(), "ADD_ABS"))
 		return addAbsEdge(flds->at(1));
+	else if (std::strstr(flds->at(0).c_str(), "SET_KIN"))
+		return setKin(flds->at(1));
 	else if (std::strstr(flds->at(0).c_str(), "FINISH_INIT")) {
 		sim->finishInitialization();
 	}
-	else if (std::strstr(flds->at(0).c_str(), "WAV_DEP_IM_TIME_PROP")) {
-		std::complex<double>* tpsi = new std::complex<double>[n];
-		std::fill_n(tpsi, n, 1);
-		sim->setPsi(tpsi);
-		sim->findGroundStateWithWaveFuncDepPot(parseVal(flds->at(1)), parseVal(flds->at(2)));
-	}
-	else if (std::strstr(flds->at(0).c_str(), "IM_TIME_PROP")) {
-		std::complex<double>* tpsi = new std::complex<double>[n];
-		std::fill_n(tpsi, n, 1);
-		sim->setPsi(tpsi);
-		sim->findGroundState(parseVal(flds->at(1)), parseVal(flds->at(2)));
-	}
-	else if (std::strstr(flds->at(0).c_str(), "FIND_EIGEN_STATE"))
-		sim->findEigenState(parseVal(flds->at(1)), parseVal(flds->at(2)));
-	else if (std::strstr(flds->at(0).c_str(), "FIND_METAL_STATE_PSM")) {
+	else if (std::strstr(flds->at(0).c_str(), "FIND_EIGENS")) {
 		//mtx->lock();
-		sim->findMetallicInitialState_PSM(parseVal(flds->at(1)), parseVal(flds->at(2)), 0, 0);
+		sim->findEigenStates(parseVal(flds->at(1)), parseVal(flds->at(2)), 0, 0);
 		sim->addMeasurer(new Measurers::ElectronNumber(sim->getNElec(), fol));
 		nelec[0] = sim->getNElec();
 		//mtx->unlock();
-	}
-	else if (std::strstr(flds->at(0).c_str(), "FIND_METAL_STATE_HOD")) {
-		//mtx->lock();
-		sim->findMetallicInitialState_HOD(parseVal(flds->at(1)), parseVal(flds->at(2)), 0, 0, parseVal(flds->at(3)));
-		sim->addMeasurer(new Measurers::ElectronNumber(sim->getNElec(), fol));
-		nelec[0] = sim->getNElec();
-		//mtx->unlock();
-	}
-	else if (std::strstr(flds->at(0).c_str(), "FIND_METAL_STATE")) {
-		sim->findMetallicInitialState(parseVal(flds->at(1)), parseVal(flds->at(2)), 0, 0);
-		sim->addMeasurer(new Measurers::ElectronNumber(sim->getNElec(), fol));
-		nelec[0] = sim->getNElec();
 	}
 	else if (std::strstr(flds->at(0).c_str(), "NEGATE_SELF_POT_INITIAL_STATE"))
 		for (int i = 0; i < spc->size(); i++)
 			spc->at(i)->negateGroundEffects(sim->getPsi());
-	else if (std::strstr(flds->at(0).c_str(), "RUN_PARALLEL_LOG_PROGRESS"))
-		sim->runParallelLogProgress(prg, simIdx);
-	else if (std::strstr(flds->at(0).c_str(), "RUN_LOG_PROGRESS"))
-		sim->runLogProgress(prg, simIdx);
-	else if (std::strstr(flds->at(0).c_str(), "RUN_SCF_LOG_PROGRESS"))
-		sim->runSCFLogProgress(prg, simIdx, parseVal(flds->at(1)));
-	else if (std::strstr(flds->at(0).c_str(), "RUN_PERT_LOG_PROGRESS"))
-		sim->runPertLogProgress(prg, simIdx, (int)(parseVal(flds->at(1))));
-	else if (std::strstr(flds->at(0).c_str(), "RUN_OS_U2TU_LOG_PROGRESS"))
-		sim->runOS_U2TULogProgress(prg, simIdx);
-	else if (std::strstr(flds->at(0).c_str(), "RUN_OS_UW2TUW_LOG_PROGRESS"))
-		sim->runOS_UW2TUWLogProgress(prg, simIdx);
+	else if (std::strstr(flds->at(0).c_str(), "RUN_OS_U2TU"))
+		sim->runOS_U2TU(prg, simIdx);
+	else if (std::strstr(flds->at(0).c_str(), "RUN_OS_UW2TUW"))
+		sim->runOS_UW2TUW(prg, simIdx);
 	else if (std::strstr(flds->at(0).c_str(), "EXIT"))
 		return 0;
 	else if (std::strstr(flds->at(0).c_str(), "MULTI_ELEC"))
@@ -531,101 +535,16 @@ double ThreadParser::parseVal(std::string str) {
 	return val;
 }
 
-std::vector<double> ThreadParser::getPotBlockParameters(int potNum) {
-	std::vector<double> out = std::vector<double>(potFields[potNum].size(), 0);
+std::vector<double> ThreadParser::getBlockParameters(int num, std::vector<std::vector<std::string>> fields) {
+	std::vector<double> out = std::vector<double>(fields[num].size(), 0);
 	int fldNum = 0;
 	do {
 		std::getline(*fil, curLine);
+		std::cout << curLine << std::endl;
 		if (std::strstr(curLine.c_str(), "END"))
 			break;
 		parsingTools::split(curLine, flds, ' ');
-		fldNum = parsingTools::findMatch(&(flds->at(0)), &potFields[potNum]);
-		if (fldNum < 0) {
-			std::cout << "Unknown parameter name: " << flds->at(0) << std::endl;
-			return out;
-		}
-		else {
-			out[fldNum] = parseVal(flds->at(1));
-		}
-	} while (!(fil->eof()) && !std::strstr(curLine.c_str(), "END"));
-	return out;
-}
-
-std::vector<double> ThreadParser::getAbsBlockParameters(int absNum) {
-	std::vector<double> out = std::vector<double>(absFields[absNum].size(), 0);
-	int fldNum = 0;
-	do {
-		std::getline(*fil, curLine);
-		if (std::strstr(curLine.c_str(), "END"))
-			break;
-		parsingTools::split(curLine, flds, ' ');
-		fldNum = parsingTools::findMatch(&(flds->at(0)), &absFields[absNum]);
-		if (fldNum < 0) {
-			std::cout << "Unknown parameter name: " << flds->at(0) << std::endl;
-			return out;
-		}
-		else {
-			out[fldNum] = parseVal(flds->at(1));
-		}
-	} while (!(fil->eof()) && !std::strstr(curLine.c_str(), "END"));
-	return out;
-}
-
-std::vector<double> ThreadParser::getMeaBlockParameters(int meaNum) {
-	std::vector<double> out = std::vector<double>(meaFields[meaNum].size(), 0);
-	if (out.size() < 1)
-		return out;
-	int fldNum = 0;
-	do {
-		std::getline(*fil, curLine);
-		if (std::strstr(curLine.c_str(), "END"))
-			break;
-		parsingTools::split(curLine, flds, ' ');
-		fldNum = parsingTools::findMatch(&(flds->at(0)), &meaFields[meaNum]);
-		if (fldNum < 0) {
-			std::cout << "Unknown parameter name: " << flds->at(0) << std::endl;
-			return out;
-		}
-		else {
-			out[fldNum] = parseVal(flds->at(1));
-		}
-	} while (!(fil->eof()) && !std::strstr(curLine.c_str(), "END"));
-	return out;
-}
-
-std::vector<double> ThreadParser::getDenBlockParameters(int denNum) {
-	std::vector<double> out = std::vector<double>(denFields[denNum].size(), 0);
-	if (out.size() < 1)
-		return out;
-	int fldNum = 0;
-	do {
-		std::getline(*fil, curLine);
-		if (std::strstr(curLine.c_str(), "END"))
-			break;
-		parsingTools::split(curLine, flds, ' ');
-		fldNum = parsingTools::findMatch(&(flds->at(0)), &denFields[denNum]);
-		if (fldNum < 0) {
-			std::cout << "Unknown parameter name: " << flds->at(0) << std::endl;
-			return out;
-		}
-		else {
-			out[fldNum] = parseVal(flds->at(1));
-		}
-	} while (!(fil->eof()) && !std::strstr(curLine.c_str(), "END"));
-	return out;
-}
-
-std::vector<double> ThreadParser::getRhoBlockParameters(int rhoNum) {
-	std::vector<double> out = std::vector<double>(rhoFields[rhoNum].size(), 0);
-	if (out.size() < 1)
-		return out;
-	int fldNum = 0;
-	do {
-		std::getline(*fil, curLine);
-		if (std::strstr(curLine.c_str(), "END"))
-			break;
-		parsingTools::split(curLine, flds, ' ');
-		fldNum = parsingTools::findMatch(&(flds->at(0)), &rhoFields[rhoNum]);
+		fldNum = parsingTools::findMatch(&(flds->at(0)), &fields[num]);
 		if (fldNum < 0) {
 			std::cout << "Unknown parameter name: " << flds->at(0) << std::endl;
 			return out;

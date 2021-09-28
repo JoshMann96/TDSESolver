@@ -1,6 +1,31 @@
 #pragma once
 
 namespace vtlsInt {
+	// Riemann integration.
+
+	template <typename T, typename U>
+	decltype(std::declval<T&>()* std::declval<U&>()) rSum(int len, T* __restrict arr, U dx) {
+		if (len <= 1)
+			return 0;
+
+		T sum = 0;
+		for (int i = 0; i < len; i++) {
+			sum += arr[i];
+		}
+		return sum * dx;
+	}
+
+	template <typename T, typename U, typename V>
+	decltype(std::declval<T&>()* std::declval<U&>()* std::declval<V&>()) rSumMul(int len, T* __restrict arr1, U* __restrict arr2, V dx) {
+		if (len <= 1)
+			return 0;
+
+		decltype(std::declval<T&>() * std::declval<U&>()) sum = 0;
+		for (int i = 0; i < len; i++)
+			sum += arr1[i] * arr2[i];
+		return sum * dx;
+	}
+
 	// Trapezoidal integration.
 	template <typename T, typename U>
 	decltype(std::declval<T&>() * std::declval<U&>()) trapz(int len, T* __restrict arr, U dx) {
@@ -122,8 +147,57 @@ namespace vtlsInt {
 };
 
 namespace vtls {
+
+	// Multiplies triag*diag*triag, with triag being a Hermitian matrix (upper triangular rep, column major) and diag being diagonal
+	template <typename T, typename U>
+	void mulTriagDiagTriag(int len, T* triag, U* diag, decltype(std::declval<T&>()* std::declval<U&>())* targ) {
+		decltype(std::declval<T&>() * std::declval<U&>()) csum = 0.0;
+		for (int i = 0; i < len; i++) {
+			for (int j = i; j < len; j++) {
+				//targ[i,j] = sum_k triag[i,k]diag[k]triag[k,l]
+				csum = 0.0;
+				for (int k = 0; k < i; k++)
+					csum += std::conj(triag[k + (i * (i + 1)) / 2]) * diag[k] * triag[k + (j * (j + 1)) / 2];
+				for(int k = i; k < j; k++)
+					csum += triag[i + (k * (k + 1)) / 2] * diag[k] * triag[k + (j * (j + 1)) / 2];
+				for (int k = j; k < len; k++)
+					csum += triag[i + (k * (k + 1)) / 2] * diag[k] * std::conj(triag[j + (k * (k + 1)) / 2]);
+				targ[i + (j * (j + 1)) / 2] = csum;
+			}
+		}
+	}
+
 	// Adds two arrays, taking only the imaginary component of the first
 	void addArraysImag(int len, std::complex<double>* arr1, double* arr2targ);
+
+	template <typename T, typename U>
+	void evalMathExpr(int len, const char* var, T* vals, std::string expr, U* res) {
+		typedef exprtk::symbol_table<T> symbol_table_t;
+		typedef exprtk::expression<T>   expression_t;
+		typedef exprtk::parser<T>       parser_t;
+
+		T cval;
+		symbol_table_t symbol_table;
+		symbol_table.add_variable(var, cval);
+		symbol_table.add_constants();
+
+		expression_t expression;
+		expression.register_symbol_table(symbol_table);
+
+		parser_t parser;
+		parser.compile(expr, expression);
+
+		for (int i = 0; i < len; i++) {
+			cval = vals[i];
+			res[i] = (U)(expression.value());
+		}
+	}
+
+	template <typename T, typename U>
+	void polyEval(int len, T* x, int nPoly, U* __restrict polyCoeffs, decltype(std::declval<T&>()* std::declval<U&>())* y) {
+		for (int i = 0; i < len; i++)
+			y[i] = boost::math::tools::evaluate_polynomial(polyCoeffs, x[i], nPoly);
+	}
 
 	// Adds two arrays into a third array
 	template <typename T, typename U, typename V>
@@ -141,7 +215,7 @@ namespace vtls {
 
 	// Sequentially multiplies two arrays into a third array
 	template <typename T, typename U, typename V>
-	void seqMulArrays(int len, T* __restrict arr1, U* __restrict arr2, V* __restrict targ) {
+	void seqMulArrays(int len, const T* __restrict arr1, const U* __restrict arr2, V* __restrict targ) {
 		for (int i = 0; i < len; i++)
 			targ[i] = arr1[i] * arr2[i];
 	}
@@ -191,6 +265,21 @@ namespace vtls {
 		normSqr(len, arr, tarr);
 		scaMulArray(len, 1.0 / std::sqrt(vtlsInt::simps(len, tarr, dx)), arr);
 		delete tarr;
+	}
+
+	// Gets square norm of an array
+	template <typename T>
+	double getNorm(int len, T* __restrict arr, double dx) {
+		double sm = 0.0;
+		for (int i = 0; i < len; i++)
+			sm += std::pow(std::abs(arr[i]), 2);
+		return sm *= dx;
+	}
+
+	// Sets square norm of an array
+	template <typename T>
+	void setNorm(int len, T* __restrict arr, double dx, double norm) {
+		scaMulArray(len, std::sqrt(norm / getNorm(len, arr, dx)), arr);
 	}
 
 	// Linear interpolation

@@ -6,7 +6,7 @@ private:
 	ProgressTracker *prg;
 	std::vector<std::string> varNames;
 	std::vector<double> var;
-	SimulationManager *sim;
+	MultiSimulationManager *sim;
 	std::string curLine;
 	std::vector<std::string> *flds = new std::vector<std::string>(0);
 	std::vector<Potentials::WaveFunctionSelfPotential*> *spc = new std::vector<Potentials::WaveFunctionSelfPotential*>(0);
@@ -35,6 +35,22 @@ private:
 	};
 	//Add the fields as an array. No need to specify the type, all are assumed to be double. Only one variable may be stored as a string.
 	//Proceed to modify addAbsEdge in the CPP file.
+
+	std::vector<std::string> kinNames =
+	{
+		"FreeElecPSM",
+		"MathExprPSM",
+		"EffMassBdyPSM",
+		"MathExprBdyPSM"
+	};
+
+	std::vector<std::vector<std::string>> kinFields =
+	{
+		{"M_EFF"},
+		{"EXPR"},
+		{"M_EFF_L", "M_EFF_R", "TRANS_RATE", "TRANS_POS", "EXP_ORDER", "FORCE_NORM"},
+		{"EXPR", "EXP_ORDER", "FORCE_NORM"}
+	};
 
 	std::vector<std::string> rhoNames =
 	{
@@ -187,14 +203,11 @@ public:
 	int addAbsEdge(std::string input);
 	int setWghtCalc(std::string input);
 	int setRhoCalc(std::string input);
+	int setKin(std::string input);
 	double parseVal(std::string str);
 	double parseValMul(std::string str);
 
-	std::vector<double> getPotBlockParameters(int potNum);
-	std::vector<double> getMeaBlockParameters(int meaNum);
-	std::vector<double> getAbsBlockParameters(int absNum);
-	std::vector<double> getDenBlockParameters(int denNum);
-	std::vector<double> getRhoBlockParameters(int denNum);
+	std::vector<double> getBlockParameters(int num, std::vector<std::vector<std::string>> fields);
 
 	void printSuccessPot(int potIdx, std::vector<double> params);
 	void printSuccessMea(int meaIdx, std::vector<double> params);
