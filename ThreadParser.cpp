@@ -537,10 +537,11 @@ double ThreadParser::parseVal(std::string str) {
 
 std::vector<double> ThreadParser::getBlockParameters(int num, std::vector<std::vector<std::string>> fields) {
 	std::vector<double> out = std::vector<double>(fields[num].size(), 0);
+	if (out.size() < 1)
+		return out;
 	int fldNum = 0;
 	do {
 		std::getline(*fil, curLine);
-		std::cout << curLine << std::endl;
 		if (std::strstr(curLine.c_str(), "END"))
 			break;
 		parsingTools::split(curLine, flds, ' ');

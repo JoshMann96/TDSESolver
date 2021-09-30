@@ -172,14 +172,14 @@ namespace KineticOperators {
 		calcOpMat();
 		for (int i = 0; i < nPts; i++)
 			opMat[(i * (i + 3)) / 2] += v[i];
- 
+
 		LAPACKE_zhpevx(LAPACK_COL_MAJOR, 'V', 'V', 'U', nPts, opMat, emin, emax, 0, 0, 2 * LAPACKE_dlamch('S'), nEigs, eigs, states, nPts, ifail);
 
 		clearOpMat();
 
 		nelec = nEigs[0];
 
-		*psi = new std::complex<double>[nPts * nelec];
+		psi[0] = new std::complex<double>[nPts * nelec];
 
 		vtls::copyArray(nPts * nelec, states, psi[0]);
 		for (int i = 0; i < nelec; i++)

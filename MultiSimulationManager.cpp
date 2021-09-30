@@ -4,11 +4,10 @@ MultiSimulationManager::MultiSimulationManager(int nPts, double dx, double dt, d
 {
 	pot = new Potentials::PotentialManager(nPts);
 	meas = new Measurers::MeasurementManager("");
-	//psis = new std::complex<double>*[4];
+	psis = new std::complex<double>*[4];
 	vs = new double*[4];
 	ts = new double[4];
 	for (int i = 0; i < 4; i++) {
-		//psis[i] = new std::complex<double>[nPts];
 		vs[i] = new double[nPts];
 		ts[i] = i * dt;
 	}
@@ -63,11 +62,12 @@ double MultiSimulationManager::getTotalEnergy(std::complex<double> * psi, double
 void MultiSimulationManager::findEigenStates(double emin, double emax, double maxT, double rate) {
 	pot->getV(0.0, vs[index]);
 
-	kin->findEigenStates(vs[index], emin, emax, &(psis[index]), &nelec);
+	kin->findEigenStates(vs[index], emin, emax, psis, &nelec);
 
-	vtls::copyArray(nPts * nelec, psis[index], psis[nextIndex()]);
-	vtls::copyArray(nPts * nelec, psis[index], psis[prevPrevIndex()]);
-	vtls::copyArray(nPts * nelec, psis[index], psis[prevIndex()]);
+	for (int i = 1; i < 4; i++) {
+		psis[i] = new std::complex<double>[nPts * nelec];
+		vtls::copyArray(nPts * nelec, psis[0], psis[i]);
+	}
 }
 
 void MultiSimulationManager::setPsi(std::complex<double>* npsi) {
