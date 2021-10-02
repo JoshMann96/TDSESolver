@@ -118,7 +118,7 @@ namespace KineticOperators {
 
 	void GenDisp_PSM::initializeKinFFT() {
 		if (firstStepKin) {
-			DftiCreateDescriptor(&dftiHandleKin, DFTI_COMPLEX, DFTI_COMPLEX, 1, nPts);
+			DftiCreateDescriptor(&dftiHandleKin, DFTI_DOUBLE, DFTI_COMPLEX, 1, nPts);
 			DftiSetValue(dftiHandleKin, DFTI_BACKWARD_SCALE, 1.0 / nPts);
 			DftiCommitDescriptor(dftiHandleKin);
 
@@ -282,6 +282,7 @@ namespace KineticOperators {
 		//Apply each order of kinetic exponential
 		DftiComputeForward(dftiHandle, targ);
 
+
 		vtls::copyArray(nPts * nelec, targ, tempPsiCum);
 		for (int o = 1; o <= expOrder; o++) {
 			for (int d = 0; d < nDisp; d++) {
@@ -289,14 +290,18 @@ namespace KineticOperators {
 #pragma omp parallel for
 				for (int i = 0; i < nelec; i++)
 					vtls::seqMulArrays(nPts, &osKineticEnergy[d * nPts], &tempPsiCum[i * nPts], &tempPsi[i * nPts + d * nPts * nelec]);
+
 				//back to real space
 				DftiComputeBackward(dftiHandle, &tempPsi[d * nPts * nelec]);
+
 				//apply mask
 #pragma omp parallel for
 				for (int i = 0; i < nelec; i++)
 					vtls::seqMulArrays(nPts, &osKineticMask[d * nPts], &tempPsi[i * nPts + d * nPts * nelec]);
+
 				//back to recip space
 				DftiComputeForward(dftiHandle, &tempPsi[d * nPts * nelec]);
+
 				//apply rest of kinetic energy
 #pragma omp parallel for
 				for (int i = 0; i < nelec; i++)
@@ -304,11 +309,14 @@ namespace KineticOperators {
 			}
 			//reset cumulative psi to first contribution
 			vtls::copyArray(nPts * nelec, tempPsi, tempPsiCum);
+
 			//combine all the other new psi components
 			for (int d = 1; d < nDisp; d++)
 				vtls::addArrays(nPts * nelec, &tempPsi[d * nPts * nelec], tempPsiCum);
+
 			//apply factor (becomes factorial with multiple applications)
 			vtls::scaMulArray(nPts * nelec, (-PhysCon::im * dt / PhysCon::hbar) / (double)o, tempPsiCum);
+
 			//and add contribution to result
 			vtls::addArrays(nPts * nelec, tempPsiCum, targ);
 		}
@@ -495,7 +503,7 @@ namespace KineticOperators {
 
 		nelec = nEigs[0];
 
-		*psi = new std::complex<double>[nPts * nelec];
+		psi[0] = new std::complex<double>[nPts * nelec];
 
 		vtls::copyArray(nPts * nelec, states, psi[0]);
 		for (int i = 0; i < nelec; i++)
@@ -513,7 +521,7 @@ namespace KineticOperators {
 
 	void NonUnifGenDisp_PSM::initializeKinFFT() {
 		if (firstStepKin) {
-			DftiCreateDescriptor(&dftiHandleKin, DFTI_COMPLEX, DFTI_COMPLEX, 1, nPts);
+			DftiCreateDescriptor(&dftiHandleKin, DFTI_DOUBLE, DFTI_COMPLEX, 1, nPts);
 			DftiSetValue(dftiHandleKin, DFTI_BACKWARD_SCALE, 1.0 / nPts);
 			DftiCommitDescriptor(dftiHandleKin);
 

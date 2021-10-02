@@ -63,9 +63,9 @@ namespace KineticOperators {
 		DFTI_DESCRIPTOR_HANDLE dftiHandle = 0, dftiHandleMat = 0, dftiHandleKin = 0;
 
 		int nPts, nelec;
-		std::complex<double> *osKineticPhase, * osPotentialPhase, *opMat;
-		std::complex<double>* osKineticEnergy;
-		std::complex<double>* temp1, *temp2;
+		std::complex<double> *osKineticPhase = nullptr, * osPotentialPhase = nullptr, *opMat = nullptr;
+		std::complex<double>* osKineticEnergy = nullptr;
+		std::complex<double>* temp1 = nullptr, *temp2 = nullptr;
 		double dx, dt;
 
 		void calcOpMat();
@@ -140,11 +140,11 @@ namespace KineticOperators {
 		DFTI_DESCRIPTOR_HANDLE dftiHandle = 0, dftiHandleMat = 0, dftiHandleKin = 0;
 
 		int nPts, nelec, nDisp, expOrder, forceNorm;
-		std::complex<double>* osPotentialPhase, * opMat;
-		std::complex<double>* osKineticEnergy;
-		std::complex<double>* tempPsi, *tempPsiCum;
-		std::complex<double>* temp1, * temp2, *temp3;
-		double* osKineticMask, *norms;
+		std::complex<double>* osPotentialPhase = nullptr, * opMat = nullptr;
+		std::complex<double>* osKineticEnergy = nullptr;
+		std::complex<double>* tempPsi = nullptr, *tempPsiCum = nullptr;
+		std::complex<double>* temp1 = nullptr, * temp2 = nullptr, *temp3 = nullptr;
+		double* osKineticMask = nullptr, *norms = nullptr;
 		double dx, dt;
 
 		void calcOpMat();
