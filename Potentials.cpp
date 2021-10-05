@@ -1,79 +1,6 @@
 #include "stdafx.h"
 
 namespace Potentials {
-	//Calculates a prefactor such that prefactor[i]*psi2[i*nelec] provides the 3-D electron density
-	//	as a function of x
-	/*void calcFermiBoxDimensionalityConversion(int nelec, int nPts, double dx, double ef, std::complex<double> * psi, Potential * totPot, double* prefactor) {
-		if (nelec < 1)
-			throw("calcFermiBoxDimensionalityConversion: Number of electrons is not finite! Failed to initialize.");
-		//prefactor = new double[nelec];
-		std::complex<double>* scratch1 = new std::complex<double>[nPts];
-		std::complex<double>* scratch2 = new std::complex<double>[nPts];
-		double* v = new double[nPts];
-		totPot->getV(0, v);
-		double minE, maxE;
-		for (int i = 0; i < nelec; i++) {
-			vtls::secondDerivative(nPts, &psi[i * nPts], scratch1, dx);
-			vtls::scaMulArray(nPts, -PhysCon::hbar * PhysCon::hbar / (2.0 * PhysCon::me), scratch1);
-			vtls::seqMulArrays(nPts, v, &psi[i * nPts], scratch2);
-			vtls::addArrays(nPts, scratch2, scratch1);
-			for (int j = 0; j < nPts; j++)
-				scratch2[j] = std::conj(psi[i * nPts + j]);
-			prefactor[i] = std::real(vtlsInt::simpsMul(nPts, scratch1, scratch2, dx));
-			if (i == 0) { minE = prefactor[i]; maxE = prefactor[i]; }
-			if (prefactor[i] < minE) minE = prefactor[i];
-			if (prefactor[i] > maxE) maxE = prefactor[i];
-		}
-		//Find center of Fermi slab, and set new 0-energy accoridngly, and convert to Fermi energy difference
-		double bottom = (maxE + minE) / 2 - ef / 2;
-		for (int i = 0; i < nelec; i++)
-			prefactor[i] = ef - (prefactor[i] - bottom);
-		//Get factored prefactor
-		double fact = 0;
-		for (int i = 0; i < nelec; i++)
-			fact += prefactor[i];
-		fact = 2 / (3 * PhysCon::pi) * PhysCon::me * ef / (PhysCon::hbar * PhysCon::hbar) * nelec / fact;
-		//Combine factored prefactor with energy difference
-		for (int i = 0; i < nelec; i++)
-			prefactor[i] *= fact;
-
-		delete[] scratch1, scratch2, v;
-
-		//psi2 = new double[nelec * nPts];
-		//if (nelec < 1)
-		//	throw("SurfaceSpaceCharge: Number of electrons is not finite! Failed to initialize.");
-		//prefactor = new double[nelec];
-		//std::complex<double>* scratch1 = new std::complex<double>[nPts];
-		//std::complex<double>* scratch2 = new std::complex<double>[nPts];
-		//double* v = new double[nPts];
-		//totPot->getV(0, v);
-		//double minE, maxE;
-		//for (int i = 0; i < nelec; i++) {
-		//	vtls::secondDerivative(nPts, &psi[i*nPts], scratch1, dx);
-		//	vtls::scaMulArray(nPts, -PhysCon::hbar * PhysCon::hbar / (2.0 * PhysCon::me), scratch1);
-		//	vtls::seqMulArrays(nPts, v, &psi[i*nPts], scratch2);
-		//	vtls::addArrays(nPts, scratch2, scratch1);
-		//	for (int j = 0; j < nPts; j++)
-		//		scratch2[j] = std::conj(psi[i*nPts+j]);
-		//	prefactor[i] = std::real(vtlsInt::simpsMul(nPts, scratch1, scratch2, dx));
-		//	if (i == 0) { minE = prefactor[i]; maxE = prefactor[i]; }
-		//	if (prefactor[i] < minE) minE = prefactor[i];
-		//	if (prefactor[i] > maxE) maxE = prefactor[i];
-		//}
-		////Find center of Fermi slab, and set new 0-energy accoridngly, and convert to Fermi energy difference
-		//double bottom = (maxE + minE) / 2 - ef / 2;
-		//for (int i = 0; i < nelec; i++)
-		//	prefactor[i] = ef - (prefactor[i] - bottom);
-		////Get factored prefactor
-		//double fact = 0;
-		//for (int i = 0; i < nelec; i++)
-		//	fact += prefactor[i];
-		//fact = 2 / (3 * PhysCon::pi) * PhysCon::me * ef / (PhysCon::hbar * PhysCon::hbar) * nelec / fact * PhysCon::qe * PhysCon::qe / PhysCon::e0 / 2;
-		////Combine factored prefactor with energy difference
-		//for (int i = 0; i < nelec; i++)
-		//	prefactor[i] *= fact;
-	}*/
-
 	FilePotential::FilePotential(int nPts, double * x, double offset, const char * fil, int refPoint) {
 		FilePotential::nPts = nPts;
 		v = new double[nPts];
@@ -94,11 +21,11 @@ namespace Potentials {
 		delete[] fv;
 	}
 
-	void FilePotential::getV(double t, double * targ) {
+	void FilePotential::getV(double t, double * targ, KineticOperators::KineticOperator* kin) {
 		vtls::copyArray(nPts, v, targ);
 	}
 
-	void FilePotential::getV(std::complex<double> * psi, double t, double * targ) {
+	void FilePotential::getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator* kin) {
 		vtls::copyArray(nPts, v, targ);
 	}
 
@@ -152,7 +79,7 @@ namespace Potentials {
 		vtls::scaAddArray(nPts, -v[refPoint], v);
 	}
 
-	void BiasFieldPotential::getV(double t, double * targ) {
+	void BiasFieldPotential::getV(double t, double * targ, KineticOperators::KineticOperator* kin) {
 		if (t > tstart + tbuf)
 			vtls::copyArray(nPts, v, targ);
 		else if (t > tstart) {
@@ -173,8 +100,8 @@ namespace Potentials {
 			std::fill_n(targ, nPts, 0.0);
 	}
 
-	void BiasFieldPotential::getV(std::complex<double> * psi, double t, double * targ) {
-		getV(t, targ);
+	void BiasFieldPotential::getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator* kin) {
+		getV(t, targ, kin);
 	}
 
 	int BiasFieldPotential::isDynamic() {
@@ -199,11 +126,11 @@ namespace Potentials {
 			v[i] -= ref;
 	}
 
-	void CoulombPotential::getV(double t, double * targ) {
+	void CoulombPotential::getV(double t, double * targ, KineticOperators::KineticOperator* kin) {
 		vtls::copyArray(nPts, v, targ);
 	}
 
-	void CoulombPotential::getV(std::complex<double> * psi, double t, double * targ) {
+	void CoulombPotential::getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator* kin) {
 		vtls::copyArray(nPts, v, targ);
 	}
 
@@ -223,12 +150,12 @@ namespace Potentials {
 		vtls::scaAddArray(nPts, -v[refPoint], v);
 	}
 
-	void FiniteBox::getV(double t, double * targ) {
+	void FiniteBox::getV(double t, double * targ, KineticOperators::KineticOperator* kin) {
 		vtls::copyArray(nPts, v, targ);
 	}
 
-	void FiniteBox::getV(std::complex<double> * psi, double t, double * targ) {
-		getV(t, targ);
+	void FiniteBox::getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator* kin) {
+		getV(t, targ, kin);
 	}
 
 	int FiniteBox::isDynamic() {
@@ -276,12 +203,12 @@ namespace Potentials {
 		vtls::scaAddArray(nPts, -v[refPoint], v);
 	}
 
-	void JelliumPotential::getV(double t, double * targ) {
+	void JelliumPotential::getV(double t, double * targ, KineticOperators::KineticOperator* kin) {
 		vtls::copyArray(nPts, v, targ);
 	}
 
-	void JelliumPotential::getV(std::complex<double> * psi, double t, double * targ) {
-		getV(t, targ);
+	void JelliumPotential::getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator* kin) {
+		getV(t, targ, kin);
 	}
 
 	int JelliumPotential::isDynamic() {
@@ -345,12 +272,12 @@ namespace Potentials {
 
 	}
 
-	void JelliumPotentialBacked::getV(double t, double * targ) {
+	void JelliumPotentialBacked::getV(double t, double * targ, KineticOperators::KineticOperator* kin) {
 		vtls::copyArray(nPts, v, targ);
 	}
 
-	void JelliumPotentialBacked::getV(std::complex<double> * psi, double t, double * targ) {
-		getV(t, targ);
+	void JelliumPotentialBacked::getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator* kin) {
+		getV(t, targ, kin);
 	}
 
 	int JelliumPotentialBacked::isDynamic() {
@@ -370,12 +297,12 @@ namespace Potentials {
 		w = PhysCon::c / lam * 2.0*PhysCon::pi;
 	}
 
-	void ElectricFieldProfileToPotential::getV(double t, double * targ) {
+	void ElectricFieldProfileToPotential::getV(double t, double * targ, KineticOperators::KineticOperator* kin) {
 		vtls::scaMulArrayRe(nPts, std::exp(PhysCon::im*(w*(t-tmax)+phase))*PhysCon::im*env->getValue(t), potMask, targ);
 	}
 
-	void ElectricFieldProfileToPotential::getV(std::complex<double> * psi, double t, double * targ) {
-		getV(t, targ);
+	void ElectricFieldProfileToPotential::getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator* kin) {
+		getV(t, targ, kin);
 	}
 
 	int ElectricFieldProfileToPotential::isDynamic() {
@@ -391,12 +318,12 @@ namespace Potentials {
 			v[i] = -zProtons * qe*qe / (2 * e0*latticeSpacing*latticeSpacing / decayConst)*std::exp(-std::abs(x[i] - center) / decayConst);
 	}
 
-	void ShieldedAtomicPotential::getV(double t, double * targ) {
+	void ShieldedAtomicPotential::getV(double t, double * targ, KineticOperators::KineticOperator* kin) {
 		vtls::copyArray(nPts, v, targ);
 	}
 
-	void ShieldedAtomicPotential::getV(std::complex<double> * psi, double t, double * targ) {
-		getV(t, targ);
+	void ShieldedAtomicPotential::getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator* kin) {
+		getV(t, targ, kin);
 	}
 
 	int ShieldedAtomicPotential::isDynamic() {
@@ -439,20 +366,20 @@ namespace Potentials {
 		vslConvSetDecimation(task, &one);
 	}
 
-	void WaveFunctionSelfPotentialJellPotMask::negateGroundEffects(std::complex<double> * psi) {
+	void WaveFunctionSelfPotentialJellPotMask::negateGroundEffects(std::complex<double> * psi, KineticOperators::KineticOperator* kin) {
 		double * temp = new double[nPts];
-		getV(psi, 0.0, temp);
+		getV(psi, 0.0, temp, kin);
 		for (int i = 0; i < nPts; i++)
 			add[i] = -temp[i] + add[i];
 		delete temp;
 	}
 
-	void WaveFunctionSelfPotentialJellPotMask::getV(double t, double * targ) {
+	void WaveFunctionSelfPotentialJellPotMask::getV(double t, double * targ, KineticOperators::KineticOperator* kin) {
 		for (int i = 0; i < nPts; i++)
 			targ[i] = 0.0;
 	}
 
-	void WaveFunctionSelfPotentialJellPotMask::getV(std::complex<double> * psi, double t, double * targ) {
+	void WaveFunctionSelfPotentialJellPotMask::getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator* kin) {
 		vtls::normSqr(nPts, psi, psi2);
 		vtls::seqMulArrays(nPts, stepFunc, psi2);
 
@@ -575,22 +502,22 @@ namespace Potentials {
 		psi0 = new std::complex<double>[nPts];
 	}
 
-	void SurfaceSpaceCharge::negateGroundEffects(std::complex<double>* psi) {
-		if (first) doFirst(psi);
-		calcPot(psi, origPot);
+	void SurfaceSpaceCharge::negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
+		if (first) doFirst(psi, kin);
+		calcPot(psi, origPot, kin);
 	}
 
-	void SurfaceSpaceCharge::getV(double t, double* targ) {
+	void SurfaceSpaceCharge::getV(double t, double* targ, KineticOperators::KineticOperator* kin) {
 		for (int i = 0; i < nPts; i++)
 			targ[i] = 0.0;
 	}
 
-	void SurfaceSpaceCharge::getV(std::complex<double>* psi, double t, double* targ) {
+	void SurfaceSpaceCharge::getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator* kin) {
 		if (first) {
-			doFirst(psi);
+			doFirst(psi, kin);
 			std::cout << "SurfaceSpaceCharge potential should be negated after initial state is found." << std::endl;
 		}
-		calcPot(psi, targ);
+		calcPot(psi, targ, kin);
 
 		double ref = targ[refPoint] - origPot[refPoint];
 		for (int i = 0; i < nPts; i++)
@@ -601,15 +528,15 @@ namespace Potentials {
 		return 2;
 	}
 
-	void SurfaceSpaceCharge::doFirst(std::complex<double>* psi) {
+	void SurfaceSpaceCharge::doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
 		first = 0;
 		nelec = nelecPtr[0];
 		psi2 = new double[nPts * nelec];
 		prefactor = new double[nelec];
 		double* energies = new double[nelec];
 		double* v0w = new double[nPts];
-		totPot->getV(0, v0w);
-		WfcToRho::calcEnergies(nelec, nPts, dx, psi, v0w, energies);
+		totPot->getV(0, v0w, kin);
+		WfcToRho::calcEnergies(nelec, nPts, dx, psi, v0w, kin, energies);
 		wght->calcWeights(nelec, energies, prefactor);
 		delete[] energies, v0w;
 		//calcFermiBoxDimensionalityConversion(nelec, nPts, dx, ef, psi, totPot, prefactor);
@@ -648,8 +575,8 @@ namespace Potentials {
 		//	prefactor[i] *= fact;
 	}
 
-	void SurfaceSpaceCharge::calcPot(std::complex<double>* psi, double* targ) {
-		if (first) doFirst(psi);
+	void SurfaceSpaceCharge::calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator* kin) {
+		if (first) doFirst(psi, kin);
 		dens->calcRho(nPts, nelec, dx, prefactor, psi, rho);
 		for (int i = 0; i < posMin; i++)
 			rho[i] = 0;
@@ -714,22 +641,22 @@ namespace Potentials {
 				lrxr[i] = std::log((r + x[i] - x[surfPos]) / r);
 	}
 
-	void FullCylindricalSpaceCharge::negateGroundEffects(std::complex<double>* psi) {
-		if (first) doFirst(psi);
-		calcPot(psi, origPot);
+	void FullCylindricalSpaceCharge::negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
+		if (first) doFirst(psi, kin);
+		calcPot(psi, origPot, kin);
 	}
 
-	void FullCylindricalSpaceCharge::getV(double t, double* targ) {
+	void FullCylindricalSpaceCharge::getV(double t, double* targ, KineticOperators::KineticOperator* kin) {
 		for (int i = 0; i < nPts; i++)
 			targ[i] = 0.0;
 	}
 
-	void FullCylindricalSpaceCharge::getV(std::complex<double>* psi, double t, double* targ) {
+	void FullCylindricalSpaceCharge::getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator* kin) {
 		if (first) {
-			doFirst(psi);
+			doFirst(psi, kin);
 			std::cout << "FullCylindricalSpaceCharge potential should be negated after initial state is found." << std::endl;
 		}
-		calcPot(psi, targ);
+		calcPot(psi, targ, kin);
 		double ref = targ[refPoint] - origPot[refPoint];
 		for (int i = 0; i < nPts; i++)
 			targ[i] -= origPot[i] + ref;
@@ -739,22 +666,22 @@ namespace Potentials {
 		return 2;
 	}
 
-	void FullCylindricalSpaceCharge::doFirst(std::complex<double>* psi) {
+	void FullCylindricalSpaceCharge::doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
 		first = 0;
 		nelec = nelecPtr[0];
 		psi2 = new double[nPts * nelec];
 		prefactor = new double[nelec];
 		double* energies = new double[nelec];
 		double* v0w = new double[nPts];
-		totPot->getV(0, v0w);
-		WfcToRho::calcEnergies(nelec, nPts, dx, psi, v0w, energies);
+		totPot->getV(0, v0w, kin);
+		WfcToRho::calcEnergies(nelec, nPts, dx, psi, v0w, kin, energies);
 		wght->calcWeights(nelec, energies, prefactor);
 		delete[] energies, v0w;
 		//calcFermiBoxDimensionalityConversion(nelec, nPts, dx, ef, psi, totPot, prefactor);
 	}
 
-	void FullCylindricalSpaceCharge::calcPot(std::complex<double>* psi, double* targ) {
-		if (first) doFirst(psi);
+	void FullCylindricalSpaceCharge::calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator* kin) {
+		if (first) doFirst(psi, kin);
 		//Caclulate 3-D density, only for within bounds
 		dens->calcRho(nPts, nelec, dx, prefactor, psi, rho);
 		for (int i = 0; i < posMin; i++)
@@ -810,22 +737,22 @@ namespace Potentials {
 				lrxr[i] = std::log((rad + x[i] - x[surfPos]) / rad);
 	}
 
-	void LinearBulkCylindricalFieldSpaceCharge::negateGroundEffects(std::complex<double>* psi) {
-		if (first) doFirst(psi);
-		calcPot(psi, origPot);
+	void LinearBulkCylindricalFieldSpaceCharge::negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
+		if (first) doFirst(psi, kin);
+		calcPot(psi, origPot, kin);
 	}
 
-	void LinearBulkCylindricalFieldSpaceCharge::getV(double t, double* targ) {
+	void LinearBulkCylindricalFieldSpaceCharge::getV(double t, double* targ, KineticOperators::KineticOperator* kin) {
 		for (int i = 0; i < nPts; i++)
 			targ[i] = 0.0;
 	}
 
-	void LinearBulkCylindricalFieldSpaceCharge::getV(std::complex<double>* psi, double t, double* targ) {
+	void LinearBulkCylindricalFieldSpaceCharge::getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator* kin) {
 		if (first) {
-			doFirst(psi);
+			doFirst(psi, kin);
 			std::cout << "LinearBulkCylindricalFieldSpaceCharge potential should be negated after initial state is found." << std::endl;
 		}
-		calcPot(psi, targ);
+		calcPot(psi, targ, kin);
 		double ref = targ[refPoint] - origPot[refPoint];
 		for (int i = 0; i < nPts; i++)
 			targ[i] -= origPot[i] + ref;
@@ -835,23 +762,23 @@ namespace Potentials {
 		return 2;
 	}
 
-	void LinearBulkCylindricalFieldSpaceCharge::doFirst(std::complex<double>* psi) {
+	void LinearBulkCylindricalFieldSpaceCharge::doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
 		first = 0;
 		nelec = nelecPtr[0];
 		psi2 = new double[nPts * nelec];
 		prefactor = new double[nelec];
 		double* energies = new double[nelec];
 		double* v0w = new double[nPts];
-		totPot->getV(0, v0w);
-		WfcToRho::calcEnergies(nelec, nPts, dx, psi, v0w, energies);
+		totPot->getV(0, v0w, kin);
+		WfcToRho::calcEnergies(nelec, nPts, dx, psi, v0w, kin, energies);
 		wght->calcWeights(nelec, energies, prefactor);
 		delete[] energies, v0w;
 		//calcFermiBoxDimensionalityConversion(nelec, nPts, dx, ef, psi, totPot, prefactor);
 	}
 
-	void LinearBulkCylindricalFieldSpaceCharge::calcPot(std::complex<double>* psi, double* targ) {
+	void LinearBulkCylindricalFieldSpaceCharge::calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator* kin) {
 		//auto t1 = std::chrono::system_clock::now();
-		if (first) doFirst(psi);
+		if (first) doFirst(psi, kin);
 		//Caclulate 3-D density, only for within bounds
 		dens->calcRho(nPts, nelec, dx, prefactor, psi, rho);
 		for (int i = 0; i < posMin; i++)
@@ -979,22 +906,22 @@ namespace Potentials {
 		//pol = 0; lpol = 0;
 	}
 
-	void DielectricBulkCylindricalFieldSpaceCharge::negateGroundEffects(std::complex<double>* psi) {
-		if (first) doFirst(psi);
-		calcPot(psi, origPot);
+	void DielectricBulkCylindricalFieldSpaceCharge::negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
+		if (first) doFirst(psi, kin);
+		calcPot(psi, origPot, kin);
 	}
 
-	void DielectricBulkCylindricalFieldSpaceCharge::getV(double t, double* targ) {
+	void DielectricBulkCylindricalFieldSpaceCharge::getV(double t, double* targ, KineticOperators::KineticOperator* kin) {
 		for (int i = 0; i < nPts; i++)
 			targ[i] = 0.0;
 	}
 
-	void DielectricBulkCylindricalFieldSpaceCharge::getV(std::complex<double>* psi, double t, double* targ) {
+	void DielectricBulkCylindricalFieldSpaceCharge::getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator* kin) {
 		if (first) {
-			doFirst(psi);
+			doFirst(psi, kin);
 			std::cout << "LinearBulkCylindricalFieldSpaceCharge potential should be negated after initial state is found." << std::endl;
 		}
-		calcPot(psi, targ);
+		calcPot(psi, targ, kin);
 		double ref = targ[refPoint] - origPot[refPoint];
 		for (int i = 0; i < nPts; i++)
 			targ[i] -= origPot[i] + ref;
@@ -1004,15 +931,15 @@ namespace Potentials {
 		return 2;
 	}
 
-	void DielectricBulkCylindricalFieldSpaceCharge::doFirst(std::complex<double>* psi) {
+	void DielectricBulkCylindricalFieldSpaceCharge::doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
 		first = 0;
 		nelec = nelecPtr[0];
 		psi2 = new double[nPts * nelec];
 		prefactor = new double[nelec];
 		double* energies = new double[nelec];
 		double* v0w = new double[nPts];
-		totPot->getV(0, v0w);
-		WfcToRho::calcEnergies(nelec, nPts, dx, psi, v0w, energies);
+		totPot->getV(0, v0w, kin);
+		WfcToRho::calcEnergies(nelec, nPts, dx, psi, v0w, kin, energies);
 		wght->calcWeights(nelec, energies, prefactor);
 		delete[] energies, v0w;
 
@@ -1029,10 +956,10 @@ namespace Potentials {
 		}
 	}
 
-	void DielectricBulkCylindricalFieldSpaceCharge::calcPot(std::complex<double>* psi, double* targ) {
+	void DielectricBulkCylindricalFieldSpaceCharge::calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator* kin) {
 		//lpol = pol;
 		//auto t1 = std::chrono::system_clock::now();
-		if (first) doFirst(psi);
+		if (first) doFirst(psi, kin);
 		//Caclulate 3-D density, only for within bounds
 		dens->calcRho(nPts, nelec, dx, prefactor, psi, rho);
 		for (int i = 0; i < posMin; i++)
@@ -1129,22 +1056,22 @@ namespace Potentials {
 		potTemp = new double[nPts];
 	}
 
-	void LinearBulkCylSectionFieldSpaceCharge::negateGroundEffects(std::complex<double>* psi) {
-		if (first) doFirst(psi);
-		calcPot(psi, origPot);
+	void LinearBulkCylSectionFieldSpaceCharge::negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
+		if (first) doFirst(psi, kin);
+		calcPot(psi, origPot, kin);
 	}
 
-	void LinearBulkCylSectionFieldSpaceCharge::getV(double t, double* targ) {
+	void LinearBulkCylSectionFieldSpaceCharge::getV(double t, double* targ, KineticOperators::KineticOperator* kin) {
 		for (int i = 0; i < nPts; i++)
 			targ[i] = 0.0;
 	}
 
-	void LinearBulkCylSectionFieldSpaceCharge::getV(std::complex<double>* psi, double t, double* targ) {
+	void LinearBulkCylSectionFieldSpaceCharge::getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator* kin) {
 		if (first) {
-			doFirst(psi);
+			doFirst(psi, kin);
 			std::cout << "LinearBulkCylSectionFieldSpaceCharge potential should be negated after initial state is found." << std::endl;
 		}
-		calcPot(psi, targ);
+		calcPot(psi, targ, kin);
 		double ref = targ[refPoint] - origPot[refPoint];
 		for (int i = 0; i < nPts; i++)
 			targ[i] -= origPot[i] + ref;
@@ -1154,23 +1081,23 @@ namespace Potentials {
 		return 2;
 	}
 
-	void LinearBulkCylSectionFieldSpaceCharge::doFirst(std::complex<double>* psi) {
+	void LinearBulkCylSectionFieldSpaceCharge::doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
 		first = 0;
 		nelec = nelecPtr[0];
 		psi2 = new double[nPts * nelec];
 		prefactor = new double[nelec];
 		double* energies = new double[nelec];
 		double* v0w = new double[nPts];
-		totPot->getV(0, v0w);
-		WfcToRho::calcEnergies(nelec, nPts, dx, psi, v0w, energies);
+		totPot->getV(0, v0w, kin);
+		WfcToRho::calcEnergies(nelec, nPts, dx, psi, v0w, kin, energies);
 		wght->calcWeights(nelec, energies, prefactor);
 		delete[] energies, v0w;
 		//calcFermiBoxDimensionalityConversion(nelec, nPts, dx, ef, psi, totPot, prefactor);
 	}
 
-	void LinearBulkCylSectionFieldSpaceCharge::calcPot(std::complex<double>* psi, double* targ) {
+	void LinearBulkCylSectionFieldSpaceCharge::calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator* kin) {
 		//auto t1 = std::chrono::system_clock::now();
-		if (first) doFirst(psi);
+		if (first) doFirst(psi, kin);
 		//Caclulate 3-D density
 		dens->calcRho(nPts, nelec, dx, prefactor, psi, rho);
 		//auto t2 = std::chrono::system_clock::now();
@@ -1219,9 +1146,9 @@ namespace Potentials {
 			mask[i] = -resistivity / (1.0 + std::exp((i - surfPos) * dx / transLen));
 	}
 
-	void OhmicRetardingPotential::calcProbCur(std::complex<double>* psi) {
+	void OhmicRetardingPotential::calcProbCur(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
 		if (first)
-			doFirst(psi);
+			doFirst(psi, kin);
 
 		std::fill_n(probCur, nPts, 0.0);
 		for (int i = 0; i < nelec; i++) {
@@ -1231,40 +1158,40 @@ namespace Potentials {
 		}
 	}
 
-	void OhmicRetardingPotential::calcPot(std::complex<double>* psi, double* targ) {
-		calcProbCur(psi);
+	void OhmicRetardingPotential::calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator* kin) {
+		calcProbCur(psi, kin);
 		vtls::seqMulArrays(nPts, mask, probCur);
 		vtlsInt::cumIntTrapz(nPts, probCur, -dx * PhysCon::qe * PhysCon::qe, targ);
 	}
 
-	void OhmicRetardingPotential::doFirst(std::complex<double>* psi) {
+	void OhmicRetardingPotential::doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
 		first = 0;
 		nelec = *nelecPtr;
 		prefactor = new double[nelec];
 		double* energies = new double[nelec];
 		double* v0w = new double[nPts];
-		totPot->getV(0, v0w);
-		WfcToRho::calcEnergies(nelec, nPts, dx, psi, v0w, energies);
+		totPot->getV(0, v0w, kin);
+		WfcToRho::calcEnergies(nelec, nPts, dx, psi, v0w, kin, energies);
 		wght->calcWeights(nelec, energies, prefactor);
 		delete[] energies, v0w;
 	}
 
-	void OhmicRetardingPotential::negateGroundEffects(std::complex<double>* psi) {
-		if (first) doFirst(psi);
-		calcPot(psi, origPot);
+	void OhmicRetardingPotential::negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
+		if (first) doFirst(psi, kin);
+		calcPot(psi, origPot, kin);
 	}
 
-	void OhmicRetardingPotential::getV(double t, double* targ) {
+	void OhmicRetardingPotential::getV(double t, double* targ, KineticOperators::KineticOperator* kin) {
 		for (int i = 0; i < nPts; i++)
 			targ[i] = 0.0;
 	}
 
-	void OhmicRetardingPotential::getV(std::complex<double>* psi, double t, double* targ) {
+	void OhmicRetardingPotential::getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator* kin) {
 		if (first) {
-			doFirst(psi);
+			doFirst(psi, kin);
 			std::cout << "OhmicRetardingPotential potential should be negated after initial state is found." << std::endl;
 		}
-		calcPot(psi, targ);
+		calcPot(psi, targ, kin);
 		double ref = targ[refPoint] - origPot[refPoint];
 		for (int i = 0; i < nPts; i++)
 			targ[i] -= origPot[i] + ref;
@@ -1275,7 +1202,7 @@ namespace Potentials {
 	}
 
 
-	CompositePotential::CompositePotential(int nPts, int numSPots, int numDPots, int numWPots, Potential ** staticPots, Potential ** dynamicPots, Potential ** waveFuncDependentPots) {
+	CompositePotential::CompositePotential(int nPts, int numSPots, int numDPots, int numWPots, KineticOperators::KineticOperator* kin, Potential ** staticPots, Potential ** dynamicPots, Potential ** waveFuncDependentPots) {
 		CompositePotential::nPts = nPts;
 		CompositePotential::numSPots = numSPots;
 		CompositePotential::numDPots = numDPots;
@@ -1285,32 +1212,32 @@ namespace Potentials {
 		CompositePotential::waveFuncDependentPots = waveFuncDependentPots;
 		v0 = new double[nPts];
 		if (numSPots != 0)
-			staticPots[0]->getV(0.0, v0);
+			staticPots[0]->getV(0.0, v0, kin);
 		else
 			std::fill_n(v0, nPts, 0.0);
 		nv = new double[nPts];
 		for (int i = 1; i < numSPots; i++) {
-			staticPots[i]->getV(0.0, nv);
+			staticPots[i]->getV(0.0, nv, kin);
 			vtls::addArrays(nPts, nv, v0);
 		}
 	}
 
-	void CompositePotential::getV(double t, double * targ) {
+	void CompositePotential::getV(double t, double * targ, KineticOperators::KineticOperator* kin) {
 		vtls::copyArray(nPts, v0, targ);
 		for (int i = 0; i < numDPots; i++) {
-			dynamicPots[i]->getV(t, nv);
+			dynamicPots[i]->getV(t, nv, kin);
 			vtls::addArrays(nPts, nv, targ);
 		}
 	}
 
-	void CompositePotential::getV(std::complex<double> * psi, double t, double * targ) {
+	void CompositePotential::getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator* kin) {
 		vtls::copyArray(nPts, v0, targ);
 		for (int i = 0; i < numDPots; i++) {
-			dynamicPots[i]->getV(t, nv);
+			dynamicPots[i]->getV(t, nv, kin);
 			vtls::addArrays(nPts, nv, targ);
 		}
 		for (int i = 0; i < numWPots; i++) {
-			waveFuncDependentPots[i]->getV(psi, t, nv);
+			waveFuncDependentPots[i]->getV(psi, t, nv, kin);
 			vtls::addArrays(nPts, nv, targ);
 		}
 	}
@@ -1345,7 +1272,7 @@ namespace Potentials {
 		}
 	}
 
-	void PotentialManager::finishAddingPotentials() {
+	void PotentialManager::finishAddingPotentials(KineticOperators::KineticOperator* kin) {
 		int ns = staticPots.size();
 		int nd = dynamicPots.size();
 		int nw = waveFuncDependentPots.size();
@@ -1358,20 +1285,20 @@ namespace Potentials {
 			dpots[i] = dynamicPots[i];
 		for (int i = 0; i < nw; i++)
 			wpots[i] = waveFuncDependentPots[i];
-		pot = new CompositePotential(nPts, ns, nd, nw, spots, dpots, wpots);
+		pot = new CompositePotential(nPts, ns, nd, nw, kin, spots, dpots, wpots);
 	}
 
-	void PotentialManager::getV(double t, double * targ) {
+	void PotentialManager::getV(double t, double * targ, KineticOperators::KineticOperator* kin) {
 		if (pot)
-			pot->getV(t, targ);
+			pot->getV(t, targ, kin);
 		else {
 			throw "Must run finishAddingPotentials() function on PotentialManager before using getV().";
 		}
 	}
 
-	void PotentialManager::getV(std::complex<double> * psi, double t, double * targ) {
+	void PotentialManager::getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator* kin) {
 		if (pot)
-			pot->getV(psi, t, targ);
+			pot->getV(psi, t, targ, kin);
 		else {
 			throw "Must run finishAddingPotentials() function on PotentialManager before using getV().";
 		}

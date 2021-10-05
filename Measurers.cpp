@@ -43,7 +43,7 @@ namespace Measurers {
 		terminate();
 	}
 
-	int DoubleConst::measure(std::complex<double>* psi, double* v, double t) { return 1; }
+	int DoubleConst::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) { return 1; }
 
 	void DoubleConst::terminate() {
 		if (fil) fil.close();
@@ -72,7 +72,7 @@ namespace Measurers {
 		terminate();
 	}
 
-	int ElectronNumber::measure(std::complex<double>* psi, double* v, double t) { return 1; }
+	int ElectronNumber::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) { return 1; }
 
 	void ElectronNumber::terminate() {
 		if (fil) fil.close();
@@ -105,7 +105,7 @@ namespace Measurers {
 		terminate();
 	}
 
-	int Header::measure(std::complex<double>* psi, double* v, double t) { return 1; }
+	int Header::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) { return 1; }
 
 	void Header::terminate() {
 		if (fil) fil.close();
@@ -141,7 +141,7 @@ namespace Measurers {
 		if (fil) fil.close();
 	}
 
-	int NPts::measure(std::complex<double>* psi, double* v, double t) { return 1; }
+	int NPts::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) { return 1; }
 
 	//NSteps
 	NSteps::NSteps(const char* fol) {
@@ -171,7 +171,7 @@ namespace Measurers {
 		if (fil) fil.close();
 	}
 
-	int NSteps::measure(std::complex<double> * psi, double * v, double t) {
+	int NSteps::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
 		if (t != tmea) {
 			steps++;
 			tmea = t;
@@ -205,7 +205,7 @@ namespace Measurers {
 		terminate();
 	}
 
-	int DX::measure(std::complex<double>* psi, double* v, double t) { return 1; }
+	int DX::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) { return 1; }
 
 	void DX::terminate() {
 		if (fil) fil.close();
@@ -237,7 +237,7 @@ namespace Measurers {
 		terminate();
 	}
 
-	int DT::measure(std::complex<double>* psi, double* v, double t) { return 1; }
+	int DT::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) { return 1; }
 
 	void DT::terminate() {
 		if (fil) fil.close();
@@ -269,7 +269,7 @@ namespace Measurers {
 		terminate();
 	}
 
-	int XS::measure(std::complex<double>* psi, double* v, double t) { return 1; }
+	int XS::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) { return 1; }
 
 	void XS::terminate() {
 		if (fil) fil.close();
@@ -301,7 +301,7 @@ namespace Measurers {
 		terminate();
 	}
 
-	int TS::measure(std::complex<double> * psi, double * v, double t) {
+	int TS::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
 		if (t != tmea) {
 			fil.write(reinterpret_cast<char*>(&t), sizeof(double));
 			tmea = t;
@@ -340,7 +340,7 @@ namespace Measurers {
 		terminate();
 	}
 
-	int OrigPot::measure(std::complex<double> * psi, double * v, double t) {
+	int OrigPot::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
 		if (!measured) {
 			fil.write(reinterpret_cast<char*>(&v[0]), sizeof(double)*n);
 			measured = 1;
@@ -398,7 +398,7 @@ namespace Measurers {
 		terminate();
 	}
 
-	int Psi2t::measure(std::complex<double> * psi, double * v, double t) {
+	int Psi2t::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
 		int k = (int)(t / interval) - curIts;
 		if ((k == 0 || std::abs(t-mulT)<dt/8) && curIts<=nt) {
 			if (std::abs(t - mulT) >= dt / 8 && curIts == nt)
@@ -492,7 +492,7 @@ namespace Measurers {
 		vslConvSetDecimation(task, &one);
 	}
 
-	int WignerQPD::measure(std::complex<double> * psi, double * v, double t) {
+	int WignerQPD::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
 		double dx = (x[n - 1] - x[0]) / n;
 		int tk = (int)(t / interval) - curIts;
 		double sum;
@@ -593,7 +593,7 @@ namespace Measurers {
 		terminate();
 	}
 
-	int ExpectE::measure(std::complex<double> * psi, double * v, double t) {
+	int ExpectE::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
 		vtls::secondDerivative(nPts, psi, scratch1, dx);
 		vtls::scaMulArray(nPts, -PhysCon::hbar*PhysCon::hbar / (2.0*PhysCon::me), scratch1);
 		vtls::seqMulArrays(nPts, v, psi, scratch2);
@@ -641,7 +641,7 @@ namespace Measurers {
 		terminate();
 	}
 
-	int ExpectX::measure(std::complex<double> * psi, double * v, double t) {
+	int ExpectX::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
 		vtls::normSqr(nPts, psi, scratch);
 		double ex = vtlsInt::simpsMul(nPts, x, scratch, dx);
 		fil.write(reinterpret_cast<char*>(&ex), sizeof(double));
@@ -682,7 +682,7 @@ namespace Measurers {
 		terminate();
 	}
 
-	int ExpectP::measure(std::complex<double> * psi, double * v, double t) {
+	int ExpectP::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
 		vtls::firstDerivative(nPts, psi, scratch1, dx);
 		for (int i = 0; i < nPts; i++)
 			scratch2[i] = std::conj(psi[i]);
@@ -726,7 +726,7 @@ namespace Measurers {
 		terminate();
 	}
 
-	int ExpectA::measure(std::complex<double> * psi, double * v, double t) {
+	int ExpectA::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
 		vtls::firstDerivative(nPts, v, scratch1, dx);
 		vtls::normSqr(nPts, psi, scratch2);
 		double ex = vtlsInt::simpsMul(nPts, scratch2, scratch1, dx)*(-1.0 / PhysCon::me);
@@ -769,7 +769,7 @@ namespace Measurers {
 		terminate();
 	}
 
-	int TotProb::measure(std::complex<double> * psi, double * v, double t) {
+	int TotProb::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
 		vtls::normSqr(n, psi, psi2);
 		double sum = vtlsInt::simps(n, psi2, dx);
 		fil.write(reinterpret_cast<char*>(&sum), sizeof(double));
@@ -816,7 +816,7 @@ namespace Measurers {
 		terminate();
 	}
 
-	int VDProbCurrent::measure(std::complex<double> * psi, double * v, double t) {
+	int VDProbCurrent::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
 		std::complex<double> der = vtls::firstDerivative(n, psi, pos, dx);
 		double j = std::imag(PhysCon::hbar / (2.0 * PhysCon::me)*(std::conj(psi[pos])*der - psi[pos] * std::conj(der)));
 		fil.write(reinterpret_cast<char*>(&j), sizeof(double));
@@ -857,7 +857,7 @@ namespace Measurers {
 		terminate();
 	}
 
-	int PsiT::measure(std::complex<double> * psi, double * v, double t) {
+	int PsiT::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
 		if ((!done && t >= meaT) || t == curTime) {
 			fil.write(reinterpret_cast<char*>(psi), sizeof(std::complex<double>)* n);
 			done = 1;
@@ -904,7 +904,7 @@ namespace Measurers {
 		terminate();
 	}
 
-	int PotT::measure(std::complex<double> * psi, double * v, double t) {
+	int PotT::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
 		if (!done && t >= meaT) {
 			fil.write(reinterpret_cast<char*>(v), sizeof(double)*n);
 			done = 1;
@@ -949,7 +949,7 @@ namespace Measurers {
 		terminate();
 	}
 
-	int VDPsi::measure(std::complex<double> * psi, double * v, double t) {
+	int VDPsi::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
 		fil.write(reinterpret_cast<char*>(&psi[pos]), sizeof(std::complex<double>));
 		return 0;
 	}
@@ -990,7 +990,7 @@ namespace Measurers {
 		terminate();
 	}
 
-	int VDPot::measure(std::complex<double> * psi, double * v, double t) {
+	int VDPot::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
 		fil.write(reinterpret_cast<char*>(&v[pos]), sizeof(double));
 		return 0;
 	}
@@ -1037,7 +1037,7 @@ namespace Measurers {
 		terminate();
 	}
 
-	int VDFluxSpec::measure(std::complex<double>* psi, double* v, double t) {
+	int VDFluxSpec::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) {
 		if (first) {
 			nelec = nelecPtr[0];
 			wfcs0 = new std::complex<double>[nsamp * nelec];
@@ -1130,7 +1130,7 @@ namespace Measurers {
 		terminate();
 	}
 
-	int Vfunct::measure(std::complex<double> * psi, double * v, double t) {
+	int Vfunct::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
 		int k = (int)(t / interval) - curIts;
 		if (k == 0 && curIts<nt) {
 			vtls::downSampleLinearInterpolateEdge(n, v, nx, vs);
@@ -1190,7 +1190,7 @@ namespace Measurers {
 		terminate();
 	}
 
-	int ExpectE0::measure(std::complex<double>* psi, double* v, double t) {
+	int ExpectE0::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) {
 		if(first || t == tmea){
 			first = 0;
 			tmea = t;
@@ -1239,14 +1239,14 @@ namespace Measurers {
 		terminate();
 	}
 
-	int WfcRhoWeights::measure(std::complex<double>* psi, double* v, double t) {
+	int WfcRhoWeights::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator * kin) {
 		if (first) {
 			first = 0;
 			int nelec = nelecPtr[0];
 			fil.write(reinterpret_cast<char*>(&nelec), sizeof(int));
 			double* energies = new double[nelec];
 			double* wghts = new double[nelec];
-			WfcToRho::calcEnergies(nelec, nPts, dx, psi, v, energies);
+			WfcToRho::calcEnergies(nelec, nPts, dx, psi, v, kin, energies);
 			wght->calcWeights(nelec, energies, wghts);
 
 			fil.write(reinterpret_cast<char*>(&wghts[0]), sizeof(double)* nelec);
@@ -1275,9 +1275,9 @@ namespace Measurers {
 
 	BasicMeasurers::~BasicMeasurers() { terminate(); }
 
-	int BasicMeasurers::measure(std::complex<double> * psi, double * v, double t) {
+	int BasicMeasurers::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
 		for (int i = meas.size() - 1; i >= 0; i--)
-			if (meas.at(i)->measure(psi, v, t) == 1) {
+			if (meas.at(i)->measure(psi, v, t, kin) == 1) {
 				meas.at(i)->terminate();
 				meas.erase(meas.begin() + i);
 			}
@@ -1307,7 +1307,7 @@ namespace Measurers {
 			lights.push_back(m);
 	}
 
-	int MeasurementManager::measure(std::complex<double> * psi, double * v, double t) {
+	int MeasurementManager::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
 		/*for (int i = meas.size()-1; i >= 0; i--) {
 			if (meas[i]->measure(psi, v, t) == 1)
 				meas.erase(meas.begin() + i);
@@ -1329,16 +1329,16 @@ namespace Measurers {
 			//Do heavies in parallel with eachother
 			for (int i = 0; i < (int)heavies.size(); i++)
 				res.emplace_back(
-					pool->enqueue([i, this, psi, v, t] {
-						return heavies.at(i)->measure(psi, v, t);
+					pool->enqueue([i, this, psi, v, t, kin] {
+						return heavies.at(i)->measure(psi, v, t, kin);
 						}
 					)
 				);
 			//Do lights together, in parallel with heavies
 			res.emplace_back(
-				pool->enqueue([this, psi, v, t] {
+				pool->enqueue([this, psi, v, t, kin] {
 					for (int i = lights.size() - 1; i >= 0; i--) {
-						if (lights[i]->measure(psi, v, t) == 1) {
+						if (lights[i]->measure(psi, v, t, kin) == 1) {
 							lights[i]->terminate();
 							lights.erase(lights.begin() + i);
 						}
@@ -1362,14 +1362,14 @@ namespace Measurers {
 		else {
 			//Do light measurements
 			for (int i = lights.size()-1; i >= 0; i--) {
-				if (lights[i]->measure(psi, v, t) == 1) {
+				if (lights[i]->measure(psi, v, t, kin) == 1) {
 					lights[i]->terminate();
 					lights.erase(lights.begin() + i);
 				}
 			}
 			//Do heavy measurement if it exists
 			if (heavies.size())
-				if (heavies[0]->measure(psi, v, t) == 1) {
+				if (heavies[0]->measure(psi, v, t, kin) == 1) {
 					heavies[0]->terminate();
 					heavies.erase(heavies.begin());
 				}

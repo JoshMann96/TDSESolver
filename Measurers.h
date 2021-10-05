@@ -10,7 +10,7 @@ namespace Measurers {
 		//Measurer();
 		//~Measurer();
 		// Required function that takes a measurement whenever called.
-		virtual int measure(std::complex<double> * psi, double * v, double t) = 0;
+		virtual int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) = 0;
 		// Required function which terminates the measurer (closes file).
 		virtual void terminate() = 0;
 		virtual int getIndex() = 0;
@@ -37,7 +37,7 @@ namespace Measurers {
 
 		~DoubleConst();
 
-		int measure(std::complex<double> * psi, double * v, double t);
+		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
 
 		void terminate();
 	};
@@ -59,7 +59,7 @@ namespace Measurers {
 
 		~Header();
 
-		int measure(std::complex<double> * psi, double * v, double t);
+		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
 
 		void terminate();
 	};
@@ -77,7 +77,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		NPts(int nPts, const char* fol);
 		~NPts();
-		int measure(std::complex<double> * psi, double * v, double t);
+		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
 		void terminate();
 	};
 
@@ -95,7 +95,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		NSteps(const char* fol);
 		~NSteps();
-		int measure(std::complex<double> * psi, double * v, double t);
+		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
 		void terminate();
 	};
 
@@ -111,7 +111,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		DX(double dx, const char* fol);
 		~DX();
-		int measure(std::complex<double> * psi, double * v, double t);
+		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
 		void terminate();
 	};
 
@@ -127,7 +127,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		DT(double dt, const char* fol);
 		~DT();
-		int measure(std::complex<double> * psi, double * v, double t);
+		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
 		void terminate();
 	};
 
@@ -143,7 +143,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		XS(int len, double* xs, const char* fol);
 		~XS();
-		int measure(std::complex<double> * psi, double * v, double t);
+		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
 		void terminate();
 	};
 
@@ -160,7 +160,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		TS(const char* fol);
 		~TS();
-		int measure(std::complex<double> * psi, double * v, double t);
+		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
 		void terminate();
 	};
 
@@ -183,7 +183,7 @@ namespace Measurers {
 
 		~OrigPot();
 
-		int measure(std::complex<double> * psi, double * v, double t);
+		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
 
 		void terminate();
 	};
@@ -217,7 +217,7 @@ namespace Measurers {
 
 		~Psi2t();
 
-		int measure(std::complex<double> * psi, double * v, double t);
+		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
 
 		void terminate();
 	};
@@ -254,7 +254,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		WignerQPD(int n, int nx, int np, int nt, double minP, double maxP, double maxT, double windowWidth, double * x, const char* fol);
 		~WignerQPD();
-		int measure(std::complex<double> * psi, double * v, double t);
+		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
 		void terminate();
 	};
 
@@ -273,7 +273,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		ExpectE(int len, double dx, const char* fol);
 		~ExpectE();
-		int measure(std::complex<double> * psi, double * v, double t);
+		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
 		void terminate();
 	};
 
@@ -293,7 +293,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		ExpectX(int len, double* xs, double dx, const char* fol);
 		~ExpectX();
-		int measure(std::complex<double> * psi, double * v, double t);
+		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
 		void terminate();
 	};
 
@@ -312,7 +312,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		ExpectP(int len, double dx, const char* fol);
 		~ExpectP();
-		int measure(std::complex<double> * psi, double * v, double t);
+		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
 		void terminate();
 	};
 
@@ -331,7 +331,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		ExpectA(int len, double dx, const char* fol);
 		~ExpectA();
-		int measure(std::complex<double> * psi, double * v, double t);
+		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
 		void terminate();
 	};
 
@@ -355,7 +355,7 @@ namespace Measurers {
 
 		~TotProb();
 
-		int measure(std::complex<double> * psi, double * v, double t);
+		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
 
 		void terminate();
 	};
@@ -376,7 +376,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		VDProbCurrent(int n, double dx, int vdPos, int vdNum, const char* name, const char* fol);
 		~VDProbCurrent();
-		int measure(std::complex<double> * psi, double * v, double t);
+		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
 		void terminate();
 	};
 
@@ -395,7 +395,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		VDPsi(int vdPos, int vdNum, const char* name, const char* fol);
 		~VDPsi();
-		int measure(std::complex<double> * psi, double * v, double t);
+		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
 		void terminate();
 	};
 
@@ -413,7 +413,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		VDPot(int vdPos, int vdNum, const char* name, const char* fol);
 		~VDPot();
-		int measure(std::complex<double> * psi, double * v, double t);
+		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
 		void terminate();
 	};
 
@@ -436,7 +436,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		VDFluxSpec(int vdPos, int vdNum, int* nelec, int nsamp, double emax, double tmax, const char* name, const char* fol);
 		~VDFluxSpec();
-		int measure(std::complex<double>* psi, double* v, double t);
+		int measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin);
 		void terminate();
 	};
 
@@ -457,7 +457,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		PsiT(int n, double meaT, int vdNum, const char* name, const char* fol);
 		~PsiT();
-		int measure(std::complex<double> * psi, double * v, double t);
+		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
 		void terminate();
 	};
 
@@ -477,7 +477,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		PotT(int n, double meaT, int vdNum, const char* name, const char* fol);
 		~PotT();
-		int measure(std::complex<double> * psi, double * v, double t);
+		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
 		void terminate();
 	};
 
@@ -508,7 +508,7 @@ namespace Measurers {
 
 		~Vfunct();
 
-		int measure(std::complex<double> * psi, double * v, double t);
+		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
 
 		void terminate();
 	};
@@ -524,7 +524,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		ElectronNumber(int nelec, const char* fol);
 		~ElectronNumber();
-		int measure(std::complex<double> * psi, double * v, double t);
+		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
 
 		void terminate();
 	};
@@ -545,7 +545,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		ExpectE0(int len, double dx, const char* fol);
 		~ExpectE0();
-		int measure(std::complex<double>* psi, double* v, double t);
+		int measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin);
 		void terminate();
 	};
 
@@ -564,7 +564,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		WfcRhoWeights(int* nelecPtr, int nPts, double dx, WfcToRho::Weight* wght, const char* fol);
 		~WfcRhoWeights();
-		int measure(std::complex<double>* psi, double* v, double t);
+		int measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin);
 		void terminate();
 	};
 
@@ -578,7 +578,7 @@ namespace Measurers {
 		int getIndex() { return INT_MIN + 1; };
 		BasicMeasurers(const char * title, int nPts, double dx, double dt, double * xs, const char* fol);
 		~BasicMeasurers();
-		int measure(std::complex<double> * psi, double * v, double t);
+		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
 		void terminate();
 	};
 
@@ -607,7 +607,7 @@ namespace Measurers {
 
 		void addMeasurer(Measurer * m);
 
-		int measure(std::complex<double> * psi, double * v, double t);
+		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
 
 		void terminate();
 	};

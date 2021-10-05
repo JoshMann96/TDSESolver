@@ -365,7 +365,7 @@ int ThreadParser::readCommand() {
 	}
 	else if (std::strstr(flds->at(0).c_str(), "NEGATE_SELF_POT_INITIAL_STATE"))
 		for (int i = 0; i < spc->size(); i++)
-			spc->at(i)->negateGroundEffects(sim->getPsi());
+			spc->at(i)->negateGroundEffects(sim->getPsi(), sim->getKin());
 	else if (std::strstr(flds->at(0).c_str(), "RUN_OS_U2TU"))
 		sim->runOS_U2TU(prg, simIdx);
 	else if (std::strstr(flds->at(0).c_str(), "RUN_OS_UW2TUW"))

@@ -1,10 +1,18 @@
 #include "stdafx.h"
 
 namespace WfcToRho {
-	void calcEnergies(int nelec, int nPts, double dx, std::complex<double>* psi, double* totPot, double* energies) {
+	void calcEnergies(int nelec, int nPts, double dx, std::complex<double>* psi, double* totPot, KineticOperators::KineticOperator* kin, double* energies) {
 		if (nelec < 1)
 			throw("calcEnergies: Number of electrons is not finite! Failed to initialize.");
-		std::complex<double>* sc1 = new std::complex<double>[nPts];
+		double* rho = new double[nPts];
+		for (int i = 0; i < nelec; i++) {
+			vtls::normSqr(nPts, &psi[i * nPts], rho);
+			energies[i] = vtlsInt::rSumMul(nPts, rho, totPot, dx) + kin->evaluateKineticEnergy(&psi[i*nPts]);
+			//potential energy + kinetic energy
+		}
+		delete[] rho;
+
+		/*std::complex<double>* sc1 = new std::complex<double>[nPts];
 		std::complex<double>* sc2 = new std::complex<double>[nPts];
 		for (int i = 0; i < nelec; i++) {
 			vtls::secondDerivative(nPts, &psi[i * nPts], sc1, dx);
@@ -15,7 +23,7 @@ namespace WfcToRho {
 				sc2[j] = std::conj(psi[i * nPts + j]);
 			energies[i] = std::real(vtlsInt::simpsMul(nPts, sc1, sc2, dx));
 		}
-		delete[] sc1, sc2;
+		delete[] sc1, sc2;*/
 	}
 
 

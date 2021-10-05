@@ -39,11 +39,12 @@ void MultiSimulationManager::addSpatialDamp(double* arr) {
 }
 
 void MultiSimulationManager::finishInitialization() {
-	pot->finishAddingPotentials();
+	pot->finishAddingPotentials(kin);
 	//it->initializeCN();
 	//it->initializeCNPA();
 }
 
+//SHOULD USE KIN METHOD OR WFCRHOTOOLS
 double MultiSimulationManager::getTotalEnergy(std::complex<double> * psi, double * v) {
 	double totE = 0.0;
 	for (int i = 0; i < nelec; i++) {
@@ -60,7 +61,7 @@ double MultiSimulationManager::getTotalEnergy(std::complex<double> * psi, double
 
 
 void MultiSimulationManager::findEigenStates(double emin, double emax, double maxT, double rate) {
-	pot->getV(0.0, vs[index]);
+	pot->getV(0.0, vs[index], kin);
 
 	kin->findEigenStates(vs[index], emin, emax, psis, &nelec);
 
@@ -85,7 +86,7 @@ void MultiSimulationManager::setPsi(std::complex<double>* npsi) {
 
 int MultiSimulationManager::getVPAR(int idx, int idxPsi) {
 	auto strt = std::chrono::high_resolution_clock::now();
-	pot->getV(psis[idxPsi], ts[idx], vs[idx]);
+	pot->getV(psis[idxPsi], ts[idx], vs[idx], kin);
 	auto end = std::chrono::high_resolution_clock::now();
 	auto dur = std::chrono::duration_cast<std::chrono::microseconds>(end - strt);
 	return dur.count();
@@ -94,7 +95,7 @@ int MultiSimulationManager::getVPAR(int idx, int idxPsi) {
 int MultiSimulationManager::measPAR(int idx) {
 	auto strt = std::chrono::high_resolution_clock::now();
 	for (int i = 0; i < nelec; i++)
-		meas->measure(&psis[idx][i*nPts], vs[idx], ts[idx]);
+		meas->measure(&psis[idx][i*nPts], vs[idx], ts[idx], kin);
 	auto end = std::chrono::high_resolution_clock::now();
 	auto dur = std::chrono::duration_cast<std::chrono::microseconds>(end - strt);
 	return dur.count();
@@ -103,7 +104,7 @@ int MultiSimulationManager::measPAR(int idx) {
 //Run simulation using operator splitting Fourier method (applies potential as linear)
 void MultiSimulationManager::runOS_U2TU(ProgressTracker* prg, int idx) {
 	iterateIndex();
-	pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()]);
+	pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()], kin);
 	kin_psm->stepOS_U2TU(psis[prevIndex()], vs[prevIndex()], spatialDamp, psis[index], nelec);
 	iterateIndex();
 	auto t0 = std::chrono::system_clock::now();
@@ -120,7 +121,7 @@ void MultiSimulationManager::runOS_U2TU(ProgressTracker* prg, int idx) {
 		f1 = std::async(rM, this, prevPrevIndex());
 
 		//t1 = std::chrono::high_resolution_clock::now();
-		pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()]);
+		pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()], kin);
 		//t2 = std::chrono::high_resolution_clock::now();
 		kin_psm->stepOS_U2TU(psis[prevIndex()], vs[prevIndex()], spatialDamp, psis[index], nelec);
 		//t3 = std::chrono::high_resolution_clock::now();
@@ -144,9 +145,9 @@ void MultiSimulationManager::runOS_U2TU(ProgressTracker* prg, int idx) {
 void MultiSimulationManager::runOS_UW2TUW(ProgressTracker* prg, int idx) {
 	tpsi = new std::complex<double>[nPts * nelec];
 	iterateIndex();
-	pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()]);
+	pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()], kin);
 	kin_psm->stepOS_UW2T(psis[prevIndex()], vs[prevIndex()], spatialDamp, tpsi, nelec);
-	pot->getV(tpsi, ts[prevIndex()], vs[prevIndex()]);
+	pot->getV(tpsi, ts[prevIndex()], vs[prevIndex()], kin);
 	kin_psm->stepOS_UW(tpsi, vs[prevIndex()], spatialDamp, psis[index], nelec);
 	iterateIndex();
 	auto t0 = std::chrono::system_clock::now();
@@ -162,9 +163,9 @@ void MultiSimulationManager::runOS_UW2TUW(ProgressTracker* prg, int idx) {
 	while (ts[prevPrevIndex()] <= maxT) {
 		f1 = std::async(rM, this, prevPrevIndex());
 
-		pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()]);
+		pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()], kin);
 		kin_psm->stepOS_UW2T(psis[prevIndex()], vs[prevIndex()], spatialDamp, tpsi, nelec);
-		pot->getV(tpsi, ts[prevIndex()], vs[prevIndex()]);
+		pot->getV(tpsi, ts[prevIndex()], vs[prevIndex()], kin);
 		kin_psm->stepOS_UW(tpsi, vs[prevIndex()], spatialDamp, psis[index], nelec);
 
 		//t1 = std::chrono::high_resolution_clock::now();
