@@ -196,7 +196,7 @@ namespace KineticOperators {
 	}
 
 	double GenDisp_PSM::evaluateKineticEnergy(std::complex<double>* psi) {
-		initializeMatFFT();
+		initializeKinFFT();
 
 		DftiComputeForward(dftiHandleKin, psi, temp1);
 		vtls::seqMulArrays(nPts, osKineticEnergy, temp1, temp2);
@@ -541,12 +541,16 @@ namespace KineticOperators {
 	}
 
 	double NonUnifGenDisp_PSM::evaluateKineticEnergy(std::complex<double>* psi) {
-		initializeMatFFT();
+		initializeKinFFT();
 
 		DftiComputeForward(dftiHandleKin, psi, temp1);
 		std::fill_n(temp2, nPts, 0.0);
 		for (int d = 0; d < nDisp; d++) {
 			vtls::seqMulArrays(nPts, osKineticEnergy, temp1, temp3);
+			DftiComputeBackward(dftiHandleKin, temp3);
+			vtls::seqMulArrays(nPts, osKineticMask, temp3);
+			DftiComputeForward(dftiHandleKin, temp3);
+			vtls::seqMulArrays(nPts, osKineticEnergy, temp3);
 			vtls::addArrays(nPts, temp3, temp2);
 		}
 		for (int i = 0; i < nPts; i++)
