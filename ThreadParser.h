@@ -48,7 +48,7 @@ private:
 	{
 		{"M_EFF"},
 		{"EXPR"},
-		{"M_EFF_L", "M_EFF_R", "TRANS_RATE", "TRANS_POS", "EXP_ORDER", "FORCE_NORM"},
+		{"M_EFF_L", "M_EFF_R", "TRANS_RATE", "TRANS_POS", "EDGE_RATE", "EXP_ORDER", "FORCE_NORM"},
 		{"EXPR", "EXP_ORDER", "FORCE_NORM"}
 	};
 

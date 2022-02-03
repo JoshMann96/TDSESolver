@@ -63,12 +63,25 @@ double MultiSimulationManager::getTotalEnergy(std::complex<double> * psi, double
 void MultiSimulationManager::findEigenStates(double emin, double emax, double maxT, double rate) {
 	pot->getV(0.0, vs[index], kin);
 
-	kin->findEigenStates(vs[index], emin, emax, psis, &nelec);
+	std::complex<double>* states = new std::complex<double>[nPts * nPts];
+
+	kin->findEigenStates(vs[index], emin, emax, states, &nelec);
+
+	psis[0] = new std::complex<double>[nPts * nelec];
+
+	vtls::copyArray(nPts * nelec, states, psis[0]);
+
+	if (states)
+		delete[] states; states = NULL;
+
+	for (int i = 0; i < nelec; i++)
+		vtls::normalizeSqrNorm(nPts, &psis[0][i * nPts], dx);
 
 	for (int i = 1; i < 4; i++) {
 		psis[i] = new std::complex<double>[nPts * nelec];
 		vtls::copyArray(nPts * nelec, psis[0], psis[i]);
 	}
+
 }
 
 void MultiSimulationManager::setPsi(std::complex<double>* npsi) {

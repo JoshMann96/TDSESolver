@@ -7,7 +7,7 @@ namespace KineticOperators {
 	public:
 		virtual std::complex<double>* getOperatorMatrix() = 0;
 		virtual double evaluateKineticEnergy(std::complex<double>* psi) = 0;
-		virtual void findEigenStates(double* v, double emin, double emax, std::complex<double>** psi, int* nEigs) = 0;
+		virtual void findEigenStates(double* v, double emin, double emax, std::complex<double>* states, int* nEigs) = 0;
 	};
 
 	class KineticOperator_PSM :
@@ -51,7 +51,7 @@ namespace KineticOperators {
 			needMat = 1;
 		}
 
-		void findEigenStates(double* v, double emin, double emax, std::complex<double>** psi, int* nEigs);
+		void findEigenStates(double* v, double emin, double emax, std::complex<double>* states, int* nEigs);
 
 		double evaluateKineticEnergy(std::complex<double>* psi);
 
@@ -124,7 +124,7 @@ namespace KineticOperators {
 			needMat = 1;
 		}
 
-		void findEigenStates(double* v, double emin, double emax, std::complex<double>** psi, int* nEigs);
+		void findEigenStates(double* v, double emin, double emax, std::complex<double>* states, int* nEigs);
 
 		double evaluateKineticEnergy(std::complex<double>* psi);
 
@@ -158,7 +158,7 @@ namespace KineticOperators {
 	{
 	public:
 		//meff_r and meff_l are relative effective masses (1 for electron rest mass)
-		NonUnifGenDisp_PSM_EffMassBoundary(int nPts, double dx, double dt, int expOrder, int forceNormalization, double meff_l, double meff_r, double transRate, int transPos);
+		NonUnifGenDisp_PSM_EffMassBoundary(int nPts, double dx, double dt, int expOrder, int forceNormalization, double meff_l, double meff_r, double transRate, int transPos, double edgeRate);
 	};
 
 	class NonUnifGenDisp_PSM_MathExprBoundary :

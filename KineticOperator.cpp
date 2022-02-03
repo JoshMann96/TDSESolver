@@ -157,21 +157,25 @@ namespace KineticOperators {
 					opMat[(i * i + (2 * d + 3) * i + d * (d + 1)) / 2] = cv;
 			}
 			delete[] kinDiags;
+
 		}
 	}
 
-	void GenDisp_PSM::findEigenStates(double* v, double emin, double emax, std::complex<double>** psi, int* nEigs) {
+	void GenDisp_PSM::findEigenStates(double* v, double emin, double emax, std::complex<double>* states, int* nEigs) {
 		if (nPts > 46340) {
 			std::cout << "Long datatype is required for grids of size nPts>46340. Rewrite this code (GenDisp_PSM::findEigenStates)" << std::endl;
 			throw NULL;
 		}
-		std::complex<double>* states = new std::complex<double>[nPts * nPts];
 		double* eigs = new double[nPts];
 		int* ifail = new int[nPts];
+
+		//vtlsPrnt::printArray(nPts, v);
 
 		calcOpMat();
 		for (int i = 0; i < nPts; i++)
 			opMat[(i * (i + 3)) / 2] += v[i];
+
+		//vtlsPrnt::printArray(nPts, opMat);
 
 		LAPACKE_zhpevx(LAPACK_COL_MAJOR, 'V', 'V', 'U', nPts, opMat, emin, emax, 0, 0, 2 * LAPACKE_dlamch('S'), nEigs, eigs, states, nPts, ifail);
 
@@ -179,16 +183,8 @@ namespace KineticOperators {
 
 		nelec = nEigs[0];
 
-		psi[0] = new std::complex<double>[nPts * nelec];
-
-		vtls::copyArray(nPts * nelec, states, psi[0]);
-		for (int i = 0; i < nelec; i++)
-			vtls::normalizeSqrNorm(nPts, &psi[0][i * nPts], dx);
-
 		if (eigs)
 			delete[] eigs; eigs = NULL;
-		if (states)
-			delete[] states; states = NULL;
 		if (ifail)
 			delete[] ifail; ifail = NULL;
 
@@ -198,7 +194,8 @@ namespace KineticOperators {
 	double GenDisp_PSM::evaluateKineticEnergy(std::complex<double>* psi) {
 		initializeKinFFT();
 
-		DftiComputeForward(dftiHandleKin, psi, temp1);
+		vtls::copyArray(nPts, psi, temp1);
+		DftiComputeForward(dftiHandleKin, temp1);
 		vtls::seqMulArrays(nPts, osKineticEnergy, temp1, temp2);
 		for (int i = 0; i < nPts; i++)
 			temp1[i] = std::conj(temp1[i]);
@@ -443,7 +440,7 @@ namespace KineticOperators {
 	void NonUnifGenDisp_PSM::initializeMatFFT() {
 		if (firstStepMat) {
 			DftiCreateDescriptor(&dftiHandleMat, DFTI_DOUBLE, DFTI_COMPLEX, 1, nPts);
-			DftiSetValue(dftiHandleMat, DFTI_BACKWARD_SCALE, 1.0 / nPts);
+			DftiSetValue(dftiHandleMat, DFTI_BACKWARD_SCALE, 1.0/nPts);
 			DftiCommitDescriptor(dftiHandleMat);
 
 			firstStepMat = 0;
@@ -462,9 +459,11 @@ namespace KineticOperators {
 
 			opMat = new std::complex<double>[(nPts * (nPts + 1)) / 2];
 			std::fill_n(opMat, (nPts * (nPts + 1)) / 2, 0.0);
+
 			std::complex<double>* kinDiags = new std::complex<double>[nPts];
 			std::complex<double>* kinMat = new std::complex<double>[(nPts * (nPts + 1)) / 2];
 			std::complex<double>* temp = new std::complex<double>[(nPts * (nPts + 1)) / 2];
+
 			for (int d = 0; d < nDisp; d++) {
 				vtls::copyArray(nPts, &osKineticEnergy[d*nPts], kinDiags);
 				DftiComputeBackward(dftiHandleMat, kinDiags);
@@ -485,17 +484,21 @@ namespace KineticOperators {
 				delete[] kinMat; kinMat = NULL;
 			if (temp)
 				delete[] temp; temp = NULL;
+
 		}
 	}
 
-	void NonUnifGenDisp_PSM::findEigenStates(double* v, double emin, double emax, std::complex<double>** psi, int* nEigs) {
-		std::complex<double>* states = new std::complex<double>[nPts * nPts];
+	void NonUnifGenDisp_PSM::findEigenStates(double* v, double emin, double emax, std::complex<double>* states, int* nEigs) {
 		double* eigs = new double[nPts];
 		int* ifail = new int[nPts];
+
+		//vtlsPrnt::printArray(nPts, v);
 
 		calcOpMat();
 		for (int i = 0; i < nPts; i++)
 			opMat[(i * (i + 3)) / 2] += v[i];
+
+		//vtlsPrnt::printArray(nPts, opMat);
 
 		LAPACKE_zhpevx(LAPACK_COL_MAJOR, 'V', 'V', 'U', nPts, opMat, emin, emax, 0, 0, 2 * LAPACKE_dlamch('S'), nEigs, eigs, states, nPts, ifail);
 
@@ -503,16 +506,8 @@ namespace KineticOperators {
 
 		nelec = nEigs[0];
 
-		psi[0] = new std::complex<double>[nPts * nelec];
-
-		vtls::copyArray(nPts * nelec, states, psi[0]);
-		for (int i = 0; i < nelec; i++)
-			vtls::normalizeSqrNorm(nPts, &psi[0][i * nPts], dx);
-
 		if (eigs)
 			delete[] eigs; eigs = NULL;
-		if (states)
-			delete[] states; states = NULL;
 		if (ifail)
 			delete[] ifail; ifail = NULL;
 
@@ -543,14 +538,16 @@ namespace KineticOperators {
 	double NonUnifGenDisp_PSM::evaluateKineticEnergy(std::complex<double>* psi) {
 		initializeKinFFT();
 
-		DftiComputeForward(dftiHandleKin, psi, temp1);
+		vtls::copyArray(nPts, psi, temp1);
+		DftiComputeForward(dftiHandleKin, temp1);
+
 		std::fill_n(temp2, nPts, 0.0);
 		for (int d = 0; d < nDisp; d++) {
-			vtls::seqMulArrays(nPts, osKineticEnergy, temp1, temp3);
+			vtls::seqMulArrays(nPts, &osKineticEnergy[d*nPts], temp1, temp3);
 			DftiComputeBackward(dftiHandleKin, temp3);
-			vtls::seqMulArrays(nPts, osKineticMask, temp3);
+			vtls::seqMulArrays(nPts, &osKineticMask[d*nPts], temp3);
 			DftiComputeForward(dftiHandleKin, temp3);
-			vtls::seqMulArrays(nPts, osKineticEnergy, temp3);
+			vtls::seqMulArrays(nPts, &osKineticEnergy[d * nPts], temp3);
 			vtls::addArrays(nPts, temp3, temp2);
 		}
 		for (int i = 0; i < nPts; i++)
@@ -560,7 +557,7 @@ namespace KineticOperators {
 	}
 
 
-	NonUnifGenDisp_PSM_EffMassBoundary::NonUnifGenDisp_PSM_EffMassBoundary(int nPts, double dx, double dt, int expOrder, int forceNormalization, double meff_l, double meff_r, double transRate, int transPos) : NonUnifGenDisp_PSM(nPts, dx, dt, 2, expOrder, forceNormalization) {
+	NonUnifGenDisp_PSM_EffMassBoundary::NonUnifGenDisp_PSM_EffMassBoundary(int nPts, double dx, double dt, int expOrder, int forceNormalization, double meff_l, double meff_r, double transRate, int transPos, double edgeRate) : NonUnifGenDisp_PSM(nPts, dx, dt, 2, expOrder, forceNormalization) {
 		std::complex<double>* osKineticEnergy = new std::complex<double>[nPts*2];
 		double* mask = new double[nPts * 2];
 
@@ -578,9 +575,17 @@ namespace KineticOperators {
 			osKineticEnergy[nPts + nPts - i] = osKineticEnergy[i];
 		}
 
-		for (int i = 0; i < nPts; i++) {
-			mask[i] = 1.0 / (1.0 + std::exp(-dx * transRate * (i - transPos)));
-			mask[i + nPts] = 1.0 - mask[i];
+		if (edgeRate != 0.0) {
+			for (int i = 0; i < nPts; i++) {
+				mask[i] = (1.0 / (1.0 + std::exp(-dx * transRate * (i - transPos))) + 1.0 / (1.0 + std::exp(dx * edgeRate * i))) / (1.0 + std::exp(dx * edgeRate * (i - nPts)));
+				mask[i + nPts] = 1.0 - mask[i];
+			}
+		}
+		else {
+			for (int i = 0; i < nPts; i++) {
+				mask[i] = 1.0 / (1.0 + std::exp(-dx * transRate * (i - transPos)));
+				mask[i + nPts] = 1.0 - mask[i];
+			}
 		}
 
 		NonUnifGenDisp_PSM::set_osKineticEnergy(osKineticEnergy, mask);

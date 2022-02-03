@@ -198,7 +198,7 @@ int ThreadParser::setKin(std::string input) {
 		sim->setKineticOperator_PSM(new KineticOperators::GenDisp_PSM_MathExpr(n, sim->getDX(), sim->getDT(), inputText));
 		break;
 	case 2:
-		sim->setKineticOperator_PSM(new KineticOperators::NonUnifGenDisp_PSM_EffMassBoundary(n, sim->getDX(), sim->getDT(), (int)(p[4]+0.5), (int)(p[5] + 0.5), p[0], p[1], p[2], vtls::findValue(n, x, p[3])));
+		sim->setKineticOperator_PSM(new KineticOperators::NonUnifGenDisp_PSM_EffMassBoundary(n, sim->getDX(), sim->getDT(), (int)(p[5]+0.5), (int)(p[6] + 0.5), p[0], p[1], p[2], vtls::findValue(n, x, p[3]), p[4]));
 		break;
 	case 3:
 		std::vector<std::string> elems;

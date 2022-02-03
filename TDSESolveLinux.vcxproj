@@ -117,7 +117,7 @@
     <Link />
     <Link />
     <ClCompile>
-      <AdditionalOptions>-fext-numeric-literals  -m64  -I/opt/intel/mkl/include -I/usr/local/boost_1_75_0 -DMKL_ILP32  -march=znver2 -mtune=znver2 -I/usr/include/python2.7 -fstack-protector-strong -fopenmp -g %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-fext-numeric-literals  -m64  -I/opt/intel/mkl/include -I/usr/local/boost_1_75_0 -DMKL_ILP32  -march=znver2 -mtune=znver2 -I/usr/include/python2.7 -fstack-protector-strong -fopenmp %(AdditionalOptions)</AdditionalOptions>
       <LinkTimeOptimization>true</LinkTimeOptimization>
       <UnrollLoops>true</UnrollLoops>
       <DebugInformationFormat>None</DebugInformationFormat>
@@ -125,7 +125,7 @@
       <WarningLevel>TurnOffAllWarnings</WarningLevel>
     </ClCompile>
     <Link>
-      <AdditionalOptions> -L/opt/intel/mkl/lib/intel64 -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lgomp  -lpthread -lm -ldl -L/usr/local/lib -lboost_filesystem -lboost_system -lboost_math_c99 -lpython2.7 -g %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions> -L/opt/intel/mkl/lib/intel64 -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lgomp  -lpthread -lm -ldl -L/usr/local/lib -lboost_filesystem -lboost_system -lboost_math_c99 -lpython2.7 %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
