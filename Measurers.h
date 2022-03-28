@@ -594,7 +594,7 @@ namespace Measurers {
 		ThreadPool* pool;
 		std::vector<std::future<int>> res;
 
-		int doParallel = -1;
+		int doParallel = 0; //Causes errors if not zero. May not give performance improvement anyway
 
 	public:
 		int isHeavy() { return 0; };

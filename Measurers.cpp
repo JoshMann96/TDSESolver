@@ -1393,6 +1393,10 @@ namespace Measurers {
 		//fill.close();
 		//DELETE INDIVIDUAL MEASURER FILES
 		*/
+
+		if (pool != NULL)
+			delete pool;
+
 		for (int i = 0; i < (int)(lights.size()); i++)
 			lights [i] ->terminate();
 		for (int i = 0; i < (int)(heavies.size()); i++)

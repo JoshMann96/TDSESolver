@@ -467,4 +467,12 @@ namespace vtlsPrnt {
 	void printArray(int n, std::complex<double> *__restrict arr);*/
 	// Uses text to graph an array.
 	//void printGraph(int n, double *__restrict arr);
+
+	template <typename T>
+	void saveArray(int n, const char* fil, T* data) {
+		std::fstream fid(fil, std::ios::out | std::ios::binary);
+		fid.write(reinterpret_cast<char*>(n), sizeof(int));
+		fid.write(reinterpret_cast<char*>(data), sizeof(T) * n);
+		fid.close();
+	}
 }
