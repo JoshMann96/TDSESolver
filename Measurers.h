@@ -582,19 +582,14 @@ namespace Measurers {
 		void terminate();
 	};
 
-	// Manages multiple measurements. Ideal if using more than one. Will automatically run measurements in parallel.
+	// Manages multiple measurements. Ideal if using more than one.
 	class MeasurementManager :
 		public Measurer {
 	private:
 		std::fstream fil;
 		int index = INT_MAX;
-		//std::vector<Measurer*> meas;
-		std::vector<Measurer*> lights, heavies;
+		std::vector<Measurer*> meas;
 		const char* fname;
-		ThreadPool* pool;
-		std::vector<std::future<int>> res;
-
-		int doParallel = 0; //Causes errors if not zero. May not give performance improvement anyway
 
 	public:
 		int isHeavy() { return 0; };

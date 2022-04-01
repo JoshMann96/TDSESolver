@@ -2752,7 +2752,8 @@ namespace matplotlibcpp {
             detail::_interpreter::get().s_python_function_tight_layout,
             detail::_interpreter::get().s_python_empty_tuple);
 
-        if (!res) throw std::runtime_error("Call to tight_layout() failed.");
+        if (!res) 
+            std::runtime_error("Call to tight_layout() failed.");
 
         Py_DECREF(res);
     }

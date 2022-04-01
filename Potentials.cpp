@@ -1268,7 +1268,8 @@ namespace Potentials {
 			staticPots.push_back(pot);
 		}
 		else {
-			throw "Potential is neither dynamic nor static.";
+			std::cout << "Potential is neither dynamic nor static." << std::endl;
+			throw -1;
 		}
 	}
 
@@ -1292,7 +1293,8 @@ namespace Potentials {
 		if (pot)
 			pot->getV(t, targ, kin);
 		else {
-			throw "Must run finishAddingPotentials() function on PotentialManager before using getV().";
+			std::cout << "Must run finishAddingPotentials() function on PotentialManager before using getV()." << std::endl;
+			throw -1;
 		}
 	}
 
@@ -1300,7 +1302,8 @@ namespace Potentials {
 		if (pot)
 			pot->getV(psi, t, targ, kin);
 		else {
-			throw "Must run finishAddingPotentials() function on PotentialManager before using getV().";
+			std::cout << "Must run finishAddingPotentials() function on PotentialManager before using getV()." << std::endl;
+			throw -1;
 		}
 	}
 

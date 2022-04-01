@@ -2071,7 +2071,8 @@ namespace exprtk
 
         virtual void handle_runtime_violation(const violation_context&)
         {
-            throw std::runtime_error("ExprTk Loop run-time violation.");
+            
+            std::runtime_error("ExprTk Loop run-time violation.");
         }
 
         virtual ~loop_runtime_check() {}

@@ -403,7 +403,7 @@ int ThreadParser::generalSimInit() {
 		sim = new MultiSimulationManager(n, dx, dt, maxT);
 	else {
 		std::cout << "SingleSimulationManager is no longer supported -- Use MultiSimulationManager with 1 simulation." << std::endl;
-		throw "FEATURE REMOVED";
+		throw -1;
 	}
 		//sim = new SingleSimulationManager(n, dx, dt, maxT);
 	x = new double[n];
@@ -444,7 +444,7 @@ int ThreadParser::hhgSimInit() {
 		sim = new MultiSimulationManager(n, dx, dt, maxT);
 	else {
 		std::cout << "SingleSimulationManager is no longer supported -- Use MultiSimulationManager with 1 simulation." << std::endl;
-		throw "FEATURE REMOVED";
+		throw -1;
 	}
 		//sim = new SingleSimulationManager(n, dx, dt, maxT);
 	x = new double[n];
@@ -461,7 +461,7 @@ int ThreadParser::setSaveLoc(std::string input) {
 	int fi = 0;
 	if (nflds->size() % 2 == 0) {
 		std::cout << "Expected extra ~ in save location string (did you forget last /?)." << std::endl;
-		throw("Unsafe File Format");
+		throw -1;
 	}
 	else {
 		for (int i = 0; i < nflds->size() / 2; i++) {

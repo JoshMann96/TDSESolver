@@ -2,8 +2,10 @@
 
 namespace WfcToRho {
 	void calcEnergies(int nelec, int nPts, double dx, std::complex<double>* psi, double* totPot, KineticOperators::KineticOperator* kin, double* energies) {
-		if (nelec < 1)
-			throw("calcEnergies: Number of electrons is not finite! Failed to initialize.");
+		if (nelec < 1) {
+			std::cout << "calcEnergies: Number of electrons is not finite! Failed to initialize." << std::endl;
+			throw -1;
+		}
 		double* rho = new double[nPts];
 		for (int i = 0; i < nelec; i++) {
 			vtls::normSqr(nPts, &psi[i * nPts], rho);

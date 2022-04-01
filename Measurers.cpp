@@ -415,8 +415,10 @@ namespace Measurers {
 				}
 			}
 		}
-		else if (k > 1)
-			throw "Downsampled measurers were not able to keep up with time step (there needs to be more time steps in the simulation than sampled).";
+		else if (k > 1) {
+			std::cout << "Downsampled measurers were not able to keep up with time step (there needs to be more time steps in the simulation than sampled)." << std::endl;
+			throw -1;
+		}
 		return 0;
 	}
 
@@ -515,8 +517,10 @@ namespace Measurers {
 			ts[curIts] = t;
 			curIts++;
 		}
-		else if (tk > 1)
-			throw "Downsampled mreasurers were not able to keep up with time step (there needs to be more time steps in the simulation than sampled).";
+		else if (tk > 1) {
+			std::cout << "Downsampled mreasurers were not able to keep up with time step (there needs to be more time steps in the simulation than sampled)." << std::endl;
+			throw - 1;
+		}
 		return 0;
 	}
 
@@ -1300,11 +1304,7 @@ namespace Measurers {
 	}
 
 	void MeasurementManager::addMeasurer(Measurer * m) {
-		//meas.push_back(m);
-		if (m->isHeavy())
-			heavies.push_back(m);
-		else
-			lights.push_back(m);
+		meas.push_back(m);
 	}
 
 	int MeasurementManager::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
@@ -1313,68 +1313,14 @@ namespace Measurers {
 				meas.erase(meas.begin() + i);
 		}
 		return 0;*/
-
-		if (doParallel == -1) {
-			// Only work in parallel if we have more than 1 heavy
-			if (heavies.size() > 1)
-				doParallel = 1;
-			else
-				doParallel = 0;
-		}
-
-		if (pool == NULL && doParallel)
-			pool = new ThreadPool(std::fmin((int)heavies.size()+1, std::thread::hardware_concurrency()));
-
-		if (doParallel) {
-			//Do heavies in parallel with eachother
-			for (int i = 0; i < (int)heavies.size(); i++)
-				res.emplace_back(
-					pool->enqueue([i, this, psi, v, t, kin] {
-						return heavies.at(i)->measure(psi, v, t, kin);
-						}
-					)
-				);
-			//Do lights together, in parallel with heavies
-			res.emplace_back(
-				pool->enqueue([this, psi, v, t, kin] {
-					for (int i = lights.size() - 1; i >= 0; i--) {
-						if (lights[i]->measure(psi, v, t, kin) == 1) {
-							lights[i]->terminate();
-							lights.erase(lights.begin() + i);
-						}
-					}
-					return 0;
-				}
-				)
-			);
-
-			for (int i = (int)heavies.size() - 1; i >= 0; i--) {
-				if (res[i].get() == 1) {
-					heavies[i]->terminate();
-					heavies.erase(heavies.begin() + i);
-				}
+		//Do measurements
+		for (int i = meas.size()-1; i >= 0; i--) {
+			if (meas[i]->measure(psi, v, t, kin) == 1) {
+				meas[i]->terminate();
+				meas.erase(meas.begin() + i);
 			}
-			res.back().get();
-			res.clear();
-
-			return 0;
 		}
-		else {
-			//Do light measurements
-			for (int i = lights.size()-1; i >= 0; i--) {
-				if (lights[i]->measure(psi, v, t, kin) == 1) {
-					lights[i]->terminate();
-					lights.erase(lights.begin() + i);
-				}
-			}
-			//Do heavy measurement if it exists
-			if (heavies.size())
-				if (heavies[0]->measure(psi, v, t, kin) == 1) {
-					heavies[0]->terminate();
-					heavies.erase(heavies.begin());
-				}
-			return 0;
-		}
+		return 0;
 	}
 
 	void MeasurementManager::terminate() {
@@ -1394,12 +1340,7 @@ namespace Measurers {
 		//DELETE INDIVIDUAL MEASURER FILES
 		*/
 
-		if (pool != NULL)
-			delete pool;
-
-		for (int i = 0; i < (int)(lights.size()); i++)
-			lights [i] ->terminate();
-		for (int i = 0; i < (int)(heavies.size()); i++)
-			heavies[i]->terminate();
+		for (int i = 0; i < (int)(meas.size()); i++)
+			meas [i] ->terminate();
 	}
 }

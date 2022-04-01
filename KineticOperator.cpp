@@ -139,7 +139,7 @@ namespace KineticOperators {
 			needMat = 0;
 			if (nPts > 46340) {
 				std::cout << "Long datatype is required for grids of size nPts>46340. Rewrite this code (GenDisp_PSM::calcOpMat)" << std::endl;
-				throw NULL;
+				throw -1;
 			}
 
 			initializeMatFFT();
@@ -164,7 +164,7 @@ namespace KineticOperators {
 	void GenDisp_PSM::findEigenStates(double* v, double emin, double emax, std::complex<double>* states, int* nEigs) {
 		if (nPts > 46340) {
 			std::cout << "Long datatype is required for grids of size nPts>46340. Rewrite this code (GenDisp_PSM::findEigenStates)" << std::endl;
-			throw NULL;
+			throw -1;
 		}
 		double* eigs = new double[nPts];
 		int* ifail = new int[nPts];
