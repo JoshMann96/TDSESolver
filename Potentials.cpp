@@ -702,9 +702,10 @@ namespace Potentials {
 	}
 
 
-	LinearBulkCylindricalFieldSpaceCharge::LinearBulkCylindricalFieldSpaceCharge(int nPts, double* x, double dx, double ef, double rad, int* nelec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int posMin, int posMax, int surfPos, int refPoint) {
+	LinearBulkCylindricalFieldSpaceCharge::LinearBulkCylindricalFieldSpaceCharge(int nPts, double* x, double dx, double dt, double ef, double rad, int* nelec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int posMin, int posMax, int surfPos, int trackInnerLoss, int refPoint) {
 		LinearBulkCylindricalFieldSpaceCharge::nPts = nPts;
 		LinearBulkCylindricalFieldSpaceCharge::dx = dx;
+		LinearBulkCylindricalFieldSpaceCharge::dt = dt;
 		LinearBulkCylindricalFieldSpaceCharge::ef = ef;
 		LinearBulkCylindricalFieldSpaceCharge::refPoint = refPoint;
 		LinearBulkCylindricalFieldSpaceCharge::nelecPtr = nelec;
@@ -712,6 +713,7 @@ namespace Potentials {
 		LinearBulkCylindricalFieldSpaceCharge::rad = rad;
 		LinearBulkCylindricalFieldSpaceCharge::wght = wght;
 		LinearBulkCylindricalFieldSpaceCharge::dens = dens;
+		LinearBulkCylindricalFieldSpaceCharge::trackInnerLoss = trackInnerLoss;
 		if (posMin < 0)
 			LinearBulkCylindricalFieldSpaceCharge::posMin = 0;
 		else
@@ -764,6 +766,7 @@ namespace Potentials {
 
 	void LinearBulkCylindricalFieldSpaceCharge::doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
 		first = 0;
+		lostCharge = 0.0;
 		nelec = nelecPtr[0];
 		psi2 = new double[nPts * nelec];
 		prefactor = new double[nelec];
@@ -785,6 +788,9 @@ namespace Potentials {
 			rho[i] = 0;
 		for (int i = posMax; i < nPts; i++)
 			rho[i] = 0;
+		if (trackInnerLoss)
+			for (int i = 0; i < nelec; i++)
+				lostCharge -= dt * PhysCon::hbar / PhysCon::me * std::imag(std::conj(psi[i*nPts + posMin]) * (psi[i * nPts + posMin + 1] - psi[i * nPts + posMin - 1]) / (2.0 * dx)) * prefactor[i];
 		//auto t2 = std::chrono::system_clock::now();
 		std::fill_n(targ, nPts, 0);
 
@@ -804,6 +810,8 @@ namespace Potentials {
 
 		////surfPos -> surfPos+1
 		vtlsInt::cumIntTrapz(surfPos+1, rho, dx, genTemp);
+		//insert lost charge at min pos
+		vtls::scaAddArray(surfPos + 1, lostCharge, genTemp);
 		//Calculate potential outside the metal (as it has an extra constant)
 
 		////surfPos-1 -> surfPos

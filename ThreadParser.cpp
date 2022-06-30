@@ -108,7 +108,7 @@ int ThreadParser::addPotential(std::string input) {
 	}
 	case 14:
 	{
-		Potentials::LinearBulkCylindricalFieldSpaceCharge* pot = new Potentials::LinearBulkCylindricalFieldSpaceCharge(n, x, sim->getDX(), p[0], p[1], nelec, sim->getPotPointer(), wght, dens, vtls::findValue(n, x, p[3]), vtls::findValue(n, x, p[4]), vtls::findValue(n, x, p[2]), vtls::findValue(n, x, p[5]));
+		Potentials::LinearBulkCylindricalFieldSpaceCharge* pot = new Potentials::LinearBulkCylindricalFieldSpaceCharge(n, x, sim->getDX(), sim->getDT(), p[0], p[1], nelec, sim->getPotPointer(), wght, dens, vtls::findValue(n, x, p[3]), vtls::findValue(n, x, p[4]), vtls::findValue(n, x, p[2]), 1, vtls::findValue(n, x, p[5]));
 		sim->addPotential(pot);
 		spc->push_back(pot);
 		break;
