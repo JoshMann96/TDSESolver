@@ -811,7 +811,7 @@ namespace Potentials {
 		////surfPos -> surfPos+1
 		vtlsInt::cumIntTrapz(surfPos+1, rho, dx, genTemp);
 		//insert lost charge at min pos
-		vtls::scaAddArray(surfPos + 1, lostCharge, genTemp);
+		vtls::scaAddArray(surfPos + 1 - posMin, lostCharge, &genTemp[posMin]);
 		//Calculate potential outside the metal (as it has an extra constant)
 
 		////surfPos-1 -> surfPos
