@@ -315,7 +315,9 @@ namespace Potentials {
 	private:
 		int nPts, refPoint, * nelecPtr, nelec, first = 1, posMin, posMax, surfPos, trackInnerLoss;
 		double dx, dt, ef, rad, * prefactor, * origPot, * potTemp, * genTemp, * psi2, * lrxr, * rho;
-		double lostCharge = 0.0;
+		//variables for charge loss prevention
+		double lostCharge = 0.0, chargeCenterD, chargeWidthD;
+		int chargeCenter, chargeWidth;
 		void calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator* kin);
 		void doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin);
 		Potential* totPot;
@@ -323,6 +325,26 @@ namespace Potentials {
 		WfcToRho::Density* dens;
 	public:
 		LinearBulkCylindricalFieldSpaceCharge(int nPts, double* x, double dx, double dt, double ef, double rad, int* nelec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int posMin, int posMax, int surfPos, int trackInnerLoss, int refPoint);
+		void negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator* kin);
+		void getV(double t, double* targ, KineticOperators::KineticOperator* kin);
+		void getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator* kin);
+		int isDynamic();
+	};
+
+	class CylindricalImageCharge :
+		public WaveFunctionSelfPotential
+	{
+	private:
+		int nPts, refPoint, * nelecPtr, nelec, first = 1, posMin, posMax, surfPos;
+		double dx, dt, ef, w, rad, * prefactor, * origPot, * potTemp, * genTemp, * psi2, * lrxr, * rho, *nsMask;
+		double emittedCharge = 0.0;
+		void calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator* kin);
+		void doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin);
+		Potential* totPot;
+		WfcToRho::Weight* wght;
+		WfcToRho::Density* dens;
+	public:
+		CylindricalImageCharge(int nPts, double* x, double dx, double dt, double ef, double w, double rad, int* nelec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int posMin, int posMax, int surfPos, int refPoint);
 		void negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator* kin);
 		void getV(double t, double* targ, KineticOperators::KineticOperator* kin);
 		void getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator* kin);

@@ -775,6 +775,20 @@ namespace Potentials {
 		totPot->getV(0, v0w, kin);
 		WfcToRho::calcEnergies(nelec, nPts, dx, psi, v0w, kin, energies);
 		wght->calcWeights(nelec, energies, prefactor);
+
+		//get location and size of starting charge
+		dens->calcRho(nPts, nelec, dx, prefactor, psi, rho);
+		for (int i = 0; i < nPts; i++)
+			chargeCenterD += rho[i] * i;
+		chargeCenterD /= vtlsInt::rSum(nPts, rho, 1.0);
+		for (int i = 0; i < nPts; i++)
+			chargeWidthD += rho[i] * std::pow(i - chargeCenterD, 2);
+		//half width assuming rectangular distribution
+		chargeWidthD = std::sqrt(chargeWidthD / vtlsInt::rSum(nPts, rho, 1.0)) * std::sqrt(3);
+		//get integer values for above
+		chargeCenter = (int)chargeCenterD;
+		chargeWidth = (int)chargeWidthD;
+
 		delete[] energies, v0w;
 		//calcFermiBoxDimensionalityConversion(nelec, nPts, dx, ef, psi, totPot, prefactor);
 	}
@@ -784,15 +798,22 @@ namespace Potentials {
 		if (first) doFirst(psi, kin);
 		//Caclulate 3-D density, only for within bounds
 		dens->calcRho(nPts, nelec, dx, prefactor, psi, rho);
+		//Replenish charge in slab only
+		//vtls::scaAddArray(chargeWidth * 2, lostCharge / dx / (double)(chargeWidth * 2), &rho[chargeCenter - chargeWidth]);
 		for (int i = 0; i < posMin; i++)
 			rho[i] = 0;
 		for (int i = posMax; i < nPts; i++)
 			rho[i] = 0;
 		if (trackInnerLoss)
 			for (int i = 0; i < nelec; i++)
-				lostCharge -= dt * PhysCon::hbar / PhysCon::me * std::imag(std::conj(psi[i*nPts + posMin]) * (psi[i * nPts + posMin + 1] - psi[i * nPts + posMin - 1]) / (2.0 * dx)) * prefactor[i];
+				lostCharge -= dt / 2.0 * PhysCon::hbar / PhysCon::me * std::imag(std::conj(psi[i*nPts + posMin]) * (psi[i * nPts + posMin + 1] - psi[i * nPts + posMin - 1]) / (2.0 * dx)) * prefactor[i];
+		//FACTOR OF 2 ONLY WORKS FOR CALCULATIONS WHICH EVALUATE POTENTIAL TWICE
+		//SHOULD BE SEPARATED INTO A VIRTUAL DETECTOR WHICH IS ONLY EVALUATED ONCE PER TIME-STEP
 		//auto t2 = std::chrono::system_clock::now();
 		std::fill_n(targ, nPts, 0);
+
+		//add lost charge to Jellium slab and beneath, hopefully smooth things out
+		//vtls::scaAddArray(surfPos + 1 - posMin, lostCharge / dx / (double)(surfPos + 1 - posMin), & rho[posMin]);
 
 		//ORIGINAL ATTEMPT
 		//CALCULATE FIELDS FROM FIELD ELECTRONS
@@ -863,6 +884,126 @@ namespace Potentials {
 		//vtlsInt::cumIntTrapz(nPts, temp1, dx, temp2);
 		//vtls::scaAddArray(nPts, -temp2[surfPos], temp2);
 		//vtls::addArrays(surfPos, temp2, targ);
+	}
+
+
+	CylindricalImageCharge::CylindricalImageCharge(int nPts, double* x, double dx, double dt, double ef, double w, double rad, int* nelec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int posMin, int posMax, int surfPos, int refPoint) {
+		CylindricalImageCharge::nPts = nPts;
+		CylindricalImageCharge::dx = dx;
+		CylindricalImageCharge::dt = dt;
+		CylindricalImageCharge::ef = ef;
+		CylindricalImageCharge::w = w;
+		CylindricalImageCharge::refPoint = refPoint;
+		CylindricalImageCharge::nelecPtr = nelec;
+		CylindricalImageCharge::totPot = totPot;
+		CylindricalImageCharge::rad = rad;
+		CylindricalImageCharge::wght = wght;
+		CylindricalImageCharge::dens = dens;
+		if (posMin < 0)
+			CylindricalImageCharge::posMin = 0;
+		else
+			CylindricalImageCharge::posMin = posMin;
+		if (posMax > nPts - 1)
+			CylindricalImageCharge::posMax = nPts - 1;
+		else
+			CylindricalImageCharge::posMax = posMax;
+		if (surfPos > nPts - 1)
+			CylindricalImageCharge::surfPos = nPts - 1;
+		else
+			CylindricalImageCharge::surfPos = surfPos;
+		potTemp = new double[nPts];
+		genTemp = new double[nPts];
+		origPot = new double[nPts];
+		rho = new double[nPts];
+		lrxr = new double[nPts];
+		nsMask = new double[nPts];
+
+		for (int i = 0; i < nPts; i++)
+			if (x[i] - x[surfPos] <= -rad)
+				lrxr[i] = 0;
+			else
+				lrxr[i] = std::log((rad + x[i] - x[surfPos]) / rad);
+
+		for (int i = 0; i < surfPos; i++)
+			nsMask[i] = 0.0;
+		for (int i = surfPos; i < nPts; i++)
+			nsMask[i] = 1.0 - std::exp(-2 * std::sqrt(2.0 * PhysCon::me * w) / PhysCon::hbar * (i - surfPos) * dx);
+	}
+	
+	void CylindricalImageCharge::negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
+		if (first) doFirst(psi, kin);
+		calcPot(psi, origPot, kin);
+	}
+
+	void CylindricalImageCharge::getV(double t, double* targ, KineticOperators::KineticOperator* kin) {
+		for (int i = 0; i < nPts; i++)
+			targ[i] = 0.0;
+	}
+
+	void CylindricalImageCharge::getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator* kin) {
+		if (first) {
+			doFirst(psi, kin);
+			std::cout << "CylindricalImageCharge potential should be negated after initial state is found." << std::endl;
+		}
+		calcPot(psi, targ, kin);
+		double ref = targ[refPoint] - origPot[refPoint];
+		for (int i = 0; i < nPts; i++)
+			targ[i] -= origPot[i] + ref;
+	}
+
+	int CylindricalImageCharge::isDynamic() {
+		return 2;
+	}
+
+	void CylindricalImageCharge::doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
+		first = 0;
+		emittedCharge = 0.0;
+		nelec = nelecPtr[0];
+		psi2 = new double[nPts * nelec];
+		prefactor = new double[nelec];
+		double* energies = new double[nelec];
+		double* v0w = new double[nPts];
+		totPot->getV(0, v0w, kin);
+		WfcToRho::calcEnergies(nelec, nPts, dx, psi, v0w, kin, energies);
+		wght->calcWeights(nelec, energies, prefactor);
+
+		delete[] energies, v0w;
+		//calcFermiBoxDimensionalityConversion(nelec, nPts, dx, ef, psi, totPot, prefactor);
+	}
+
+	void CylindricalImageCharge::calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator* kin) {
+		//auto t1 = std::chrono::system_clock::now();
+		if (first) doFirst(psi, kin);
+		//Caclulate 3-D density, only for within bounds
+		dens->calcRho(nPts, nelec, dx, prefactor, psi, rho);
+		for (int i = 0; i < posMin; i++)
+			rho[i] = 0;
+		for (int i = posMax; i < nPts; i++)
+			rho[i] = 0;
+		for (int i = 0; i < nelec; i++)
+				emittedCharge += dt / 2.0 * PhysCon::hbar / PhysCon::me * std::imag(std::conj(psi[i * nPts + posMax]) * (psi[i * nPts + posMax + 1] - psi[i * nPts + posMax - 1]) / (2.0 * dx)) * prefactor[i];
+		//FACTOR OF 2 ONLY WORKS FOR CALCULATIONS WHICH EVALUATE POTENTIAL TWICE
+		//SHOULD BE SEPARATED INTO A VIRTUAL DETECTOR WHICH IS ONLY EVALUATED ONCE PER TIME-STEP
+		//auto t2 = std::chrono::system_clock::now();
+		std::fill_n(targ, nPts, 0);
+
+		//ORIGINAL ATTEMPT
+		//CALCULATE FIELDS FROM FIELD ELECTRONS
+		//Calculate first integral
+		vtlsInt::cumIntTrapz(nPts - surfPos, &rho[surfPos], dx * rad, &targ[surfPos]);
+		//Add in image charge
+		vtls::scaAddArray(nPts - surfPos, -targ[nPts - 1] - emittedCharge * rad, &targ[surfPos]);
+		vtls::seqMulArrays(nPts - surfPos, &lrxr[surfPos], &targ[surfPos]);
+		//Calculate second integral
+		std::fill_n(potTemp, nPts, 0);
+		vtls::seqMulArrays(nPts - surfPos, &lrxr[surfPos], &rho[surfPos], &genTemp[surfPos]);
+		vtlsInt::cumIntTrapz(nPts - surfPos, &genTemp[surfPos], -dx * rad, &potTemp[surfPos]);
+		vtls::addArrays(nPts - surfPos, &potTemp[surfPos], &targ[surfPos]);
+
+		//Apply near-surface mask
+		vtls::seqMulArrays(nPts, nsMask, targ);
+		//Apply final constants
+		vtls::scaMulArray(nPts, -PhysCon::qe * PhysCon::qe / PhysCon::e0, targ);
 	}
 
 

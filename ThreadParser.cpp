@@ -134,6 +134,13 @@ int ThreadParser::addPotential(std::string input) {
 		spc->push_back(pot);
 		break;
 	}
+	case 18:
+	{
+		Potentials::CylindricalImageCharge* pot = new Potentials::CylindricalImageCharge(n, x, sim->getDX(), sim->getDT(), p[1], p[0], p[2], nelec, sim->getPotPointer(), wght, dens, vtls::findValue(n, x, p[4]), vtls::findValue(n, x, p[5]), vtls::findValue(n, x, p[3]), vtls::findValue(n, x, p[6]));
+		sim->addPotential(pot);
+		spc->push_back(pot);
+		break;
+	}
 	}
 	return 1;
 }
