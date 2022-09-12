@@ -298,7 +298,7 @@ namespace Potentials {
 	}
 
 	void ElectricFieldProfileToPotential::getV(double t, double * targ, KineticOperators::KineticOperator* kin) {
-		vtls::scaMulArrayRe(nPts, std::exp(PhysCon::im*(w*(t-tmax)+phase))*PhysCon::im*env->getValue(t), potMask, targ);
+		vtls::scaMulArrayRe(nPts, std::exp(PhysCon::im*(w*(t-tmax)+phase))*env->getValue(t), potMask, targ);
 	}
 
 	void ElectricFieldProfileToPotential::getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator* kin) {
