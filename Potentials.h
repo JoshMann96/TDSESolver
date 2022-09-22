@@ -47,6 +47,15 @@ namespace ElectricFieldProfiles {
 		std::complex<double> * getProfile();
 	};
 
+	class ExponentialToLinearProfile :
+		public ElectricFieldProfile {
+	private:
+		std::complex<double>* fs;
+	public:
+		ExponentialToLinearProfile(int nPts, double* x, double minX, double maxX, double r, double eMax);
+		std::complex<double>* getProfile();
+	};
+
 	class FileFieldProfile :
 		public ElectricFieldProfile {
 		std::complex<double> * fs;

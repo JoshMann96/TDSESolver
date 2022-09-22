@@ -141,6 +141,11 @@ int ThreadParser::addPotential(std::string input) {
 		spc->push_back(pot);
 		break;
 	}
+	case 19:
+		sim->addPotential(new Potentials::ElectricFieldProfileToPotential(
+			n, new ElectricFieldProfiles::ExponentialToLinearProfile(n, x, p[0], p[1], p[2], p[3]),
+			sim->getDX(), p[7], p[6], p[4], new Envelopes::SmoothedInitialGaussianEnvelope(p[5], p[6], p[8]), vtls::findValue(n, x, p[9])));
+		break;
 	}
 	return 1;
 }

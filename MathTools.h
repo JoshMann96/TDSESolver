@@ -460,6 +460,7 @@ namespace vtlsPrnt {
 
 	// Uses text to graph an array.
 	void printGraph(int n, double* __restrict arr);
+	void printGraph(int n, std::complex<double>* __restrict arr);
 
 	// Prints contents of array.
 	/*void printArray(int n, double *__restrict arr);

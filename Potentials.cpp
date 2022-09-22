@@ -1471,9 +1471,11 @@ namespace ElectricFieldProfiles {
 				fs[i] = 0.0;
 		}
 	}
+
 	std::complex<double> * ConstantFieldProfile::getProfile() {
 		return fs;
 	}
+
 
 	CylindricalToLinearProfile::CylindricalToLinearProfile(int nPts, double * x, double minX, double maxX, double r, double eMax, double enhFact) {
 		fs = new std::complex<double>[nPts];
@@ -1493,6 +1495,7 @@ namespace ElectricFieldProfiles {
 	std::complex<double> * CylindricalToLinearProfile::getProfile() {
 		return fs;
 	}
+
 
 	CylindricalToCutoffProfile::CylindricalToCutoffProfile(int nPts, double * x, double minX, double maxX, double r, double eMax, double enhFact, double decayLength) {
 		fs = new std::complex<double>[nPts];
@@ -1520,6 +1523,7 @@ namespace ElectricFieldProfiles {
 	std::complex<double> * CylindricalToCutoffProfile::getProfile() {
 		return fs;
 	}
+
 
 	InMetalFieldProfile::InMetalFieldProfile(int nPts, double * x, double minX, double maxX, double eMax, double lam, std::complex<double> er, double cond) {
 		fs = new std::complex<double>[nPts];
@@ -1550,6 +1554,7 @@ namespace ElectricFieldProfiles {
 	std::complex<double> * InMetalFieldProfile::getProfile() {
 		return fs;
 	}
+
 
 	FileFieldProfile::FileFieldProfile(int nPts, double * x, double offset, double rightDecayPos, double leftDecayPos, double decayLength, double emax, const char * fil) {
 		fs = new std::complex<double>[nPts];
@@ -1608,6 +1613,26 @@ namespace ElectricFieldProfiles {
 	std::complex<double> * FileFieldProfile::getProfile() {
 		return fs;
 	}
+
+
+	ExponentialToLinearProfile::ExponentialToLinearProfile(int nPts, double* x, double minX, double maxX, double r, double eMax) {
+		fs = new std::complex<double>[nPts];
+		double xn;
+		for (int i = 0; i < nPts; i++) {
+			xn = x[i];
+			if (xn < minX || xn > maxX)
+				fs[i] = 0.0;
+			else if (xn < maxX - r)
+				fs[i] = eMax * std::exp(-(xn - minX) / r);
+			else
+				fs[i] = eMax / r * std::exp(-(maxX - r) / r) * (maxX - xn);
+		}
+	}
+
+	std::complex<double>* ExponentialToLinearProfile::getProfile() {
+		return fs;
+	}
+
 }
 
 namespace Envelopes {

@@ -116,4 +116,21 @@ namespace vtlsPrnt {
 			std::cout << std::endl;
 		}
 	}
+
+	void printGraph(int n, std::complex<double>* __restrict arr0) {
+		double* arr = new double[n];
+		for (int i = 0; i < n; i++)
+			arr[i] = std::real(arr0[i]);
+		double minVal = *std::min_element(arr, arr + n);
+		double maxVal = *std::max_element(arr, arr + n);
+		int* nArr = new int[n];
+		int k = n / 50 + 1;
+		for (int i = 0; i < n; i += k) nArr[i] = (int)(((arr[i] - minVal) / (maxVal - minVal)) * 100.0);
+		//printArray(n, nArr);
+		for (int i = 0; i < n; i += k) {
+			for (int j = 0; j < nArr[i]; j++)
+				std::cout << "#";
+			std::cout << std::endl;
+		}
+	}
 }
