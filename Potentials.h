@@ -94,6 +94,17 @@ namespace Envelopes {
 		SmoothedInitialGaussianEnvelope(double tau, double tmax, double bufferTime);
 		double getValue(double t);
 	};
+
+	class CosSquaredEnvelope :
+		public Envelope {
+	private:
+		double tau;
+		double tmax;
+		double a_t = 2.0 * std::acos(std::powf(0.5, 0.25)); // cos^4(a_t*(tau/2)/tau)=1/2 s.t. tau = FWHM-power
+	public:
+		CosSquaredEnvelope(double tau, double tmax);
+		double getValue(double t);
+	};
 }
 
 namespace Potentials {

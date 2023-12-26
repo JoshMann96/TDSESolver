@@ -146,7 +146,36 @@ int ThreadParser::addPotential(std::string input) {
 			n, new ElectricFieldProfiles::ExponentialToLinearProfile(n, x, p[0], p[1], p[2], p[3]),
 			sim->getDX(), p[7], p[6], p[4], new Envelopes::SmoothedInitialGaussianEnvelope(p[5], p[6], p[8]), vtls::findValue(n, x, p[9])));
 		break;
+	case 20:
+		sim->addPotential(
+			new Potentials::ElectricFieldProfileToPotential(
+				n, new ElectricFieldProfiles::FileFieldProfile(
+					n, x, p[0], p[3], p[2], p[4], p[5], inputText.c_str()),
+				sim->getDX(), p[9], p[8], p[6], new Envelopes::CosSquaredEnvelope(
+					p[7], p[8]),
+				vtls::findValue(n, x, p[10])));
+		break;
+	case 21:
+		sim->addPotential(
+			new Potentials::ElectricFieldProfileToPotential(
+				n, new ElectricFieldProfiles::FileFieldProfile(
+					n, x, p[0], p[3], p[2], p[4], p[5], inputText.c_str()),
+				sim->getDX(), p[9], p[8], p[6], new Envelopes::CosSquaredEnvelope(
+					p[7], p[8]),
+				vtls::findValue(n, x, p[10])));
+		break;
+	case 22:
+		sim->addPotential(new Potentials::ElectricFieldProfileToPotential(
+			n, new ElectricFieldProfiles::ExponentialToLinearProfile(n, x, p[0], p[1], p[2], p[3]),
+			sim->getDX(), p[7], p[6], p[4], new Envelopes::CosSquaredEnvelope(p[5], p[6]), vtls::findValue(n, x, p[8])));
+		break;
+	case 23:
+		sim->addPotential(new Potentials::ElectricFieldProfileToPotential(
+			n, new ElectricFieldProfiles::CylindricalToCutoffProfile(n, x, p[0], p[1], p[2], p[3], p[4], p[10]),
+			sim->getDX(), p[8], p[7], p[5], new Envelopes::CosSquaredEnvelope(p[6], p[7]), vtls::findValue(n, x, p[9])));
+		break;
 	}
+
 	return 1;
 }
 

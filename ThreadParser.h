@@ -87,7 +87,7 @@ private:
 		"FilePot",
 		"SelfCoulomb",
 		"BiasField",
-		"FileField", 
+		"GaussFileField", 
 		"GaussianPulseCylindrical",
 		"FiniteBox",
 		"FullCylindricalSpaceCharge",
@@ -97,7 +97,11 @@ private:
 		"DielectricBulkCylindricalFieldSpaceCharge",
 		"OhmicRetardingCurrent",
 		"CylindricalImageCharge",
-		"GaussianPulseExponential"
+		"GaussianPulseExponential",
+		"Cos2FileField",
+		"Cos2PulseCylindrical",
+		"Cos2PulseExponential",
+		"CutoffCos2PulseCylindrical"
 	};
 	//Add a potential function name here and then add its parameters in potFields.
 
@@ -122,7 +126,11 @@ private:
 		{"FERMI_E", "RADIUS", "SURF_X", "MIN_X", "MAX_X", "WELL_WIDTH", "DAMP_RATE", "REF_POINT"},
 		{"SURF_X", "TRANS_LEN", "RESISTIVITY", "REF_POINT"},
 		{"WORK_F", "FERMI_E", "RADIUS", "SURF_X", "MIN_X", "MAX_X", "REF_POINT"},
-		{"MIN_X", "MAX_X", "RADIUS", "MAX_E", "LAM", "TAU", "PEAK_T", "PHASE", "BUFFER_TIME", "REF_POINT"}
+		{"MIN_X", "MAX_X", "RADIUS", "MAX_E", "LAM", "TAU", "PEAK_T", "PHASE", "BUFFER_TIME", "REF_POINT"},
+		{"OFFSET", "FILE", "BUFFER_X_MIN", "BUFFER_X_MAX", "BUFFER_LENGTH", "MAX_E", "LAM", "TAU", "PEAK_T", "PHASE", "REF_POINT"},
+		{"MIN_X", "MAX_X", "RADIUS", "MAX_E", "ENHANCEMENT", "LAM", "TAU", "PEAK_T", "PHASE", "REF_POINT"},
+		{"MIN_X", "MAX_X", "RADIUS", "MAX_E", "LAM", "TAU", "PEAK_T", "PHASE", "REF_POINT"},
+		{"MIN_X", "MAX_X", "RADIUS", "MAX_E", "ENHANCEMENT", "LAM", "TAU", "PEAK_T", "PHASE", "REF_POINT", "BUFFER_LENGTH" }
 	};
 	//Add the fields as an array. No need to specify the type, all are assumed to be double. Only one variable may be stored as a string.
 	//Proceed to modify addPotential in the CPP file.

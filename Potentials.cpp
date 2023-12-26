@@ -1668,4 +1668,16 @@ namespace Envelopes {
 			return std::pow(2.0, -2.0 * std::log(2.0)*std::pow((t - tmax) / tau, 2));
 		}
 	}
+
+	CosSquaredEnvelope::CosSquaredEnvelope(double tau, double tmax) {
+		CosSquaredEnvelope::tau = tau;
+		CosSquaredEnvelope::tmax = tmax;
+	}
+
+	double CosSquaredEnvelope::getValue(double t) {
+		if (std::abs((t - tmax) * a_t / tau) < PhysCon::pi / 2.0)
+			return std::pow(std::cos(a_t * (t - tmax) / tau), 2);
+		else
+			return 0.0;
+	}
 }
