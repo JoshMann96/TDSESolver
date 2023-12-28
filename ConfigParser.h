@@ -1,4 +1,5 @@
 #pragma once
+
 namespace cfgParse {
 	static std::string curLine;
 	static std::fstream *fil;

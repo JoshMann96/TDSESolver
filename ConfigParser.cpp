@@ -1,4 +1,5 @@
 #include "stdafx.h"
+
 namespace cfgParse {
 	void readCFG(char *trg) {
 		fil = new std::fstream(trg, std::ios::in);

@@ -12,7 +12,6 @@
 #include <queue>
 #define NOMINMAX
 #include "exprtk.hpp"
-#include "matplotlibcpp.h"
 #include <iomanip>
 #include <future>
 #include <thread>
