@@ -1,0 +1,3 @@
+/home/jmann/TDSESolveLinux/TDSESolveLinux/build/CMakeFiles/TDSESolveLinux.dir
+/home/jmann/TDSESolveLinux/TDSESolveLinux/build/CMakeFiles/edit_cache.dir
+/home/jmann/TDSESolveLinux/TDSESolveLinux/build/CMakeFiles/rebuild_cache.dir

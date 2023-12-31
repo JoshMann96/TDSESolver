@@ -44,7 +44,7 @@
 #include "WfcRhoTools.h"
 #include "Measurers.h"
 #include "Potentials.h"
-//#include "TDSEIterator1D.h"
+#include "TDSEIterator1D.h"
 //#include "SimulationManager.h"
 //#include "SingleSimulationManager.h"
 #include "MultiSimulationManager.h"
