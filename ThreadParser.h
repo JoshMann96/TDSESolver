@@ -19,7 +19,7 @@ private:
 	int multiElec = 0;
 	std::string inputText = "";
 	int* nelec = new int[1];
-	std::mutex* mtx;
+	//std::mutex* mtx;
 
 	std::vector<std::string> absNames =
 	{
@@ -203,7 +203,7 @@ private:
 	//Proceed to modify addMeasurer in the CPP file.
 
 public:
-	ThreadParser(std::stringstream *fil, ProgressTracker *prg, std::vector<std::string> varNames, std::vector<double> var, int simIdx, std::mutex* mtx);
+	ThreadParser(std::stringstream *fil, ProgressTracker *prg, std::vector<std::string> varNames, std::vector<double> var, int simIdx);
 	~ThreadParser();
 	void readConfig();
 	int readCommand();

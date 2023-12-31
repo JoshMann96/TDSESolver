@@ -1,77 +1,77 @@
 [
 {
   "directory": "/home/jmann/TDSESolveLinux/TDSESolveLinux/build",
-  "command": "/usr/bin/c++  -I/usr/include/boost -I/usr/include/mkl -I/home/jmann/TDSESolveLinux/TDSESolveLinux  -O3 -march=native -DNDEBUG -g -fopenmp -std=gnu++17 -o CMakeFiles/TDSESolveLinux.dir/AbsorptiveRegions.cpp.o -c /home/jmann/TDSESolveLinux/TDSESolveLinux/AbsorptiveRegions.cpp",
+  "command": "/usr/bin/c++  -I/usr/include/boost -I/usr/include/mkl -I/home/jmann/TDSESolveLinux/TDSESolveLinux -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi  -O3 -march=native -DNDEBUG -fopenmp -g -fopenmp -std=gnu++17 -o CMakeFiles/TDSESolveLinux.dir/AbsorptiveRegions.cpp.o -c /home/jmann/TDSESolveLinux/TDSESolveLinux/AbsorptiveRegions.cpp",
   "file": "/home/jmann/TDSESolveLinux/TDSESolveLinux/AbsorptiveRegions.cpp"
 },
 {
   "directory": "/home/jmann/TDSESolveLinux/TDSESolveLinux/build",
-  "command": "/usr/bin/c++  -I/usr/include/boost -I/usr/include/mkl -I/home/jmann/TDSESolveLinux/TDSESolveLinux  -O3 -march=native -DNDEBUG -g -fopenmp -std=gnu++17 -o CMakeFiles/TDSESolveLinux.dir/ConfigParser.cpp.o -c /home/jmann/TDSESolveLinux/TDSESolveLinux/ConfigParser.cpp",
+  "command": "/usr/bin/c++  -I/usr/include/boost -I/usr/include/mkl -I/home/jmann/TDSESolveLinux/TDSESolveLinux -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi  -O3 -march=native -DNDEBUG -fopenmp -g -fopenmp -std=gnu++17 -o CMakeFiles/TDSESolveLinux.dir/ConfigParser.cpp.o -c /home/jmann/TDSESolveLinux/TDSESolveLinux/ConfigParser.cpp",
   "file": "/home/jmann/TDSESolveLinux/TDSESolveLinux/ConfigParser.cpp"
 },
 {
   "directory": "/home/jmann/TDSESolveLinux/TDSESolveLinux/build",
-  "command": "/usr/bin/c++  -I/usr/include/boost -I/usr/include/mkl -I/home/jmann/TDSESolveLinux/TDSESolveLinux  -O3 -march=native -DNDEBUG -g -fopenmp -std=gnu++17 -o CMakeFiles/TDSESolveLinux.dir/HHGFunctions.cpp.o -c /home/jmann/TDSESolveLinux/TDSESolveLinux/HHGFunctions.cpp",
+  "command": "/usr/bin/c++  -I/usr/include/boost -I/usr/include/mkl -I/home/jmann/TDSESolveLinux/TDSESolveLinux -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi  -O3 -march=native -DNDEBUG -fopenmp -g -fopenmp -std=gnu++17 -o CMakeFiles/TDSESolveLinux.dir/HHGFunctions.cpp.o -c /home/jmann/TDSESolveLinux/TDSESolveLinux/HHGFunctions.cpp",
   "file": "/home/jmann/TDSESolveLinux/TDSESolveLinux/HHGFunctions.cpp"
 },
 {
   "directory": "/home/jmann/TDSESolveLinux/TDSESolveLinux/build",
-  "command": "/usr/bin/c++  -I/usr/include/boost -I/usr/include/mkl -I/home/jmann/TDSESolveLinux/TDSESolveLinux  -O3 -march=native -DNDEBUG -g -fopenmp -std=gnu++17 -o CMakeFiles/TDSESolveLinux.dir/KineticOperator.cpp.o -c /home/jmann/TDSESolveLinux/TDSESolveLinux/KineticOperator.cpp",
+  "command": "/usr/bin/c++  -I/usr/include/boost -I/usr/include/mkl -I/home/jmann/TDSESolveLinux/TDSESolveLinux -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi  -O3 -march=native -DNDEBUG -fopenmp -g -fopenmp -std=gnu++17 -o CMakeFiles/TDSESolveLinux.dir/KineticOperator.cpp.o -c /home/jmann/TDSESolveLinux/TDSESolveLinux/KineticOperator.cpp",
   "file": "/home/jmann/TDSESolveLinux/TDSESolveLinux/KineticOperator.cpp"
 },
 {
   "directory": "/home/jmann/TDSESolveLinux/TDSESolveLinux/build",
-  "command": "/usr/bin/c++  -I/usr/include/boost -I/usr/include/mkl -I/home/jmann/TDSESolveLinux/TDSESolveLinux  -O3 -march=native -DNDEBUG -g -fopenmp -std=gnu++17 -o CMakeFiles/TDSESolveLinux.dir/LinuxFuncs.cpp.o -c /home/jmann/TDSESolveLinux/TDSESolveLinux/LinuxFuncs.cpp",
+  "command": "/usr/bin/c++  -I/usr/include/boost -I/usr/include/mkl -I/home/jmann/TDSESolveLinux/TDSESolveLinux -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi  -O3 -march=native -DNDEBUG -fopenmp -g -fopenmp -std=gnu++17 -o CMakeFiles/TDSESolveLinux.dir/LinuxFuncs.cpp.o -c /home/jmann/TDSESolveLinux/TDSESolveLinux/LinuxFuncs.cpp",
   "file": "/home/jmann/TDSESolveLinux/TDSESolveLinux/LinuxFuncs.cpp"
 },
 {
   "directory": "/home/jmann/TDSESolveLinux/TDSESolveLinux/build",
-  "command": "/usr/bin/c++  -I/usr/include/boost -I/usr/include/mkl -I/home/jmann/TDSESolveLinux/TDSESolveLinux  -O3 -march=native -DNDEBUG -g -fopenmp -std=gnu++17 -o CMakeFiles/TDSESolveLinux.dir/MathTools.cpp.o -c /home/jmann/TDSESolveLinux/TDSESolveLinux/MathTools.cpp",
+  "command": "/usr/bin/c++  -I/usr/include/boost -I/usr/include/mkl -I/home/jmann/TDSESolveLinux/TDSESolveLinux -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi  -O3 -march=native -DNDEBUG -fopenmp -g -fopenmp -std=gnu++17 -o CMakeFiles/TDSESolveLinux.dir/MathTools.cpp.o -c /home/jmann/TDSESolveLinux/TDSESolveLinux/MathTools.cpp",
   "file": "/home/jmann/TDSESolveLinux/TDSESolveLinux/MathTools.cpp"
 },
 {
   "directory": "/home/jmann/TDSESolveLinux/TDSESolveLinux/build",
-  "command": "/usr/bin/c++  -I/usr/include/boost -I/usr/include/mkl -I/home/jmann/TDSESolveLinux/TDSESolveLinux  -O3 -march=native -DNDEBUG -g -fopenmp -std=gnu++17 -o CMakeFiles/TDSESolveLinux.dir/Measurers.cpp.o -c /home/jmann/TDSESolveLinux/TDSESolveLinux/Measurers.cpp",
+  "command": "/usr/bin/c++  -I/usr/include/boost -I/usr/include/mkl -I/home/jmann/TDSESolveLinux/TDSESolveLinux -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi  -O3 -march=native -DNDEBUG -fopenmp -g -fopenmp -std=gnu++17 -o CMakeFiles/TDSESolveLinux.dir/Measurers.cpp.o -c /home/jmann/TDSESolveLinux/TDSESolveLinux/Measurers.cpp",
   "file": "/home/jmann/TDSESolveLinux/TDSESolveLinux/Measurers.cpp"
 },
 {
   "directory": "/home/jmann/TDSESolveLinux/TDSESolveLinux/build",
-  "command": "/usr/bin/c++  -I/usr/include/boost -I/usr/include/mkl -I/home/jmann/TDSESolveLinux/TDSESolveLinux  -O3 -march=native -DNDEBUG -g -fopenmp -std=gnu++17 -o CMakeFiles/TDSESolveLinux.dir/MultiSimulationManager.cpp.o -c /home/jmann/TDSESolveLinux/TDSESolveLinux/MultiSimulationManager.cpp",
+  "command": "/usr/bin/c++  -I/usr/include/boost -I/usr/include/mkl -I/home/jmann/TDSESolveLinux/TDSESolveLinux -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi  -O3 -march=native -DNDEBUG -fopenmp -g -fopenmp -std=gnu++17 -o CMakeFiles/TDSESolveLinux.dir/MultiSimulationManager.cpp.o -c /home/jmann/TDSESolveLinux/TDSESolveLinux/MultiSimulationManager.cpp",
   "file": "/home/jmann/TDSESolveLinux/TDSESolveLinux/MultiSimulationManager.cpp"
 },
 {
   "directory": "/home/jmann/TDSESolveLinux/TDSESolveLinux/build",
-  "command": "/usr/bin/c++  -I/usr/include/boost -I/usr/include/mkl -I/home/jmann/TDSESolveLinux/TDSESolveLinux  -O3 -march=native -DNDEBUG -g -fopenmp -std=gnu++17 -o CMakeFiles/TDSESolveLinux.dir/ParallelSimParser.cpp.o -c /home/jmann/TDSESolveLinux/TDSESolveLinux/ParallelSimParser.cpp",
+  "command": "/usr/bin/c++  -I/usr/include/boost -I/usr/include/mkl -I/home/jmann/TDSESolveLinux/TDSESolveLinux -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi  -O3 -march=native -DNDEBUG -fopenmp -g -fopenmp -std=gnu++17 -o CMakeFiles/TDSESolveLinux.dir/ParallelSimParser.cpp.o -c /home/jmann/TDSESolveLinux/TDSESolveLinux/ParallelSimParser.cpp",
   "file": "/home/jmann/TDSESolveLinux/TDSESolveLinux/ParallelSimParser.cpp"
 },
 {
   "directory": "/home/jmann/TDSESolveLinux/TDSESolveLinux/build",
-  "command": "/usr/bin/c++  -I/usr/include/boost -I/usr/include/mkl -I/home/jmann/TDSESolveLinux/TDSESolveLinux  -O3 -march=native -DNDEBUG -g -fopenmp -std=gnu++17 -o CMakeFiles/TDSESolveLinux.dir/Potentials.cpp.o -c /home/jmann/TDSESolveLinux/TDSESolveLinux/Potentials.cpp",
+  "command": "/usr/bin/c++  -I/usr/include/boost -I/usr/include/mkl -I/home/jmann/TDSESolveLinux/TDSESolveLinux -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi  -O3 -march=native -DNDEBUG -fopenmp -g -fopenmp -std=gnu++17 -o CMakeFiles/TDSESolveLinux.dir/Potentials.cpp.o -c /home/jmann/TDSESolveLinux/TDSESolveLinux/Potentials.cpp",
   "file": "/home/jmann/TDSESolveLinux/TDSESolveLinux/Potentials.cpp"
 },
 {
   "directory": "/home/jmann/TDSESolveLinux/TDSESolveLinux/build",
-  "command": "/usr/bin/c++  -I/usr/include/boost -I/usr/include/mkl -I/home/jmann/TDSESolveLinux/TDSESolveLinux  -O3 -march=native -DNDEBUG -g -fopenmp -std=gnu++17 -o CMakeFiles/TDSESolveLinux.dir/ProgressTracker.cpp.o -c /home/jmann/TDSESolveLinux/TDSESolveLinux/ProgressTracker.cpp",
+  "command": "/usr/bin/c++  -I/usr/include/boost -I/usr/include/mkl -I/home/jmann/TDSESolveLinux/TDSESolveLinux -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi  -O3 -march=native -DNDEBUG -fopenmp -g -fopenmp -std=gnu++17 -o CMakeFiles/TDSESolveLinux.dir/ProgressTracker.cpp.o -c /home/jmann/TDSESolveLinux/TDSESolveLinux/ProgressTracker.cpp",
   "file": "/home/jmann/TDSESolveLinux/TDSESolveLinux/ProgressTracker.cpp"
 },
 {
   "directory": "/home/jmann/TDSESolveLinux/TDSESolveLinux/build",
-  "command": "/usr/bin/c++  -I/usr/include/boost -I/usr/include/mkl -I/home/jmann/TDSESolveLinux/TDSESolveLinux  -O3 -march=native -DNDEBUG -g -fopenmp -std=gnu++17 -o CMakeFiles/TDSESolveLinux.dir/TDSEIterator1D.cpp.o -c /home/jmann/TDSESolveLinux/TDSESolveLinux/TDSEIterator1D.cpp",
+  "command": "/usr/bin/c++  -I/usr/include/boost -I/usr/include/mkl -I/home/jmann/TDSESolveLinux/TDSESolveLinux -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi  -O3 -march=native -DNDEBUG -fopenmp -g -fopenmp -std=gnu++17 -o CMakeFiles/TDSESolveLinux.dir/TDSEIterator1D.cpp.o -c /home/jmann/TDSESolveLinux/TDSESolveLinux/TDSEIterator1D.cpp",
   "file": "/home/jmann/TDSESolveLinux/TDSESolveLinux/TDSEIterator1D.cpp"
 },
 {
   "directory": "/home/jmann/TDSESolveLinux/TDSESolveLinux/build",
-  "command": "/usr/bin/c++  -I/usr/include/boost -I/usr/include/mkl -I/home/jmann/TDSESolveLinux/TDSESolveLinux  -O3 -march=native -DNDEBUG -g -fopenmp -std=gnu++17 -o CMakeFiles/TDSESolveLinux.dir/ThreadParser.cpp.o -c /home/jmann/TDSESolveLinux/TDSESolveLinux/ThreadParser.cpp",
+  "command": "/usr/bin/c++  -I/usr/include/boost -I/usr/include/mkl -I/home/jmann/TDSESolveLinux/TDSESolveLinux -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi  -O3 -march=native -DNDEBUG -fopenmp -g -fopenmp -std=gnu++17 -o CMakeFiles/TDSESolveLinux.dir/ThreadParser.cpp.o -c /home/jmann/TDSESolveLinux/TDSESolveLinux/ThreadParser.cpp",
   "file": "/home/jmann/TDSESolveLinux/TDSESolveLinux/ThreadParser.cpp"
 },
 {
   "directory": "/home/jmann/TDSESolveLinux/TDSESolveLinux/build",
-  "command": "/usr/bin/c++  -I/usr/include/boost -I/usr/include/mkl -I/home/jmann/TDSESolveLinux/TDSESolveLinux  -O3 -march=native -DNDEBUG -g -fopenmp -std=gnu++17 -o CMakeFiles/TDSESolveLinux.dir/WfcRhoTools.cpp.o -c /home/jmann/TDSESolveLinux/TDSESolveLinux/WfcRhoTools.cpp",
+  "command": "/usr/bin/c++  -I/usr/include/boost -I/usr/include/mkl -I/home/jmann/TDSESolveLinux/TDSESolveLinux -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi  -O3 -march=native -DNDEBUG -fopenmp -g -fopenmp -std=gnu++17 -o CMakeFiles/TDSESolveLinux.dir/WfcRhoTools.cpp.o -c /home/jmann/TDSESolveLinux/TDSESolveLinux/WfcRhoTools.cpp",
   "file": "/home/jmann/TDSESolveLinux/TDSESolveLinux/WfcRhoTools.cpp"
 },
 {
   "directory": "/home/jmann/TDSESolveLinux/TDSESolveLinux/build",
-  "command": "/usr/bin/c++  -I/usr/include/boost -I/usr/include/mkl -I/home/jmann/TDSESolveLinux/TDSESolveLinux  -O3 -march=native -DNDEBUG -g -fopenmp -std=gnu++17 -o CMakeFiles/TDSESolveLinux.dir/main.cpp.o -c /home/jmann/TDSESolveLinux/TDSESolveLinux/main.cpp",
+  "command": "/usr/bin/c++  -I/usr/include/boost -I/usr/include/mkl -I/home/jmann/TDSESolveLinux/TDSESolveLinux -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi  -O3 -march=native -DNDEBUG -fopenmp -g -fopenmp -std=gnu++17 -o CMakeFiles/TDSESolveLinux.dir/main.cpp.o -c /home/jmann/TDSESolveLinux/TDSESolveLinux/main.cpp",
   "file": "/home/jmann/TDSESolveLinux/TDSESolveLinux/main.cpp"
 }
 ]

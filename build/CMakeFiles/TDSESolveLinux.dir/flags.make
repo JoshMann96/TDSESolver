@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/usr/include/boost -I/usr/include/mkl -I/home/jmann/TDSESolveLinux/TDSESolveLinux
+CXX_INCLUDES = -I/usr/include/boost -I/usr/include/mkl -I/home/jmann/TDSESolveLinux/TDSESolveLinux -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi
 
-CXX_FLAGS =  -O3 -march=native -DNDEBUG -g -fopenmp -std=gnu++17
+CXX_FLAGS =  -O3 -march=native -DNDEBUG -fopenmp -g -fopenmp -std=gnu++17
 

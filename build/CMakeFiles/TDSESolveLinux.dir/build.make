@@ -318,6 +318,8 @@ TDSESolveLinux: CMakeFiles/TDSESolveLinux.dir/main.cpp.o
 TDSESolveLinux: CMakeFiles/TDSESolveLinux.dir/build.make
 TDSESolveLinux: /usr/lib/gcc/x86_64-linux-gnu/12/libgomp.so
 TDSESolveLinux: /usr/lib/x86_64-linux-gnu/libpthread.a
+TDSESolveLinux: /usr/lib/x86_64-linux-gnu/openmpi/lib/libmpi_cxx.so
+TDSESolveLinux: /usr/lib/x86_64-linux-gnu/openmpi/lib/libmpi.so
 TDSESolveLinux: CMakeFiles/TDSESolveLinux.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/jmann/TDSESolveLinux/TDSESolveLinux/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Linking CXX executable TDSESolveLinux"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/TDSESolveLinux.dir/link.txt --verbose=$(VERBOSE)

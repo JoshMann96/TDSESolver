@@ -3,7 +3,7 @@ project(TDSESolveLinux)
 
 # Compiler options
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native -DNDEBUG")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native -DNDEBUG -fopenmp")
 
 # Boost Configuration
 set(BOOST_INC "/usr/include/boost")
@@ -20,6 +20,10 @@ set(MKL_LIBS "-Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_core -lmkl_sequential -l
 # OpenMP Configuration
 find_package(OpenMP REQUIRED)
 
+#MPI Configuration
+find_package(MPI REQUIRED)
+include_directories(SYSTEM ${MPI_INCLUDE_PATH})
+
 
 # Add source files
 file(GLOB SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
@@ -29,7 +33,7 @@ file(GLOB HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 add_executable(TDSESolveLinux ${SOURCES} ${HEADERS})
 
 # Include directories
-target_include_directories(TDSESolveLinux PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" ${BOOST_INC_ROOT} ${MKL_INC_ROOT})
+target_include_directories(TDSESolveLinux PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" ${BOOST_INC_ROOT} ${MKL_INC_ROOT} ${MPI_INCLUDE_PATH})
 
 # Link libraries
-target_link_libraries(TDSESolveLinux PRIVATE OpenMP::OpenMP_CXX ${MKL_LIBS} ${BOOST_LIBS})
+target_link_libraries(TDSESolveLinux PRIVATE OpenMP::OpenMP_CXX MPI::MPI_CXX ${MKL_LIBS} ${BOOST_LIBS})

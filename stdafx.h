@@ -28,6 +28,7 @@
 #include "mkl_vsl.h"
 #include "mkl_dfti.h"
 #include "omp.h"
+#include "mpi.h"
 
 #ifdef USE_RESTRICT
 #else

@@ -105,7 +105,6 @@ int ParallelSimParser::branchOff() {
 		for (int i = 0; i < arrVarSizes.size(); i++) {
 			numSims *= arrVarSizes[i];
 		}
-		std::cout << "Number of simulations to run: " << numSims << ", " << maxSims << " at a time." << std::endl;
 
 		std::stringstream filContents = std::stringstream();
 		filContents << fil->rdbuf();
@@ -117,6 +116,41 @@ int ParallelSimParser::branchOff() {
 			varNames.push_back(arrVarNames.at(i));
 		}
 
+		int size, rank;
+
+    	MPI_Init(NULL, NULL);
+    	MPI_Comm_size(MPI_COMM_WORLD, &size);
+    	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+		std::cout << "Number of simulations to run: " << numSims << " on " << size << " processes." << std::endl;
+
+		int* idxs = new int[numSims];
+		for (int i = 0; i < numSims; i++)
+			idxs[i] = i;
+
+		int i;
+
+		MPI_Scatter(idxs, 1, MPI_INT, &i, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+		std::cout << i << std::endl;
+
+		std::vector<std::string> myVarNames = std::vector<std::string>(varNames);
+		std::vector<double> myVar = std::vector<double>(var);
+		int curVarGen = i;
+		for (int j = 0; j < arrVarSizes.size(); j++) {
+			int idx = curVarGen % arrVarSizes.at(j);
+			myVar.push_back(arrVar.at(j)[idx]);
+			curVarGen /= arrVarSizes.at(j);
+		}
+		std::stringstream* myFil = new std::stringstream(filContents.str());
+
+		ThreadParser* mySim = new ThreadParser(myFil, prg, myVarNames, myVar, i);
+		mySim->readConfig();
+		delete mySim;
+
+		MPI_Finalize();
+
+		/*
 		ThreadPool * pool = new ThreadPool(maxSims);
 		std::vector<std::future<int>> res;
 
@@ -147,7 +181,7 @@ int ParallelSimParser::branchOff() {
 			result.get();
 		res.clear();
 
-		delete pool;
+		delete pool;*/
 	}
 	return 0;
 }

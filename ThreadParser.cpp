@@ -2,14 +2,14 @@
 
 
 
-ThreadParser::ThreadParser(std::stringstream *fil, ProgressTracker *prg, std::vector<std::string> varNames, std::vector<double> var, int simIdx, std::mutex *mtx)
+ThreadParser::ThreadParser(std::stringstream *fil, ProgressTracker *prg, std::vector<std::string> varNames, std::vector<double> var, int simIdx)
 {
 	ThreadParser::fil = fil;
 	ThreadParser::prg = prg;
 	ThreadParser::varNames = varNames;
 	ThreadParser::var = var;
 	ThreadParser::simIdx = simIdx;
-	ThreadParser::mtx = mtx;
+	//ThreadParser::mtx = mtx;
 }
 
 ThreadParser::~ThreadParser() {
