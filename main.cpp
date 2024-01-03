@@ -8,6 +8,7 @@ int main(int argc, char** argv)
 			std::cout << "If address includes spaces, it needs to be surrounded by quotes." << std::endl;
 	}
 	else {
+		MPI_Init(&argc, &argv);
 		cfgParse::readCFG(argv[1]);
 	}
 

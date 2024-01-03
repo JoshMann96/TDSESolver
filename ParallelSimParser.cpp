@@ -96,36 +96,57 @@ void ParallelSimParser::processNewArray(std::string input) {
 }
 
 int ParallelSimParser::branchOff() {
-	int usingMPI;
-	MPI_Initialized(&usingMPI);
+	MPI_Barrier(MPI_COMM_WORLD);
 	if (arrVar.size() == 0) {
 		std::cout << "Expected at least one array. Terminating simulations." << std::endl;
 		return 1;
 	}
-	else if( MPI_Initialized() == 0 )
-		std::cout << "Not using MPI!"
-		
 	else {
+		//calc num of sims
 		int numSims = 1;
 		for (int i = 0; i < arrVarSizes.size(); i++) {
 			numSims *= arrVarSizes[i];
 		}
 
+		//load file contents
 		std::stringstream filContents = std::stringstream();
 		filContents << fil->rdbuf();
 		fil->close();
-
-		ProgressTracker * prg = new ProgressTracker();
 
 		for (int i = 0; i < arrVar.size(); i++) {
 			varNames.push_back(arrVarNames.at(i));
 		}
 
-		int size, rank;
+		//MPI tags
+		enum MPITags { UpdateSent, RequestSent, JobSent, Complete };
 
-    	MPI_Init(NULL, NULL);
+		int size, rank, root_proc=0;
+
     	MPI_Comm_size(MPI_COMM_WORLD, &size);
     	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+
+		if (rank == root_proc){
+			int nJobSent = 0;
+			int nProcDone = 0;
+			int buf;
+			MPI_Status stat;
+
+			ProgressTracker * prg = new ProgressTracker();
+
+			while(nProcDone < size - 1){
+				MPI_Recv(&buf, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD);
+				switch(stat.MPI_TAG){
+					case MPITags::UpdateSent :
+
+				}
+			}
+
+		}
+		else{
+
+		}
+		ProgressTracker * prg = new ProgressTracker();
 
 		std::cout << "Number of simulations to run: " << numSims << " on " << size << " processes." << std::endl;
 
