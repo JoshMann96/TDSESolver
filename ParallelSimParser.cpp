@@ -96,10 +96,15 @@ void ParallelSimParser::processNewArray(std::string input) {
 }
 
 int ParallelSimParser::branchOff() {
+	int usingMPI;
+	MPI_Initialized(&usingMPI);
 	if (arrVar.size() == 0) {
 		std::cout << "Expected at least one array. Terminating simulations." << std::endl;
 		return 1;
 	}
+	else if( MPI_Initialized() == 0 )
+		std::cout << "Not using MPI!"
+		
 	else {
 		int numSims = 1;
 		for (int i = 0; i < arrVarSizes.size(); i++) {
