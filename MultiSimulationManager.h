@@ -11,7 +11,7 @@ private:
 	KineticOperators::KineticOperator_FDM* kin_fdm;
 	double *ts, maxT, dt, dx;
 	double **vs, *spatialDamp;
-	int nPts, index, nelec, mpiRoot, mpiUpdateTag, mpiJob;
+	int nPts, index, nelec, mpiJob;
 	std::complex<double> **psis, *scratch1, *scratch2, *tpsi;
 	double getTotalEnergy(std::complex<double> * psi, double * v);
 
@@ -20,7 +20,7 @@ private:
 	int measPAR(int idx);
 
 public:
-	MultiSimulationManager(int nPts, double dx, double dt, double max, int mpiRoot, int mpiUpdateTag, int mpiJob);
+	MultiSimulationManager(int nPts, double dx, double dt, double max, int mpiJob);
 	~MultiSimulationManager();
 	// Adds a measurer to the simulation.
 	void addMeasurer(Measurers::Measurer * nMeas);

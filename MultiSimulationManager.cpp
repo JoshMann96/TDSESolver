@@ -1,7 +1,7 @@
 #include "stdafx.h"
 
-MultiSimulationManager::MultiSimulationManager(int nPts, double dx, double dt, double maxT, int mpiRoot, int mpiUpdateTag, int mpiJob)
-	: maxT(maxT), dt(dt), dx(dx), nPts(nPts), mpiRoot(mpiRoot), mpiUpdateTag(mpiUpdateTag), mpiJob(mpiJob)
+MultiSimulationManager::MultiSimulationManager(int nPts, double dx, double dt, double maxT, int mpiJob)
+	: maxT(maxT), dt(dt), dx(dx), nPts(nPts), mpiJob(mpiJob)
 {
 	pot = new Potentials::PotentialManager(nPts);
 	meas = new Measurers::MeasurementManager("");
@@ -152,13 +152,13 @@ void MultiSimulationManager::runOS_U2TU(int idx) {
 			//tf = std::chrono::system_clock::now();
 			//dur = tf - t0;
 			//PROGRESS UPDATE
-			MPI_Ssend(&percDone, 1, MPI_INT, mpiRoot, mpiUpdateTag, MPI_COMM_WORLD);
+			MPI_Ssend(&percDone, 1, MPI_INT, MPI_Root_Proc, MPITag::UpdateSent, MPI_COMM_WORLD);
 			percDone++;
 			//std::async(std::launch::async, rLog, prg, idx, ts[prevPrevIndex()] / maxT, (int)(dur.count() * (maxT - ts[prevPrevIndex()]) / ts[prevPrevIndex()]));
 			//numPrints++;
 		}
 	}
-	MPI_Ssend(&percDone, 1, MPI_INT, mpiRoot, mpiUpdateTag, MPI_COMM_WORLD);
+	MPI_Ssend(&percDone, 1, MPI_INT, MPI_Root_Proc, MPITag::UpdateSent, MPI_COMM_WORLD);
 	//std::async(std::launch::async, rLog, prg, idx, ts[prevPrevIndex()] / maxT, (int)(dur.count() * (maxT - ts[prevPrevIndex()]) / ts[prevPrevIndex()]));
 	meas->terminate();
 }
@@ -201,7 +201,7 @@ void MultiSimulationManager::runOS_UW2TUW(int idx) {
 		iterateIndex();
 		if (ts[prevPrevIndex()] / maxT * 100.0 > percDone) {
 			//PROGRESS UPDATE
-			MPI_Ssend(&percDone, 1, MPI_INT, mpiRoot, mpiUpdateTag, MPI_COMM_WORLD);
+			MPI_Ssend(&percDone, 1, MPI_INT, MPI_Root_Proc, MPITag::UpdateSent, MPI_COMM_WORLD);
 			percDone++;
 			//tf = std::chrono::system_clock::now();
 			//dur = tf - t0;
@@ -209,8 +209,6 @@ void MultiSimulationManager::runOS_UW2TUW(int idx) {
 			//numPrints++;
 		}
 	}
-	//std::async(std::launch::async, rLog, prg, idx, ts[prevPrevIndex()] / maxT, (int)(dur.count() * (maxT - ts[prevPrevIndex()]) / ts[prevPrevIndex()]));
-	MPI_Ssend(&percDone, 1, MPI_INT, mpiRoot, mpiUpdateTag, MPI_COMM_WORLD);
 	meas->terminate();
 }
 

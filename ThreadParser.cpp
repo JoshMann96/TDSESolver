@@ -2,8 +2,8 @@
 
 
 
-ThreadParser::ThreadParser(std::stringstream *fil, std::vector<std::string> varNames, std::vector<double> var, int mpiRoot, int mpiUpdateTag, int mpiJob) 
-	: fil(fil), varNames(varNames), var(var), mpiRoot(mpiRoot), mpiUpdateTag(mpiUpdateTag), mpiJob(mpiJob)
+ThreadParser::ThreadParser(std::stringstream *fil, std::vector<std::string> varNames, std::vector<double> var, int mpiJob) 
+	: fil(fil), varNames(varNames), var(var), mpiJob(mpiJob)
 {
 	/*
 	ThreadParser::fil = fil;
@@ -402,6 +402,7 @@ int ThreadParser::readCommand() {
 	}
 	else if (std::strstr(flds->at(0).c_str(), "FIND_EIGENS")) {
 		//mtx->lock();
+		MPI_Ssend(nullptr, 0, MPI_INT, MPI_Root_Proc, MPITag::AmEigenSolving, MPI_COMM_WORLD);
 		sim->findEigenStates(parseVal(flds->at(1)), parseVal(flds->at(2)), 0, 0);
 		sim->addMeasurer(new Measurers::ElectronNumber(sim->getNElec(), fol));
 		nelec[0] = sim->getNElec();
@@ -410,10 +411,14 @@ int ThreadParser::readCommand() {
 	else if (std::strstr(flds->at(0).c_str(), "NEGATE_SELF_POT_INITIAL_STATE"))
 		for (int i = 0; i < spc->size(); i++)
 			spc->at(i)->negateGroundEffects(sim->getPsi(), sim->getKin());
-	else if (std::strstr(flds->at(0).c_str(), "RUN_OS_U2TU"))
+	else if (std::strstr(flds->at(0).c_str(), "RUN_OS_U2TU")){
+		MPI_Ssend(nullptr, 0, MPI_INT, MPI_Root_Proc, MPITag::AmSimulating, MPI_COMM_WORLD);
 		sim->runOS_U2TU(mpiJob);
-	else if (std::strstr(flds->at(0).c_str(), "RUN_OS_UW2TUW"))
+	}
+	else if (std::strstr(flds->at(0).c_str(), "RUN_OS_UW2TUW")){
+		MPI_Ssend(nullptr, 0, MPI_INT, MPI_Root_Proc, MPITag::AmSimulating, MPI_COMM_WORLD);
 		sim->runOS_UW2TUW(mpiJob);
+	}
 	else if (std::strstr(flds->at(0).c_str(), "EXIT"))
 		return 0;
 	else if (std::strstr(flds->at(0).c_str(), "MULTI_ELEC"))
@@ -444,7 +449,7 @@ int ThreadParser::generalSimInit() {
 	} while (!(fil->eof()) && !std::strstr(curLine.c_str(), "END"));
 	n = (((int)((maxX - minX) / dx))/2)*2; // get num points, force even
 	if(multiElec)
-		sim = new MultiSimulationManager(n, dx, dt, maxT, mpiRoot, mpiUpdateTag, mpiJob);
+		sim = new MultiSimulationManager(n, dx, dt, maxT, mpiJob);
 	else {
 		std::cout << "SingleSimulationManager is no longer supported -- Use MultiSimulationManager with 1 simulation." << std::endl;
 		throw -1;
@@ -485,7 +490,7 @@ int ThreadParser::hhgSimInit() {
 
 	n = (int)((maxX - minX) / dx);
 	if (multiElec)
-		sim = new MultiSimulationManager(n, dx, dt, maxT, mpiRoot, mpiUpdateTag, mpiJob);
+		sim = new MultiSimulationManager(n, dx, dt, maxT, mpiJob);
 	else {
 		std::cout << "SingleSimulationManager is no longer supported -- Use MultiSimulationManager with 1 simulation." << std::endl;
 		throw -1;

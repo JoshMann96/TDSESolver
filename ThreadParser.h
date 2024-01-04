@@ -19,7 +19,7 @@ private:
 	std::string inputText = "";
 	int* nelec = new int[1];
 	//std::mutex* mtx;
-	int mpiJob, mpiRoot, mpiUpdateTag;
+	int mpiJob;
 
 	std::vector<std::string> absNames =
 	{
@@ -203,7 +203,7 @@ private:
 	//Proceed to modify addMeasurer in the CPP file.
 
 public:
-	ThreadParser(std::stringstream *fil, std::vector<std::string> varNames, std::vector<double> var, int mpiRoot, int mpiUpdateTag, int mpiJob);
+	ThreadParser(std::stringstream *fil, std::vector<std::string> varNames, std::vector<double> var, int mpiJob);
 	~ThreadParser();
 	void readConfig();
 	int readCommand();

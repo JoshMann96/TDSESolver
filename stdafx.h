@@ -23,6 +23,8 @@
 #include <boost/math/interpolators/cardinal_cubic_b_spline.hpp>
 #include <boost/math/tools/rational.hpp>
 #include <boost/math/special_functions/factorials.hpp>
+#include <boost/assign/list_of.hpp>
+#include <boost/unordered_map.hpp>
 
 #define MKL_Complex16 std::complex<double>
 #include "mkl.h"
@@ -35,6 +37,9 @@
 #else
 #define __restrict
 #endif
+
+typedef enum { UpdateSent, RequestSent, JobSent, Complete, AmInitializing, AmEigenSolving, AmSimulating, AmIdle, AmDone } MPITag;
+inline int MPI_Root_Proc = 0;
 
 #include "ThreadPool.h"
 #include "ProgressTracker.h"

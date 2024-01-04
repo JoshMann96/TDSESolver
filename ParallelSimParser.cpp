@@ -118,10 +118,7 @@ int ParallelSimParser::branchOff() {
 			varNames.push_back(arrVarNames.at(i));
 		}
 
-		//MPI tags
-		enum MPITags { UpdateSent, RequestSent, JobSent, Complete };
-
-		int size, rank, rootProc=0;
+		int size, rank;
 
     	MPI_Comm_size(MPI_COMM_WORLD, &size);
     	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -129,56 +126,58 @@ int ParallelSimParser::branchOff() {
 		MPI_Status stat;
 		int buf;
 
-		if (rank == rootProc){
+		if (rank == MPI_Root_Proc){
 			int curJob = 0;
 			int nProcDone = 0;
 			int* assignedJobs = new int[size];
-			std::fill_n(assignedJobs, size, rootProc);
+			std::fill_n(assignedJobs, size, MPI_Root_Proc);
 
 			ProgressTrackerMPI * prg = new ProgressTrackerMPI(numSims);
 
 			while(nProcDone < size - 1){
 				MPI_Recv(&buf, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &stat);
 				switch(stat.MPI_TAG){
-					case MPITags::UpdateSent :
+					case MPITag::UpdateSent :
 						prg->update(assignedJobs[stat.MPI_SOURCE], buf);
 						prg->output();
 						break;
-					case MPITags::RequestSent :
+					case MPITag::RequestSent :
 						//tell progress tracker that job has been complete
-						if(assignedJobs[stat.MPI_SOURCE] != rootProc)
+						if(assignedJobs[stat.MPI_SOURCE] != MPI_Root_Proc)
 							prg->update(assignedJobs[stat.MPI_SOURCE], 100);
 						//assign job if available, inform tracker of job assignment
 						if(curJob < numSims){
-							std::cout << "Sending Job " << curJob << " to Proc " << stat.MPI_SOURCE << std::endl;
-							MPI_Ssend(&curJob, 1, MPI_INT, stat.MPI_SOURCE, MPITags::JobSent, MPI_COMM_WORLD);
+							std::cout << "Sending Job " << std::setw(4) << curJob << " to Proc " << std::setw(4) << stat.MPI_SOURCE << std::endl;
+							MPI_Ssend(&curJob, 1, MPI_INT, stat.MPI_SOURCE, MPITag::JobSent, MPI_COMM_WORLD);
 							assignedJobs[stat.MPI_SOURCE] = curJob;
 							prg->jobAssigned(curJob, stat.MPI_SOURCE);
                         	curJob++;
 						}
 						else{
-							std::cout << "Proc " << stat.MPI_SOURCE << " all done" << std::endl;
-							MPI_Ssend(nullptr, 0, MPI_INT, stat.MPI_SOURCE, MPITags::Complete, MPI_COMM_WORLD);
+							std::cout << "Proc " << std::setw(4) << stat.MPI_SOURCE << " Fired" << std::endl;
+							MPI_Ssend(nullptr, 0, MPI_INT, stat.MPI_SOURCE, MPITag::Complete, MPI_COMM_WORLD);
 							nProcDone++;
 						}
 						prg->output();
+						break;
+					default:
+						prg->updateStatus(assignedJobs[stat.MPI_SOURCE], (MPITag)stat.MPI_TAG);
 						break;
 				}
 			}
 		}
 		else{
-			std::cout << omp_get_max_threads() << std::endl;
-			std::cout << omp_get_num_threads() << " " << mkl_get_max_threads() << std::endl;
 			int done = 0, job, curVarGen;
 			std::vector<std::string> myVarNames;
 			std::vector<double> myVar;
 			std::stringstream* myFil;
 			ThreadParser* mySim;
 			while(!done){
-				MPI_Ssend(nullptr, 0, MPI_INT, rootProc, MPITags::RequestSent, MPI_COMM_WORLD); //request data
-				MPI_Recv(&job, 1, MPI_INT, rootProc, MPI_ANY_TAG, MPI_COMM_WORLD, &stat); //listen for data
+				MPI_Ssend(nullptr, 0, MPI_INT, MPI_Root_Proc, MPITag::RequestSent, MPI_COMM_WORLD); //request data
+				MPI_Recv(&job, 1, MPI_INT, MPI_Root_Proc, MPI_ANY_TAG, MPI_COMM_WORLD, &stat); //listen for data
 				switch(stat.MPI_TAG){
-					case MPITags::JobSent : //job available, run calculation
+					case MPITag::JobSent : //job available, run calculation
+						MPI_Ssend(nullptr, 0, MPI_INT, MPI_Root_Proc, MPITag::AmInitializing, MPI_COMM_WORLD);
 						myVarNames = std::vector<std::string>(varNames);
 						myVar = std::vector<double>(var);
 						curVarGen = job;
@@ -189,11 +188,12 @@ int ParallelSimParser::branchOff() {
 						}
 						myFil = new std::stringstream(filContents.str());
 
-						mySim = new ThreadParser(myFil, myVarNames, myVar, rootProc, MPITags::UpdateSent, job);
+						mySim = new ThreadParser(myFil, myVarNames, myVar, job);
 						mySim->readConfig();
+						MPI_Ssend(nullptr, 0, MPI_INT, MPI_Root_Proc, MPITag::AmDone, MPI_COMM_WORLD);
 						delete mySim;
 						break;
-					case MPITags::Complete :
+					case MPITag::Complete :
 						done = 1;
 						break;
 				}

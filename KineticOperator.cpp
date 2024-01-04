@@ -452,7 +452,7 @@ namespace KineticOperators {
 			needMat = 0;
 			if (nPts > 46340) {
 				std::cout << "Long datatype is required for grids of size nPts>46340. Rewrite this code (NonUnifGenDisp_PSM::calcOpMat)" << std::endl;
-				throw NULL;
+				return;
 			}
 
 			initializeMatFFT();

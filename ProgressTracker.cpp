@@ -9,10 +9,10 @@ std::string toHMS(double sec){
 	return fmt.str();
 }
 
-template <typename T0, typename T1, typename T2, typename T3, typename T4>
+template <typename T0, typename T1, typename T2, typename T3, typename T4, typename T5>
 void printRow(std::ostream& os, T0 const& job, T1 const& proc, T2 const& prog,
-                T3 const& timeSpent, T4 const& timeRemaining){
-	os << std::setw(5) << job << std::setw(5) << proc << std::setw(30) << prog
+                T3 const& timeSpent, T4 const& timeRemaining, T5 const& currentOperation){
+	os << std::setw(5) << job << std::setw(5) << proc << std::setw(10) << currentOperation << std::setw(30) << prog
        << std::setw(12) << timeSpent << std::setw(12) << timeRemaining << "\n";
 }
 
@@ -110,6 +110,9 @@ ProgressTrackerMPI::ProgressTrackerMPI(int nJobs)
 
 	secondsRemaining = new double[nJobs];
 	std::fill_n(secondsRemaining, nJobs, 0.0);
+
+	currentOperation = new MPITag[nJobs];
+	std::fill_n(currentOperation, nJobs, MPITag::AmIdle);
 }
 
 ProgressTrackerMPI::~ProgressTrackerMPI(){
@@ -129,6 +132,10 @@ void ProgressTrackerMPI::update(int job, int prog){
 		secondsSpent[job] = dur.count();
 		secondsRemaining[job] = (secondsSpent[job]/(double)prog)*(100-prog);
 	}
+}
+
+void ProgressTrackerMPI::updateStatus(int job, MPITag stat){
+	currentOperation[job] = stat;
 }
 
 void ProgressTrackerMPI::jobAssigned(int job, int proc){
@@ -151,14 +158,14 @@ void ProgressTrackerMPI::output(){
 	std::time_t result = std::time(nullptr);
 	fil << std::asctime(std::localtime(&result)) << "\n";
 
-	printRow(fil, "Job", "Proc", progressBar(-1), "TSpent", "TRemain");
+	printRow(fil, "Job", "Proc", progressBar(-1), "TSpent", "TRemain", "Status");
 	for (int i = 0; i < nJobs; i++) {
 		if (jobProc[i] == - 1)
-			printRow(fil, i, "UA", progressBar(0), toHMS(0), "N/A");
+			printRow(fil, i, "UA", progressBar(0), toHMS(0), "N/A", "Queue");
 		else if (jobProg[i] == 0)
-			printRow(fil, i, jobProc[i], progressBar(jobProg[i]), toHMS(0), "N/A");
+			printRow(fil, i, jobProc[i], progressBar(jobProg[i]), toHMS(0), "N/A", tagToString.at(currentOperation[i]));
 		else
-			printRow(fil, i, jobProc[i], progressBar(jobProg[i]), toHMS(secondsSpent[i]), toHMS(secondsRemaining[i]));
+			printRow(fil, i, jobProc[i], progressBar(jobProg[i]), toHMS(secondsSpent[i]), toHMS(secondsRemaining[i]), tagToString.at(currentOperation[i]));
 	}
 
 	try {
