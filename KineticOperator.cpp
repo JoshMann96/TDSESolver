@@ -188,7 +188,7 @@ namespace KineticOperators {
 		if (ifail)
 			delete[] ifail; ifail = NULL;
 
-		std::cout << "GenDisp_PSM created " << nelec << " electrons." << std::endl;
+		//std::cout << "GenDisp_PSM created " << nelec << " electrons." << std::endl;
 	}
 
 	double GenDisp_PSM::evaluateKineticEnergy(std::complex<double>* psi) {
@@ -511,7 +511,7 @@ namespace KineticOperators {
 		if (ifail)
 			delete[] ifail; ifail = NULL;
 
-		std::cout << "NonUnifGenDisp_PSM created " << nelec << " electrons." << std::endl;
+		//std::cout << "NonUnifGenDisp_PSM created " << nelec << " electrons." << std::endl;
 	}
 
 	void NonUnifGenDisp_PSM::initializeKinFFT() {

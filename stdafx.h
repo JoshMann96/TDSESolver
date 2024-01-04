@@ -19,6 +19,7 @@
 #include <string>
 #include <mutex>
 #include <boost/filesystem.hpp>
+#include <boost/format.hpp>
 #include <boost/math/interpolators/cardinal_cubic_b_spline.hpp>
 #include <boost/math/tools/rational.hpp>
 #include <boost/math/special_functions/factorials.hpp>

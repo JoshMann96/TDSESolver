@@ -2,14 +2,17 @@
 
 
 
-ThreadParser::ThreadParser(std::stringstream *fil, ProgressTracker *prg, std::vector<std::string> varNames, std::vector<double> var, int simIdx)
+ThreadParser::ThreadParser(std::stringstream *fil, std::vector<std::string> varNames, std::vector<double> var, int mpiRoot, int mpiUpdateTag, int mpiJob) 
+	: fil(fil), varNames(varNames), var(var), mpiRoot(mpiRoot), mpiUpdateTag(mpiUpdateTag), mpiJob(mpiJob)
 {
+	/*
 	ThreadParser::fil = fil;
-	ThreadParser::prg = prg;
+	//ThreadParser::prg = prg;
 	ThreadParser::varNames = varNames;
 	ThreadParser::var = var;
 	ThreadParser::simIdx = simIdx;
 	//ThreadParser::mtx = mtx;
+	*/
 }
 
 ThreadParser::~ThreadParser() {
@@ -408,9 +411,9 @@ int ThreadParser::readCommand() {
 		for (int i = 0; i < spc->size(); i++)
 			spc->at(i)->negateGroundEffects(sim->getPsi(), sim->getKin());
 	else if (std::strstr(flds->at(0).c_str(), "RUN_OS_U2TU"))
-		sim->runOS_U2TU(prg, simIdx);
+		sim->runOS_U2TU(mpiJob);
 	else if (std::strstr(flds->at(0).c_str(), "RUN_OS_UW2TUW"))
-		sim->runOS_UW2TUW(prg, simIdx);
+		sim->runOS_UW2TUW(mpiJob);
 	else if (std::strstr(flds->at(0).c_str(), "EXIT"))
 		return 0;
 	else if (std::strstr(flds->at(0).c_str(), "MULTI_ELEC"))
@@ -441,7 +444,7 @@ int ThreadParser::generalSimInit() {
 	} while (!(fil->eof()) && !std::strstr(curLine.c_str(), "END"));
 	n = (((int)((maxX - minX) / dx))/2)*2; // get num points, force even
 	if(multiElec)
-		sim = new MultiSimulationManager(n, dx, dt, maxT);
+		sim = new MultiSimulationManager(n, dx, dt, maxT, mpiRoot, mpiUpdateTag, mpiJob);
 	else {
 		std::cout << "SingleSimulationManager is no longer supported -- Use MultiSimulationManager with 1 simulation." << std::endl;
 		throw -1;
@@ -482,7 +485,7 @@ int ThreadParser::hhgSimInit() {
 
 	n = (int)((maxX - minX) / dx);
 	if (multiElec)
-		sim = new MultiSimulationManager(n, dx, dt, maxT);
+		sim = new MultiSimulationManager(n, dx, dt, maxT, mpiRoot, mpiUpdateTag, mpiJob);
 	else {
 		std::cout << "SingleSimulationManager is no longer supported -- Use MultiSimulationManager with 1 simulation." << std::endl;
 		throw -1;

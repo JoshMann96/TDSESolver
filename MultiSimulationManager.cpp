@@ -1,6 +1,7 @@
 #include "stdafx.h"
 
-MultiSimulationManager::MultiSimulationManager(int nPts, double dx, double dt, double maxT)
+MultiSimulationManager::MultiSimulationManager(int nPts, double dx, double dt, double maxT, int mpiRoot, int mpiUpdateTag, int mpiJob)
+	: maxT(maxT), dt(dt), dx(dx), nPts(nPts), mpiRoot(mpiRoot), mpiUpdateTag(mpiUpdateTag), mpiJob(mpiJob)
 {
 	pot = new Potentials::PotentialManager(nPts);
 	meas = new Measurers::MeasurementManager("");
@@ -15,7 +16,10 @@ MultiSimulationManager::MultiSimulationManager(int nPts, double dx, double dt, d
 	scratch2 = new std::complex<double>[nPts];
 	spatialDamp = new double[nPts];
 	std::fill_n(spatialDamp, nPts, 1.0);
+	/*
 	MultiSimulationManager::maxT = maxT; MultiSimulationManager::dt = dt; MultiSimulationManager::dx = dx; MultiSimulationManager::nPts = nPts;
+	MultiSimulationManager::mpiRoot = mpiRoot; MultiSimulationManager::mpiUpdateTag = mpiUpdateTag; MultiSimulationManager::mpiJob = mpiJob;
+	*/
 
 	index = 0;
 	nelec = 0;
@@ -115,21 +119,22 @@ int MultiSimulationManager::measPAR(int idx) {
 }
 
 //Run simulation using operator splitting Fourier method (applies potential as linear)
-void MultiSimulationManager::runOS_U2TU(ProgressTracker* prg, int idx) {
+void MultiSimulationManager::runOS_U2TU(int idx) {
 	iterateIndex();
 	pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()], kin);
 	kin_psm->stepOS_U2TU(psis[prevIndex()], vs[prevIndex()], spatialDamp, psis[index], nelec);
 	iterateIndex();
-	auto t0 = std::chrono::system_clock::now();
-	auto tf = std::chrono::system_clock::now();
+	//auto t0 = std::chrono::system_clock::now();
+	//auto tf = std::chrono::system_clock::now();
 	//auto t1 = std::chrono::high_resolution_clock::now();
 	//auto t2 = std::chrono::high_resolution_clock::now();
 	//auto t3 = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double> dur;
-	int numPrints = 0;
+	//std::chrono::duration<double> dur;
+	//int numPrints = 0;
+	int percDone = 0;
 	std::future<int> f1;
 	auto rM = &MultiSimulationManager::measPAR;
-	auto rLog = &ProgressTracker::update;
+	//auto rLog = &ProgressTracker::update;
 	while (ts[prevPrevIndex()] <= maxT) {
 		f1 = std::async(rM, this, prevPrevIndex());
 
@@ -143,19 +148,23 @@ void MultiSimulationManager::runOS_U2TU(ProgressTracker* prg, int idx) {
 		//std::cout << "Potential: " << dur2.count() << "\nStep: " << dur3.count() << "\n" << std::endl;
 		f1.get();
 		iterateIndex();
-		if (ts[prevPrevIndex()] / maxT * 100.0 > numPrints) {
-			tf = std::chrono::system_clock::now();
-			dur = tf - t0;
-			std::async(std::launch::async, rLog, prg, idx, ts[prevPrevIndex()] / maxT, (int)(dur.count() * (maxT - ts[prevPrevIndex()]) / ts[prevPrevIndex()]));
-			numPrints++;
+		if (ts[prevPrevIndex()] / maxT * 100.0 > percDone) {
+			//tf = std::chrono::system_clock::now();
+			//dur = tf - t0;
+			//PROGRESS UPDATE
+			MPI_Ssend(&percDone, 1, MPI_INT, mpiRoot, mpiUpdateTag, MPI_COMM_WORLD);
+			percDone++;
+			//std::async(std::launch::async, rLog, prg, idx, ts[prevPrevIndex()] / maxT, (int)(dur.count() * (maxT - ts[prevPrevIndex()]) / ts[prevPrevIndex()]));
+			//numPrints++;
 		}
 	}
-	std::async(std::launch::async, rLog, prg, idx, ts[prevPrevIndex()] / maxT, (int)(dur.count() * (maxT - ts[prevPrevIndex()]) / ts[prevPrevIndex()]));
+	MPI_Ssend(&percDone, 1, MPI_INT, mpiRoot, mpiUpdateTag, MPI_COMM_WORLD);
+	//std::async(std::launch::async, rLog, prg, idx, ts[prevPrevIndex()] / maxT, (int)(dur.count() * (maxT - ts[prevPrevIndex()]) / ts[prevPrevIndex()]));
 	meas->terminate();
 }
 
 //Run simulation using operator splitting Fourier method (applies potential as nonlinear, second potential phase is recalculated after propagation phase)
-void MultiSimulationManager::runOS_UW2TUW(ProgressTracker* prg, int idx) {
+void MultiSimulationManager::runOS_UW2TUW(int idx) {
 	tpsi = new std::complex<double>[nPts * nelec];
 	iterateIndex();
 	pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()], kin);
@@ -163,16 +172,17 @@ void MultiSimulationManager::runOS_UW2TUW(ProgressTracker* prg, int idx) {
 	pot->getV(tpsi, ts[prevIndex()], vs[prevIndex()], kin);
 	kin_psm->stepOS_UW(tpsi, vs[prevIndex()], spatialDamp, psis[index], nelec);
 	iterateIndex();
-	auto t0 = std::chrono::system_clock::now();
-	auto tf = std::chrono::system_clock::now();
+	//auto t0 = std::chrono::system_clock::now();
+	//auto tf = std::chrono::system_clock::now();
 	//auto t1 = std::chrono::high_resolution_clock::now();
 	//auto t2 = std::chrono::high_resolution_clock::now();
 	//auto t3 = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double> dur;
-	int numPrints = 0;
+	//std::chrono::duration<double> dur;
+	//int numPrints = 0;
+	int percDone = 0;
 	std::future<int> f1;
 	auto rM = &MultiSimulationManager::measPAR;
-	auto rLog = &ProgressTracker::update;
+	//auto rLog = &ProgressTracker::update;
 	while (ts[prevPrevIndex()] <= maxT) {
 		f1 = std::async(rM, this, prevPrevIndex());
 
@@ -189,14 +199,18 @@ void MultiSimulationManager::runOS_UW2TUW(ProgressTracker* prg, int idx) {
 		//std::cout << "Potential: " << dur2.count() << "\nStep: " << dur3.count() << "\n" << std::endl;
 		f1.get();
 		iterateIndex();
-		if (ts[prevPrevIndex()] / maxT * 100.0 > numPrints) {
-			tf = std::chrono::system_clock::now();
-			dur = tf - t0;
-			std::async(std::launch::async, rLog, prg, idx, ts[prevPrevIndex()] / maxT, (int)(dur.count() * (maxT - ts[prevPrevIndex()]) / ts[prevPrevIndex()]));
-			numPrints++;
+		if (ts[prevPrevIndex()] / maxT * 100.0 > percDone) {
+			//PROGRESS UPDATE
+			MPI_Ssend(&percDone, 1, MPI_INT, mpiRoot, mpiUpdateTag, MPI_COMM_WORLD);
+			percDone++;
+			//tf = std::chrono::system_clock::now();
+			//dur = tf - t0;
+			//std::async(std::launch::async, rLog, prg, idx, ts[prevPrevIndex()] / maxT, (int)(dur.count() * (maxT - ts[prevPrevIndex()]) / ts[prevPrevIndex()]));
+			//numPrints++;
 		}
 	}
-	std::async(std::launch::async, rLog, prg, idx, ts[prevPrevIndex()] / maxT, (int)(dur.count() * (maxT - ts[prevPrevIndex()]) / ts[prevPrevIndex()]));
+	//std::async(std::launch::async, rLog, prg, idx, ts[prevPrevIndex()] / maxT, (int)(dur.count() * (maxT - ts[prevPrevIndex()]) / ts[prevPrevIndex()]));
+	MPI_Ssend(&percDone, 1, MPI_INT, mpiRoot, mpiUpdateTag, MPI_COMM_WORLD);
 	meas->terminate();
 }
 

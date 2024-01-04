@@ -11,7 +11,7 @@ private:
 	KineticOperators::KineticOperator_FDM* kin_fdm;
 	double *ts, maxT, dt, dx;
 	double **vs, *spatialDamp;
-	int nPts, index, nelec;
+	int nPts, index, nelec, mpiRoot, mpiUpdateTag, mpiJob;
 	std::complex<double> **psis, *scratch1, *scratch2, *tpsi;
 	double getTotalEnergy(std::complex<double> * psi, double * v);
 
@@ -20,7 +20,7 @@ private:
 	int measPAR(int idx);
 
 public:
-	MultiSimulationManager(int nPts, double dx, double dt, double max);
+	MultiSimulationManager(int nPts, double dx, double dt, double max, int mpiRoot, int mpiUpdateTag, int mpiJob);
 	~MultiSimulationManager();
 	// Adds a measurer to the simulation.
 	void addMeasurer(Measurers::Measurer * nMeas);
@@ -32,8 +32,8 @@ public:
 	void setKineticOperator_PSM(KineticOperators::KineticOperator_PSM* nkin) { kin = nkin; kin_psm = nkin; }
 	void setKineticOperator_FDM(KineticOperators::KineticOperator_FDM* nkin) { kin = nkin; kin_fdm = nkin; }
 
-	void runOS_U2TU(ProgressTracker* prg, int idx);
-	void runOS_UW2TUW(ProgressTracker* prg, int idx);
+	void runOS_U2TU(int idx);
+	void runOS_UW2TUW(int idx);
 
 	// Finishes initialization of manager (REQUIRED BEFORE RUNNING).
 	void finishInitialization();

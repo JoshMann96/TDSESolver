@@ -17,8 +17,9 @@ void ParallelSimParser::readConfig() {
 
 int ParallelSimParser::readCommand(std::string input) {
 	parsingTools::split(input, flds, ' ');
-	if (input[0] == '#')
-		std::cout << input.substr(1, input.length() - 1) << std::endl;
+	if (input[0] == '#'){
+		//std::cout << input.substr(1, input.length() - 1) << std::endl;
+	}
 	else if (std::strstr(flds->at(0).c_str(), "MAX_SIMS"))
 		maxSims = std::stoi(flds->at(1));
 	else if (std::strstr(flds->at(0).c_str(), "MAX_ELEC"))
@@ -26,7 +27,7 @@ int ParallelSimParser::readCommand(std::string input) {
 	else if (std::strstr(flds->at(0).c_str(), "DEF_ARR"))
 		processNewArray(flds->at(1));
 	else if (std::strstr(flds->at(0).c_str(), "FINISH_DEF")) {
-		std::cout << "Reached end of global initialization. Now branching off...\n" << std::endl;
+		//std::cout << "Reached end of global initialization. Now branching off...\n" << std::endl;
 		return branchOff();
 	}
 	else if (std::strstr(flds->at(0).c_str(), "DEF"))
@@ -53,7 +54,7 @@ void ParallelSimParser::processNewVariable(std::string input) {
 			val *= var[x];
 	}
 	var.push_back(val);
-	std::cout << "Created new variable: " << varNames.back() << " = " << var.back() << std::endl;
+	//std::cout << "Created new variable: " << varNames.back() << " = " << var.back() << std::endl;
 }
 
 void ParallelSimParser::processNewArray(std::string input) {
@@ -89,10 +90,10 @@ void ParallelSimParser::processNewArray(std::string input) {
 			}
 		}
 	}
-	std::cout << "Created new array: " << arrVarNames.back() << " = [";
-	for (int i = 0; i < arrVarSizes.back() - 1; i++)
-		std::cout << arrVar.back()[i] << ", ";
-	std::cout << arrVar.back()[arrVarSizes.back() - 1] << "]" << std::endl;
+	//std::cout << "Created new array: " << arrVarNames.back() << " = [";
+	//for (int i = 0; i < arrVarSizes.back() - 1; i++)
+		//std::cout << arrVar.back()[i] << ", ";
+	//std::cout << arrVar.back()[arrVarSizes.back() - 1] << "]" << std::endl;
 }
 
 int ParallelSimParser::branchOff() {
@@ -120,61 +121,82 @@ int ParallelSimParser::branchOff() {
 		//MPI tags
 		enum MPITags { UpdateSent, RequestSent, JobSent, Complete };
 
-		int size, rank, root_proc=0;
+		int size, rank, rootProc=0;
 
     	MPI_Comm_size(MPI_COMM_WORLD, &size);
     	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+		MPI_Status stat;
+		int buf;
 
-		if (rank == root_proc){
-			int nJobSent = 0;
+		if (rank == rootProc){
+			int curJob = 0;
 			int nProcDone = 0;
-			int buf;
-			MPI_Status stat;
+			int* assignedJobs = new int[size];
+			std::fill_n(assignedJobs, size, rootProc);
 
-			ProgressTracker * prg = new ProgressTracker();
+			ProgressTrackerMPI * prg = new ProgressTrackerMPI(numSims);
 
 			while(nProcDone < size - 1){
-				MPI_Recv(&buf, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD);
+				MPI_Recv(&buf, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &stat);
 				switch(stat.MPI_TAG){
 					case MPITags::UpdateSent :
-
+						prg->update(assignedJobs[stat.MPI_SOURCE], buf);
+						prg->output();
+						break;
+					case MPITags::RequestSent :
+						//tell progress tracker that job has been complete
+						if(assignedJobs[stat.MPI_SOURCE] != rootProc)
+							prg->update(assignedJobs[stat.MPI_SOURCE], 100);
+						//assign job if available, inform tracker of job assignment
+						if(curJob < numSims){
+							std::cout << "Sending Job " << curJob << " to Proc " << stat.MPI_SOURCE << std::endl;
+							MPI_Ssend(&curJob, 1, MPI_INT, stat.MPI_SOURCE, MPITags::JobSent, MPI_COMM_WORLD);
+							assignedJobs[stat.MPI_SOURCE] = curJob;
+							prg->jobAssigned(curJob, stat.MPI_SOURCE);
+                        	curJob++;
+						}
+						else{
+							std::cout << "Proc " << stat.MPI_SOURCE << " all done" << std::endl;
+							MPI_Ssend(nullptr, 0, MPI_INT, stat.MPI_SOURCE, MPITags::Complete, MPI_COMM_WORLD);
+							nProcDone++;
+						}
+						prg->output();
+						break;
 				}
 			}
-
 		}
 		else{
+			int done = 0, job, curVarGen;
+			std::vector<std::string> myVarNames;
+			std::vector<double> myVar;
+			std::stringstream* myFil;
+			ThreadParser* mySim;
+			while(!done){
+				MPI_Ssend(nullptr, 0, MPI_INT, rootProc, MPITags::RequestSent, MPI_COMM_WORLD); //request data
+				MPI_Recv(&job, 1, MPI_INT, rootProc, MPI_ANY_TAG, MPI_COMM_WORLD, &stat); //listen for data
+				switch(stat.MPI_TAG){
+					case MPITags::JobSent : //job available, run calculation
+						myVarNames = std::vector<std::string>(varNames);
+						myVar = std::vector<double>(var);
+						curVarGen = job;
+						for (int j = 0; j < arrVarSizes.size(); j++) {
+							int idx = curVarGen % arrVarSizes.at(j);
+							myVar.push_back(arrVar.at(j)[idx]);
+							curVarGen /= arrVarSizes.at(j);
+						}
+						myFil = new std::stringstream(filContents.str());
 
+						mySim = new ThreadParser(myFil, myVarNames, myVar, rootProc, MPITags::UpdateSent, job);
+						mySim->readConfig();
+						delete mySim;
+						break;
+					case MPITags::Complete :
+						done = 1;
+						break;
+				}
+			}
 		}
-		ProgressTracker * prg = new ProgressTracker();
-
-		std::cout << "Number of simulations to run: " << numSims << " on " << size << " processes." << std::endl;
-
-		int* idxs = new int[numSims];
-		for (int i = 0; i < numSims; i++)
-			idxs[i] = i;
-
-		int i;
-
-		MPI_Scatter(idxs, 1, MPI_INT, &i, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-		std::cout << i << std::endl;
-
-		std::vector<std::string> myVarNames = std::vector<std::string>(varNames);
-		std::vector<double> myVar = std::vector<double>(var);
-		int curVarGen = i;
-		for (int j = 0; j < arrVarSizes.size(); j++) {
-			int idx = curVarGen % arrVarSizes.at(j);
-			myVar.push_back(arrVar.at(j)[idx]);
-			curVarGen /= arrVarSizes.at(j);
-		}
-		std::stringstream* myFil = new std::stringstream(filContents.str());
-
-		ThreadParser* mySim = new ThreadParser(myFil, prg, myVarNames, myVar, i);
-		mySim->readConfig();
-		delete mySim;
-
-		MPI_Finalize();
 
 		/*
 		ThreadPool * pool = new ThreadPool(maxSims);

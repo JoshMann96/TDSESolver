@@ -6,7 +6,7 @@ namespace cfgParse {
 		std::getline(*fil, curLine);
 		if(std::strstr(curLine.c_str(), "MULTIPLE_SIMS_PARALLEL")){
 			ParallelSimParser *sims = new ParallelSimParser(fil);
-			std::cout << "Beginning global initializations..." << std::endl;
+			//std::cout << "Beginning global initializations..." << std::endl;
 			sims->readConfig();
 		}
 	}

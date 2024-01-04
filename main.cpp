@@ -10,6 +10,7 @@ int main(int argc, char** argv)
 	else {
 		MPI_Init(&argc, &argv);
 		cfgParse::readCFG(argv[1]);
+		MPI_Finalize();
 	}
 
 	return 0;

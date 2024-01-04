@@ -18,6 +18,7 @@ public:
 	int readCommand(std::string input);
 	void processNewVariable(std::string input);
 	void processNewArray(std::string input);
+
 	int branchOff();
 };
 

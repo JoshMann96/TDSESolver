@@ -3,7 +3,7 @@ class ThreadParser
 {
 private:
 	std::stringstream *fil;
-	ProgressTracker *prg;
+	//ProgressTracker *prg;
 	std::vector<std::string> varNames;
 	std::vector<double> var;
 	MultiSimulationManager *sim;
@@ -15,11 +15,11 @@ private:
 	double *x;
 	char * fol;
 	int n;
-	int simIdx;
 	int multiElec = 0;
 	std::string inputText = "";
 	int* nelec = new int[1];
 	//std::mutex* mtx;
+	int mpiJob, mpiRoot, mpiUpdateTag;
 
 	std::vector<std::string> absNames =
 	{
@@ -203,7 +203,7 @@ private:
 	//Proceed to modify addMeasurer in the CPP file.
 
 public:
-	ThreadParser(std::stringstream *fil, ProgressTracker *prg, std::vector<std::string> varNames, std::vector<double> var, int simIdx);
+	ThreadParser(std::stringstream *fil, std::vector<std::string> varNames, std::vector<double> var, int mpiRoot, int mpiUpdateTag, int mpiJob);
 	~ThreadParser();
 	void readConfig();
 	int readCommand();
