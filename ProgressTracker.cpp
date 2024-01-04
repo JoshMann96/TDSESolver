@@ -5,14 +5,14 @@ std::string toHMS(double sec){
 	int hrs = (int)(sec/3600.0);
 	int mns = (int)((sec - 3600*hrs)/60.0);
 	int scs = (int)(sec - (3600*hrs + 60*mns));
-	boost::format fmt = boost::format("%-4d:%-2d:%-2d") % hrs % mns % scs;
+	boost::format fmt = boost::format("%04d:%02d:%02d") % hrs % mns % scs;
 	return fmt.str();
 }
 
 template <typename T0, typename T1, typename T2, typename T3, typename T4>
 void printRow(std::ostream& os, T0 const& job, T1 const& proc, T2 const& prog,
                 T3 const& timeSpent, T4 const& timeRemaining){
-	os << std::setw(5) << job << std::setw(5) << proc << std::setw(20) << prog
+	os << std::setw(5) << job << std::setw(5) << proc << std::setw(30) << prog
        << std::setw(12) << timeSpent << std::setw(12) << timeRemaining << "\n";
 }
 
@@ -20,19 +20,17 @@ std::string progressBar(int prog){
 	std::stringstream str = std::stringstream();
 	if (prog != -1){
 		str << "[";
-		for(int i = 0; i < 10; i++)
-			if((i+1)*10 <= prog)
+		for(int i = 0; i < 20; i++)
+			if((i+1)*5 <= prog)
 				str << "=";
-			else if(i*10 < prog)
+			else if(i*5 <= prog && prog != 0)
 				str << ">";
 			else
 				str << " ";
-		str << "] " << prog;
+		str << "] " << (boost::format("%3d") % prog).str();
 	}
 	else{
-		for (int i = 0; i < 12; i++)
-			str << " ";
-		str << " " << "\% Comp";
+		str << "Progress    \%";
 	}
 	return str.str();
 }
@@ -103,7 +101,7 @@ ProgressTrackerMPI::ProgressTrackerMPI(int nJobs)
 	std::fill_n(jobProg, nJobs, 0);
 
 	jobProc = new int[nJobs];
-	std::fill_n(jobProg, nJobs, -1);
+	std::fill_n(jobProc, nJobs, -1);
 
 	jobStart = new std::chrono::time_point<std::chrono::system_clock>[nJobs];
 
