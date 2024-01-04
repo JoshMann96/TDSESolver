@@ -52,7 +52,7 @@ inline int MPI_Root_Proc = 0;
 #include "Measurers.h"
 #include "Potentials.h"
 #include "TDSEIterator1D.h"
-//#include "SimulationManager.h"
+#include "SimulationManager.h"
 //#include "SingleSimulationManager.h"
 #include "MultiSimulationManager.h"
 #include "HHGFunctions.h"
