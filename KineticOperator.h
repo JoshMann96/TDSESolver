@@ -60,7 +60,9 @@ namespace KineticOperators {
 		}
 	private:
 		int firstStep = 1, firstStepMat = 1, firstStepKin = 1, needMat = 1;
-		DFTI_DESCRIPTOR_HANDLE dftiHandle = 0, dftiHandleMat = 0, dftiHandleKin = 0;
+		//DFTI_DESCRIPTOR_HANDLE dftiHandle = 0, dftiHandleMat = 0, dftiHandleKin = 0;
+		fftw_plan fftwHandle, fftwHandleMat, fftwHandleKin;
+
 
 		int nPts, nelec;
 		std::complex<double> *osKineticPhase = nullptr, * osPotentialPhase = nullptr, *opMat = nullptr;
@@ -69,7 +71,7 @@ namespace KineticOperators {
 		double dx, dt;
 
 		void calcOpMat();
-		void initializeFFT(int nelec);
+		void initializeFFT(int nelec, std::complex<double>* arr);
 		void initializeMatFFT();
 		void initializeKinFFT();
 	};

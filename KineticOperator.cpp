@@ -3,7 +3,7 @@
 namespace KineticOperators {
 
 	void GenDisp_PSM::stepOS_U2TU(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nelec) {
-		initializeFFT(nelec);
+		initializeFFT(nelec, targ);
 
 		std::complex<double> vcnst = -PhysCon::im * dt / PhysCon::hbar / 2.0;
 #pragma omp parallel for
@@ -18,7 +18,8 @@ namespace KineticOperators {
 		}
 
 		//Perform FFT, apply full momentum-space phase contribution, invert FFT
-		DftiComputeForward(dftiHandle, targ);
+		//DftiComputeForward(dftiHandle, targ);
+		fftw_execute(fftwHandle);
 
 #pragma omp parallel for
 		for (int i = 0; i < nelec; i++) {
@@ -27,7 +28,8 @@ namespace KineticOperators {
 			}
 		}
 
-		DftiComputeBackward(dftiHandle, targ);
+		//DftiComputeBackward(dftiHandle, targ);
+		fftw_execute(fftwHandle);
 
 		//Apply half of phase contribution from potential
 #pragma omp parallel for
@@ -36,10 +38,12 @@ namespace KineticOperators {
 				targ[i * nPts + j] *= osPotentialPhase[j];
 			}
 		}
+
+		fftw_destroy_plan(fftwHandle);
 	}
 
 	void GenDisp_PSM::stepOS_UW2T(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nelec) {
-		initializeFFT(nelec);
+		initializeFFT(nelec, targ);
 
 		std::complex<double> vcnst = -PhysCon::im * dt / PhysCon::hbar / 2.0;
 #pragma omp parallel for
@@ -54,7 +58,8 @@ namespace KineticOperators {
 		}
 
 		//Perform FFT, apply full momentum-space phase contribution, invert FFT
-		DftiComputeForward(dftiHandle, targ);
+		//DftiComputeForward(dftiHandle, targ);
+		fftw_execute(fftwHandle);
 
 #pragma omp parallel for
 		for (int i = 0; i < nelec; i++) {
@@ -63,7 +68,9 @@ namespace KineticOperators {
 			}
 		}
 
-		DftiComputeBackward(dftiHandle, targ);
+		//DftiComputeBackward(dftiHandle, targ);
+		fftw_execute(fftwHandle);
+		fftw_destroy_plan(fftwHandle);
 	}
 
 	void GenDisp_PSM::stepOS_UW(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nelec) {
@@ -80,15 +87,20 @@ namespace KineticOperators {
 		}
 	}
 
-	void GenDisp_PSM::initializeFFT(int nelec) {
+	void GenDisp_PSM::initializeFFT(int nelec, std::complex<double>* arr) {
 		if (firstStep || GenDisp_PSM::nelec != nelec) {
 			GenDisp_PSM::nelec = nelec;
-			DftiCreateDescriptor(&dftiHandle, DFTI_DOUBLE, DFTI_COMPLEX, 1, nPts);
+			/*DftiCreateDescriptor(&dftiHandle, DFTI_DOUBLE, DFTI_COMPLEX, 1, nPts);
 			DftiSetValue(dftiHandle, DFTI_NUMBER_OF_TRANSFORMS, nelec);
 			DftiSetValue(dftiHandle, DFTI_INPUT_DISTANCE, nPts);
 			DftiSetValue(dftiHandle, DFTI_BACKWARD_SCALE, 1.0 / nPts);
 			//DftiSetValue(dftiHandle, DFTI_THREAD_LIMIT, numThreads);
-			DftiCommitDescriptor(dftiHandle);
+			DftiCommitDescriptor(dftiHandle);*/
+
+			//test FFTW for performance, find best algo
+			std::complex<double>* test = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nelec);
+			fftwHandle = fftw_plan_many_dft(1, &nPts, nelec, test, &nPts, 1, nPts, test, &nPts, 1, nPts, FFTW_FORWARD, FFTW_PATIENT);
+			fftw_destroy_plan(fftwHandle);
 
 			if (firstStep) {
 				if (osPotentialPhase)
@@ -96,14 +108,15 @@ namespace KineticOperators {
 				if (osKineticPhase)
 					delete[] osKineticPhase; osKineticPhase = NULL;
 
-				osPotentialPhase = new std::complex<double>[nPts];
-				osKineticPhase = new std::complex<double>[nPts];
+				osPotentialPhase = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts);
+				osKineticPhase = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts);
 				for (int i = 0; i < nPts; i++)
 					osKineticPhase[i] = std::exp(-PhysCon::im * dt / PhysCon::hbar * osKineticEnergy[i]);
 			}
 
 			firstStep = 0;
 		}
+		fftwHandle = fftw_plan_many_dft(1, &nPts, nelec, arr, &nPts, 1, nPts, arr, &nPts, 1, nPts, FFTW_FORWARD, FFTW_WISDOM_ONLY );
 	}
 
 	void GenDisp_PSM::initializeMatFFT() {

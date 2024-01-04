@@ -25,12 +25,15 @@
 #include <boost/math/special_functions/factorials.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/unordered_map.hpp>
+#include <fftw.h>
 
 #define MKL_Complex16 std::complex<double>
+/*
 #include "mkl.h"
 #include "mkl_vsl.h"
 #include "mkl_dfti.h"
 #include "omp.h"
+*/
 #include "mpi.h"
 
 #ifdef USE_RESTRICT

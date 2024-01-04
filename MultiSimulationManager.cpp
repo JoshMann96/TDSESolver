@@ -9,12 +9,12 @@ MultiSimulationManager::MultiSimulationManager(int nPts, double dx, double dt, d
 	vs = new double*[4];
 	ts = new double[4];
 	for (int i = 0; i < 4; i++) {
-		vs[i] = new double[nPts];
+		vs[i] = (double*) fftw_malloc(sizeof(double) * nPts);
 		ts[i] = i * dt;
 	}
-	scratch1 = new std::complex<double>[nPts];
-	scratch2 = new std::complex<double>[nPts];
-	spatialDamp = new double[nPts];
+	scratch1 = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts);
+	scratch2 = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts);
+	spatialDamp = (double*) fftw_malloc(sizeof(double) * nPts);
 	std::fill_n(spatialDamp, nPts, 1.0);
 	/*
 	MultiSimulationManager::maxT = maxT; MultiSimulationManager::dt = dt; MultiSimulationManager::dx = dx; MultiSimulationManager::nPts = nPts;
@@ -67,11 +67,11 @@ double MultiSimulationManager::getTotalEnergy(std::complex<double> * psi, double
 void MultiSimulationManager::findEigenStates(double emin, double emax, double maxT, double rate) {
 	pot->getV(0.0, vs[index], kin);
 
-	std::complex<double>* states = new std::complex<double>[nPts * nPts];
+	std::complex<double>* states = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nPts);
 
 	kin->findEigenStates(vs[index], emin, emax, states, &nelec);
 
-	psis[0] = new std::complex<double>[nPts * nelec];
+	psis[0] = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nelec);
 
 	vtls::copyArray(nPts * nelec, states, psis[0]);
 
@@ -82,7 +82,7 @@ void MultiSimulationManager::findEigenStates(double emin, double emax, double ma
 		vtls::normalizeSqrNorm(nPts, &psis[0][i * nPts], dx);
 
 	for (int i = 1; i < 4; i++) {
-		psis[i] = new std::complex<double>[nPts * nelec];
+		psis[i] = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nelec);
 		vtls::copyArray(nPts * nelec, psis[0], psis[i]);
 	}
 
