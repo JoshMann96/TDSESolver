@@ -139,7 +139,6 @@ int ParallelSimParser::branchOff() {
 				switch(stat.MPI_TAG){
 					case MPITag::UpdateSent :
 						prg->update(assignedJobs[stat.MPI_SOURCE], buf);
-						prg->output();
 						break;
 					case MPITag::RequestSent :
 						//tell progress tracker that job has been complete
@@ -158,12 +157,12 @@ int ParallelSimParser::branchOff() {
 							MPI_Ssend(nullptr, 0, MPI_INT, stat.MPI_SOURCE, MPITag::Complete, MPI_COMM_WORLD);
 							nProcDone++;
 						}
-						prg->output();
 						break;
 					default:
 						prg->updateStatus(assignedJobs[stat.MPI_SOURCE], (MPITag)stat.MPI_TAG);
 						break;
 				}
+				prg->output();
 			}
 		}
 		else{

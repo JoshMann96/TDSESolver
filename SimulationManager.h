@@ -13,18 +13,18 @@ public:
 	virtual void addSpatialDamp(double* arr) = 0;
 	// Runs simulation.
 	virtual void run() = 0;
-	virtual void runLogProgress(ProgressTracker * prg, int idx) = 0;
+	virtual void runLogProgress(int idx) = 0;
 	// Times individual components of simulation.
 	virtual void runTimed() = 0;
 	// Runs simulation and prints progress.
 	virtual void runPrintProgress() = 0;
 	// Runs the various parts of the simulation in parallel, and prints progress. Keep in mind that with psi-dependent potentials that a 2-step old psi is used to do the calculation.
 	virtual void runParallel() = 0;
-	virtual void runParallelLogProgress(ProgressTracker * prg, int idx) = 0;
-	virtual void runSCFLogProgress(ProgressTracker * prg, int idx, double thresh) = 0;
-	virtual void runPertLogProgress(ProgressTracker* prg, int idx, int nit) = 0;
-	virtual void runOS_U2TULogProgress(ProgressTracker* prg, int idx) = 0;
-	virtual void runOS_UW2TUWLogProgress(ProgressTracker* prg, int idx) = 0;
+	virtual void runParallelLogProgress(int idx) = 0;
+	virtual void runSCFLogProgress(double thresh) = 0;
+	virtual void runPertLogProgress(int idx, int nit) = 0;
+	virtual void runOS_U2TULogProgress(int idx) = 0;
+	virtual void runOS_UW2TUWLogProgress(int idx) = 0;
 	// OBSOLETE
 	virtual void runParallelOMPOld() = 0;
 	// Finishes initialization of manager (REQUIRED BEFORE RUNNING).
