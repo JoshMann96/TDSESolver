@@ -29,7 +29,7 @@ namespace KineticOperators {
 		public KineticOperator_PSM
 	{
 	protected:
-		GenDisp_PSM(int nPts, double dx, double dt) : nPts(nPts), dx(dx), dt(dt), osKineticEnergy(new std::complex<double>[nPts]) {};
+		GenDisp_PSM(int nPts, double dx, double dt) : nPts(nPts), dx(dx), dt(dt), osKineticEnergy((std::complex<double>*)fftw_malloc(sizeof(std::complex<double>)*nPts)) {};
 	public:
 		//Functions useful for updating potential immediately after kinetic phase for nonlinear systems
 		//Half potential then full kinetic (returns in real space)
@@ -56,12 +56,12 @@ namespace KineticOperators {
 		double evaluateKineticEnergy(std::complex<double>* psi);
 
 		void set_osKineticEnergy(std::complex<double>* kinIn) {
-			vtls::copyArray(nPts, kinIn, osKineticEnergy); needMat = 1; firstStep = 1;
+			vtls::copyArray(nPts, kinIn, osKineticEnergy); needMat = 1;
 		}
 	private:
-		int firstStep = 1, firstStepMat = 1, firstStepKin = 1, needMat = 1;
+		int firstStepAll = 1, firstStepOne = 1, needMat = 1;
 		//DFTI_DESCRIPTOR_HANDLE dftiHandle = 0, dftiHandleMat = 0, dftiHandleKin = 0;
-		fftw_plan fftwHandle, fftwHandleMat, fftwHandleKin;
+		fftw_plan fftwAllForward=NULL, fftwAllBackward=NULL, fftwOneForward=NULL, fftwOneBackward=NULL;
 
 
 		int nPts, nelec;
@@ -71,9 +71,13 @@ namespace KineticOperators {
 		double dx, dt;
 
 		void calcOpMat();
-		void initializeFFT(int nelec, std::complex<double>* arr);
-		void initializeMatFFT();
-		void initializeKinFFT();
+		void initializeAllFFT(int nelec);
+		void initializeOneFFT();
+		void executeAllFFTForward(std::complex<double>* targ);
+		void executeAllFFTBackward(std::complex<double>* targ);
+		void executeOneFFTForward(std::complex<double>* targ);
+		void executeOneFFTBackward(std::complex<double>* targ);
+		
 	};
 
 	class GenDisp_PSM_FreeElec :
@@ -104,7 +108,7 @@ namespace KineticOperators {
 	protected:
 		NonUnifGenDisp_PSM(int nPts, double dx, double dt, int nDisp, int expOrder, int forceNormalization) : 
 			nPts(nPts), dx(dx), dt(dt), nDisp(nDisp), expOrder(expOrder), forceNorm(forceNormalization), 
-			osKineticEnergy(new std::complex<double>[nPts * nDisp]), osKineticMask(new double[nPts * nDisp]) {};
+			osKineticEnergy((std::complex<double>*)fftw_malloc(sizeof(std::complex<double>)*nPts*nDisp)), osKineticMask(new double[nPts * nDisp]) {};
 	public:
 		//Functions useful for updating potential immediately after kinetic phase for nonlinear systems
 		//Half potential then full kinetic (returns in real space)
@@ -131,15 +135,16 @@ namespace KineticOperators {
 		double evaluateKineticEnergy(std::complex<double>* psi);
 
 		void set_osKineticEnergy(std::complex<double>* kinIn, double* maskIn) {
-			vtls::copyArray(nPts * nDisp, kinIn, osKineticEnergy); needMat = 1; firstStep = 1;
+			vtls::copyArray(nPts * nDisp, kinIn, osKineticEnergy); needMat = 1; firstStepOne = 1;
 			vtls::copyArray(nPts * nDisp, maskIn, osKineticMask);
 			//take square root, as is required for this method
 			for (int i = 0; i < nPts * nDisp; i++)
 				osKineticEnergy[i] = std::sqrt(osKineticEnergy[i]);
 		}
 	private:
-		int firstStep = 1, firstStepMat = 1, firstStepKin = 1, needMat = 1;
-		DFTI_DESCRIPTOR_HANDLE dftiHandle = 0, dftiHandleMat = 0, dftiHandleKin = 0;
+		int firstStepAll = 1, firstStepOne = 1, needMat = 1;
+		//DFTI_DESCRIPTOR_HANDLE dftiHandle = 0, dftiHandleMat = 0, dftiHandleKin = 0;
+		fftw_plan fftwAllForward=NULL, fftwAllBackward=NULL, fftwOneForward=NULL, fftwOneBackward=NULL;
 
 		int nPts, nelec, nDisp, expOrder, forceNorm;
 		std::complex<double>* osPotentialPhase = nullptr, * opMat = nullptr;
@@ -150,9 +155,12 @@ namespace KineticOperators {
 		double dx, dt;
 
 		void calcOpMat();
-		void initializeFFT(int nelec);
-		void initializeMatFFT();
-		void initializeKinFFT();
+		void initializeAllFFT(int nelec);
+		void initializeOneFFT();
+		void executeAllFFTForward(std::complex<double>* targ);
+		void executeAllFFTBackward(std::complex<double>* targ);
+		void executeOneFFTForward(std::complex<double>* targ);
+		void executeOneFFTBackward(std::complex<double>* targ);
 	};
 
 	class NonUnifGenDisp_PSM_EffMassBoundary :

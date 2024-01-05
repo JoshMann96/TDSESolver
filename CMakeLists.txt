@@ -9,19 +9,21 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native -DNDEBUG -fopenmp")
 # Boost Configuration
 set(BOOST_INC "/usr/include/boost")
 include_directories(${BOOST_INC})
-set(BOOST_LIBS "-lboost_system -lboost_filesystem")
+set(BOOST_LINK_FLAGS "-lboost_system -lboost_filesystem")
 
 # FFTW3 Config
-set(FFTW_INC "/usr/include/")
+set(FFTW_INC "/usr/include")
+set(FFTW_LIB "/usr/lib")
 include_directories(${FFTW_INC})
-set(FFT_LIBS "-lfftw3 -lm")
+link_directories(${FFTW_LIB})
+set(FFTW_LINK_FLAGS "-lfftw3 -lm")
 
 # Intel MKL Configuration
-#set(MKL_INC "/usr/include/mkl")
-#set(MKL_LIB "/usr/lib/x86_64-linux-gnu/mkl/lib")
-#include_directories(${MKL_INC})
-#link_directories(${MKL_LIB})
-#set(MKL_LIBS "-lmkl_intel_thread -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_core -lmkl_sequential -lpthread -lm -ldl")
+set(MKL_INC "/usr/include/mkl")
+set(MKL_LIB "/usr/lib/x86_64-linux-gnu/mkl/lib")
+include_directories(${MKL_INC})
+link_directories(${MKL_LIB})
+set(MKL_LINK_FLAGS "-lmkl_intel_thread -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_core -lmkl_sequential -lpthread -lm -ldl")
 
 # OpenMP Configuration
 find_package(OpenMP REQUIRED)
@@ -29,8 +31,6 @@ find_package(OpenMP REQUIRED)
 #MPI Configuration
 find_package(MPI REQUIRED)
 include_directories(SYSTEM ${MPI_INCLUDE_PATH})
-
-
 
 # Add source files
 file(GLOB SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
@@ -41,8 +41,8 @@ add_executable(TDSESolveLinux ${SOURCES} ${HEADERS})
 
 # Include directories
 #target_include_directories(TDSESolveLinux PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" ${BOOST_INC_ROOT} ${MKL_INC_ROOT} ${MPI_INCLUDE_PATH})
-target_include_directories(TDSESolveLinux PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" ${BOOST_INC_ROOT} ${MPI_INCLUDE_PATH})
+target_include_directories(TDSESolveLinux PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" ${BOOST_INC_ROOT} ${MPI_INCLUDE_PATH} ${FFTW3_INCLUDE_DIRS} ${MKL_INC_ROOT})
 
 # Link libraries
 #target_link_libraries(TDSESolveLinux PRIVATE OpenMP::OpenMP_CXX MPI::MPI_CXX ${MKL_LIBS} ${BOOST_LIBS})
-target_link_libraries(TDSESolveLinux PRIVATE OpenMP::OpenMP_CXX MPI::MPI_CXX ${BOOST_LIBS})
+target_link_libraries(TDSESolveLinux PRIVATE OpenMP::OpenMP_CXX MPI::MPI_CXX ${BOOST_LINK_FLAGS} ${FFTW_LINK_FLAGS} ${MKL_LINK_FLAGS})
