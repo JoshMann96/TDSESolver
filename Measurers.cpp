@@ -571,8 +571,7 @@ namespace Measurers {
 	ExpectE::ExpectE(int len, double dx, const char* fol) {
 		nPts = len;
 		ExpectE::dx = dx;
-		scratch1 = new std::complex<double>[len];
-		scratch2 = new std::complex<double>[len];
+		rho = new double[nPts];
 
 		int l1 = std::strlen(fol), l2 = std::strlen(fname);
 		char* nfil = new char[l1 + l2 + 1];
@@ -598,13 +597,16 @@ namespace Measurers {
 	}
 
 	int ExpectE::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
-		vtls::secondDerivative(nPts, psi, scratch1, dx);
+		/*vtls::secondDerivative(nPts, psi, scratch1, dx);
 		vtls::scaMulArray(nPts, -PhysCon::hbar*PhysCon::hbar / (2.0*PhysCon::me), scratch1);
 		vtls::seqMulArrays(nPts, v, psi, scratch2);
 		vtls::addArrays(nPts, scratch2, scratch1);
 		for (int i = 0; i < nPts; i++)
 			scratch2[i] = std::conj(psi[i]);
-		double ex = std::real(vtlsInt::simpsMul(nPts, scratch1, scratch2, dx));
+		double ex = std::real(vtlsInt::simpsMul(nPts, scratch1, scratch2, dx));*/
+
+		vtls::normSqr(nPts, psi, rho);
+		double ex = vtlsInt::rSumMul(nPts, rho, v, dx) + kin->evaluateKineticEnergy(psi);
 
 		fil.write(reinterpret_cast<char*>(&ex), sizeof(double));
 
