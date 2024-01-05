@@ -187,10 +187,6 @@ namespace KineticOperators {
 			vtls::copyArray(nPts, osKineticEnergy, kinDiags);
 			//DftiComputeBackward(dftiHandleMat, kinDiags);
 			executeOneFFTBackward(kinDiags);
-
-			//normalize FFT
-			for(int i = 0; i < nPts; i++)
-				kinDiags[i] *= 1.0/nPts;
 			
 			//good for row major
 			/*for (int i = 0; i < nPts; i++)
@@ -568,10 +564,6 @@ namespace KineticOperators {
 				vtls::copyArray(nPts, &osKineticEnergy[d*nPts], kinDiags);
 				//DftiComputeBackward(dftiHandleMat, kinDiags);
 				executeOneFFTBackward(kinDiags);
-
-				//normalize FFT
-				for(int i = 0; i < nPts; i++)
-					kinDiags[i] *= 1.0/nPts;
 
 				for (int dk = 0; dk < nPts; dk++) {
 					std::complex<double> cv = kinDiags[dk];

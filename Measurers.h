@@ -536,9 +536,9 @@ namespace Measurers {
 		int index = 23;
 		const char* fname = "expectE0.tdsePART";
 		int nPts;
-		std::complex<double>* scratch1, * scratch2;
 		double dx;
 		double tmea;
+		double* rho;
 		int first = 1;
 	public:
 		int isHeavy() { return 0; };

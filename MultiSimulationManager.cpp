@@ -76,7 +76,7 @@ void MultiSimulationManager::findEigenStates(double emin, double emax, double ma
 	vtls::copyArray(nPts * nelec, states, psis[0]);
 
 	if (states)
-		delete[] states; states = NULL;
+		fftw_free(states); states = NULL;
 
 	for (int i = 0; i < nelec; i++)
 		vtls::normalizeSqrNorm(nPts, &psis[0][i * nPts], dx);
@@ -93,7 +93,7 @@ void MultiSimulationManager::setPsi(std::complex<double>* npsi) {
 		psis = new std::complex<double>*[4];
 		nelec = 1;
 		for (int i = 0; i < 4; i++) {
-			psis[i] = new std::complex<double>[nPts];
+			psis[i] = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts);
 		}
 
 	}
@@ -165,7 +165,7 @@ void MultiSimulationManager::runOS_U2TU(int idx) {
 
 //Run simulation using operator splitting Fourier method (applies potential as nonlinear, second potential phase is recalculated after propagation phase)
 void MultiSimulationManager::runOS_UW2TUW(int idx) {
-	tpsi = new std::complex<double>[nPts * nelec];
+	tpsi = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nelec);
 	iterateIndex();
 	pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()], kin);
 	kin_psm->stepOS_UW2T(psis[prevIndex()], vs[prevIndex()], spatialDamp, tpsi, nelec);
