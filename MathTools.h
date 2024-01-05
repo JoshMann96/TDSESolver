@@ -148,6 +148,31 @@ namespace vtlsInt {
 
 namespace vtls {
 
+	template <typename T>
+	class Convolver{
+	private:
+		int len;
+		fftw_plan fp, bp;
+		fftw_complex *temp1, *temp2;
+	public:
+		Convolver<T>(int len);
+		~Convolver();
+		void compute(T* arr1, T* arr2, T* targ);
+	};
+
+	template <typename T>
+	class MaskConvolver :
+		public Convolver<T>{
+	private:
+		int len;
+		fftw_plan fp, bp;
+		fftw_complex *temp1, *temp2;
+	public:
+		MaskConvolver<T>(int len, T* constArr);
+		~MaskConvolver();
+		void compute(T* arr, T* targ);
+	};
+
 	// Multiplies triag*diag*triag, with triag being a Hermitian matrix (upper triangular rep, column major) and diag being diagonal
 	template <typename T, typename U>
 	void mulTriagDiagTriag(int len, T* triag, U* diag, decltype(std::declval<T&>()* std::declval<U&>())* targ) {
@@ -359,6 +384,9 @@ namespace vtls {
 	void copyArray(int len, std::complex<double>* __restrict arr1, std::complex<double>* __restrict arr2);
 	void copyArray(int len, double* __restrict arr1, std::complex<double>* __restrict arr2);
 
+	template <typename T>
+	void copyArrayRe(int len, T* __restrict arr1, double* __restrict arr2);
+
 	// Takes first derivative at one point
 	template <typename T>
 	T firstDerivative(int len, T* __restrict arr, int pos, double dx) {
@@ -391,8 +419,6 @@ namespace vtls {
 
 	// Finds the location of a value
 	int findValue(int len, double* __restrict arr, double val);
-
-	void mkl_ddcon(double h[], int inch, double x[], int incx, double y[], int incy, int nh, int nx, int iy0, int ny, int id);
 
 	void insertSort_idxs(int len, double* __restrict arr, int* __restrict idxs);
 

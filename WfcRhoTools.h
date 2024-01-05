@@ -50,9 +50,8 @@ namespace WfcToRho {
 	{
 	private:
 		int first = 1;
-		double* psi2, sig;
-		DFTI_DESCRIPTOR_HANDLE dftiHandle = 0;
-		std::complex<double>* mask, *tempRho;
+		double *psi2, *tempRho, sig;
+		vtls::MaskConvolver<double>* conv;
 	public:
 		GaussianSmoothedDensity(double sig) : sig(sig) {}
 		void calcRho(int nPts, int nelec, double dx, double* weights, std::complex<double>* psi, double* rho);

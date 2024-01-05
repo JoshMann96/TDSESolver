@@ -218,7 +218,7 @@ namespace KineticOperators {
 
 		//vtlsPrnt::printArray(nPts, opMat);
 
-		LAPACKE_zhpevx(LAPACK_COL_MAJOR, 'V', 'V', 'U', nPts, opMat, emin, emax, 0, 0, 2 * LAPACKE_dlamch('S'), nEigs, eigs, states, nPts, ifail);
+		LAPACKE_zhpevx(LAPACK_COL_MAJOR, 'V', 'V', 'U', nPts, reinterpret_cast<double __complex__ *>(opMat), emin, emax, 0, 0, 2 * LAPACKE_dlamch('S'), nEigs, eigs, reinterpret_cast<double __complex__ *>(states), nPts, ifail);
 
 		clearOpMat();
 
@@ -597,7 +597,7 @@ namespace KineticOperators {
 
 		//vtlsPrnt::printArray(nPts, opMat);
 
-		LAPACKE_zhpevx(LAPACK_COL_MAJOR, 'V', 'V', 'U', nPts, opMat, emin, emax, 0, 0, 2 * LAPACKE_dlamch('S'), nEigs, eigs, states, nPts, ifail);
+		LAPACKE_zhpevx(LAPACK_COL_MAJOR, 'V', 'V', 'U', nPts, reinterpret_cast<double __complex__ *>(opMat), emin, emax, 0, 0, 2 * LAPACKE_dlamch('S'), nEigs, eigs, reinterpret_cast<double __complex__ *>(states), nPts, ifail);
 
 		clearOpMat();
 

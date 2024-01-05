@@ -26,11 +26,18 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/unordered_map.hpp>
 #include <fftw3.h>
+#include <blis.h>
+#include "lapacke_mangling.h"
+#include "FLAME.h"
+//#include <cblas.h>
 
-#define MKL_Complex16 std::complex<double>
+#define LAPACKE_dlamch dlamch_
+#define LAPACK_COL_MAJOR col_major_
 
-#include "mkl.h"
-#include "mkl_vsl.h"
+//#define MKL_Complex16 std::complex<double>
+
+//#include "mkl.h"
+//#include "mkl_vsl.h"
 //#include "mkl_dfti.h"
 #include "omp.h"
 

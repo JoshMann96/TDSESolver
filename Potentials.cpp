@@ -352,18 +352,7 @@ namespace Potentials {
 		for (int i = 0; i < nPts; i++)
 			stepFunc[i] = 1.0 / (aA*std::exp(-bB * (x[i] - center) / PhysCon::a0) + 1.0);
 
-		initializeConvolution();
-	}
-
-	void WaveFunctionSelfPotentialJellPotMask::initializeConvolution() {
-		status = VSL_STATUS_OK;
-		task_ptr = &task;
-
-		vsldConvNewTaskX1D(task_ptr, VSL_CONV_MODE_FFT, nPts, nPts, nPts, mask, 1);
-		int nPts2 = nPts / 2;
-		vslConvSetStart(task, &nPts2);
-		int one = 1;
-		vslConvSetDecimation(task, &one);
+		conv = new vtls::Convolver<double>(nPts);
 	}
 
 	void WaveFunctionSelfPotentialJellPotMask::negateGroundEffects(std::complex<double> * psi, KineticOperators::KineticOperator* kin) {
@@ -383,13 +372,7 @@ namespace Potentials {
 		vtls::normSqr(nPts, psi, psi2);
 		vtls::seqMulArrays(nPts, stepFunc, psi2);
 
-		status = vsldConvExecX1D(task, psi2, 1, targ, 1);
-
-		if (status != VSL_STATUS_OK) {
-			std::cout << "ERROR: convolution: bad status=" << status << std::endl;
-			std::cin.ignore();
-			exit(1);
-		}
+		conv->compute(psi2, targ, targ);
 
 		vtls::addArrays(nPts, add, targ);
 		vtls::scaAddArray(nPts, -targ[refPoint], targ);

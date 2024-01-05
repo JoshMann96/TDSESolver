@@ -336,7 +336,7 @@ int ThreadParser::addMeasurer(std::string input) {
 		sim->addMeasurer(new Measurers::DoubleConst(p[1], inputText.c_str(), fol));
 		break;
 	case 19:
-		sim->addMeasurer(new Measurers::WignerQPD(n, p[0], p[1], p[2], p[3], p[4], sim->getMaxT(), p[5], x, fol));
+		std::cout << "WignerQPD Measurer Deprecated" << std::endl;
 		break;
 	case 20:
 		sim->addMeasurer(new Measurers::PsiT(n, p[2], p[1], inputText.c_str(), fol));

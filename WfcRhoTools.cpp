@@ -127,15 +127,10 @@ namespace WfcToRho {
 	void GaussianSmoothedDensity::calcRho(int nPts, int nelec, double dx, double* weights, std::complex<double>* psi, double* rho) {
 		if (first) {
 			//Initialize variables
-			psi2 = new double[nPts * nelec];
-			mask = new std::complex<double>[nPts];
-			tempRho = new std::complex<double>[nPts];
+			psi2 = (double*)fftw_malloc(sizeof(double)*nPts*nelec);
+			double* mask = (double*)fftw_malloc(sizeof(double)*nPts);
+			tempRho = (double*)fftw_malloc(sizeof(double)*nPts);
 			first = 0;
-
-			//Initialize FFT for convolution
-			DftiCreateDescriptor(&dftiHandle, DFTI_DOUBLE, DFTI_COMPLEX, 1, nPts);
-			DftiSetValue(dftiHandle, DFTI_BACKWARD_SCALE, 1.0 / nPts);
-			DftiCommitDescriptor(dftiHandle);
 
 			//Initialize Gaussian mask (in k space)
 			for (int i = 0; i < nPts / 2; i++) {
@@ -144,7 +139,9 @@ namespace WfcToRho {
 			}
 			if(nPts%2)
 				mask[nPts/2] = 1.0 / (sig/dx * std::sqrt(2.0 * PhysCon::pi)) * std::exp(-0.5 / (sig * sig) * (nPts * nPts / 4.0 * dx * dx));
-			DftiComputeForward(dftiHandle, mask);
+				
+			//Initialize FFT for convolution
+			conv = new vtls::MaskConvolver(nPts, mask);
 		}
 
 		std::fill_n(tempRho, nPts, 0);
@@ -155,9 +152,7 @@ namespace WfcToRho {
 				tempRho[j] += psi2[i * nPts + j] * pref;
 		}
 
-		DftiComputeForward(dftiHandle, tempRho);
-		vtls::seqMulArrays(nPts, mask, tempRho);
-		DftiComputeBackward(dftiHandle, tempRho);
+		conv->compute(tempRho, rho);
 
 		for (int i = 0; i < nPts; i++)
 			rho[i] = std::real(tempRho[i]);

@@ -2,6 +2,74 @@
 
 
 namespace vtls {
+
+	template<typename T>
+	Convolver<T>::Convolver(int len) : len(len){
+		temp1 = fftw_malloc(sizeof(fftw_complex)*len);
+		temp2 = fftw_malloc(sizeof(fftw_complex)*len);
+		fp = fftw_plan_dft(1, &len, temp1, temp1, FFTW_FORWARD, FFTW_PATIENT);
+		bp = fftw_plan_dft(1, &len, temp2, temp2, FFTW_BACKWARD, FFTW_PATIENT);
+	}
+
+	template<typename T>
+	Convolver<T>::~Convolver(){
+		fftw_free(temp1);
+		fftw_free(temp2);
+		fftw_destroy_plan(fp);
+		fftw_destroy_plan(bp);
+	}
+
+	template<typename T>
+	void Convolver<T>::compute(T* arr1, T* arr2, T* targ){
+		vtls::copyArray(len, arr1, temp1);
+		vtls::copyArray(len, arr2, temp2);
+
+		fftw_execute_dft(fp, temp1, temp1);
+		fftw_execute_dft(fp, temp2, temp2);
+
+		vtls::seqMulArrays(len, temp1, temp2);
+
+		fftw_execute_dft(bp, temp2, temp2);
+
+		vtls::scaMulArrayRe(len, 1.0/len, temp2, targ);
+	}
+
+
+
+	template<typename T>
+	MaskConvolver<T>::MaskConvolver(int len, T* constArr) : len(len){
+		temp1 = fftw_malloc(sizeof(fftw_complex)*len);
+		temp2 = fftw_malloc(sizeof(fftw_complex)*len);
+		fp = fftw_plan_dft(1, &len, temp1, temp1, FFTW_FORWARD, FFTW_PATIENT);
+		bp = fftw_plan_dft(1, &len, temp2, temp2, FFTW_BACKWARD, FFTW_PATIENT);
+
+		vtls::copyArray(len, constArr, temp1);
+		fftw_execute_dft(fp, temp1, temp1);
+	}
+
+	template<typename T>
+	MaskConvolver<T>::~MaskConvolver(){
+		fftw_free(temp1);
+		fftw_free(temp2);
+		fftw_destroy_plan(fp);
+		fftw_destroy_plan(bp);
+	}
+
+	template<typename T>
+	void MaskConvolver<T>::compute(T* arr, T* targ){
+		vtls::copyArray(len, arr, temp2);
+
+		fftw_execute_dft(fp, temp2, temp2);
+
+		vtls::seqMulArrays(len, temp1, temp2);
+
+		fftw_execute_dft(bp, temp2, temp2);
+
+		vtls::scaMulArrayRe(len, 1.0/len, temp2, targ);
+	}
+
+
+
 	void addArraysImag(int len, std::complex<double>* arr1, double* arr2targ) {
 		for (int i = 0; i < len; i++)
 			arr2targ[i] += std::imag(arr1[i]);
@@ -40,6 +108,12 @@ namespace vtls {
 			arr2[i] = arr1[i];
 	}
 
+	template <typename T>
+	void copyArrayRe(int len, T* __restrict arr1, double* __restrict arr2){
+		for (int i = 0; i < len; i++)
+			arr2[i] = std::real(arr1[i]);
+	}
+
 	int findValue(int len, double *__restrict arr, double val) {
 		for (int i = 0; i < len; i++)
 			if (arr[i] >= val)
@@ -48,27 +122,6 @@ namespace vtls {
 			return len - 1;
 		else
 			return -1;
-	}
-
-	void mkl_ddcon(double h[], int inch, double x[], int incx, double y[], int incy, int nh, int nx, int iy0, int ny, int id) {
-		int status = VSL_STATUS_OK, error;
-		VSLConvTaskPtr task, *task_ptr = &task;
-
-		vsldConvNewTask1D(task_ptr, VSL_CONV_MODE_DIRECT, nh, nx, ny);
-		vslConvSetStart(task, &iy0);
-		vslConvSetDecimation(task, &id);
-		status = vsldConvExec1D(task, h, inch, x, incx, y, incy);
-
-		error = vslConvDeleteTask(task_ptr);
-
-		if (status != VSL_STATUS_OK) {
-			printf("ERROR: ddcon(): bad status=%d\n", status);
-			exit(1);
-		}
-		if (error != 0) {
-			printf("ERROR: ddcon(): failed to destroy the task descriptor\n");
-			exit(1);
-		}
 	}
 
 	//idxs should be initialized by user

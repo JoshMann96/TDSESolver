@@ -222,42 +222,6 @@ namespace Measurers {
 		void terminate();
 	};
 
-	class WignerQPD :
-		public Measurer
-	{
-	private:
-		std::fstream fil;
-		int index = 18;
-		int n;
-		int nx;
-		int np;
-		int nt;
-		int windowWid;
-		int curIts;
-		double maxT;
-		double minP;
-		double maxP;
-		double * xs;
-		double * ps;
-		double * ts;
-		double * x;
-		double interval;
-		const char* fname = "wignerqpd.tdsePART";
-		VSLConvTaskPtr task, *task_ptr;
-		int status;
-		std::complex<double> * convEnt;
-		std::complex<double> * convOut;
-		std::complex<double> * output;
-		void initializeConvolution(std::complex<double> * staticElement);
-	public:
-		int isHeavy() { return 0; };
-		int getIndex() { return index; };
-		WignerQPD(int n, int nx, int np, int nt, double minP, double maxP, double maxT, double windowWidth, double * x, const char* fol);
-		~WignerQPD();
-		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
-		void terminate();
-	};
-
 	// Records expectation value of energy.
 	class ExpectE :
 		public Measurer {

@@ -271,9 +271,7 @@ namespace Potentials {
 		double* mask;
 		double* stepFunc;
 		double* add;
-		VSLConvTaskPtr task, * task_ptr;
-		int status;
-		void initializeConvolution();
+		vtls::Convolver<double>* conv;
 	public:
 		WaveFunctionSelfPotentialJellPotMask(int nPts, double* x, double dx, double strength, double otherDimensionDistance, double center, double ef, double w, int refPoint);
 		void negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator* kin);
