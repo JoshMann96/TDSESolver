@@ -72,7 +72,9 @@ namespace WfcToRho {
 
 		dosISpline = boost::math::interpolators::cardinal_cubic_b_spline<double>(dosI, nes, fE[0]*PhysCon::qe - fl, dE*PhysCon::qe);
 		
-		delete[] dos, dosI, fE;
+		delete[] dos;
+		delete[] dosI;
+		delete[] fE;
 	}
 
 	void FromDOS::calcWeights(int nelec, double* energies, double* weights) {
@@ -141,7 +143,7 @@ namespace WfcToRho {
 				mask[nPts/2] = 1.0 / (sig/dx * std::sqrt(2.0 * PhysCon::pi)) * std::exp(-0.5 / (sig * sig) * (nPts * nPts / 4.0 * dx * dx));
 				
 			//Initialize FFT for convolution
-			conv = new vtls::MaskConvolver(nPts, mask);
+			conv = new vtls::MaskConvolver<double>(nPts, mask);
 		}
 
 		std::fill_n(tempRho, nPts, 0);

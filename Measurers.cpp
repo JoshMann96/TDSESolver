@@ -657,7 +657,8 @@ namespace Measurers {
 		VDProbCurrent::pos = vdPos;
 		VDProbCurrent::vdNum = vdNum;
 
-		const char* nm = std::to_string(vdNum).c_str();
+		std::string tempstr = std::to_string(vdNum);
+		const char* nm = tempstr.c_str();
 		int l1 = std::strlen(fol), l2 = std::strlen(nm), l3 = std::strlen(fname);
 		char* nfil = new char[l1 + l2 + l3 + 1];
 		strncpy(nfil, fol, l1);
@@ -702,7 +703,8 @@ namespace Measurers {
 		PsiT::vdNum = vdNum;
 		PsiT::n = n;
 
-		const char* nm = std::to_string(vdNum).c_str();
+		std::string tempstr = std::to_string(vdNum);
+		const char* nm = tempstr.c_str();
 		int l1 = std::strlen(fol), l2 = std::strlen(nm), l3 = std::strlen(fname);
 		char* nfil = new char[l1 + l2 + l3 + 1];
 		strncpy(nfil, fol, l1);
@@ -749,7 +751,8 @@ namespace Measurers {
 		PotT::vdNum = vdNum;
 		PotT::n = n;
 
-		const char* nm = std::to_string(vdNum).c_str();
+		std::string tempstr = std::to_string(vdNum);
+		const char* nm = tempstr.c_str();
 		int l1 = std::strlen(fol), l2 = std::strlen(nm), l3 = std::strlen(fname);
 		char* nfil = new char[l1 + l2 + l3 + 1];
 		strncpy(nfil, fol, l1);
@@ -790,7 +793,8 @@ namespace Measurers {
 		VDPsi::pos = vdPos;
 		VDPsi::vdNum = vdNum;
 
-		const char* nm = std::to_string(vdNum).c_str();
+		std::string tempstr = std::to_string(vdNum);
+		const char* nm = tempstr.c_str();
 		int l1 = std::strlen(fol), l2 = std::strlen(nm), l3 = std::strlen(fname);
 		char* nfil = new char[l1 + l2 + l3 + 1];
 		strncpy(nfil, fol, l1);
@@ -831,7 +835,8 @@ namespace Measurers {
 		VDPot::pos = vdPos;
 		VDPot::vdNum = vdNum;
 
-		const char* nm = std::to_string(vdNum).c_str();
+		std::string tempstr = std::to_string(vdNum);
+		const char* nm = tempstr.c_str();
 		int l1 = std::strlen(fol), l2 = std::strlen(nm), l3 = std::strlen(fname);
 		char* nfil = new char[l1 + l2 + l3 + 1];
 		strncpy(nfil, fol, l1);
@@ -880,7 +885,8 @@ namespace Measurers {
 		phss = new std::complex<double>[nsamp];
 		cumPotPhs = 1;
 
-		const char* nm = std::to_string(vdNum).c_str();
+		std::string tempstr = std::to_string(vdNum);
+		const char* nm = tempstr.c_str();
 		int l1 = std::strlen(fol), l2 = std::strlen(nm), l3 = std::strlen(fname);
 		char* nfil = new char[l1 + l2 + l3 + 1];
 		strncpy(nfil, fol, l1);
@@ -1122,7 +1128,8 @@ namespace Measurers {
 
 			fil.write(reinterpret_cast<char*>(&wghts[0]), sizeof(double)* nelec);
 
-			delete[] energies, wghts;
+			delete[] energies;
+			delete[] wghts;
 
 			return 0;
 		}

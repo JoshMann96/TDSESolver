@@ -360,7 +360,7 @@ namespace Potentials {
 		getV(psi, 0.0, temp, kin);
 		for (int i = 0; i < nPts; i++)
 			add[i] = -temp[i] + add[i];
-		delete temp;
+		delete[] temp;
 	}
 
 	void WaveFunctionSelfPotentialJellPotMask::getV(double t, double * targ, KineticOperators::KineticOperator* kin) {
@@ -521,7 +521,8 @@ namespace Potentials {
 		totPot->getV(0, v0w, kin);
 		WfcToRho::calcEnergies(nelec, nPts, dx, psi, v0w, kin, energies);
 		wght->calcWeights(nelec, energies, prefactor);
-		delete[] energies, v0w;
+		delete[] energies;
+		delete[] v0w;
 		//calcFermiBoxDimensionalityConversion(nelec, nPts, dx, ef, psi, totPot, prefactor);
 		//psi2 = new double[nelec * nPts];
 		//if (nelec < 1)
@@ -659,7 +660,8 @@ namespace Potentials {
 		totPot->getV(0, v0w, kin);
 		WfcToRho::calcEnergies(nelec, nPts, dx, psi, v0w, kin, energies);
 		wght->calcWeights(nelec, energies, prefactor);
-		delete[] energies, v0w;
+		delete[] energies;
+		delete[] v0w;
 		//calcFermiBoxDimensionalityConversion(nelec, nPts, dx, ef, psi, totPot, prefactor);
 	}
 
@@ -772,7 +774,8 @@ namespace Potentials {
 		chargeCenter = (int)chargeCenterD;
 		chargeWidth = (int)chargeWidthD;
 
-		delete[] energies, v0w;
+		delete[] energies;
+		delete[] v0w;
 		//calcFermiBoxDimensionalityConversion(nelec, nPts, dx, ef, psi, totPot, prefactor);
 	}
 
@@ -950,7 +953,8 @@ namespace Potentials {
 		WfcToRho::calcEnergies(nelec, nPts, dx, psi, v0w, kin, energies);
 		wght->calcWeights(nelec, energies, prefactor);
 
-		delete[] energies, v0w;
+		delete[] energies;
+		delete[] v0w;
 		//calcFermiBoxDimensionalityConversion(nelec, nPts, dx, ef, psi, totPot, prefactor);
 	}
 
@@ -1073,7 +1077,8 @@ namespace Potentials {
 		totPot->getV(0, v0w, kin);
 		WfcToRho::calcEnergies(nelec, nPts, dx, psi, v0w, kin, energies);
 		wght->calcWeights(nelec, energies, prefactor);
-		delete[] energies, v0w;
+		delete[] energies;
+		delete[] v0w;
 
 		dens->calcRho(nPts, nelec, dx, prefactor, psi, rho);
 		//pol = vtlsInt::trapzMul(nPts, xs, rho, dx);
@@ -1223,7 +1228,8 @@ namespace Potentials {
 		totPot->getV(0, v0w, kin);
 		WfcToRho::calcEnergies(nelec, nPts, dx, psi, v0w, kin, energies);
 		wght->calcWeights(nelec, energies, prefactor);
-		delete[] energies, v0w;
+		delete[] energies;
+		delete[] v0w;
 		//calcFermiBoxDimensionalityConversion(nelec, nPts, dx, ef, psi, totPot, prefactor);
 	}
 
@@ -1305,7 +1311,8 @@ namespace Potentials {
 		totPot->getV(0, v0w, kin);
 		WfcToRho::calcEnergies(nelec, nPts, dx, psi, v0w, kin, energies);
 		wght->calcWeights(nelec, energies, prefactor);
-		delete[] energies, v0w;
+		delete[] energies;
+		delete[] v0w;
 	}
 
 	void OhmicRetardingPotential::negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {

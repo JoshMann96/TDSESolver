@@ -1,5 +1,38 @@
 cmake_minimum_required(VERSION 3.13)
+
+#aocc environment variables
+#set(ENV{LIBRARY_PATH} "/usr/lib64:/usr/lib/x86_64-linux-gnu:/usr/lib:/usr/lib32:$ENV{LIBRARY_PATH}")
+#set(ENV{LD_LIBRARY_PATH} "/usr/lib64:/usr/lib/x86_64-linux-gnu:/usr/lib:/usr/lib32:$ENV{LD_LIBRARY_PATH}")
+#set(ENV{PATH} "/home/jmann/aocc-compiler-4.1.0/bin:$ENV{PATH}")
+#set(ENV{PATH} "/home/jmann/aocc-compiler-4.1.0/share/opt-viewer:$ENV{PATH}")
+#set(ENV{LIBRARY_PATH} "/home/jmann/aocc-compiler-4.1.0/lib:/home/jmann/aocc-compiler-4.1.0/lib32:$ENV{LIBRARY_PATH}")
+#set(ENV{LD_LIBRARY_PATH} "/home/jmann/aocc-compiler-4.1.0/ompd:/home/jmann/aocc-compiler-4.1.0/lib:/home/jmann/aocc-compiler-4.1.0/lib32:$ENV{LD_LIBRARY_PATH}")
+
+#IF(DEFINED $ENV{C_INCLUDE_PATH})
+#    set(ENV{C_INCLUDE_PATH} "$ENV{C_INCLUDE_PATH}:/home/jmann/aocc-compiler-4.1.0/include")
+#ELSE()
+#    set(ENV{C_INCLUDE_PATH} "/home/jmann/aocc-compiler-4.1.0/include")
+#ENDIF()
+
+#IF(DEFINED $ENV{CPLUS_INCLUDE_PATH})
+#    set(ENV{CPLUS_INCLUDE_PATH} "$ENV{CPLUS_INCLUDE_PATH}:/home/jmann/aocc-compiler-4.1.0/include")
+#ELSE()
+#    set(ENV{CPLUS_INCLUDE_PATH} "/home/jmann/aocc-compiler-4.1.0/include")
+#ENDIF()
+
+#aocl environment variables
+#set(ENV{AOCL_ROOT} "/home/jmann/aocl/4.1.0/aocc")
+#set(ENV{C_INCLUDE_PATH} "/home/jmann/aocl/4.1.0/aocc/include:$ENV{C_INCLUDE_PATH}")
+#set(ENV{CPLUS_INCLUDE_PATH} "/home/jmann/aocl/4.1.0/aocc/include:$ENV{CPLUS_INCLUDE_PATH}")
+#set(ENV{LD_LIBRARY_PATH} "/home/jmann/aocl/4.1.0/aocc/lib:$ENV{LD_LIBRARY_PATH}")
+#set(ENV{LIBRARY_PATH} "/home/jmann/aocl/4.1.0/aocc/lib:$ENV{LIBRARY_PATH}")
+
 project(TDSESolveLinux)
+
+#set compiler
+set(CMAKE_C_COMPILER "/home/jmann/aocc-compiler-4.1.0/bin/clang")
+set(CMAKE_CXX_COMPILER "/home/jmann/aocc-compiler-4.1.0/bin/clang++")
+set(CMAKE_Fortran_COMPILER "/home/jmann/aocc-compiler-4.1.0/bin/flang")
 
 # Compiler options
 set(CMAKE_CXX_STANDARD 17)
@@ -14,12 +47,25 @@ set(BOOST_INC "/usr/include/boost")
 include_directories(${BOOST_INC})
 set(BOOST_LINK_FLAGS "-lboost_system -lboost_filesystem")
 
+#AOCC config
+set(AOCC_ROOT "/home/jmann/aocc")
+set(AOCC_INC "${AOCC_ROOT}/include")
+set(AOCC_LIB "${AOCC_ROOT}/lib")
+include_directories(${AOCC_INC})
+find_library(FLANG_LIB      NAMES flang     HINTS ${AOCC_LIB})
+find_library(OMP_LIB        NAMES omp      HINTS ${AOCC_LIB})
+
 #AOCL config
-set(AOCL_INC "/home/jmann/aocl/4.1.0/aocc/include")
-set(AOCL_LIB "/home/jmann/aocl/4.1.0/aocc/lib")
+set(AOCL_ROOT "/home/jmann/aocl/4.1.0/aocc")
+set(AOCL_INC "${AOCL_ROOT}/include")
+set(AOCL_LIB "${AOCL_ROOT}/lib")
 include_directories(${AOCL_INC})
-link_directories(${AOCL_LIB})
-set(AOCL_LINK_FLAGS "-lm -lpthread -lblis -lfftw3 -lstdc++")
+find_library(BLIS_LIB       NAMES blis      HINTS ${AOCL_LIB})
+find_library(PTHREAD_LIB    NAMES pthread   HINTS ${AOCL_LIB})
+find_library(FFTW3_LIB      NAMES fftw3     HINTS ${AOCL_LIB})
+find_library(FLAME_LIB      NAMES flame     HINTS ${AOCL_LIB})
+
+#set(AOCL_LINK_FLAGS "-lm -lblis -lpthread -lfftw3 -lstdc++ -lflame")
 
 # FFTW3 Config
 #set(FFTW_INC "/usr/include")
@@ -41,10 +87,11 @@ include_directories(SYSTEM ${MPI_INCLUDE_PATH})
 
 # Add source files
 file(GLOB SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
+file(GLOB IMPLEMENTS "${CMAKE_CURRENT_SOURCE_DIR}/*.tpp")
 file(GLOB HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 
 # Add the executable
-add_executable(TDSESolveLinux ${SOURCES} ${HEADERS})
+add_executable(TDSESolveLinux ${SOURCES} ${IMPLEMENTS} ${HEADERS})
 
 # Include directories
 #target_include_directories(TDSESolveLinux PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" ${BOOST_INC_ROOT} ${MKL_INC_ROOT} ${MPI_INCLUDE_PATH})
@@ -52,4 +99,4 @@ target_include_directories(TDSESolveLinux PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" 
 
 # Link libraries
 #target_link_libraries(TDSESolveLinux PRIVATE OpenMP::OpenMP_CXX MPI::MPI_CXX ${MKL_LIBS} ${BOOST_LIBS})
-target_link_libraries(TDSESolveLinux PRIVATE OpenMP::OpenMP_CXX MPI::MPI_CXX ${BOOST_LINK_FLAGS} ${AOCL_LINK_FLAGS})
+target_link_libraries(TDSESolveLinux PRIVATE MPI::MPI_CXX ${FLANG_LIB} ${OMP_LIB} ${BOOST_LINK_FLAGS} ${BLIS_LIB} ${PTHREAD_LIB} ${FFTW3_LIB} ${FLAME_LIB})

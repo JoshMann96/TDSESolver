@@ -26,21 +26,20 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/unordered_map.hpp>
 #include <fftw3.h>
-#include <blis.h>
-#include "lapacke_mangling.h"
-#include "FLAME.h"
-//#include <cblas.h>
+//#define BLIS_DISABLE_BLAS_DEFS
+#include <cblas.h>
+#include <lapacke.h>
 
-#define LAPACKE_dlamch dlamch_
-#define LAPACK_COL_MAJOR col_major_
+//#define LAPACKE_dlamch dlamch_
+//#define LAPACKE_zhpevx zhpevx_
+//#define LAPACK_COL_MAJOR col_major_
 
 //#define MKL_Complex16 std::complex<double>
 
 //#include "mkl.h"
 //#include "mkl_vsl.h"
 //#include "mkl_dfti.h"
-#include "omp.h"
-
+#include <omp.h>
 #include <mpi.h>
 
 #ifdef USE_RESTRICT

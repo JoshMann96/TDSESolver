@@ -148,25 +148,26 @@ namespace vtlsInt {
 
 namespace vtls {
 
-	template <typename T>
+	template <class T>
 	class Convolver{
 	private:
 		int len;
 		fftw_plan fp, bp;
-		fftw_complex *temp1, *temp2;
+		std::complex<double> *temp1, *temp2;
 	public:
+		Convolver<T>(){}
 		Convolver<T>(int len);
 		~Convolver();
 		void compute(T* arr1, T* arr2, T* targ);
 	};
 
-	template <typename T>
+	template <class T>
 	class MaskConvolver :
 		public Convolver<T>{
 	private:
 		int len;
 		fftw_plan fp, bp;
-		fftw_complex *temp1, *temp2;
+		std::complex<double> *temp1, *temp2;
 	public:
 		MaskConvolver<T>(int len, T* constArr);
 		~MaskConvolver();
@@ -289,7 +290,7 @@ namespace vtls {
 		double* tarr = new double[len];
 		normSqr(len, arr, tarr);
 		scaMulArray(len, 1.0 / std::sqrt(vtlsInt::simps(len, tarr, dx)), arr);
-		delete tarr;
+		delete[] tarr;
 	}
 
 	// Gets square norm of an array
@@ -503,3 +504,5 @@ namespace vtlsPrnt {
 		fid.close();
 	}
 }
+
+#include "MathTools.tpp"
