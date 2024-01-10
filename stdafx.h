@@ -25,6 +25,8 @@
 #include <boost/math/special_functions/factorials.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/unordered_map.hpp>
+#include <omp.h>
+#include <mpi.h>
 #include <fftw3.h>
 //#define BLIS_DISABLE_BLAS_DEFS
 #include <cblas.h>
@@ -39,8 +41,6 @@
 //#include "mkl.h"
 //#include "mkl_vsl.h"
 //#include "mkl_dfti.h"
-#include <omp.h>
-#include <mpi.h>
 
 #ifdef USE_RESTRICT
 #else

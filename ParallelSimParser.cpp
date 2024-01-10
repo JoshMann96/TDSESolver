@@ -166,6 +166,9 @@ int ParallelSimParser::branchOff() {
 			}
 		}
 		else{
+			std::cout << "Available OMP threads: " << omp_get_max_threads() << std::endl;
+			omp_set_num_threads(omp_get_max_threads());
+
 			int done = 0, job, curVarGen;
 			std::vector<std::string> myVarNames;
 			std::vector<double> myVar;

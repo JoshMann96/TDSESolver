@@ -101,6 +101,10 @@ namespace KineticOperators {
 				fftw_destroy_plan(fftwAllForward); fftwAllForward=NULL;
 			if(fftwAllBackward)
 				fftw_destroy_plan(fftwAllBackward);fftwAllBackward=NULL;
+
+			fftw_plan_with_nthreads(omp_get_max_threads());
+			std::cout << "Assigned FFTW threads: " << fftw_planner_nthreads() << std:: endl;
+			
 			fftwAllForward = fftw_plan_many_dft(1, &nPts, nelec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_FORWARD, FFTW_PATIENT);
 			fftwAllBackward = fftw_plan_many_dft(1, &nPts, nelec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_BACKWARD, FFTW_PATIENT);
 			fftw_free(test);
@@ -134,6 +138,10 @@ namespace KineticOperators {
 				fftw_destroy_plan(fftwOneForward); fftwOneForward=NULL;
 			if(fftwOneBackward)
 				fftw_destroy_plan(fftwOneBackward); fftwOneBackward=NULL;
+
+			fftw_plan_with_nthreads(omp_get_max_threads());
+			std::cout << "Assigned FFTW threads: " << fftw_planner_nthreads() << std:: endl;
+
 			fftwOneForward = fftw_plan_dft(1, &nPts, reinterpret_cast<fftw_complex*>(test), reinterpret_cast<fftw_complex*>(test), FFTW_FORWARD, FFTW_PATIENT);
 			fftwOneBackward = fftw_plan_dft(1, &nPts, reinterpret_cast<fftw_complex*>(test), reinterpret_cast<fftw_complex*>(test), FFTW_BACKWARD, FFTW_PATIENT);
 			fftw_free(test);
@@ -470,6 +478,10 @@ namespace KineticOperators {
 				fftw_destroy_plan(fftwAllForward); fftwAllForward=NULL;
 			if(fftwAllBackward)
 				fftw_destroy_plan(fftwAllBackward); fftwAllBackward=NULL;
+
+			fftw_plan_with_nthreads(omp_get_max_threads());
+			std::cout << "Assigned FFTW threads: " << fftw_planner_nthreads() << std:: endl;
+			
 			fftwAllForward = fftw_plan_many_dft(1, &nPts, nelec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_FORWARD, FFTW_PATIENT);
 			fftwAllBackward = fftw_plan_many_dft(1, &nPts, nelec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_BACKWARD, FFTW_PATIENT);
 			fftw_free(test);
@@ -504,6 +516,10 @@ namespace KineticOperators {
 				fftw_destroy_plan(fftwOneForward); fftwOneForward=NULL;
 			if(fftwOneBackward)
 				fftw_destroy_plan(fftwOneBackward); fftwOneBackward=NULL;
+
+			fftw_plan_with_nthreads(omp_get_max_threads());
+			std::cout << "Assigned FFTW threads: " << fftw_planner_nthreads() << std:: endl;
+
 			fftwOneForward = fftw_plan_dft(1, &nPts, reinterpret_cast<fftw_complex*>(test), reinterpret_cast<fftw_complex*>(test), FFTW_FORWARD, FFTW_PATIENT);
 			fftwOneBackward = fftw_plan_dft(1, &nPts, reinterpret_cast<fftw_complex*>(test), reinterpret_cast<fftw_complex*>(test), FFTW_BACKWARD, FFTW_PATIENT);
 			fftw_free(test);

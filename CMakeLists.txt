@@ -34,13 +34,17 @@ set(CMAKE_C_COMPILER "/home/jmann/aocc-compiler-4.1.0/bin/clang")
 set(CMAKE_CXX_COMPILER "/home/jmann/aocc-compiler-4.1.0/bin/clang++")
 set(CMAKE_Fortran_COMPILER "/home/jmann/aocc-compiler-4.1.0/bin/flang")
 
+message("C   Compiler: ${CMAKE_C_COMPILER}")
+message("CXX Compiler: ${CMAKE_CXX_COMPILER}")
+message("FTN Compiler: ${CMAKE_Fortran_COMPILER}")
+
 # Compiler options
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native -DNDEBUG -fopenmp")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -fopenmp")
 
-# OpenMP Configuration
-find_package(OpenMP REQUIRED)
+# OpenMP Configuration (USING AOCL BELOW)
+#find_package(OpenMP REQUIRED)
 
 # Boost Configuration
 set(BOOST_INC "/usr/include/boost")
@@ -55,15 +59,29 @@ include_directories(${AOCC_INC})
 find_library(FLANG_LIB      NAMES flang     HINTS ${AOCC_LIB})
 find_library(OMP_LIB        NAMES omp      HINTS ${AOCC_LIB})
 
+message("Using flang: ${FLANG_LIB}")
+message("Using omp: ${OMP_LIB}")
+
 #AOCL config
 set(AOCL_ROOT "/home/jmann/aocl/4.1.0/aocc")
 set(AOCL_INC "${AOCL_ROOT}/include")
 set(AOCL_LIB "${AOCL_ROOT}/lib")
 include_directories(${AOCL_INC})
-find_library(BLIS_LIB       NAMES blis      HINTS ${AOCL_LIB})
-find_library(PTHREAD_LIB    NAMES pthread   HINTS ${AOCL_LIB})
-find_library(FFTW3_LIB      NAMES fftw3     HINTS ${AOCL_LIB})
-find_library(FLAME_LIB      NAMES flame     HINTS ${AOCL_LIB})
+set(BLIS_LIB "-L${AOCL_LIB} -lblis-mt")
+#find_library(BLIS_LIB       NAMES libblis-mt  HINTS ${AOCL_LIB})
+#find_library(PTHREAD_LIB    NAMES pthread   HINTS ${AOCL_LIB})
+find_library(FFTW3_OMP_LIB  NAMES fftw3_omp     HINTS ${AOCL_LIB})
+find_library(FFTW3_LIB      NAMES fftw3         HINTS ${AOCL_LIB})
+find_library(FLAME_LIB      NAMES flame         HINTS ${AOCL_LIB})
+find_library(ALM_LIB        NAMES alm           HINTS ${AOCL_LIB})
+find_library(M_LIB          NAMES m)
+
+message("Using blis: ${BLIS_LIB}")
+message("Using FFTW3_OMP: ${FFTW3_OMP_LIB}")
+message("Using FFTW3: ${FFTW3_LIB}")
+message("Using libFLAME: ${FLAME_LIB}")
+message("Using libALM: ${ALM_LIB}")
+message("Using libM: ${M_LIB}")
 
 #set(AOCL_LINK_FLAGS "-lm -lblis -lpthread -lfftw3 -lstdc++ -lflame")
 
@@ -99,4 +117,4 @@ target_include_directories(TDSESolveLinux PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" 
 
 # Link libraries
 #target_link_libraries(TDSESolveLinux PRIVATE OpenMP::OpenMP_CXX MPI::MPI_CXX ${MKL_LIBS} ${BOOST_LIBS})
-target_link_libraries(TDSESolveLinux PRIVATE MPI::MPI_CXX ${FLANG_LIB} ${OMP_LIB} ${BOOST_LINK_FLAGS} ${BLIS_LIB} ${PTHREAD_LIB} ${FFTW3_LIB} ${FLAME_LIB})
+target_link_libraries(TDSESolveLinux PRIVATE MPI::MPI_CXX ${FLANG_LIB} ${OMP_LIB} ${BOOST_LINK_FLAGS} ${BLIS_LIB} ${FFTW3_OMP_LIB} ${FFTW3_LIB} ${FLAME_LIB} ${ALM_LIB} ${M_LIB})
