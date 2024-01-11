@@ -47,7 +47,7 @@
 #define __restrict
 #endif
 
-typedef enum { UpdateSent, RequestSent, JobSent, Complete, AmInitializing, AmEigenSolving, AmSimulating, AmIdle, AmDone } MPITag;
+typedef enum { UpdateSent, RequestSent, JobSent, Complete, AmInitializing, AmEigenSolving, AmSimulating, AmIdle, AmDone, AmRoot } MPITag;
 inline int MPI_Root_Proc = 0;
 
 #include "ThreadPool.h"
