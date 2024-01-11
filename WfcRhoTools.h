@@ -1,4 +1,8 @@
 #pragma once
+#include "CommonHeader.h"
+#include <boost/math/interpolators/cardinal_cubic_b_spline.hpp>
+#include "KineticOperator.h"
+
 // Different ways of calculating weights (w*|psi(x)|^2 = rho(x) [e/m^3]) for density functional potentials
 namespace WfcToRho {
 	void calcEnergies(int nelec, int nPts, double dx, std::complex<double>* psi, double* totPot, KineticOperators::KineticOperator* kin, double* energies);

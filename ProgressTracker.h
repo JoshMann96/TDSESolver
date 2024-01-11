@@ -1,4 +1,8 @@
 #pragma once
+#include "CommonHeader.h"
+#include <boost/unordered_map.hpp>
+#include <boost/format.hpp>
+#include <boost/assign/list_of.hpp>
 
 std::string toHMS(double sec);
 

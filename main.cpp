@@ -1,4 +1,6 @@
-#include "stdafx.h"
+#include "CommonHeader.h"
+#include "ConfigParser.h"
+
 
 int main(int argc, char** argv)
 {

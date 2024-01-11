@@ -1,4 +1,5 @@
-#include "stdafx.h"
+#include "ConfigParser.h"
+
 
 namespace cfgParse {
 	void readCFG(char *trg) {

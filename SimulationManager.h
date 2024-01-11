@@ -1,4 +1,8 @@
 #pragma once
+#include "CommonHeader.h"
+#include "AbsorptiveRegions.h"
+#include "Potentials.h"
+#include "Measurers.h"
 
 class SimulationManager {
 public:

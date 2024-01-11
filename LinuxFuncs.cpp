@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "LinuxFuncs.h"
 
 namespace OSSpecificFuncs {
 	void createFolder(const char* fol) {

@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "AbsorptiveRegions.h"
 // OBSOLETE
 namespace AbsorptiveRegions {
 	AbsorptiveRegionVel::AbsorptiveRegionVel(double dx, double dt, int nPts, int left, int right, double rate) {

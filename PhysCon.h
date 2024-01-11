@@ -1,4 +1,6 @@
 #pragma once
+
+#include <complex>
 // Various physical constants.
 namespace PhysCon {
 	using namespace std;

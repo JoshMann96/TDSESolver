@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "MultiSimulationManager.h"
 
 MultiSimulationManager::MultiSimulationManager(int nPts, double dx, double dt, double maxT, int mpiJob)
 	: maxT(maxT), dt(dt), dx(dx), nPts(nPts), mpiJob(mpiJob)

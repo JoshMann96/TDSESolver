@@ -1,4 +1,8 @@
 #pragma once
+#include "CommonHeader.h"
+#include "KineticOperator.h"
+#include "WfcRhoTools.h"
+
 // Measurers used for use with a simulation manager (or not).
 namespace Measurers {
 	std::fstream openFile(const char* fol);

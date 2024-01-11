@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "ProgressTracker.h"
 
 
 std::string toHMS(double sec){

@@ -1,4 +1,8 @@
 #pragma once
+#include "CommonHeader.h"
+#include <omp.h>
+#include <fftw3.h>
+#include <lapacke.h>
 
 namespace KineticOperators {
 

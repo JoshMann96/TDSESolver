@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "Potentials.h"
 
 namespace Potentials {
 	FilePotential::FilePotential(int nPts, double * x, double offset, const char * fil, int refPoint) {

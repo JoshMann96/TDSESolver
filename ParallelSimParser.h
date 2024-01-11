@@ -1,4 +1,10 @@
 #pragma once
+#include "CommonHeader.h"
+#include "ConfigParser.h"
+#include "LinuxFuncs.h"
+#include "ProgressTracker.h"
+#include "ThreadParser.h"
+
 class ParallelSimParser
 {
 private:

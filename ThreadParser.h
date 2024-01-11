@@ -1,4 +1,12 @@
 #pragma once
+#include "CommonHeader.h"
+#include "ConfigParser.h"
+#include "WfcRhoTools.h"
+#include "AbsorptiveRegions.h"
+#include "Potentials.h"
+#include "MultiSimulationManager.h"
+#include "HHGFunctions.h"
+
 class ThreadParser
 {
 private:

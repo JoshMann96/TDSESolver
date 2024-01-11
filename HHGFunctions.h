@@ -1,4 +1,6 @@
 #pragma once
+#include "CommonHeader.h"
+
 // Functions that are useful for HHG simulations. Everything is in SI units.
 namespace HHGFunctions {
 	// Calculates image plane position relative to center of Jellium potential, given Fermi energy (ef) and work function (w).

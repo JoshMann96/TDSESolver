@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "WfcRhoTools.h"
 
 namespace WfcToRho {
 	void calcEnergies(int nelec, int nPts, double dx, std::complex<double>* psi, double* totPot, KineticOperators::KineticOperator* kin, double* energies) {

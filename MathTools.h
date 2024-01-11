@@ -1,4 +1,10 @@
 #pragma once
+#include "CommonHeader.h"
+#include <omp.h>
+#include <cblas.h>
+#include <fftw3.h>
+#include "exprtk.hpp"
+#include <boost/math/tools/rational.hpp>
 
 namespace vtlsInt {
 	// Riemann integration.

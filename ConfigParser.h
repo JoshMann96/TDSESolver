@@ -1,4 +1,6 @@
 #pragma once
+#include "CommonHeader.h"
+#include "ParallelSimParser.h"
 
 namespace cfgParse {
 	static std::string curLine;

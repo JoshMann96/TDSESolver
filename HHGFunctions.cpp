@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "HHGFunctions.h"
 
 namespace HHGFunctions {
 	double getZim(double ef, double w) {

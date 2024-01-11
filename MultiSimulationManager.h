@@ -1,4 +1,8 @@
 #pragma once
+#include "CommonHeader.h"
+#include "Measurers.h"
+#include "Potentials.h"
+#include "KineticOperator.h"
 // Manages simulation by controling potentials, measurements, and TDSE iterator(s) for multiple electrons at the same time.
 
 class MultiSimulationManager
