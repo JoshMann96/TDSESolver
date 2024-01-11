@@ -1,2 +1,0 @@
-C:/Users/Joshua/source/repos/carbusta/TDSESolveLinux/out/build/windows-default/CMakeFiles/edit_cache.dir
-C:/Users/Joshua/source/repos/carbusta/TDSESolveLinux/out/build/windows-default/CMakeFiles/rebuild_cache.dir

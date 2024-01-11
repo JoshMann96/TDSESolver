@@ -1,3 +1,0 @@
-/mnt/c/Users/Joshua/source/repos/carbusta/TDSESolveLinux/out/build/linux-default/CMakeFiles/rebuild_cache.dir
-/mnt/c/Users/Joshua/source/repos/carbusta/TDSESolveLinux/out/build/linux-default/CMakeFiles/edit_cache.dir
-/mnt/c/Users/Joshua/source/repos/carbusta/TDSESolveLinux/out/build/linux-default/CMakeFiles/TDSESolveLinux.dir
