@@ -1,6 +1,5 @@
 #pragma once
 #include "CommonHeader.h"
-#include <boost/math/interpolators/cardinal_cubic_b_spline.hpp>
 #include "KineticOperator.h"
 
 // Different ways of calculating weights (w*|psi(x)|^2 = rho(x) [e/m^3]) for density functional potentials

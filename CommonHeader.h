@@ -12,7 +12,6 @@
 #define NOMINMAX
 #include <iomanip>
 #include <future>
-#include <thread>
 #include <cstring>
 #include <string>
 
@@ -27,5 +26,7 @@
 typedef enum { UpdateSent, RequestSent, JobSent, Complete, AmInitializing, AmEigenSolving, AmSimulating, AmIdle, AmDone, AmRoot } MPITag;
 inline int MPI_Root_Proc = 0;
 
+#include <boost/math/interpolators/cardinal_cubic_b_spline.hpp>
+#include <boost/math/tools/rational.hpp>
 #include "MathTools.h"
 #include "PhysCon.h"

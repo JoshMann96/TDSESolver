@@ -2,7 +2,7 @@
 #include "CommonHeader.h"
 #include <omp.h>
 #include <fftw3.h>
-#include <lapacke.h>
+#include <FLAME.h>
 
 namespace KineticOperators {
 
@@ -51,7 +51,7 @@ namespace KineticOperators {
 
 		void clearOpMat() {
 			if (opMat)
-				delete[] opMat; opMat = NULL;
+				fftw_free(opMat); opMat = NULL;
 			needMat = 1;
 		}
 
@@ -130,7 +130,7 @@ namespace KineticOperators {
 
 		void clearOpMat() {
 			if (opMat)
-				delete[] opMat; opMat = NULL;
+				fftw_free(opMat); opMat = NULL;
 			needMat = 1;
 		}
 

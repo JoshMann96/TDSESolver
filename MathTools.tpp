@@ -35,7 +35,6 @@ namespace vtls{
 	}
 
 
-
 	template<class T>
 	MaskConvolver<T>::MaskConvolver(int len, T* constArr) : len(len){
 		temp1 = reinterpret_cast<std::complex<double>*>(fftw_malloc(sizeof(fftw_complex)*len));
