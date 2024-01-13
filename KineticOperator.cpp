@@ -1,5 +1,10 @@
 #include "KineticOperator.h"
 
+int aocl_fla_progress(const char* const api,const integer lenapi,const integer* const progress,const integer* const current_thread,const integer* const total_threads){
+ 		printf( "In AOCL FLA Progress thread %lld, at API %s, progress %lld total threads=%lld\n",*current_thread, api, *progress,*total_threads ); 
+		return 0;
+	}
+
 namespace KineticOperators {
 
 	void GenDisp_PSM::stepOS_U2TU(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nelec) {
@@ -102,6 +107,8 @@ namespace KineticOperators {
 			if(fftwAllBackward)
 				fftw_destroy_plan(fftwAllBackward);fftwAllBackward=NULL;
 			
+			std::cout << "Initializing FFTW Threads - code: " << fftw_init_threads() << std::endl;
+			fftw_plan_with_nthreads(omp_get_max_threads());
 			fftwAllForward = fftw_plan_many_dft(1, &nPts, nelec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_FORWARD, FFTW_PATIENT);
 			fftwAllBackward = fftw_plan_many_dft(1, &nPts, nelec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_BACKWARD, FFTW_PATIENT);
 			fftw_free(test);
@@ -208,7 +215,7 @@ namespace KineticOperators {
 		}
 	}
 
-	void GenDisp_PSM::findEigenStates(double* v, double emin, double emax, std::complex<double>* states, int* nEigs) {
+	void GenDisp_PSM::findEigenStates(double* v, double emin, double emax, std::complex<double>* states, int* nEigs, int* firstState) {
 		if (nPts > 46340) {
 			std::cout << "Long datatype is required for grids of size nPts>46340. Rewrite this code (GenDisp_PSM::findEigenStates)" << std::endl;
 			throw -1;
@@ -227,13 +234,55 @@ namespace KineticOperators {
 		char cV = 'V', cU = 'U', cS = 'S';
 
 		double prec = (2 * dlamch_(&cS));
-		int info;
+		int info = 0;
+
+		//get only desired
+
+		auto t0 = std::chrono::high_resolution_clock::now();
 
 		zhpevx_(&cV, &cV, &cU, &nPts, reinterpret_cast<dcomplex *>(opMat), &emin, &emax, 0, 0, &prec, nEigs, eigs, reinterpret_cast<dcomplex *>(states), &nPts, work, work2, iwork3, ifail, &info);
 
+		auto t1 = std::chrono::high_resolution_clock::now();
+
+		//get all, select desired
+		int lwork = 2*nPts;
+		int lrwork = 1+5*nPts+2*nPts*nPts;
+		double* rwork = (double *)FLA_malloc(sizeof(double)*lrwork);
+		int liwork = 3+5*nPts;
+		int* iwork = (int *)FLA_malloc(sizeof(int)*liwork);
+
+		auto t2 = std::chrono::high_resolution_clock::now();
+
+		zhpevd_(&cV, &cU, &nPts, reinterpret_cast<dcomplex *>(opMat), eigs, reinterpret_cast<dcomplex *>(states), &nPts, work, &lwork, rwork, &lrwork, iwork, &liwork, &info);
+
+		auto t3 = std::chrono::high_resolution_clock::now();
+
+		std::cout << "zhpevx took : " << std::chrono::duration_cast<std::chrono::seconds>(t1-t0).count() << " s" << std::endl;
+		std::cout << "zhpevd took : " << std::chrono::duration_cast<std::chrono::seconds>(t3-t2).count() << " s" << std::endl;
+
+		int startEig = 0;
+		int endEig = 0;
+		for(int i = 0; i < nPts; i++)
+			if(eigs[i]<emin)
+				startEig = i;
+			else if(eigs[i]>emax){
+				endEig = i;
+				break;
+			}
+
+		*firstState = startEig;
+		nelec = endEig - startEig;
+		*nEigs = nelec;
+
+		if(rwork)
+			FLA_free(rwork); rwork=NULL;
+		if(iwork)
+			FLA_free(iwork); iwork=NULL;	
+
+
 		clearOpMat();
 
-		nelec = nEigs[0];
+		//nelec = nEigs[0];
 
 		if (work)
 			FLA_free(work); work = NULL;
@@ -607,7 +656,7 @@ namespace KineticOperators {
 		}
 	}
 
-	void NonUnifGenDisp_PSM::findEigenStates(double* v, double emin, double emax, std::complex<double>* states, int* nEigs) {
+	void NonUnifGenDisp_PSM::findEigenStates(double* v, double emin, double emax, std::complex<double>* states, int* nEigs, int* firstState) {
 		calcOpMat();
 		for (int i = 0; i < nPts; i++)
 			opMat[(i * (i + 3)) / 2] += v[i];
@@ -627,6 +676,7 @@ namespace KineticOperators {
 
 		clearOpMat();
 
+		*firstState = 0;
 		nelec = nEigs[0];
 
 		if (work)

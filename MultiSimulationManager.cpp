@@ -69,11 +69,16 @@ void MultiSimulationManager::findEigenStates(double emin, double emax, double ma
 
 	std::complex<double>* states = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nPts);
 
-	kin->findEigenStates(vs[index], emin, emax, states, &nelec);
+	std::cout << "MultiSimulationManager: Max Threads " << omp_get_max_threads() << std::endl;
+	std::cout << "MultiSimulationManager: OMP Threads " << omp_get_num_threads() << std::endl;
+
+	int firstState;
+
+	kin->findEigenStates(vs[index], emin, emax, states, &nelec, &firstState);
 
 	psis[0] = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nelec);
 
-	vtls::copyArray(nPts * nelec, states, psis[0]);
+	vtls::copyArray(nPts * nelec, &states[firstState*nPts], psis[0]);
 
 	if (states)
 		fftw_free(states); states = NULL;

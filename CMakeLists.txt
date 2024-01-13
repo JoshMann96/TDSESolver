@@ -30,9 +30,9 @@ cmake_minimum_required(VERSION 3.13)
 project(TDSESolveLinux)
 
 #set compiler
-set(CMAKE_C_COMPILER "/home/jmann/aocc-compiler-4.1.0/bin/clang")
-set(CMAKE_CXX_COMPILER "/home/jmann/aocc-compiler-4.1.0/bin/clang++")
-set(CMAKE_Fortran_COMPILER "/home/jmann/aocc-compiler-4.1.0/bin/flang")
+set(CMAKE_C_COMPILER "/home/jmann/bin/clang")
+set(CMAKE_CXX_COMPILER "/home/jmann/bin/clang++")
+set(CMAKE_Fortran_COMPILER "/home/jmann/bin/flang")
 
 message("C   Compiler: ${CMAKE_C_COMPILER}")
 message("CXX Compiler: ${CMAKE_CXX_COMPILER}")
@@ -40,7 +40,7 @@ message("FTN Compiler: ${CMAKE_Fortran_COMPILER}")
 
 # Compiler options
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -std=c++1y -O3 -march=znver2 -mtune=native -DNDEBUG -fopenmp")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=znver2 -mtune=native -DNDEBUG -fopenmp")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -fopenmp")
 
 # OpenMP Configuration (USING AOCL BELOW)
@@ -52,10 +52,10 @@ include_directories(${BOOST_INC})
 set(BOOST_LINK_FLAGS "-lboost_system -lboost_filesystem")
 
 #AOCC config
-set(AOCC_ROOT "/home/jmann/aocc")
+set(AOCC_ROOT "/home/jmann")
 set(AOCC_INC "${AOCC_ROOT}/include")
 set(AOCC_LIB "${AOCC_ROOT}/lib")
-set(AOCC_LIBS "-L${AOCL_LIB} -lomp -lflang")
+set(AOCC_LIBS "-L${AOCC_LIB} -lomp -lflang")
 include_directories(${AOCC_INC})
 #find_library(FLANG_LIB      NAMES flang     HINTS ${AOCC_LIB})
 #find_library(OMP_LIB        NAMES omp      HINTS ${AOCC_LIB})
@@ -64,11 +64,13 @@ include_directories(${AOCC_INC})
 #message("Using omp: ${OMP_LIB}")
 
 #AOCL config
-set(AOCL_ROOT "/home/jmann/aocl/4.1.0/aocc")
+set(AOCL_ROOT "/home/jmann")
 set(AOCL_INC "${AOCL_ROOT}/include")
 set(AOCL_LIB "${AOCL_ROOT}/lib")
+set(BLIS_INC "${AOCL_INC}/blis")
 include_directories(${AOCL_INC})
-set(AOCL_LIBS "-L${AOCL_LIB} -lblis-mt -lflame -lfftw3_omp -lfftw3 -lalm -lm")
+include_directories(${BLIS_INC})
+set(AOCL_LIBS "-L${AOCL_LIB} -lflame -lfftw3_omp -lfftw3 -lblis-mt  -lalm -lm -lstdc++ -lpthread")
 #find_library(BLIS_LIB       NAMES libblis-mt  HINTS ${AOCL_LIB})
 #find_library(PTHREAD_LIB    NAMES pthread   HINTS ${AOCL_LIB})
 #find_library(FFTW3_OMP_LIB  NAMES fftw3_omp     HINTS ${AOCL_LIB})
@@ -114,7 +116,7 @@ add_executable(TDSESolveLinux ${SOURCES} ${IMPLEMENTS} ${HEADERS})
 
 # Include directories
 #target_include_directories(TDSESolveLinux PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" ${BOOST_INC_ROOT} ${MKL_INC_ROOT} ${MPI_INCLUDE_PATH})
-target_include_directories(TDSESolveLinux PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" ${BOOST_INC_ROOT} ${MPI_INCLUDE_PATH} ${AOCL_INC})
+target_include_directories(TDSESolveLinux PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" ${MPI_INCLUDE_PATH} ${AOCL_INC} ${BLIS_INC} ${BOOST_INC_ROOT})
 
 # Link libraries
 #target_link_libraries(TDSESolveLinux PRIVATE OpenMP::OpenMP_CXX MPI::MPI_CXX ${MKL_LIBS} ${BOOST_LIBS})

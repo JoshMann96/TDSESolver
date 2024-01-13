@@ -11,7 +11,7 @@ namespace KineticOperators {
 	public:
 		virtual std::complex<double>* getOperatorMatrix() = 0;
 		virtual double evaluateKineticEnergy(std::complex<double>* psi) = 0;
-		virtual void findEigenStates(double* v, double emin, double emax, std::complex<double>* states, int* nEigs) = 0;
+		virtual void findEigenStates(double* v, double emin, double emax, std::complex<double>* states, int* nEigs, int* firstState) = 0;
 	};
 
 	class KineticOperator_PSM :
@@ -55,7 +55,7 @@ namespace KineticOperators {
 			needMat = 1;
 		}
 
-		void findEigenStates(double* v, double emin, double emax, std::complex<double>* states, int* nEigs);
+		void findEigenStates(double* v, double emin, double emax, std::complex<double>* states, int* nEigs, int* firstState);
 
 		double evaluateKineticEnergy(std::complex<double>* psi);
 
@@ -134,7 +134,7 @@ namespace KineticOperators {
 			needMat = 1;
 		}
 
-		void findEigenStates(double* v, double emin, double emax, std::complex<double>* states, int* nEigs);
+		void findEigenStates(double* v, double emin, double emax, std::complex<double>* states, int* nEigs, int* firstState);
 
 		double evaluateKineticEnergy(std::complex<double>* psi);
 
