@@ -166,8 +166,7 @@ int ParallelSimParser::branchOff() {
 			}
 		}
 		else{
-			omp_set_num_threads(omp_get_max_threads());
-			//std::cout << "Initializing FFTW Threads - code: " << fftw_init_threads() << std::endl;
+			//omp_set_num_threads(omp_get_max_threads());
 
 			int done = 0, job, curVarGen;
 			std::vector<std::string> myVarNames;
