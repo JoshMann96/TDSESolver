@@ -5,6 +5,8 @@
 #include "ProgressTracker.h"
 #include "ThreadParser.h"
 
+
+//reads config file and listens to root process for receiving assignments
 class ParallelSimParser
 {
 private:
@@ -13,8 +15,6 @@ private:
 	std::vector<std::string> arrVarNames = std::vector<std::string>(0), varNames = std::vector<std::string>(0);
 	std::vector<int> arrVarSizes = std::vector<int>(0);
 	std::fstream * fil;
-	int maxSims = 1;
-	int maxElecThreads = 1;
 	std::vector<std::string> * flds = new std::vector<std::string>(0);
 	std::string curLine = "";
 public:

@@ -12,30 +12,25 @@ ParallelSimParser::~ParallelSimParser()
 }
 
 void ParallelSimParser::readConfig() {
+	//read each line in the file so long as readCommand 
 	do { std::getline(*fil, curLine); } while (readCommand(curLine) && !(fil->eof()));
 }
 
 int ParallelSimParser::readCommand(std::string input) {
 	parsingTools::split(input, flds, ' ');
-	if (input[0] == '#'){
-		//std::cout << input.substr(1, input.length() - 1) << std::endl;
-	}
-	else if (std::strstr(flds->at(0).c_str(), "MAX_SIMS"))
-		maxSims = std::stoi(flds->at(1));
-	else if (std::strstr(flds->at(0).c_str(), "MAX_ELEC"))
-		maxElecThreads = std::stoi(flds->at(1));
-	else if (std::strstr(flds->at(0).c_str(), "DEF_ARR"))
+	if (input[0] == '#') //comment
+		return 1;
+	else if (std::strstr(flds->at(0).c_str(), "DEF_ARR")) //defining array variable
 		processNewArray(flds->at(1));
-	else if (std::strstr(flds->at(0).c_str(), "FINISH_DEF")) {
-		//std::cout << "Reached end of global initialization. Now branching off...\n" << std::endl;
+	else if (std::strstr(flds->at(0).c_str(), "FINISH_DEF")) //finished with definitions, computation processes create thread parsers to evaluate the rest of the cfg
 		return branchOff();
-	}
-	else if (std::strstr(flds->at(0).c_str(), "DEF"))
+	else if (std::strstr(flds->at(0).c_str(), "DEF")) //defining scalar variable
 		processNewVariable(flds->at(1));
-	else if (std::strstr(flds->at(0).c_str(), "MASTER_FOL"))
+	else if (std::strstr(flds->at(0).c_str(), "MASTER_FOL")) //available but obsolete
 		OSSpecificFuncs::createFolder(flds->at(1).c_str());
 	else {
-		std::cout << "- " << input << std::endl;
+		std::cout << "- " << input << std::endl; //
+		return 0; //
 	}
 	return 1;
 }

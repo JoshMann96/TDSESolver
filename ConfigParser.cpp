@@ -2,18 +2,16 @@
 
 
 namespace cfgParse {
+	//read and execute config file
 	void readCFG(char *trg) {
 		fil = new std::fstream(trg, std::ios::in);
-		std::getline(*fil, curLine);
-		if(std::strstr(curLine.c_str(), "MULTIPLE_SIMS_PARALLEL")){
-			ParallelSimParser *sims = new ParallelSimParser(fil);
-			//std::cout << "Beginning global initializations..." << std::endl;
-			sims->readConfig();
-		}
+		ParallelSimParser *sims = new ParallelSimParser(fil);
+		sims->readConfig();
 	}
 }
 
 namespace parsingTools {
+	//split string via delimiter
 	void split(const std::string str, std::vector<std::string> * fields, char delim) {
 		fields->clear();
 		int startPos = 0;
@@ -29,6 +27,7 @@ namespace parsingTools {
 			fields->push_back("");
 	}
 
+	//find string that matches
 	int findMatch(const std::string *cmp, const std::vector<std::string> *lst) {
 		for (int i = 0; i < lst->size(); i++)
 			if(std::strstr(cmp->c_str(), lst->at(i).c_str()))
