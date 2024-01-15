@@ -152,7 +152,6 @@ namespace vtlsInt {
 };
 
 namespace vtls {
-
 	template <class T>
 	class Convolver{
 	private:

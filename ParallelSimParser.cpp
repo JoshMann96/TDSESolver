@@ -171,6 +171,10 @@ int ParallelSimParser::branchOff() {
 		else{
 			//omp_set_num_threads(omp_get_max_threads());
 
+			//set wisdom file according to number of threads used
+			char* wisdomFile = new char[50];
+			std::snprintf(wisdomFile, 50, "fftw_nt_%04d.wisdom", omp_get_max_threads());
+
 			int done = 0, job, curVarGen;
 			std::vector<std::string> myVarNames;
 			std::vector<double> myVar;
@@ -193,7 +197,15 @@ int ParallelSimParser::branchOff() {
 						myFil = new std::stringstream(filContents.str());
 
 						mySim = new ThreadParser(myFil, myVarNames, myVar, job);
+
+						//try to import wisdom specifically for number of available threads
+						fftw_init_threads();
+						fftw_import_wisdom_from_filename(wisdomFile);
+
 						mySim->readConfig();
+
+						fftw_export_wisdom_to_filename(wisdomFile);
+
 						MPI_Ssend(nullptr, 0, MPI_INT, MPI_Root_Proc, MPITag::AmDone, MPI_COMM_WORLD);
 						delete mySim;
 						break;
