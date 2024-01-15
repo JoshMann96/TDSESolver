@@ -200,39 +200,6 @@ int ParallelSimParser::branchOff() {
 				}
 			}
 		}
-
-		/*
-		ThreadPool * pool = new ThreadPool(maxSims);
-		std::vector<std::future<int>> res;
-
-		std::mutex mtx;
-
-		for (int i = 0; i < numSims; i++) {
-			res.emplace_back(
-				pool->enqueue([this, i, &filContents, prg, &mtx] {
-				omp_set_num_threads(maxElecThreads);
-				std::vector<std::string> myVarNames = std::vector<std::string>(varNames);
-				std::vector<double> myVar = std::vector<double>(var);
-				int curVarGen = i;
-				for (int j = 0; j < arrVarSizes.size(); j++) {
-					int idx = curVarGen % arrVarSizes.at(j);
-					myVar.push_back(arrVar.at(j)[idx]);
-					curVarGen /= arrVarSizes.at(j);
-				}
-				std::stringstream* myFil = new std::stringstream(filContents.str());
-
-				ThreadParser* mySim = new ThreadParser(myFil, prg, myVarNames, myVar, i, &mtx);
-				mySim->readConfig();
-				delete mySim;
-				return 0;
-			}));
-		}
-
-		for (auto&& result : res)
-			result.get();
-		res.clear();
-
-		delete pool;*/
 	}
 	return 0;
 }

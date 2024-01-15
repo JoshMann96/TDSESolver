@@ -2,7 +2,9 @@
 #include "CommonHeader.h"
 #include <omp.h>
 #include <fftw3.h>
-#include <FLAME.h>
+#include <lapack.h>
+
+#define dcomplex double __complex__
 
 namespace KineticOperators {
 

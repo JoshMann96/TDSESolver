@@ -186,9 +186,9 @@ namespace KineticOperators {
 			initializeOneFFT();
 
 			if(opMat)
-				FLA_free(opMat); opMat = NULL;
+				fftw_free(opMat); opMat = NULL;
 
-			opMat = (std::complex<double>*)FLA_malloc(sizeof(std::complex<double>)*(nPts*(nPts+1))/2);//new std::complex<double>[(nPts * (nPts+1))/2];
+			opMat = (std::complex<double>*)fftw_malloc(sizeof(std::complex<double>)*(nPts*(nPts+1))/2);//new std::complex<double>[(nPts * (nPts+1))/2];
 
 			std::complex<double>* kinDiags = (std::complex<double>*)fftw_malloc(sizeof(std::complex<double>)*nPts);//new std::complex<double>[nPts];
 
@@ -221,33 +221,34 @@ namespace KineticOperators {
 		for (int i = 0; i < nPts; i++)
 			opMat[(i * (i + 3)) / 2] += v[i];
 
-		dcomplex * work = (dcomplex *)FLA_malloc(sizeof(dcomplex)*2*nPts);
-		double * work2 = (double *)FLA_malloc(sizeof(double)*7*nPts);
-		int * iwork3 = (int *)FLA_malloc(sizeof(int)*5*nPts);
-		double * eigs = (double *)FLA_malloc(sizeof(double)*nPts);
-		int * ifail = (int *)FLA_malloc(sizeof(int)*nPts);
+
+		dcomplex * work = (dcomplex *)fftw_malloc(sizeof(dcomplex)*2*nPts);
+		double * work2 = (double *)fftw_malloc(sizeof(double)*7*nPts);
+		int * iwork3 = (int *)fftw_malloc(sizeof(int)*5*nPts);
+		double * eigs = (double *)fftw_malloc(sizeof(double)*nPts);
+		int * ifail = (int *)fftw_malloc(sizeof(int)*nPts);
 
 		char cV = 'V', cU = 'U', cS = 'S';
 
-		double prec = (2 * dlamch_(&cS));
+		double prec = LAPACK_dlamch(&cS);//(2 * dlamch_(&cS));
 		int info;
 
-		zhpevx_(&cV, &cV, &cU, &nPts, reinterpret_cast<dcomplex *>(opMat), &emin, &emax, 0, 0, &prec, nEigs, eigs, reinterpret_cast<dcomplex *>(states), &nPts, work, work2, iwork3, ifail, &info);
+		LAPACK_zhpevx(&cV, &cV, &cU, &nPts, reinterpret_cast<dcomplex *>(opMat), &emin, &emax, 0, 0, &prec, nEigs, eigs, reinterpret_cast<dcomplex *>(states), &nPts, work, work2, iwork3, ifail, &info);
 
 		clearOpMat();
 
 		nelec = nEigs[0];
 
 		if (work)
-			FLA_free(work); work = NULL;
+			fftw_free(work); work = NULL;
 		if (work2)
-			FLA_free(work2); work2 = NULL;
+			fftw_free(work2); work2 = NULL;
 		if (iwork3)
-			FLA_free(iwork3); iwork3 = NULL;
+			fftw_free(iwork3); iwork3 = NULL;
 		if (eigs)
-			FLA_free(eigs); eigs = NULL;
+			fftw_free(eigs); eigs = NULL;
 		if (ifail)
-			FLA_free(ifail); ifail = NULL;
+			fftw_free(ifail); ifail = NULL;
 	}
 
 	double GenDisp_PSM::evaluateKineticEnergy(std::complex<double>* psi) {
@@ -577,8 +578,8 @@ namespace KineticOperators {
 
 			initializeOneFFT();
 			if(opMat)
-				FLA_free(opMat); opMat = NULL;
-			opMat = (std::complex<double>*) FLA_malloc(sizeof(std::complex<double>) * (nPts * (nPts + 1)) / 2);
+				fftw_free(opMat); opMat = NULL;
+			opMat = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * (nPts * (nPts + 1)) / 2);
 			std::fill_n(opMat, (nPts * (nPts + 1)) / 2, 0.0);
 
 			std::complex<double>* kinDiags = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts);
@@ -615,33 +616,33 @@ namespace KineticOperators {
 		for (int i = 0; i < nPts; i++)
 			opMat[(i * (i + 3)) / 2] += v[i];
 
-		dcomplex * work = (dcomplex *)FLA_malloc(sizeof(dcomplex)*2*nPts);
-		double * work2 = (double *)FLA_malloc(sizeof(double)*7*nPts);
-		int * iwork3 = (int *)FLA_malloc(sizeof(int)*5*nPts);
-		double * eigs = (double *)FLA_malloc(sizeof(double)*nPts);
-		int * ifail = (int *)FLA_malloc(sizeof(int)*nPts);
+		dcomplex * work = (dcomplex *)fftw_malloc(sizeof(dcomplex)*2*nPts);
+		double * work2 = (double *)fftw_malloc(sizeof(double)*7*nPts);
+		int * iwork3 = (int *)fftw_malloc(sizeof(int)*5*nPts);
+		double * eigs = (double *)fftw_malloc(sizeof(double)*nPts);
+		int * ifail = (int *)fftw_malloc(sizeof(int)*nPts);
 
 		char cV = 'V', cU = 'U', cS = 'S';
 
-		double prec = (2 * dlamch_(&cS));
+		double prec = LAPACK_dlamch(&cS);//(2 * dlamch_(&cS));
 		int info;
 
-		zhpevx_(&cV, &cV, &cU, &nPts, reinterpret_cast<dcomplex *>(opMat), &emin, &emax, 0, 0, &prec, nEigs, eigs, reinterpret_cast<dcomplex *>(states), &nPts, work, work2, iwork3, ifail, &info);
+		LAPACK_zhpevx(&cV, &cV, &cU, &nPts, reinterpret_cast<dcomplex *>(opMat), &emin, &emax, 0, 0, &prec, nEigs, eigs, reinterpret_cast<dcomplex *>(states), &nPts, work, work2, iwork3, ifail, &info);
 
 		clearOpMat();
 
 		nelec = nEigs[0];
 
 		if (work)
-			FLA_free(work); work = NULL;
+			fftw_free(work); work = NULL;
 		if (work2)
-			FLA_free(work2); work2 = NULL;
+			fftw_free(work2); work2 = NULL;
 		if (iwork3)
-			FLA_free(iwork3); iwork3 = NULL;
+			fftw_free(iwork3); iwork3 = NULL;
 		if (eigs)
-			FLA_free(eigs); eigs = NULL;
+			fftw_free(eigs); eigs = NULL;
 		if (ifail)
-			FLA_free(ifail); ifail = NULL;
+			fftw_free(ifail); ifail = NULL;
 	}
 
 	double NonUnifGenDisp_PSM::evaluateKineticEnergy(std::complex<double>* psi) {
