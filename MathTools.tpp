@@ -5,7 +5,7 @@ namespace vtls{
 		temp2 = reinterpret_cast<std::complex<double>*>(fftw_malloc(sizeof(fftw_complex)*len));
 
 		fftw_plan_with_nthreads(omp_get_max_threads());
-		std::cout << "Assigned FFTW threads: " << fftw_planner_nthreads() << std:: endl;
+		//std::cout << "Assigned FFTW threads: " << fftw_planner_nthreads() << std:: endl;
 
 		fp = fftw_plan_dft(1, &len, reinterpret_cast<fftw_complex*>(temp1), reinterpret_cast<fftw_complex*>(temp1), FFTW_FORWARD, FFTW_PATIENT);
 		bp = fftw_plan_dft(1, &len, reinterpret_cast<fftw_complex*>(temp2), reinterpret_cast<fftw_complex*>(temp2), FFTW_BACKWARD, FFTW_PATIENT);
@@ -41,7 +41,7 @@ namespace vtls{
 		temp2 = reinterpret_cast<std::complex<double>*>(fftw_malloc(sizeof(fftw_complex)*len));
 
 		fftw_plan_with_nthreads(omp_get_max_threads());
-		std::cout << "Assigned FFTW threads: " << fftw_planner_nthreads() << std:: endl;
+		//std::cout << "Assigned FFTW threads: " << fftw_planner_nthreads() << std:: endl;
 
 		fp = fftw_plan_dft(1, &len, reinterpret_cast<fftw_complex*>(temp1), reinterpret_cast<fftw_complex*>(temp1), FFTW_FORWARD, FFTW_PATIENT);
 		bp = fftw_plan_dft(1, &len, reinterpret_cast<fftw_complex*>(temp2), reinterpret_cast<fftw_complex*>(temp2), FFTW_BACKWARD, FFTW_PATIENT);

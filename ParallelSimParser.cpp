@@ -132,6 +132,9 @@ int ParallelSimParser::branchOff() {
 			int* assignedJobs = new int[size];
 			std::fill_n(assignedJobs, size, MPI_Root_Proc);
 
+			std::chrono::high_resolution_clock::time_point* jt = new std::chrono::high_resolution_clock::time_point[size];
+			std::fill_n(jt, size, std::chrono::high_resolution_clock::now());
+
 			ProgressTrackerMPI * prg = new ProgressTrackerMPI(numSims);
 
 			while(nProcDone < size - 1){

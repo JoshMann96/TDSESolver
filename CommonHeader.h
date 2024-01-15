@@ -23,7 +23,17 @@
 #define __restrict
 #endif
 
+
+#include <boost/unordered_map.hpp>
+#include <boost/assign/list_of.hpp>
+
 typedef enum { UpdateSent, RequestSent, JobSent, Complete, AmInitializing, AmEigenSolving, AmSimulating, AmIdle, AmDone, AmRoot } MPITag;
+const boost::unordered_map<MPITag,const char*> tagToString = boost::assign::map_list_of
+		(MPITag::AmIdle, "Idle")
+		(MPITag::AmEigenSolving, "Eigen")
+		(MPITag::AmInitializing, "Init")
+		(MPITag::AmSimulating, "Simu")
+		(MPITag::AmDone, "Done");
 inline int MPI_Root_Proc = 0;
 
 #include <boost/math/interpolators/cardinal_cubic_b_spline.hpp>

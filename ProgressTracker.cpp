@@ -9,16 +9,16 @@ std::string toHMS(double sec){
 	return fmt.str();
 }
 
-template <typename T0, typename T1, typename T2, typename T3, typename T4, typename T5>
+template <typename T0, typename T1, typename T2, typename T3, typename T4, typename T5, typename T6>
 void printRow(std::ostream& os, T0 const& job, T1 const& proc, T2 const& prog,
-                T3 const& timeSpent, T4 const& timeRemaining, T5 const& currentOperation){
+                T3 const& timeSpent, T6 const& timeStatSpent, T4 const& timeRemaining, T5 const& currentOperation){
 	os << std::setw(5) << job << std::setw(5) << proc << std::setw(10) << currentOperation << std::setw(30) << prog
-       << std::setw(12) << timeSpent << std::setw(12) << timeRemaining << "\n";
+       << std::setw(12) << timeSpent << std::setw(12) << timeStatSpent << std::setw(12) << timeRemaining << "\n";
 }
 
 std::string progressBar(int prog){
 	std::stringstream str = std::stringstream();
-	if (prog != -1){
+	if (prog >= 0){
 		str << "[";
 		for(int i = 0; i < 20; i++)
 			if((i+1)*5 <= prog)
@@ -29,9 +29,10 @@ std::string progressBar(int prog){
 				str << " ";
 		str << "] " << (boost::format("%3d") % prog).str();
 	}
-	else{
+	else if(prog == -2)
 		str << "Progress    \%";
-	}
+	else if(prog == -1)
+		str << "";
 	return str.str();
 }
 
@@ -98,15 +99,19 @@ ProgressTrackerMPI::ProgressTrackerMPI(int nJobs)
 	: nJobs(nJobs)
 {
 	jobProg = new int[nJobs];
-	std::fill_n(jobProg, nJobs, 0);
+	std::fill_n(jobProg, nJobs, -1);
 
 	jobProc = new int[nJobs];
 	std::fill_n(jobProc, nJobs, -1);
 
 	jobStart = new std::chrono::time_point<std::chrono::system_clock>[nJobs];
+	std::fill_n(jobStart, nJobs, std::chrono::system_clock::now());
 
-	secondsSpent = new double[nJobs];
-	std::fill_n(secondsSpent, nJobs, 0.0);
+	jobStatStart = new std::chrono::time_point<std::chrono::system_clock>[nJobs];
+	std::fill_n(jobStatStart, nJobs, std::chrono::system_clock::now());
+
+	jobDone = new std::chrono::time_point<std::chrono::system_clock>[nJobs];
+	std::fill_n(jobStatStart, nJobs, std::chrono::system_clock::now());
 
 	secondsRemaining = new double[nJobs];
 	std::fill_n(secondsRemaining, nJobs, 0.0);
@@ -122,24 +127,32 @@ ProgressTrackerMPI::~ProgressTrackerMPI(){
 //update job progress (prog = 0-100, 100 interpreted as complete)
 void ProgressTrackerMPI::update(int job, int prog){
 	jobProg[job] = prog;
-
 	latestTime = std::chrono::system_clock::now();
 
 	if(prog == 0)
-		jobStart[job] = std::chrono::system_clock::now();
+		jobStatStart[job] = latestTime;
 	else{
-		dur = latestTime - jobStart[job];
-		secondsSpent[job] = dur.count();
-		secondsRemaining[job] = (secondsSpent[job]/(double)prog)*(100-prog);
+		dur = latestTime - jobStatStart[job];
+		secondsRemaining[job] = (dur.count()/(double)prog)*(100-prog);
 	}
 }
 
 void ProgressTrackerMPI::updateStatus(int job, MPITag stat){
+	latestTime = std::chrono::system_clock::now();
+	dur = latestTime - jobStart[job];
+	std::printf("Job %3d spent %10s in %s", job, toHMS(dur.count()).c_str(), tagToString.at(currentOperation[job]));
+	std::cout << std::endl;
+
 	currentOperation[job] = stat;
+	jobStatStart[job] = latestTime;
+	if(stat == MPITag::AmDone)
+		jobDone[job] = latestTime;
 }
 
 void ProgressTrackerMPI::jobAssigned(int job, int proc){
 	jobProc[job] = proc;
+	jobProg[job] = -1;
+	jobStart[job]= std::chrono::system_clock::now();
 }
 
 void ProgressTrackerMPI::output(){
@@ -158,14 +171,21 @@ void ProgressTrackerMPI::output(){
 	std::time_t result = std::time(nullptr);
 	fil << std::asctime(std::localtime(&result)) << "\n";
 
-	printRow(fil, "Job", "Proc", progressBar(-1), "TSpent", "TRemain", "Status");
+	latestTime = std::chrono::system_clock::now();
+
+	printRow(fil, "Job", "Proc", progressBar(-2), "Job T", "Status T", "ETA", "Status");
 	for (int i = 0; i < nJobs; i++) {
-		if (jobProc[i] == - 1)
-			printRow(fil, i, "UA", progressBar(0), toHMS(0), "N/A", "Queue");
-		else if (jobProg[i] == 0)
-			printRow(fil, i, jobProc[i], progressBar(jobProg[i]), toHMS(0), "N/A", tagToString.at(currentOperation[i]));
+		if (currentOperation[i] == MPITag::AmDone)
+			dur = jobDone[i] - jobStart[i];
 		else
-			printRow(fil, i, jobProc[i], progressBar(jobProg[i]), toHMS(secondsSpent[i]), toHMS(secondsRemaining[i]), tagToString.at(currentOperation[i]));
+			dur = latestTime - jobStart[i];
+		std::chrono::duration<double> statDur = latestTime - jobStatStart[i];
+		if (jobProc[i] == - 1)
+			printRow(fil, i, "UA", progressBar(-1),  "N/A",  "N/A", "N/A", "Queue");
+		else if (jobProg[i] == 0)
+			printRow(fil, i, jobProc[i], progressBar(jobProg[i]), toHMS(dur.count()), toHMS(statDur.count()), "N/A", tagToString.at(currentOperation[i]));
+		else
+			printRow(fil, i, jobProc[i], progressBar(jobProg[i]), toHMS(dur.count()), toHMS(statDur.count()), toHMS(secondsRemaining[i]), tagToString.at(currentOperation[i]));
 	}
 
 	try {
