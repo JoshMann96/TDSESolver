@@ -124,13 +124,7 @@ void MultiSimulationManager::runOS_U2TU(int idx) {
 	pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()], kin);
 	kin_psm->stepOS_U2TU(psis[prevIndex()], vs[prevIndex()], spatialDamp, psis[index], nelec);
 	iterateIndex();
-	//auto t0 = std::chrono::system_clock::now();
-	//auto tf = std::chrono::system_clock::now();
-	//auto t1 = std::chrono::high_resolution_clock::now();
-	//auto t2 = std::chrono::high_resolution_clock::now();
-	//auto t3 = std::chrono::high_resolution_clock::now();
-	//std::chrono::duration<double> dur;
-	//int numPrints = 0;
+
 	int percDone = 0;
 	std::future<int> f1;
 	auto rM = &MultiSimulationManager::measPAR;
@@ -138,15 +132,19 @@ void MultiSimulationManager::runOS_U2TU(int idx) {
 	while (ts[prevPrevIndex()] <= maxT) {
 		f1 = std::async(rM, this, prevPrevIndex());
 
-		//t1 = std::chrono::high_resolution_clock::now();
+		auto t1 = std::chrono::high_resolution_clock::now();
 		pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()], kin);
-		//t2 = std::chrono::high_resolution_clock::now();
+		auto t2 = std::chrono::high_resolution_clock::now();
 		kin_psm->stepOS_U2TU(psis[prevIndex()], vs[prevIndex()], spatialDamp, psis[index], nelec);
-		//t3 = std::chrono::high_resolution_clock::now();
-		//auto dur2 = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
-		//auto dur3 = std::chrono::duration_cast<std::chrono::microseconds>(t3 - t2);
-		//std::cout << "Potential: " << dur2.count() << "\nStep: " << dur3.count() << "\n" << std::endl;
-		f1.get();
+		auto t3 = std::chrono::high_resolution_clock::now();
+
+		int durm = f1.get();
+		int durv = std::chrono::duration_cast<std::chrono::microseconds>(t2-t1).count();
+		int durk = std::chrono::duration_cast<std::chrono::microseconds>(t3-t2).count();
+
+		printf("M: %6d | V: %6d | K: %6d\n", durm, durv, durk);
+		std::cout << std::flush;
+
 		iterateIndex();
 		if (ts[prevPrevIndex()] / maxT * 100.0 > percDone) {
 			//tf = std::chrono::system_clock::now();
@@ -172,13 +170,7 @@ void MultiSimulationManager::runOS_UW2TUW(int idx) {
 	pot->getV(tpsi, ts[prevIndex()], vs[prevIndex()], kin);
 	kin_psm->stepOS_UW(tpsi, vs[prevIndex()], spatialDamp, psis[index], nelec);
 	iterateIndex();
-	//auto t0 = std::chrono::system_clock::now();
-	//auto tf = std::chrono::system_clock::now();
-	//auto t1 = std::chrono::high_resolution_clock::now();
-	//auto t2 = std::chrono::high_resolution_clock::now();
-	//auto t3 = std::chrono::high_resolution_clock::now();
-	//std::chrono::duration<double> dur;
-	//int numPrints = 0;
+
 	int percDone = 0;
 	std::future<int> f1;
 	auto rM = &MultiSimulationManager::measPAR;
@@ -186,18 +178,27 @@ void MultiSimulationManager::runOS_UW2TUW(int idx) {
 	while (ts[prevPrevIndex()] <= maxT) {
 		f1 = std::async(rM, this, prevPrevIndex());
 
+		auto t1 = std::chrono::high_resolution_clock::now();
 		pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()], kin);
+		auto t2 = std::chrono::high_resolution_clock::now();
 		kin_psm->stepOS_UW2T(psis[prevIndex()], vs[prevIndex()], spatialDamp, tpsi, nelec);
+		auto t3 = std::chrono::high_resolution_clock::now();
 		pot->getV(tpsi, ts[prevIndex()], vs[prevIndex()], kin);
+		auto t4 = std::chrono::high_resolution_clock::now();
 		kin_psm->stepOS_UW(tpsi, vs[prevIndex()], spatialDamp, psis[index], nelec);
+		auto t5 = std::chrono::high_resolution_clock::now();
+		int durm = f1.get();
+		auto t6 = std::chrono::high_resolution_clock::now();
 
-		//t1 = std::chrono::high_resolution_clock::now();
-		//t2 = std::chrono::high_resolution_clock::now();
-		//t3 = std::chrono::high_resolution_clock::now();
-		//auto dur2 = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
-		//auto dur3 = std::chrono::duration_cast<std::chrono::microseconds>(t3 - t2);
-		//std::cout << "Potential: " << dur2.count() << "\nStep: " << dur3.count() << "\n" << std::endl;
-		f1.get();
+		printf("V1: %6d | K1: %6d | V2: %6d | K2: %6d\nKV: %6d |  M: %6d\n", 
+			(int)std::chrono::duration_cast<std::chrono::microseconds>(t2-t1).count(),
+			(int)std::chrono::duration_cast<std::chrono::microseconds>(t3-t2).count(),
+			(int)std::chrono::duration_cast<std::chrono::microseconds>(t4-t3).count(),
+			(int)std::chrono::duration_cast<std::chrono::microseconds>(t5-t4).count(),
+			(int)std::chrono::duration_cast<std::chrono::microseconds>(t5-t1).count(),
+			durm);
+		std::cout<<std::flush;
+
 		iterateIndex();
 		if (ts[prevPrevIndex()] / maxT * 100.0 > percDone) {
 			//PROGRESS UPDATE

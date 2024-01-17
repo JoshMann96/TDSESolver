@@ -1182,18 +1182,17 @@ namespace Measurers {
 	}
 
 	int MeasurementManager::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
-		/*for (int i = meas.size()-1; i >= 0; i--) {
-			if (meas[i]->measure(psi, v, t) == 1)
-				meas.erase(meas.begin() + i);
-		}
-		return 0;*/
-		//Do measurements
 		for (int i = meas.size()-1; i >= 0; i--) {
+			auto t1 = std::chrono::high_resolution_clock::now();
 			if (meas[i]->measure(psi, v, t, kin) == 1) {
 				meas[i]->terminate();
 				meas.erase(meas.begin() + i);
+			}else{
+				auto t2 = std::chrono::high_resolution_clock::now();
+				printf("M %2d : %6d \n", meas[i]->getIndex(), (int)std::chrono::duration_cast<std::chrono::microseconds>(t2-t1).count());
 			}
 		}
+		std::cout << std::flush;
 		return 0;
 	}
 
