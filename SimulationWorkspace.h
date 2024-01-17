@@ -6,7 +6,8 @@
 #include "ThreadParser.h"
 
 
-//reads config file and listens to root process for receiving assignments
+//creates variable/array workspace from simulation input file during definition stage
+//then dispatches MPI processes to execute rest of input using each unique combination of array elements
 class SimulationWorkspace
 {
 private:
@@ -20,11 +21,17 @@ private:
 public:
 	SimulationWorkspace(std::fstream *fil);
 	~SimulationWorkspace();
+	//read input file
 	void executeScript();
+	//read one line of input (definition stage)
 	int readCommand(std::string input);
+	//creates new variable in workspace
 	void processNewVariable(std::string input);
+	//creates new array in workspace
 	void processNewArray(std::string input);
 
+	//root proc: manage and distribute simulation assignments
+	//calc proc: receive assignment and execute remainder of input file using assigned elements of array variables
 	int distributeAndCompute();
 };
  
