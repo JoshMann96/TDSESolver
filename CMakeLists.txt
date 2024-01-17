@@ -24,7 +24,7 @@ set(BOOST_LINK_FLAGS "-lboost_system -lboost_filesystem")
 set(AOCC_ROOT "/home/jmann")
 set(AOCC_INC "${AOCC_ROOT}/include")
 set(AOCC_LIB "${AOCC_ROOT}/lib")
-set(AOCC_LIBS "-L${AOCC_LIB} -lomp -lflang")
+set(AOCC_LIBS "-L${AOCC_LIB} -lomp -lflang -lstdc++")
 include_directories(${AOCC_INC})
 
 #AOCL config
@@ -35,7 +35,7 @@ set(BLIS_INC "${AOCL_INC}/blis")
 include_directories(${AOCL_INC})
 #include_directories(${BLIS_INC})
 #set(AOCL_LIBS "-L${AOCL_LIB} -lflame -lfftw3_omp -lfftw3 -lblis-mt  -lalm -lm -lstdc++ -lpthread")
-set(AOCL_LIBS "-L${AOCL_LIB} -lfftw3_omp -lfftw3 -lalm -lm -lstdc++ -lpthread")
+set(AOCL_LIBS "-L${AOCL_LIB} -lfftw3_omp -lfftw3 -lm -lpthread")
 
 #OpenBLAS config
 set(OBLAS_ROOT "/home/jmann")

@@ -25,7 +25,7 @@ int SimulationWorkspace::readCommand(std::string input) {
 		processNewVariable(flds->at(1));
 	else if (std::strstr(flds->at(0).c_str(), "MASTER_FOL")) //obsolete (just creates a folder)
 		OSSpecificFuncs::createFolder(flds->at(1).c_str());
-	else {
+	else if(!std::strstr(flds->at(0).c_str(), "")){ //isn't just whitespace
 		std::cout << "- " << input << std::endl; //command not recognized
 		return 0;
 	}
@@ -106,10 +106,6 @@ int SimulationWorkspace::distributeAndCompute() {
 		filContents << fil->rdbuf();
 		fil->close();
 
-		//add array variable names to variables (for later interpretation of individual elements as variables)
-		for (int i = 0; i < arrVar.size(); i++)
-			varNames.push_back(arrVarNames.at(i));
-
 		//get this proc's MPI info
 		int size, rank;
     	MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -185,7 +181,10 @@ int SimulationWorkspace::distributeAndCompute() {
 						curVarGen = job;
 						for (int j = 0; j < arrVarSizes.size(); j++) {
 							int idx = curVarGen % arrVarSizes.at(j);
+
 							myVar.push_back(arrVar.at(j)[idx]);
+							myVarNames.push_back(arrVarNames.at(j));
+
 							curVarGen /= arrVarSizes.at(j);
 						}
 
@@ -203,7 +202,9 @@ int SimulationWorkspace::distributeAndCompute() {
 						fftw_export_wisdom_to_filename(wisdomFile);
 
 						MPI_Ssend(nullptr, 0, MPI_INT, MPI_Root_Proc, MPITag::AmDone, MPI_COMM_WORLD); //notify root of completion
+
 						delete mySim;
+						delete myFil;
 						break;
 					case MPITag::Complete : //no more jobs
 						done = 1;

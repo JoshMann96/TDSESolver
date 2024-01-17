@@ -488,18 +488,23 @@ int ThreadParser::setSaveLoc(std::string input) {
 		throw -1;
 	}
 	else {
-		for (int i = 0; i < nflds->size() / 2; i++) {
+		for (int i = 0; i < nflds->size() / 2; i++) { //for each segment
+			//add static text
 			for (int j = 0; j < nflds->at(i * 2).length(); j++)
 				fol[j + fi] = nflds->at(i * 2).at(j);
 			fi += nflds->at(i * 2).length();
+			//calculate value of formatted string
 			std::string tstr = std::to_string(std::lrint(parseVal(nflds->at(i * 2 + 1))));
+			//add formatted string
 			for (int j = 0; j < tstr.length(); j++)
 				fol[j + fi] = tstr.at(j);
 			fi += tstr.length();
 		}
+		//add last bit of text
 		for (int j = 0; j < nflds->back().length(); j++)
 			fol[j + fi] = nflds->back().at(j);
 		fi += nflds->back().length();
+		//add character array terminator
 		fol[fi] = '\0';
 	}
 	OSSpecificFuncs::createFolder(fol);
