@@ -1,14 +1,4 @@
-#include "ConfigParser.h"
-
-
-namespace cfgParse {
-	//read and execute config file
-	void readCFG(char *trg) {
-		fil = new std::fstream(trg, std::ios::in);
-		ParallelSimParser *sims = new ParallelSimParser(fil);
-		sims->readConfig();
-	}
-}
+#include "ParsingTools.h"
 
 namespace parsingTools {
 	//split string via delimiter

@@ -1,6 +1,7 @@
 #pragma once
 #include "CommonHeader.h"
-#include "ConfigParser.h"
+#include "LinuxFuncs.h"
+#include "ParsingTools.h"
 #include "WfcRhoTools.h"
 #include "AbsorptiveRegions.h"
 #include "Potentials.h"

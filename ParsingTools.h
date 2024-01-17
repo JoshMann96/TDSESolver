@@ -1,13 +1,5 @@
 #pragma once
 #include "CommonHeader.h"
-#include "ParallelSimParser.h"
-
-namespace cfgParse {
-	static std::string curLine;
-	static std::fstream *fil;
-
-	void readCFG(char *trg);
-}
 
 namespace parsingTools {
 	void split(const std::string str, std::vector<std::string> * fields, char delim);

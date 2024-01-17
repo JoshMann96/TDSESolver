@@ -1,41 +1,36 @@
-#include "ParallelSimParser.h"
+#include "SimulationWorkspace.h"
 
 
 
-ParallelSimParser::ParallelSimParser(std::fstream *fil){
-	ParallelSimParser::fil = fil;
-}
+SimulationWorkspace::SimulationWorkspace(std::fstream *fil) : fil(fil){}
 
+SimulationWorkspace::~SimulationWorkspace(){}
 
-ParallelSimParser::~ParallelSimParser()
-{
-}
-
-void ParallelSimParser::readConfig() {
-	//read each line in the file so long as readCommand 
+void SimulationWorkspace::executeScript() {
+	//read and execute each line in the file so long as readCommand 
 	do { std::getline(*fil, curLine); } while (readCommand(curLine) && !(fil->eof()));
 }
 
-int ParallelSimParser::readCommand(std::string input) {
+int SimulationWorkspace::readCommand(std::string input) {
 	parsingTools::split(input, flds, ' ');
 	if (input[0] == '#') //comment
 		return 1;
 	else if (std::strstr(flds->at(0).c_str(), "DEF_ARR")) //defining array variable
 		processNewArray(flds->at(1));
 	else if (std::strstr(flds->at(0).c_str(), "FINISH_DEF")) //finished with definitions, computation processes create thread parsers to evaluate the rest of the cfg
-		return branchOff();
+		return distributeAndCompute();
 	else if (std::strstr(flds->at(0).c_str(), "DEF")) //defining scalar variable
 		processNewVariable(flds->at(1));
 	else if (std::strstr(flds->at(0).c_str(), "MASTER_FOL")) //available but obsolete
 		OSSpecificFuncs::createFolder(flds->at(1).c_str());
 	else {
-		std::cout << "- " << input << std::endl; //
-		return 0; //
+		std::cout << "- " << input << std::endl;
+		return 0;
 	}
 	return 1;
 }
 
-void ParallelSimParser::processNewVariable(std::string input) {
+void SimulationWorkspace::processNewVariable(std::string input) {
 	parsingTools::split(input, flds, '=');
 	varNames.push_back(flds->at(0));
 	parsingTools::split(flds->at(1), flds, '*');
@@ -52,7 +47,7 @@ void ParallelSimParser::processNewVariable(std::string input) {
 	//std::cout << "Created new variable: " << varNames.back() << " = " << var.back() << std::endl;
 }
 
-void ParallelSimParser::processNewArray(std::string input) {
+void SimulationWorkspace::processNewArray(std::string input) {
 	parsingTools::split(input, flds, '=');
 	arrVarNames.push_back(flds->at(0));
 	parsingTools::split(flds->at(1), flds, '|');
@@ -91,7 +86,7 @@ void ParallelSimParser::processNewArray(std::string input) {
 	//std::cout << arrVar.back()[arrVarSizes.back() - 1] << "]" << std::endl;
 }
 
-int ParallelSimParser::branchOff() {
+int SimulationWorkspace::distributeAndCompute() {
 	MPI_Barrier(MPI_COMM_WORLD);
 	if (arrVar.size() == 0) {
 		std::cout << "Expected at least one array. Terminating simulations." << std::endl;
