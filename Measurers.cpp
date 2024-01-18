@@ -883,6 +883,12 @@ namespace Measurers {
 		VDFluxSpec::tmax = tmax;
 
 		phss = new std::complex<double>[nsamp];
+		temp = new std::complex<double>[nsamp];
+
+		phaseCalcExpMul = new std::complex<double>[nsamp];
+		for(int i = 0; i < nsamp; i++)
+			phaseCalcExpMul[i] = PhysCon::im * dw * (double)i; //to be multiplied by t then exponentiated later
+		
 		cumPotPhs = 1;
 
 		std::string tempstr = std::to_string(vdNum);
@@ -936,8 +942,16 @@ namespace Measurers {
 			else
 				winMul = 1;
 
-			for (int i = 0; i < nsamp; i++)
-				phss[i] = std::exp(PhysCon::im * dw * t * (double)i)*cumPotPhs*winMul;
+			//exp(i t dw (idx))*cumPotPhs*winMul, expanded to hopefully vectorize better
+			cblas_zcopy(nsamp, phaseCalcExpMul, 1, phss, 1); 	// phss = 		i dw (idx)
+			cblas_zdscal(nsamp, t, phss, 1); 					// phss = 		i dw (idx) t
+			for(int i = 0; i < nsamp; i++)
+				phss[i] = std::exp(phss[i]);					// phss = exp(	i dw (idx) t)
+			std::complex<double> cpwm = cumPotPhs * winMul;
+			cblas_zscal(nsamp, &cpwm, phss, 1);					// phss = exp(	i dw (idx) t)*cumPotPhs*winMul
+			//used to be this
+			/*for (int i = 0; i < nsamp; i++)
+				phss[i] = std::exp(PhysCon::im * dw * t * (double)i)*cumPotPhs*winMul;*/
 			ct = t;
 		}
 		if (ct != t) {
@@ -945,18 +959,25 @@ namespace Measurers {
 			return 1;
 		}
 		auto t2 = std::chrono::high_resolution_clock::now();
-		for (int i = 0; i < nsamp; i++) {
+		//wfcs0[i0 + i] += psip0 * phss[i]
+		//wfcs1[i0 + i] += psip1 * phss[i]
+		cblas_zaxpy(nsamp, &psi[pos  ], phss, 1, &wfcs0[celec*nsamp], 1);
+		cblas_zaxpy(nsamp, &psi[pos+1], phss, 1, &wfcs1[celec*nsamp], 1);
+		//was this
+		/*for (int i = 0; i < nsamp; i++) {
 			wfcs0[celec * nsamp + i] += psi[pos] * phss[i];
 			wfcs1[celec * nsamp + i] += psi[pos+1] * phss[i];
-		}
+		}*/
 		auto t3 = std::chrono::high_resolution_clock::now();
-		printf("VD : %4d, %4d", 
+		printf("VD : %4d, %4d |\t", 
 			(int)std::chrono::duration_cast<std::chrono::microseconds>(t2-t1).count(),
 			(int)std::chrono::duration_cast<std::chrono::microseconds>(t3-t2).count());
-		std::cout << std::flush;
 		celec++;
-		if (celec == nelec)
+		if (celec == nelec){
+			printf("\n");
+			std::cout << std::flush;
 			celec = 0;
+		}
 
 		return 0;
 	}

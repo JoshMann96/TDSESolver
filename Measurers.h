@@ -398,7 +398,7 @@ namespace Measurers {
 		double ct;
 		double dw, tmax, tukeyAl=0.05;
 		const char* fname = "fluxspecvd.tdsePART";
-		std::complex<double>* wfcs0, * wfcs1, *phss, cumPotPhs;
+		std::complex<double>* wfcs0, * wfcs1, *phss, cumPotPhs, *phaseCalcExpMul, *temp;
 	public:
 		int isHeavy() { return 0; };
 		int getIndex() { return index; };
