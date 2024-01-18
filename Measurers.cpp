@@ -931,7 +931,6 @@ namespace Measurers {
 			first = 0;
 			ct = 0;
 		}
-		auto t1 = std::chrono::high_resolution_clock::now();
 		if (celec == 0) {
 			cumPotPhs *= std::exp(PhysCon::im * (v[pos] + v[pos + 1]) / (2.0 * PhysCon::hbar) * (t - ct));
 			double winMul;
@@ -958,7 +957,6 @@ namespace Measurers {
 			std::cout << "VDFluxSpec: Inconsistent timing." << std::endl;
 			return 1;
 		}
-		auto t2 = std::chrono::high_resolution_clock::now();
 		//wfcs0[i0 + i] += psip0 * phss[i]
 		//wfcs1[i0 + i] += psip1 * phss[i]
 		cblas_zaxpy(nsamp, &psi[pos  ], phss, 1, &wfcs0[celec*nsamp], 1);
@@ -968,10 +966,6 @@ namespace Measurers {
 			wfcs0[celec * nsamp + i] += psi[pos] * phss[i];
 			wfcs1[celec * nsamp + i] += psi[pos+1] * phss[i];
 		}*/
-		auto t3 = std::chrono::high_resolution_clock::now();
-		printf("VD : %4d, %4d |\t", 
-			(int)std::chrono::duration_cast<std::chrono::microseconds>(t2-t1).count(),
-			(int)std::chrono::duration_cast<std::chrono::microseconds>(t3-t2).count());
 		celec++;
 		if (celec == nelec){
 			printf("\n");
@@ -1208,16 +1202,11 @@ namespace Measurers {
 
 	int MeasurementManager::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
 		for (int i = meas.size()-1; i >= 0; i--) {
-			//auto t1 = std::chrono::high_resolution_clock::now();
 			if (meas[i]->measure(psi, v, t, kin) == 1) {
 				meas[i]->terminate();
 				meas.erase(meas.begin() + i);
-			}else{
-				//auto t2 = std::chrono::high_resolution_clock::now();
-				//printf("M %2d : %6d \n", meas[i]->getIndex(), (int)std::chrono::duration_cast<std::chrono::microseconds>(t2-t1).count());
 			}
 		}
-		std::cout << std::flush;
 		return 0;
 	}
 

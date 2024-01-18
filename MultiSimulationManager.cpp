@@ -128,36 +128,22 @@ void MultiSimulationManager::runOS_U2TU(int idx) {
 	int percDone = 0;
 	std::future<int> f1;
 	auto rM = &MultiSimulationManager::measPAR;
-	//auto rLog = &ProgressTracker::update;
 	while (ts[prevPrevIndex()] <= maxT) {
 		f1 = std::async(rM, this, prevPrevIndex());
 
-		auto t1 = std::chrono::high_resolution_clock::now();
 		pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()], kin);
-		auto t2 = std::chrono::high_resolution_clock::now();
 		kin_psm->stepOS_U2TU(psis[prevIndex()], vs[prevIndex()], spatialDamp, psis[index], nelec);
-		auto t3 = std::chrono::high_resolution_clock::now();
 
-		int durm = f1.get();
-		int durv = std::chrono::duration_cast<std::chrono::microseconds>(t2-t1).count();
-		int durk = std::chrono::duration_cast<std::chrono::microseconds>(t3-t2).count();
-
-		printf("M: %6d | V: %6d | K: %6d\n", durm, durv, durk);
-		std::cout << std::flush;
+		f1.get();
 
 		iterateIndex();
 		if (ts[prevPrevIndex()] / maxT * 100.0 > percDone) {
-			//tf = std::chrono::system_clock::now();
-			//dur = tf - t0;
 			//PROGRESS UPDATE
 			MPI_Ssend(&percDone, 1, MPI_INT, MPI_Root_Proc, MPITag::UpdateSent, MPI_COMM_WORLD);
 			percDone++;
-			//std::async(std::launch::async, rLog, prg, idx, ts[prevPrevIndex()] / maxT, (int)(dur.count() * (maxT - ts[prevPrevIndex()]) / ts[prevPrevIndex()]));
-			//numPrints++;
 		}
 	}
 	MPI_Ssend(&percDone, 1, MPI_INT, MPI_Root_Proc, MPITag::UpdateSent, MPI_COMM_WORLD);
-	//std::async(std::launch::async, rLog, prg, idx, ts[prevPrevIndex()] / maxT, (int)(dur.count() * (maxT - ts[prevPrevIndex()]) / ts[prevPrevIndex()]));
 	meas->terminate();
 }
 
@@ -174,40 +160,20 @@ void MultiSimulationManager::runOS_UW2TUW(int idx) {
 	int percDone = 0;
 	std::future<int> f1;
 	auto rM = &MultiSimulationManager::measPAR;
-	//auto rLog = &ProgressTracker::update;
 	while (ts[prevPrevIndex()] <= maxT) {
 		f1 = std::async(rM, this, prevPrevIndex());
 
-		auto t1 = std::chrono::high_resolution_clock::now();
 		pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()], kin);
-		auto t2 = std::chrono::high_resolution_clock::now();
 		kin_psm->stepOS_UW2T(psis[prevIndex()], vs[prevIndex()], spatialDamp, tpsi, nelec);
-		auto t3 = std::chrono::high_resolution_clock::now();
 		pot->getV(tpsi, ts[prevIndex()], vs[prevIndex()], kin);
-		auto t4 = std::chrono::high_resolution_clock::now();
 		kin_psm->stepOS_UW(tpsi, vs[prevIndex()], spatialDamp, psis[index], nelec);
-		auto t5 = std::chrono::high_resolution_clock::now();
-		int durm = f1.get();
-		auto t6 = std::chrono::high_resolution_clock::now();
-
-		printf("V1: %6d | K1: %6d | V2: %6d | K2: %6d\nKV: %6d |  M: %6d\n", 
-			(int)std::chrono::duration_cast<std::chrono::microseconds>(t2-t1).count(),
-			(int)std::chrono::duration_cast<std::chrono::microseconds>(t3-t2).count(),
-			(int)std::chrono::duration_cast<std::chrono::microseconds>(t4-t3).count(),
-			(int)std::chrono::duration_cast<std::chrono::microseconds>(t5-t4).count(),
-			(int)std::chrono::duration_cast<std::chrono::microseconds>(t5-t1).count(),
-			durm);
-		std::cout<<std::flush;
+		f1.get();
 
 		iterateIndex();
 		if (ts[prevPrevIndex()] / maxT * 100.0 > percDone) {
 			//PROGRESS UPDATE
 			MPI_Ssend(&percDone, 1, MPI_INT, MPI_Root_Proc, MPITag::UpdateSent, MPI_COMM_WORLD);
 			percDone++;
-			//tf = std::chrono::system_clock::now();
-			//dur = tf - t0;
-			//std::async(std::launch::async, rLog, prg, idx, ts[prevPrevIndex()] / maxT, (int)(dur.count() * (maxT - ts[prevPrevIndex()]) / ts[prevPrevIndex()]));
-			//numPrints++;
 		}
 	}
 	meas->terminate();
