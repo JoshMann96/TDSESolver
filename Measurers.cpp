@@ -968,8 +968,6 @@ namespace Measurers {
 		}*/
 		celec++;
 		if (celec == nelec){
-			printf("\n");
-			std::cout << std::flush;
 			celec = 0;
 		}
 
