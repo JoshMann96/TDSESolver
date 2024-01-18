@@ -111,8 +111,6 @@ int MultiSimulationManager::getVPAR(int idx, int idxPsi) {
 
 int MultiSimulationManager::measPAR(int idx) {
 	auto strt = std::chrono::high_resolution_clock::now();
-	/*for (int i = 0; i < nelec; i++)
-		meas->measure(&psis[idx][i*nPts], vs[idx], ts[idx], kin);*/
 	meas->measureMany(psis[idx], vs[idx], ts[idx], kin, nelec, nPts);
 	auto end = std::chrono::high_resolution_clock::now();
 	auto dur = std::chrono::duration_cast<std::chrono::microseconds>(end - strt);
