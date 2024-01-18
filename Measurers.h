@@ -573,5 +573,7 @@ namespace Measurers {
 		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
 
 		void terminate();
+
+		int measureMany(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin, int nelec, int nPts);
 	};
 }
