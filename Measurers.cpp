@@ -1217,7 +1217,20 @@ namespace Measurers {
 				//printf("M %2d : %6d \n", meas[i]->getIndex(), (int)std::chrono::duration_cast<std::chrono::microseconds>(t2-t1).count());
 			}
 		}
-		std::cout << std::flush;
+		//std::cout << std::flush;
+		return 0;
+	}
+
+	int MeasurementManager::measureMany(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin, int nelec, int nPts){
+		for(int i = meas.size()-1; i>=0; i--){
+			for(int j = 0; j < nelec; j++){
+				if (meas[i]->measure(&psi[nPts*j], v, t, kin) == 1){
+					meas[i]->terminate();
+					meas.erase(meas.begin() + i);
+					break;
+				}
+			}
+		}
 		return 0;
 	}
 
