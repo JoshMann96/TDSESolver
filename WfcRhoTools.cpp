@@ -89,7 +89,7 @@ namespace WfcToRho {
 		}
 
 		//sort energy
-		int* idx = new int[nelec];
+		long* idx = new long[nelec];
 		for (int i = 0; i < nelec; i++)
 			idx[i] = i;
 		vtls::insertSort_idxs(nelec, energies, idx);

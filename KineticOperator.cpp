@@ -195,6 +195,7 @@ namespace KineticOperators {
 			//good for row major
 			/*for (int i = 0; i < nPts; i++)
 				vtls::copyArray(nPts - i, kinDiags, &opMat[(i * (2 * nPts + 1 - i)) / 2]);*/
+		#pragma omp parallel for
 			for (long d = 0l; d < nPts; d++) {
 				std::complex<double> cv = kinDiags[(int)d];
 				for (long i = 0l; i < nPts - d; i++)
@@ -226,7 +227,11 @@ namespace KineticOperators {
 
 		long nEigs_l, nPts_l=nPts;
 
+		std::cout << "BEGINNING EIGENSOLVING" << std::endl;
+
 		LAPACK_zhpevx(&cV, &cV, &cU, &nPts_l, reinterpret_cast<dcomplex *>(opMat), &emin, &emax, 0l, 0l, &prec, &nEigs_l, eigs, reinterpret_cast<dcomplex *>(states), &nPts_l, work, work2, iwork3, ifail, &info);
+
+		std::cout << "DONE EIGENSOLVING" << std::endl;
 
 		*nEigs = (int)nEigs_l;
 		nelec = (int)nEigs_l;
@@ -565,34 +570,31 @@ namespace KineticOperators {
 	void NonUnifGenDisp_PSM::calcOpMat() {
 		if (needMat) {
 			needMat = 0;
-			if (nPts > 46340) {
-				std::cout << "Long datatype is required for grids of size nPts>46340. Rewrite this code (NonUnifGenDisp_PSM::calcOpMat)" << std::endl;
-				return;
-			}
 
 			initializeOneFFT();
 			if(opMat)
 				LAPACKE_free(opMat); opMat = NULL;
-			opMat = (std::complex<double>*) LAPACKE_malloc(sizeof(std::complex<double>) * (nPts * (nPts + 1)) / 2);
-			std::fill_n(opMat, (nPts * (nPts + 1)) / 2, 0.0);
+			opMat = (std::complex<double>*) LAPACKE_malloc(sizeof(std::complex<double>) * (nPts * (nPts + 1l)) / 2l);
+			std::fill_n(opMat, (nPts * (nPts + 1l)) / 2l, 0.0);
 
 			std::complex<double>* kinDiags = (std::complex<double>*) LAPACKE_malloc(sizeof(std::complex<double>) * nPts);
-			std::complex<double>* kinMat = (std::complex<double>*) LAPACKE_malloc(sizeof(std::complex<double>) * (nPts * (nPts + 1)) / 2);
-			std::complex<double>* temp = (std::complex<double>*) LAPACKE_malloc(sizeof(std::complex<double>) * (nPts * (nPts + 1)) / 2);
+			std::complex<double>* kinMat = (std::complex<double>*) LAPACKE_malloc(sizeof(std::complex<double>) * (nPts * (nPts + 1l)) / 2l);
+			std::complex<double>* temp = (std::complex<double>*) LAPACKE_malloc(sizeof(std::complex<double>) * (nPts * (nPts + 1l)) / 2l);
 
 			for (int d = 0; d < nDisp; d++) {
 				vtls::copyArray(nPts, &osKineticEnergy[d*nPts], kinDiags);
 				//DftiComputeBackward(dftiHandleMat, kinDiags);
 				executeOneFFTBackward(kinDiags);
 
-				for (int dk = 0; dk < nPts; dk++) {
+			#pragma omp parallel for
+				for (long dk = 0; dk < nPts; dk++) {
 					std::complex<double> cv = kinDiags[dk];
-					for (int i = 0; i < nPts - dk; i++)
-						kinMat[(i * i + (2 * dk + 3) * i + dk * (dk + 1)) / 2] = cv;
+					for (long i = 0; i < nPts - dk; i++)
+						kinMat[(i * i + (2l * dk + 3l) * i + dk * (dk + 1l)) / 2l] = cv;
 				}
 
-				vtls::mulTriagDiagTriag(nPts, kinMat, &osKineticMask[d * nPts], temp);
-				vtls::addArrays((nPts * (nPts + 1)) / 2, temp, opMat);
+				vtls::mulTriagDiagTriag(nPts, kinMat, &osKineticMask[(long)d * nPts], temp);
+				vtls::addArrays((nPts * (nPts + 1l)) / 2l, temp, opMat);
 			}
 
 			if (kinDiags)

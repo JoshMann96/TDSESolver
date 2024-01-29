@@ -23,7 +23,9 @@
 #define __restrict
 #endif
 
-#define lapack_int long int
+#define lapack_int long int //use long datatype for large matrices
+#define LAPACKE_malloc fftw_malloc
+#define LAPACKE_free fftw_free
 
 #include <boost/unordered_map.hpp>
 #include <boost/assign/list_of.hpp>

@@ -14,6 +14,7 @@ message("FTN Compiler: ${CMAKE_Fortran_COMPILER}")
 # Compiler options
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=znver2 -mtune=native -DNDEBUG -fopenmp")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -march=znver2 -mtune=native -fopenmp")
 
 # Boost Configuration
 set(BOOST_INC "/usr/include/boost")
