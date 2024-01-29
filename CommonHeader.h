@@ -23,6 +23,7 @@
 #define __restrict
 #endif
 
+#define lapack_int long int
 
 #include <boost/unordered_map.hpp>
 #include <boost/assign/list_of.hpp>

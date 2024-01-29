@@ -3,6 +3,7 @@
 #include <omp.h>
 #include <fftw3.h>
 #include <lapack.h>
+#include <lapacke.h>
 
 #define dcomplex double __complex__
 

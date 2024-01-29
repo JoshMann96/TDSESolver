@@ -178,77 +178,71 @@ namespace KineticOperators {
 	void GenDisp_PSM::calcOpMat() {
 		if(needMat){
 			needMat = 0;
-			if (nPts > 46340) {
-				std::cout << "Long datatype is required for grids of size nPts>46340. Rewrite this code (GenDisp_PSM::calcOpMat)" << std::endl;
-				throw -1;
-			}
 
 			initializeOneFFT();
 
 			if(opMat)
-				fftw_free(opMat); opMat = NULL;
+				LAPACKE_free(opMat); opMat = NULL;
 
-			opMat = (std::complex<double>*)fftw_malloc(sizeof(std::complex<double>)*(nPts*(nPts+1))/2);//new std::complex<double>[(nPts * (nPts+1))/2];
+			opMat = (std::complex<double>*)LAPACKE_malloc(sizeof(std::complex<double>)*(nPts*(nPts+1l))/2l);//new std::complex<double>[(nPts * (nPts+1))/2];
 
-			std::complex<double>* kinDiags = (std::complex<double>*)fftw_malloc(sizeof(std::complex<double>)*nPts);//new std::complex<double>[nPts];
+			std::complex<double>* kinDiags = (std::complex<double>*)LAPACKE_malloc(sizeof(std::complex<double>)*nPts);//new std::complex<double>[nPts];
 
 			vtls::copyArray(nPts, osKineticEnergy, kinDiags);
-			//DftiComputeBackward(dftiHandleMat, kinDiags);
 
 			executeOneFFTBackward(kinDiags);
 
 			//good for row major
 			/*for (int i = 0; i < nPts; i++)
 				vtls::copyArray(nPts - i, kinDiags, &opMat[(i * (2 * nPts + 1 - i)) / 2]);*/
-			for (int d = 0; d < nPts; d++) {
-				std::complex<double> cv = kinDiags[d];
-				for (int i = 0; i < nPts - d; i++)
-					opMat[(i * i + (2 * d + 3) * i + d * (d + 1)) / 2] = cv;
+			for (long d = 0l; d < nPts; d++) {
+				std::complex<double> cv = kinDiags[(int)d];
+				for (long i = 0l; i < nPts - d; i++)
+					opMat[(i * i + (2l * d + 3l) * i + d * (d + 1l)) / 2l] = cv;
 			}
 
-			fftw_free(kinDiags); kinDiags = NULL; //delete[] kinDiags;
+			LAPACKE_free(kinDiags); kinDiags = NULL; //delete[] kinDiags;
 
 		}
 	}
 
 	void GenDisp_PSM::findEigenStates(double* v, double emin, double emax, std::complex<double>* states, int* nEigs) {
-		if (nPts > 46340) {
-			std::cout << "Long datatype is required for grids of size nPts>46340. Rewrite this code (GenDisp_PSM::findEigenStates)" << std::endl;
-			throw -1;
-		}
 
 		calcOpMat();
-		for (int i = 0; i < nPts; i++)
-			opMat[(i * (i + 3)) / 2] += v[i];
+		for (long i = 0l; i < nPts; i++)
+			opMat[(i * (i + 3l)) / 2l] += v[(int)i];
 
 
-		dcomplex * work = (dcomplex *)fftw_malloc(sizeof(dcomplex)*2*nPts);
-		double * work2 = (double *)fftw_malloc(sizeof(double)*7*nPts);
-		int * iwork3 = (int *)fftw_malloc(sizeof(int)*5*nPts);
-		double * eigs = (double *)fftw_malloc(sizeof(double)*nPts);
-		int * ifail = (int *)fftw_malloc(sizeof(int)*nPts);
+		dcomplex * work = (dcomplex *)LAPACKE_malloc(sizeof(dcomplex)*2*nPts);
+		double * work2 = (double *)LAPACKE_malloc(sizeof(double)*7*nPts);
+		long * iwork3 = (long *)LAPACKE_malloc(sizeof(long)*5*nPts);
+		double * eigs = (double *)LAPACKE_malloc(sizeof(double)*nPts);
+		long * ifail = (long *)LAPACKE_malloc(sizeof(long)*nPts);
 
 		char cV = 'V', cU = 'U', cS = 'S';
 
 		double prec = LAPACK_dlamch(&cS);//(2 * dlamch_(&cS));
-		int info;
+		long info;
 
-		LAPACK_zhpevx(&cV, &cV, &cU, &nPts, reinterpret_cast<dcomplex *>(opMat), &emin, &emax, 0, 0, &prec, nEigs, eigs, reinterpret_cast<dcomplex *>(states), &nPts, work, work2, iwork3, ifail, &info);
+		long nEigs_l, nPts_l=nPts;
+
+		LAPACK_zhpevx(&cV, &cV, &cU, &nPts_l, reinterpret_cast<dcomplex *>(opMat), &emin, &emax, 0l, 0l, &prec, &nEigs_l, eigs, reinterpret_cast<dcomplex *>(states), &nPts_l, work, work2, iwork3, ifail, &info);
+
+		*nEigs = (int)nEigs_l;
+		nelec = (int)nEigs_l;
 
 		clearOpMat();
 
-		nelec = nEigs[0];
-
 		if (work)
-			fftw_free(work); work = NULL;
+			LAPACKE_free(work); work = NULL;
 		if (work2)
-			fftw_free(work2); work2 = NULL;
+			LAPACKE_free(work2); work2 = NULL;
 		if (iwork3)
-			fftw_free(iwork3); iwork3 = NULL;
+			LAPACKE_free(iwork3); iwork3 = NULL;
 		if (eigs)
-			fftw_free(eigs); eigs = NULL;
+			LAPACKE_free(eigs); eigs = NULL;
 		if (ifail)
-			fftw_free(ifail); ifail = NULL;
+			LAPACKE_free(ifail); ifail = NULL;
 	}
 
 	double GenDisp_PSM::evaluateKineticEnergy(std::complex<double>* psi) {
@@ -578,13 +572,13 @@ namespace KineticOperators {
 
 			initializeOneFFT();
 			if(opMat)
-				fftw_free(opMat); opMat = NULL;
-			opMat = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * (nPts * (nPts + 1)) / 2);
+				LAPACKE_free(opMat); opMat = NULL;
+			opMat = (std::complex<double>*) LAPACKE_malloc(sizeof(std::complex<double>) * (nPts * (nPts + 1)) / 2);
 			std::fill_n(opMat, (nPts * (nPts + 1)) / 2, 0.0);
 
-			std::complex<double>* kinDiags = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts);
-			std::complex<double>* kinMat = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * (nPts * (nPts + 1)) / 2);
-			std::complex<double>* temp = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * (nPts * (nPts + 1)) / 2);
+			std::complex<double>* kinDiags = (std::complex<double>*) LAPACKE_malloc(sizeof(std::complex<double>) * nPts);
+			std::complex<double>* kinMat = (std::complex<double>*) LAPACKE_malloc(sizeof(std::complex<double>) * (nPts * (nPts + 1)) / 2);
+			std::complex<double>* temp = (std::complex<double>*) LAPACKE_malloc(sizeof(std::complex<double>) * (nPts * (nPts + 1)) / 2);
 
 			for (int d = 0; d < nDisp; d++) {
 				vtls::copyArray(nPts, &osKineticEnergy[d*nPts], kinDiags);
@@ -602,47 +596,51 @@ namespace KineticOperators {
 			}
 
 			if (kinDiags)
-				fftw_free(kinDiags); kinDiags = NULL;
+				LAPACKE_free(kinDiags); kinDiags = NULL;
 			if (kinMat)
-				fftw_free(kinMat); kinMat = NULL;
+				LAPACKE_free(kinMat); kinMat = NULL;
 			if (temp)
-				fftw_free(temp); temp = NULL;
+				LAPACKE_free(temp); temp = NULL;
 
 		}
 	}
 
 	void NonUnifGenDisp_PSM::findEigenStates(double* v, double emin, double emax, std::complex<double>* states, int* nEigs) {
-		calcOpMat();
-		for (int i = 0; i < nPts; i++)
-			opMat[(i * (i + 3)) / 2] += v[i];
 
-		dcomplex * work = (dcomplex *)fftw_malloc(sizeof(dcomplex)*2*nPts);
-		double * work2 = (double *)fftw_malloc(sizeof(double)*7*nPts);
-		int * iwork3 = (int *)fftw_malloc(sizeof(int)*5*nPts);
-		double * eigs = (double *)fftw_malloc(sizeof(double)*nPts);
-		int * ifail = (int *)fftw_malloc(sizeof(int)*nPts);
+		calcOpMat();
+		for (long i = 0l; i < nPts; i++)
+			opMat[(i * (i + 3l)) / 2l] += v[i];
+
+		dcomplex * work = (dcomplex *)LAPACKE_malloc(sizeof(dcomplex)*2*nPts);
+		double * work2 = (double *)LAPACKE_malloc(sizeof(double)*7*nPts);
+		long * iwork3 = (long *)LAPACKE_malloc(sizeof(long)*5*nPts);
+		double * eigs = (double *)LAPACKE_malloc(sizeof(double)*nPts);
+	    long * ifail = (long *)LAPACKE_malloc(sizeof(long)*nPts);
 
 		char cV = 'V', cU = 'U', cS = 'S';
 
 		double prec = LAPACK_dlamch(&cS);//(2 * dlamch_(&cS));
-		int info;
+		long info;
 
-		LAPACK_zhpevx(&cV, &cV, &cU, &nPts, reinterpret_cast<dcomplex *>(opMat), &emin, &emax, 0, 0, &prec, nEigs, eigs, reinterpret_cast<dcomplex *>(states), &nPts, work, work2, iwork3, ifail, &info);
+		long nEigs_l, nPts_l=nPts;
+
+		LAPACK_zhpevx(&cV, &cV, &cU, &nPts_l, reinterpret_cast<dcomplex *>(opMat), &emin, &emax, 0l, 0l, &prec, &nEigs_l, eigs, reinterpret_cast<dcomplex *>(states), &nPts_l, work, work2, iwork3, ifail, &info);
 
 		clearOpMat();
 
-		nelec = nEigs[0];
+		*nEigs = (int)nEigs_l;
+		nelec = (int)nEigs_l;
 
 		if (work)
-			fftw_free(work); work = NULL;
+			LAPACKE_free(work); work = NULL;
 		if (work2)
-			fftw_free(work2); work2 = NULL;
+			LAPACKE_free(work2); work2 = NULL;
 		if (iwork3)
-			fftw_free(iwork3); iwork3 = NULL;
+			LAPACKE_free(iwork3); iwork3 = NULL;
 		if (eigs)
-			fftw_free(eigs); eigs = NULL;
+			LAPACKE_free(eigs); eigs = NULL;
 		if (ifail)
-			fftw_free(ifail); ifail = NULL;
+			LAPACKE_free(ifail); ifail = NULL;
 	}
 
 	double NonUnifGenDisp_PSM::evaluateKineticEnergy(std::complex<double>* psi) {
