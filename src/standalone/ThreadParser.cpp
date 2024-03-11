@@ -3,13 +3,13 @@
 
 
 ThreadParser::ThreadParser(std::stringstream *fil, std::vector<std::string> varNames, std::vector<double> var, int mpiJob) 
-	: fil(fil), varNames(varNames), var(var), mpiJob(mpiJob) {}
+	: fil(fil), varNames(varNames), var(var), mpiJob(mpiJob) { mpiCallbackPtr = &mpiCallbackFunc; }
 
 ThreadParser::~ThreadParser() {
 	delete sim;
 }
 
-int ThreadParser::mpiCallbackProgUpdate(int prog){
+int ThreadParser::mpiCallbackFunc(int prog){
 	MPI_Ssend(&prog, 1, MPI_INT, MPI_Root_Proc, MPITag::UpdateSent, MPI_COMM_WORLD);
 	return 0;
 }
@@ -440,7 +440,7 @@ int ThreadParser::generalSimInit() {
 			dt = parseVal(flds->at(1));
 	} while (!(fil->eof()) && !std::strstr(curLine.c_str(), "END"));
 	n = (((int)((maxX - minX) / dx))/2)*2; // get num points, force to be even
-	sim = new MultiSimulationManager(n, dx, dt, maxT, mpiCallbackProgUpdate);
+	sim = new MultiSimulationManager(n, dx, dt, maxT, mpiCallbackPtr);
 	x = new double[n];
 	vtls::linspace(n, minX, maxX, x);
 	return 1;
@@ -476,7 +476,7 @@ int ThreadParser::hhgSimInit() {
 	double dt = HHGFunctions::getIdealDT(dx);
 
 	n = (int)((maxX - minX) / dx);
-	sim = new MultiSimulationManager(n, dx, dt, maxT, mpiJob);
+	sim = new MultiSimulationManager(n, dx, dt, maxT, mpiCallbackPtr);
 	x = new double[n];
 	vtls::linspace(n, minX, maxX, x);
 	return 1;
