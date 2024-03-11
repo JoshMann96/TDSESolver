@@ -1,5 +1,5 @@
 #pragma once
-#include "CommonHeader.h"
+#include "CORECommonHeader.h"
 #include "Measurers.h"
 #include "Potentials.h"
 #include "KineticOperator.h"
@@ -15,7 +15,8 @@ private:
 	KineticOperators::KineticOperator_FDM* kin_fdm;
 	double *ts, maxT, dt, dx;
 	double **vs, *spatialDamp;
-	int nPts, index, nelec, mpiJob;
+	int nPts, index, nelec;
+	int (*progCallback)(int);
 	std::complex<double> **psis, *scratch1, *scratch2, *tpsi;
 	double getTotalEnergy(std::complex<double> * psi, double * v);
 
@@ -24,7 +25,7 @@ private:
 	int measPAR(int idx);
 
 public:
-	MultiSimulationManager(int nPts, double dx, double dt, double max, int mpiJob);
+	MultiSimulationManager(int nPts, double dx, double dt, double max, int (*callback)(int));
 	~MultiSimulationManager();
 	// Adds a measurer to the simulation.
 	void addMeasurer(Measurers::Measurer * nMeas);

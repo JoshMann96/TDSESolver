@@ -9,6 +9,11 @@ ThreadParser::~ThreadParser() {
 	delete sim;
 }
 
+int ThreadParser::mpiCallbackProgUpdate(int prog){
+	MPI_Ssend(&prog, 1, MPI_INT, MPI_Root_Proc, MPITag::UpdateSent, MPI_COMM_WORLD);
+	return 0;
+}
+
 void ThreadParser::executeScript() {
 	//read each line as long as read was successful and not at end of file
 	do { std::getline(*fil, curLine); } while (readCommand() && !(fil->eof()));
@@ -435,7 +440,7 @@ int ThreadParser::generalSimInit() {
 			dt = parseVal(flds->at(1));
 	} while (!(fil->eof()) && !std::strstr(curLine.c_str(), "END"));
 	n = (((int)((maxX - minX) / dx))/2)*2; // get num points, force to be even
-	sim = new MultiSimulationManager(n, dx, dt, maxT, mpiJob);
+	sim = new MultiSimulationManager(n, dx, dt, maxT, mpiCallbackProgUpdate);
 	x = new double[n];
 	vtls::linspace(n, minX, maxX, x);
 	return 1;

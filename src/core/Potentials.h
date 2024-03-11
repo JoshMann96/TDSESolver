@@ -1,5 +1,5 @@
 #pragma once
-#include "CommonHeader.h"
+#include "CORECommonHeader.h"
 #include "WfcRhoTools.h"
 
 // Electric field profiles for use of creating potentials.

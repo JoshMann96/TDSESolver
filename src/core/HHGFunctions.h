@@ -1,5 +1,5 @@
 #pragma once
-#include "CommonHeader.h"
+#include "CORECommonHeader.h"
 
 // Functions that are useful for HHG simulations. Everything is in SI units.
 namespace HHGFunctions {

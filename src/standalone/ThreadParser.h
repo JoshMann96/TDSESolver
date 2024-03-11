@@ -1,5 +1,5 @@
 #pragma once
-#include "CommonHeader.h"
+#include "STLNCommonHeader.h"
 #include "LinuxFuncs.h"
 #include "ParsingTools.h"
 #include "WfcRhoTools.h"
@@ -226,6 +226,9 @@ private:
 public:
 	ThreadParser(std::stringstream *fil, std::vector<std::string> varNames, std::vector<double> var, int mpiJob);
 	~ThreadParser();
+
+	//MPI update progress callback
+	int mpiCallbackProgUpdate(int prog);
 	//execute rest of file
 	void executeScript();
 	//read/execute line

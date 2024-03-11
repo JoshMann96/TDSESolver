@@ -1,5 +1,5 @@
 #pragma once
-#include "CommonHeader.h"
+#include "CORECommonHeader.h"
 
 namespace parsingTools {
 	void split(const std::string str, std::vector<std::string> * fields, char delim);

@@ -1,5 +1,5 @@
 #pragma once
-#include "CommonHeader.h"
+#include "CORECommonHeader.h"
 #include "AbsorptiveRegions.h"
 #include "Potentials.h"
 #include "Measurers.h"
