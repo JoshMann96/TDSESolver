@@ -21,11 +21,16 @@ set(OBLAS_ROOT "/home/jmann")
 #AOCL config
 set(AOCL_ROOT "/home/jmann")
 
-# Boost Configuration
+# Boost config
 set(BOOST_INC "/usr/include/boost")
 
 #AOCC config
 set(AOCC_ROOT "/home/jmann")
+
+# Set output directory for built executables and libraries
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 add_subdirectory(src)
 

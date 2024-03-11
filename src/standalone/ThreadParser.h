@@ -29,6 +29,11 @@ private:
 	int* nelec = new int[1];
 	//std::mutex* mtx;
 	int mpiJob;
+	
+	//MPI update progress callback
+	int mpiCallbackFunc(int prog);
+	int (*mpiCallbackPtr)(int);
+
 
 	//Names of absorptive boundary types.
 	std::vector<std::string> absNames =
@@ -227,8 +232,6 @@ public:
 	ThreadParser(std::stringstream *fil, std::vector<std::string> varNames, std::vector<double> var, int mpiJob);
 	~ThreadParser();
 
-	//MPI update progress callback
-	int mpiCallbackProgUpdate(int prog);
 	//execute rest of file
 	void executeScript();
 	//read/execute line
