@@ -1,5 +1,5 @@
 #pragma once
-#include "CommonHeader.h"
+#include "CORECommonHeader.h"
 #include <omp.h>
 #include <fftw3.h>
 #include <lapack.h>

@@ -1,7 +1,8 @@
 #include "MultiSimulationManager.h"
 
-MultiSimulationManager::MultiSimulationManager(int nPts, double dx, double dt, double maxT, int mpiJob)
-	: maxT(maxT), dt(dt), dx(dx), nPts(nPts), mpiJob(mpiJob)
+//callback sends progress int 0-100 (can be nullptr for no callback)
+MultiSimulationManager::MultiSimulationManager(int nPts, double dx, double dt, double maxT, int (*callback)(int))
+	: maxT(maxT), dt(dt), dx(dx), nPts(nPts)
 {
 	pot = new Potentials::PotentialManager(nPts);
 	meas = new Measurers::MeasurementManager("");
@@ -20,6 +21,8 @@ MultiSimulationManager::MultiSimulationManager(int nPts, double dx, double dt, d
 	MultiSimulationManager::maxT = maxT; MultiSimulationManager::dt = dt; MultiSimulationManager::dx = dx; MultiSimulationManager::nPts = nPts;
 	MultiSimulationManager::mpiRoot = mpiRoot; MultiSimulationManager::mpiUpdateTag = mpiUpdateTag; MultiSimulationManager::mpiJob = mpiJob;
 	*/
+
+	progCallback = callback;
 
 	index = 0;
 	nelec = 0;
@@ -138,11 +141,13 @@ void MultiSimulationManager::runOS_U2TU(int idx) {
 		iterateIndex();
 		if (ts[prevPrevIndex()] / maxT * 100.0 > percDone) {
 			//PROGRESS UPDATE
-			MPI_Ssend(&percDone, 1, MPI_INT, MPI_Root_Proc, MPITag::UpdateSent, MPI_COMM_WORLD);
+			//MPI_Ssend(&percDone, 1, MPI_INT, MPI_Root_Proc, MPITag::UpdateSent, MPI_COMM_WORLD);
+			progCallback(percDone);
 			percDone++;
 		}
 	}
-	MPI_Ssend(&percDone, 1, MPI_INT, MPI_Root_Proc, MPITag::UpdateSent, MPI_COMM_WORLD);
+	//MPI_Ssend(&percDone, 1, MPI_INT, MPI_Root_Proc, MPITag::UpdateSent, MPI_COMM_WORLD);
+	progCallback(percDone);
 	meas->terminate();
 }
 
@@ -171,7 +176,8 @@ void MultiSimulationManager::runOS_UW2TUW(int idx) {
 		iterateIndex();
 		if (ts[prevPrevIndex()] / maxT * 100.0 > percDone) {
 			//PROGRESS UPDATE
-			MPI_Ssend(&percDone, 1, MPI_INT, MPI_Root_Proc, MPITag::UpdateSent, MPI_COMM_WORLD);
+			//MPI_Ssend(&percDone, 1, MPI_INT, MPI_Root_Proc, MPITag::UpdateSent, MPI_COMM_WORLD);
+			progCallback(percDone);
 			percDone++;
 		}
 	}

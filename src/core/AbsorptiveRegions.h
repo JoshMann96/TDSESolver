@@ -1,5 +1,5 @@
 #pragma once
-#include "CommonHeader.h"
+#include "CORECommonHeader.h"
 // OBSOLETE
 namespace AbsorptiveRegions {
 	class AbsorptiveRegion {
