@@ -1,0 +1,17 @@
+OpenBLAS lapack zhpevx_
+OMP Num Threads: 1
+n =     1 | nEig =     0 | t =    0.0000 s
+n =     2 | nEig =     1 | t =    0.0000 s
+n =     4 | nEig =     3 | t =    0.0000 s
+n =     8 | nEig =     7 | t =    0.0000 s
+n =    16 | nEig =    16 | t =    0.0000 s
+n =    32 | nEig =    31 | t =    0.0010 s
+n =    64 | nEig =    63 | t =    0.0030 s
+n =   128 | nEig =   100 | t =    0.0060 s
+n =   256 | nEig =    99 | t =    0.0150 s
+n =   512 | nEig =   101 | t =    0.0670 s
+n =  1024 | nEig =    98 | t =    0.4480 s
+n =  2048 | nEig =   100 | t =    3.6470 s
+n =  4096 | nEig =    99 | t =   36.5250 s
+n =  8192 | nEig =    99 | t =  326.7680 s
+n = 16384 | nEig =   100 | t = 2642.6820 s
