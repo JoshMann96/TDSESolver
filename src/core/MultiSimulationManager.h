@@ -16,7 +16,7 @@ private:
 	double *ts, maxT, dt, dx;
 	double **vs, *spatialDamp;
 	int nPts, index, nelec;
-	int (*progCallback)(int);
+	std::function <int(int)> progCallback;
 	std::complex<double> **psis, *scratch1, *scratch2, *tpsi;
 	double getTotalEnergy(std::complex<double> * psi, double * v);
 
@@ -25,7 +25,7 @@ private:
 	int measPAR(int idx);
 
 public:
-	MultiSimulationManager(int nPts, double dx, double dt, double max, int (*callback)(int));
+	MultiSimulationManager(int nPts, double dx, double dt, double max, std::function<int(int)> callback);
 	~MultiSimulationManager();
 	// Adds a measurer to the simulation.
 	void addMeasurer(Measurers::Measurer * nMeas);

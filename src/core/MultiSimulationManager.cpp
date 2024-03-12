@@ -1,7 +1,7 @@
 #include "MultiSimulationManager.h"
 
 //callback sends progress int 0-100 (can be nullptr for no callback)
-MultiSimulationManager::MultiSimulationManager(int nPts, double dx, double dt, double maxT, int (*callback)(int))
+MultiSimulationManager::MultiSimulationManager(int nPts, double dx, double dt, double maxT, std::function<int(int)> callback)
 	: maxT(maxT), dt(dt), dx(dx), nPts(nPts)
 {
 	pot = new Potentials::PotentialManager(nPts);

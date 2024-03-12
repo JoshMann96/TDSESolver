@@ -3,7 +3,10 @@
 
 
 ThreadParser::ThreadParser(std::stringstream *fil, std::vector<std::string> varNames, std::vector<double> var, int mpiJob) 
-	: fil(fil), varNames(varNames), var(var), mpiJob(mpiJob) { mpiCallbackPtr = &mpiCallbackFunc; }
+	: fil(fil), varNames(varNames), var(var), mpiJob(mpiJob) { 
+		auto lam = [this](int prog){return ThreadParser::mpiCallbackFunc(prog);};
+		callbackFunc = lam; 
+		}
 
 ThreadParser::~ThreadParser() {
 	delete sim;
@@ -440,7 +443,7 @@ int ThreadParser::generalSimInit() {
 			dt = parseVal(flds->at(1));
 	} while (!(fil->eof()) && !std::strstr(curLine.c_str(), "END"));
 	n = (((int)((maxX - minX) / dx))/2)*2; // get num points, force to be even
-	sim = new MultiSimulationManager(n, dx, dt, maxT, mpiCallbackPtr);
+	sim = new MultiSimulationManager(n, dx, dt, maxT, callbackFunc);
 	x = new double[n];
 	vtls::linspace(n, minX, maxX, x);
 	return 1;
@@ -476,7 +479,7 @@ int ThreadParser::hhgSimInit() {
 	double dt = HHGFunctions::getIdealDT(dx);
 
 	n = (int)((maxX - minX) / dx);
-	sim = new MultiSimulationManager(n, dx, dt, maxT, mpiCallbackPtr);
+	sim = new MultiSimulationManager(n, dx, dt, maxT, callbackFunc);
 	x = new double[n];
 	vtls::linspace(n, minX, maxX, x);
 	return 1;
