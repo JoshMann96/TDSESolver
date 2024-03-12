@@ -32,7 +32,7 @@ private:
 	
 	//MPI update progress callback
 	int mpiCallbackFunc(int prog);
-	int (*mpiCallbackPtr)(int);
+	std::function<int(int)> callbackFunc;
 
 
 	//Names of absorptive boundary types.
