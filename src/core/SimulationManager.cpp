@@ -1,7 +1,7 @@
-#include "MultiSimulationManager.h"
+#include "SimulationManager.h"
 
 //callback sends progress int 0-100 (can be nullptr for no callback)
-MultiSimulationManager::MultiSimulationManager(int nPts, double dx, double dt, double maxT, std::function<int(int)> callback)
+SimulationManager::SimulationManager(int nPts, double dx, double dt, double maxT, std::function<int(int)> callback)
 	: maxT(maxT), dt(dt), dx(dx), nPts(nPts)
 {
 	pot = new Potentials::PotentialManager(nPts);
@@ -18,8 +18,8 @@ MultiSimulationManager::MultiSimulationManager(int nPts, double dx, double dt, d
 	spatialDamp = (double*) fftw_malloc(sizeof(double) * nPts);
 	std::fill_n(spatialDamp, nPts, 1.0);
 	/*
-	MultiSimulationManager::maxT = maxT; MultiSimulationManager::dt = dt; MultiSimulationManager::dx = dx; MultiSimulationManager::nPts = nPts;
-	MultiSimulationManager::mpiRoot = mpiRoot; MultiSimulationManager::mpiUpdateTag = mpiUpdateTag; MultiSimulationManager::mpiJob = mpiJob;
+	SimulationManager::maxT = maxT; SimulationManager::dt = dt; SimulationManager::dx = dx; SimulationManager::nPts = nPts;
+	SimulationManager::mpiRoot = mpiRoot; SimulationManager::mpiUpdateTag = mpiUpdateTag; SimulationManager::mpiJob = mpiJob;
 	*/
 
 	progCallback = callback;
@@ -28,31 +28,31 @@ MultiSimulationManager::MultiSimulationManager(int nPts, double dx, double dt, d
 	nelec = 0;
 }
 
-MultiSimulationManager::~MultiSimulationManager()
+SimulationManager::~SimulationManager()
 {
 	meas->terminate();
 }
 
-void MultiSimulationManager::addMeasurer(Measurers::Measurer* m) {
+void SimulationManager::addMeasurer(Measurers::Measurer* m) {
 	meas->addMeasurer(m);
 }
 
-void MultiSimulationManager::addPotential(Potentials::Potential* p) {
+void SimulationManager::addPotential(Potentials::Potential* p) {
 	pot->addPotential(p);
 }
 
-void MultiSimulationManager::addSpatialDamp(double* arr) {
+void SimulationManager::addSpatialDamp(double* arr) {
 	vtls::seqMulArrays(nPts, arr, spatialDamp);
 }
 
-void MultiSimulationManager::finishInitialization() {
+void SimulationManager::finishInitialization() {
 	pot->finishAddingPotentials(kin);
 	//it->initializeCN();
 	//it->initializeCNPA();
 }
 
 //SHOULD USE KIN METHOD OR WFCRHOTOOLS
-double MultiSimulationManager::getTotalEnergy(std::complex<double> * psi, double * v) {
+double SimulationManager::getTotalEnergy(std::complex<double> * psi, double * v) {
 	double totE = 0.0;
 	for (int i = 0; i < nelec; i++) {
 		vtls::secondDerivative(nPts, &psi[i*nPts], scratch1, dx);
@@ -67,7 +67,7 @@ double MultiSimulationManager::getTotalEnergy(std::complex<double> * psi, double
 }
 
 
-void MultiSimulationManager::findEigenStates(double emin, double emax, double maxT, double rate) {
+void SimulationManager::findEigenStates(double emin, double emax, double maxT, double rate) {
 	pot->getV(0.0, vs[index], kin);
 
 	std::complex<double>* states = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nPts);
@@ -91,7 +91,7 @@ void MultiSimulationManager::findEigenStates(double emin, double emax, double ma
 
 }
 
-void MultiSimulationManager::setPsi(std::complex<double>* npsi) {
+void SimulationManager::setPsi(std::complex<double>* npsi) {
 	if (!nelec) {
 		psis = new std::complex<double>*[4];
 		nelec = 1;
@@ -104,7 +104,7 @@ void MultiSimulationManager::setPsi(std::complex<double>* npsi) {
 	vtls::normalizeSqrNorm(nPts, psis[index], dx);
 }
 
-int MultiSimulationManager::getVPAR(int idx, int idxPsi) {
+int SimulationManager::getVPAR(int idx, int idxPsi) {
 	auto strt = std::chrono::high_resolution_clock::now();
 	pot->getV(psis[idxPsi], ts[idx], vs[idx], kin);
 	auto end = std::chrono::high_resolution_clock::now();
@@ -112,7 +112,7 @@ int MultiSimulationManager::getVPAR(int idx, int idxPsi) {
 	return dur.count();
 }
 
-int MultiSimulationManager::measPAR(int idx) {
+int SimulationManager::measPAR(int idx) {
 	auto strt = std::chrono::high_resolution_clock::now();
 	meas->measureMany(psis[idx], vs[idx], ts[idx], kin, nelec, nPts);
 	auto end = std::chrono::high_resolution_clock::now();
@@ -121,7 +121,7 @@ int MultiSimulationManager::measPAR(int idx) {
 }
 
 //Run simulation using operator splitting Fourier method (applies potential as linear)
-void MultiSimulationManager::runOS_U2TU(int idx) {
+void SimulationManager::runOS_U2TU(int idx) {
 	iterateIndex();
 	pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()], kin);
 	kin_psm->stepOS_U2TU(psis[prevIndex()], vs[prevIndex()], spatialDamp, psis[index], nelec);
@@ -129,7 +129,7 @@ void MultiSimulationManager::runOS_U2TU(int idx) {
 
 	int percDone = 0;
 	std::future<int> f1;
-	auto rM = &MultiSimulationManager::measPAR;
+	auto rM = &SimulationManager::measPAR;
 	while (ts[prevPrevIndex()] <= maxT) {
 		f1 = std::async(rM, this, prevPrevIndex());
 
@@ -152,7 +152,7 @@ void MultiSimulationManager::runOS_U2TU(int idx) {
 }
 
 //Run simulation using operator splitting Fourier method (applies potential as nonlinear, second potential phase is recalculated after propagation phase)
-void MultiSimulationManager::runOS_UW2TUW(int idx) {
+void SimulationManager::runOS_UW2TUW(int idx) {
 	tpsi = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nelec);
 	iterateIndex();
 	pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()], kin);
@@ -163,7 +163,7 @@ void MultiSimulationManager::runOS_UW2TUW(int idx) {
 
 	int percDone = 0;
 	std::future<int> f1;
-	auto rM = &MultiSimulationManager::measPAR;
+	auto rM = &SimulationManager::measPAR;
 	while (ts[prevPrevIndex()] <= maxT) {
 		f1 = std::async(rM, this, prevPrevIndex());
 
@@ -184,54 +184,54 @@ void MultiSimulationManager::runOS_UW2TUW(int idx) {
 	meas->terminate();
 }
 
-void MultiSimulationManager::iterateIndex() {
+void SimulationManager::iterateIndex() {
 	ts[nextIndex()] = ts[index] + dt;
 	index++;
 	if (index > 3)
 		index = 0;
 }
 
-int MultiSimulationManager::prevIndex() {
+int SimulationManager::prevIndex() {
 	if (index == 0)
 		return 3;
 	else
 		return index - 1;
 }
 
-int MultiSimulationManager::prevPrevIndex() {
+int SimulationManager::prevPrevIndex() {
 	if (index <= 1)
 		return 2 + index;
 	else
 		return index - 2;
 }
 
-int MultiSimulationManager::nextIndex() {
+int SimulationManager::nextIndex() {
 	if (index == 3)
 		return 0;
 	else
 		return index + 1;
 }
 
-int MultiSimulationManager::getNumPoints() {
+int SimulationManager::getNumPoints() {
 	return nPts;
 }
 
-double MultiSimulationManager::getDX() {
+double SimulationManager::getDX() {
 	return dx;
 }
 
-double MultiSimulationManager::getDT() {
+double SimulationManager::getDT() {
 	return dt;
 }
 
-double MultiSimulationManager::getMaxT() {
+double SimulationManager::getMaxT() {
 	return maxT;
 }
 
-std::complex<double> * MultiSimulationManager::getPsi() {
+std::complex<double> * SimulationManager::getPsi() {
 	return psis[index];
 }
 
-int MultiSimulationManager::getNElec() {
+int SimulationManager::getNElec() {
 	return nelec;
 }

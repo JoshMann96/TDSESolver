@@ -5,7 +5,7 @@
 #include "WfcRhoTools.h"
 #include "AbsorptiveRegions.h"
 #include "Potentials.h"
-#include "MultiSimulationManager.h"
+#include "SimulationManager.h"
 #include "HHGFunctions.h"
 
 //Reads simulation information after definition stage, executes simulation
@@ -16,7 +16,7 @@ private:
 	//ProgressTracker *prg;
 	std::vector<std::string> varNames;
 	std::vector<double> var;
-	MultiSimulationManager *sim;
+	SimulationManager *sim;
 	std::string curLine;
 	std::vector<std::string> *flds = new std::vector<std::string>(0);
 	std::vector<Potentials::WaveFunctionSelfPotential*> *spc = new std::vector<Potentials::WaveFunctionSelfPotential*>(0);
