@@ -127,4 +127,10 @@ extern "C" {
         std::cout << "1" << std::endl;
     }
 
+    int testPtr( void* ptr ){
+        SimulationManager* sim = reinterpret_cast<SimulationManager*>(ptr);
+
+        return sim->getNumPoints();
+    }
+
 }

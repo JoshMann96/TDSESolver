@@ -1,5 +1,7 @@
 import ctypes
-lib = ctypes.CDLL('./libTDSEpy.so')
+lib = ctypes.cdll.LoadLibrary('./libTDSEpy.so')
+stdc = ctypes.cdll.LoadLibrary("libc.so.6")
+stdcpp = ctypes.cdll.LoadLibrary("libstdc++.so.6")
 
 lib.createSimulation.argtypes = [ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double]
 lib.createSimulation.restype = ctypes.c_void_p
@@ -106,3 +108,9 @@ def addPot_JelliumPotentialBacked(ptr:ctypes.c_void_p, center:float, ef:float, w
     backWidth = ctypes.c_double(backWidth)
     refPoint = ctypes.c_int(refPoint)
     return lib.addPot_JelliumPotentialBacked(ptr, center, ef, w, backStart, backWidth, refPoint)
+
+lib.testPtr.argtypes = [ctypes.c_void_p]
+lib.testPtr.restype = ctypes.c_int
+
+def testPtr(ptr:ctypes.c_void_p):
+    return lib.testPtr(ptr)

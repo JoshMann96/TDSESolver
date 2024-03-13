@@ -1,2 +1,4 @@
 import ctypes
-lib = ctypes.CDLL('./libTDSEpy.so')
+lib = ctypes.cdll.LoadLibrary('./libTDSEpy.so')
+stdc = ctypes.cdll.LoadLibrary("libc.so.6")
+stdcpp = ctypes.cdll.LoadLibrary("libstdc++.so.6")
