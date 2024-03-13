@@ -1,8 +1,5 @@
 import ctypes
-# Load shared library
 lib = ctypes.CDLL('./libTDSEpy.so')
-
-#inst = ctypes.c_void_p(SimulationManager()) #NEED TO ADD PARAMETERS
 
 lib.createSimulation.argtypes = [ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double]
 lib.createSimulation.restype = ctypes.c_void_p
@@ -26,7 +23,7 @@ def createSimulation(xmin:float, xmax:float, dx:float, dt:float, maxT:float):
 
     Returns
     -------
-    int
+    ctypes.c_void_p
         Pointer to simulation instance.
     """
     xmin = ctypes.c_double(xmin)
@@ -34,7 +31,7 @@ def createSimulation(xmin:float, xmax:float, dx:float, dt:float, maxT:float):
     dx = ctypes.c_double(dx)
     dt = ctypes.c_double(dt)
     maxT = ctypes.c_double(maxT)
-    return lib.createSimulation(xmin, xmax, dx, dt, maxT)
+    return ctypes.c_void_p(lib.createSimulation(xmin, xmax, dx, dt, maxT))
 
 lib.deleteSimulation.argtypes = [ctypes.c_void_p]
 lib.deleteSimulation.restype = ctypes.c_int
@@ -45,7 +42,7 @@ def deleteSimulation(ptr:ctypes.c_void_p):
 
     Parameters
     ----------
-    ptr : int
+    ptr : c_void_p
         Pointer to simulation instance.
 
     Returns
@@ -53,11 +50,10 @@ def deleteSimulation(ptr:ctypes.c_void_p):
     int
         0 if successful.
     """
-    ptr = ctypes.c_void_p(ptr)
     return lib.deleteSimulation(ptr)
 
 lib.addPot_FilePotential.argtypes = [ctypes.c_void_p, ctypes.c_double, ctypes.c_wchar_p, ctypes.c_int]
-lib.addPot_FilePotential.restype = ctypes.c_void_p
+lib.addPot_FilePotential.restype = None
 
 def addPot_FilePotential(ptr:ctypes.c_void_p, offset:float, fil:str, refPoint:int):
     """
@@ -65,7 +61,7 @@ def addPot_FilePotential(ptr:ctypes.c_void_p, offset:float, fil:str, refPoint:in
 
     Parameters
     ----------
-    ptr : int
+    ptr : c_void_p
         Pointer to simulation instance.
     offset : float
         Positional offset.
@@ -73,14 +69,40 @@ def addPot_FilePotential(ptr:ctypes.c_void_p, offset:float, fil:str, refPoint:in
         File containing potential.
     refPoint : int
         Maximum time in simulation (end time).
-
-    Returns
-    -------
-    int
-        Pointer to simulation instance.
     """
-    ptr = ctypes.c_void_p(ptr)
     offset = ctypes.c_double(offset)
     fil = ctypes.c_wchar_p(fil)
     refPoint = ctypes.c_int(refPoint)
     return lib.addPot_FilePotential(ptr, offset, fil, refPoint)
+
+lib.addPot_JelliumPotentialBacked.argtypes = [ctypes.c_void_p, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_int]
+lib.addPot_JelliumPotentialBacked.restype = None
+
+def addPot_JelliumPotentialBacked(ptr:ctypes.c_void_p, center:float, ef:float, w:float, backStart:float, backWidth:float, refPoint:int):
+    """
+    Adds Jellium potential.
+
+    Parameters
+    ----------
+    ptr : c_void_p
+        Pointer to simulation instance.
+    center : float
+        Jellium center (sigmoid center).
+    ef : float
+        Fermi energy.
+    w : float
+        Work function.
+    backStart : float
+        Internal start position of polynomial smooth spline backing.
+    backWidth : float
+        Width of polynomial smooth spline backing.
+    refPoint : int
+        Maximum time in simulation (end time).
+    """
+    center = ctypes.c_double(center)
+    ef = ctypes.c_double(ef)
+    w = ctypes.c_double(w)
+    backStart = ctypes.c_double(backStart)
+    backWidth = ctypes.c_double(backWidth)
+    refPoint = ctypes.c_int(refPoint)
+    return lib.addPot_JelliumPotentialBacked(ptr, center, ef, w, backStart, backWidth, refPoint)

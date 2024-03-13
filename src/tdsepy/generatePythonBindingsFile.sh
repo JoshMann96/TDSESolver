@@ -34,11 +34,19 @@ function PRINT_DEF_END {
 }
 
 function PRINT_CALL_START {
-    echo -n "    return lib.$1(" >&3
+    if [[ "$2" == "void*" ]]; then
+        echo -n "    return ctypes.c_void_p(lib.$1(" >&3
+    else
+        echo -n "    return lib.$1(" >&3
+    fi
 }
 
 function PRINT_CALL_END {
-    echo ")" >&3
+    if [[ "$1" == "void*" ]]; then
+        echo "))" >&3
+    else
+        echo ")" >&3
+    fi
 }
 
 function PRINT_CTYPE {
@@ -124,9 +132,11 @@ function HANDLE_CTYPE_MATCHES {
         DTYPE="${BASH_REMATCH[1]}"
         ARGST="${BASH_REMATCH[2]}"
 
-        echo -n "    ${ARGST} = " >&3
-        PRINT_CTYPE "$DTYPE"
-        echo "(${ARGST})" >&3
+        if [[ "$DTYPE" != "void*" ]]; then
+            echo -n "    ${ARGST} = " >&3
+            PRINT_CTYPE "$DTYPE"
+            echo "(${ARGST})" >&3
+        fi
 
         # Remove the first regex match and try again
         HANDLE_CTYPE_MATCHES "${MSG/${BASH_REMATCH[0]}/}"
@@ -232,9 +242,9 @@ while IFS= read -r line; do
             PRINT_CTYPE_CONV "$functionArgs"
 
             ### CALL FUNCTION ###
-            PRINT_CALL_START "$functionName"
+            PRINT_CALL_START "$functionName" "$outputType"
             PRINT_CALL_ARGS "$functionArgs"
-            PRINT_CALL_END
+            PRINT_CALL_END "$outputType"
         fi
     fi
 done < "$1"

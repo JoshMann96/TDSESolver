@@ -1396,20 +1396,28 @@ namespace Potentials {
 	}
 
 	void PotentialManager::addPotential(Potential * pot) {
+		std::cout << "000" << std::endl;
 		int typ = pot->isDynamic();
+		std::cout << "001" << std::endl;
 		if (typ == 2) {
+			std::cout << "002" << std::endl;
 			waveFuncDependentPots.push_back(pot);
 		}
 		else if (typ == 1) {
+			std::cout << "003" << std::endl;
 			dynamicPots.push_back(pot);
 		}
 		else if (typ == 0) {
+			std::cout << "004" << std::endl;
+			std::cout << staticPots.size() << std::endl;
+			std::cout << "005" << std::endl;
 			staticPots.push_back(pot);
 		}
 		else {
 			std::cout << "Potential is neither dynamic nor static." << std::endl;
 			throw -1;
 		}
+		std::cout << "006" << std::endl;
 	}
 
 	void PotentialManager::finishAddingPotentials(KineticOperators::KineticOperator* kin) {

@@ -3,6 +3,7 @@
 #include "Potentials.h"
 #include "Measurers.h"
 #include "PhysCon.h"
+#include <memory>
 #include <new>
 
 using namespace std;
@@ -28,7 +29,7 @@ extern "C" {
 
     Returns
     -------
-    int
+    ctypes.c_void_p
         Pointer to simulation instance.
     """
 */
@@ -39,7 +40,9 @@ extern "C" {
         for (int i = 0; i < nPts; i++)
             xs[i] = xmin + dx*i;
 
-        return new(std::nothrow) SimulationManager(nPts, dx, dt, maxT, NULL, xs);
+        SimulationManager* sim = new(std::nothrow) SimulationManager(nPts, dx, dt, maxT, NULL, xs);
+
+        return reinterpret_cast<void*>(sim);
     }
 
 /*
@@ -48,7 +51,7 @@ extern "C" {
 
     Parameters
     ----------
-    ptr : int
+    ptr : c_void_p
         Pointer to simulation instance.
 
     Returns
@@ -58,6 +61,8 @@ extern "C" {
     """
 */
     int deleteSimulation( void* ptr ){
+        void* args = reinterpret_cast<SimulationManager*>(ptr)->getargs();
+        delete[] reinterpret_cast<double*>(args);
         delete reinterpret_cast<SimulationManager*>(ptr);
         return 0;
     }
@@ -68,7 +73,7 @@ extern "C" {
 
     Parameters
     ----------
-    ptr : int
+    ptr : c_void_p
         Pointer to simulation instance.
     offset : float
         Positional offset.
@@ -76,11 +81,6 @@ extern "C" {
         File containing potential.
     refPoint : int
         Maximum time in simulation (end time).
-
-    Returns
-    -------
-    int
-        Pointer to simulation instance.
     """
 */
     void addPot_FilePotential( void* ptr, double offset, string fil, int refPoint ){
@@ -91,4 +91,40 @@ extern "C" {
 
         sim->addPotential(nPot);
     }
+
+/*
+    """
+    Adds Jellium potential.
+
+    Parameters
+    ----------
+    ptr : c_void_p
+        Pointer to simulation instance.
+    center : float
+        Jellium center (sigmoid center).
+    ef : float
+        Fermi energy.
+    w : float
+        Work function.
+    backStart : float
+        Internal start position of polynomial smooth spline backing.
+    backWidth : float
+        Width of polynomial smooth spline backing.
+    refPoint : int
+        Maximum time in simulation (end time).
+    """
+*/
+    void addPot_JelliumPotentialBacked( void* ptr, double center, double ef, double w, double backStart, double backWidth, int refPoint ){
+        SimulationManager* sim = reinterpret_cast<SimulationManager*>(ptr);
+
+        Potentials::Potential* nPot = new Potentials::JelliumPotentialBacked(
+            sim->getNumPoints(), reinterpret_cast<double*>(sim->getargs()), center, ef, w, backStart, backWidth, refPoint);
+
+        std::cout << "0" << std::endl;
+
+        sim->addPotential(nPot);
+
+        std::cout << "1" << std::endl;
+    }
+
 }
