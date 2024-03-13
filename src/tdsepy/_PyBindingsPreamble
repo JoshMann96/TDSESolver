@@ -1,0 +1,5 @@
+import ctypes
+# Load shared library
+lib = ctypes.CDLL('./libTDSEpy.so')
+
+#inst = ctypes.c_void_p(SimulationManager()) #NEED TO ADD PARAMETERS

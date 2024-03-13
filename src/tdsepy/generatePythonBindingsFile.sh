@@ -6,18 +6,16 @@ if [ "$#" -ne 2 ]; then
     exit 1
 fi
 
-CPP_REGEX="^\s*(\w+)\s+(\w+)\s*\(\s*([^)]*)\s*\)"  # functionName(argType0 argName0 argType1 argName1...)
-# ^(\w+) - outputType
+CPP_FUNC_REGEX="^\s*(\w+\*?)\s+(\w+)\s*\(\s*([^)]*)\s*\)"  # functionName(argType0 argName0 argType1 argName1...)
+# ^(\w+\*?) - outputType
 # \s+    - 1+ whitespace
 # (\w+)  - functionName
 # \s*\(\s*  - 0+ white spaces around parenthesis
 # ([^)]*) - parameters
 # \s*\)\s*  - 0+ white spaces around right parenthesis
 
-PY_DEF_TEMP="def %s(%s):"
+ARG_REGEX="(\w+\*?)\s+(\w+)"
 
-# Open the output Python file for writing
-exec 3> "$2"
 
 function PRINT_TYPESET_START {
     echo -n "lib.$1.argtypes = [" >&3
@@ -29,10 +27,6 @@ function PRINT_TYPESET_END {
 
 function PRINT_DEF_START {
     echo -n "def $1(" >&3
-}
-
-function PRINT_ARGS {
-    echo -n "$1:$2" >&3
 }
 
 function PRINT_DEF_END {
@@ -47,8 +41,44 @@ function PRINT_CALL_END {
     echo ")" >&3
 }
 
+function PRINT_CTYPE {
+    case "$1" in
+        "int")
+            echo -n "ctypes.c_int" >&3
+            ;;
+        "double")
+            echo -n "ctypes.c_double" >&3
+            ;;
+        "void")
+            echo -n "ctypes.c_void" >&3
+            ;;
+        "void*")
+            echo -n "ctypes.c_void_p" >&3
+            ;;
+        "string")
+            echo -n "ctypes.c_wchar_p" >&3
+            ;;
+    esac
+}
+
+function PRINT_PTYPE {
+    case "$1" in
+        "int")
+            echo -n "int" >&3
+            ;;
+        "double")
+            echo -n "float" >&3
+            ;;
+        "void*")
+            echo -n "ctypes.c_void_p" >&3
+            ;;
+        "string")
+            echo -n "str" >&3
+            ;;
+    esac
+}
+
 function HANDLE_TYPE_SETTING {
-    ARG_REGEX="(\w+)\s+(\w+)"
     MSG=$1
     I=$2
 
@@ -56,12 +86,10 @@ function HANDLE_TYPE_SETTING {
         DTYPE="${BASH_REMATCH[1]}"
         ARGST="${BASH_REMATCH[2]}"
 
-
         if [[ $I != 0 ]] ; then
             echo -n ", " >&3
         fi
-        echo -n "ctypes.c_${DTYPE}" >&3
-
+        PRINT_CTYPE "$DTYPE"
 
         # Remove the first regex match and try again
         HANDLE_TYPE_SETTING "${MSG/${BASH_REMATCH[0]}/}" ${I+1}
@@ -69,7 +97,6 @@ function HANDLE_TYPE_SETTING {
 }
 
 function HANDLE_ARG_MATCHES {
-    ARG_REGEX="(\w+)\s+(\w+)"
     MSG=$1
     I=$2
 
@@ -81,7 +108,8 @@ function HANDLE_ARG_MATCHES {
         if [[ $I != 0 ]] ; then
             echo -n ", " >&3
         fi
-        echo -n "$ARGST" >&3
+        echo -n "$ARGST:" >&3
+        PRINT_PTYPE "$DTYPE"
 
 
         # Remove the first regex match and try again
@@ -90,16 +118,15 @@ function HANDLE_ARG_MATCHES {
 }
 
 function HANDLE_CTYPE_MATCHES {
-    ARG_REGEX="(\w+)\s+(\w+)"
     MSG=$1
 
     if [[ $MSG =~ $ARG_REGEX ]] ; then
         DTYPE="${BASH_REMATCH[1]}"
         ARGST="${BASH_REMATCH[2]}"
 
-
-        echo "    $ARGST = ctypes.c_$DTYPE($ARGST)" >&3
-
+        echo -n "    ${ARGST} = " >&3
+        PRINT_CTYPE "$DTYPE"
+        echo "(${ARGST})" >&3
 
         # Remove the first regex match and try again
         HANDLE_CTYPE_MATCHES "${MSG/${BASH_REMATCH[0]}/}"
@@ -107,7 +134,6 @@ function HANDLE_CTYPE_MATCHES {
 }
 
 function HANDLE_CALL_ARGS {
-    ARG_REGEX="(\w+)\s+(\w+)"
     MSG=$1
     I=$2
 
@@ -115,12 +141,10 @@ function HANDLE_CALL_ARGS {
         DTYPE="${BASH_REMATCH[1]}"
         ARGST="${BASH_REMATCH[2]}"
 
-
         if [[ $I != 0 ]] ; then
             echo -n ", " >&3
         fi
         echo -n "$ARGST" >&3
-
 
         # Remove the first regex match and try again
         HANDLE_CALL_ARGS "${MSG/${BASH_REMATCH[0]}/}" ${I+1}
@@ -139,7 +163,9 @@ function PRINT_RESTYPESET {
     if [[ "$DTYPE" == "void" ]]; then
         echo "lib.${FUNCN}.restype = None" >&3
     else
-        echo "lib.${FUNCN}.restype = ctypes.c_${DTYPE}" >&3
+        echo -n "lib.${FUNCN}.restype = " >&3
+        PRINT_CTYPE "$DTYPE"
+        echo "" >&3
     fi
 }
 
@@ -156,47 +182,66 @@ function PRINT_CALL_ARGS {
 }
 
 ############ BEGIN PYTHON ENCODING #############
-#imports
-echo "import ctypes" >&3
-echo "# Load shared library" >&3
-echo "lib = ctypes.CDLL('./libTDSEpy.so')" >&3
-echo "">&3
 
+# Open the output Python file for writing
+exec 3> "$2"
 
-#definitions
+cat _PyBindingsPreamble >&3
+
+IN_PYDOC=0
+
+PYDOC_BUF=$(mktemp)
+
+#Go through each line in file
 while IFS= read -r line; do
-    # Check if the line matches the function definition pattern
-    if [[ $line =~ $CPP_REGEX ]]; then
+    # Starting/ending docstring?
+    if [[ $line =~ \s*\"{3} ]]; then
+        IN_PYDOC=$((!IN_PYDOC))
+        echo "${line}" >> "$PYDOC_BUF"
+    # Currently doing docstring?
+    elif [[ ${IN_PYDOC} == 1 ]]; then
+        echo "${line}" >> "$PYDOC_BUF"
+    # FUNCTION DEFINITION
+    elif [[ $line =~ $CPP_FUNC_REGEX ]]; then
         # Extract components from the matched line
         outputType="${BASH_REMATCH[1]}"       # outputType
         functionName="${BASH_REMATCH[2]}"     # functionName
         functionArgs="${BASH_REMATCH[3]}"             # argType0 argName0 argType1 argName1...
 
-        
+        ### RUN ONLY IF IS FILE DEFINITION ###
+        if [[ "${outputType}" != "return" ]]; then
+            echo "" >&3
 
-        echo "" >&3
+            ### CTYPES SETTING ###
+            PRINT_TYPESET "$functionName" "$functionArgs"
+            PRINT_RESTYPESET "$functionName" "$outputType"
 
-        ### CTYPES SETTING ###
-        PRINT_TYPESET "$functionName" "$functionArgs"
-        PRINT_RESTYPESET "$functionName" "$outputType"
+            echo "" >&3
 
-        echo "" >&3
+            ### FUNCTION DEFINITION ###
+            PRINT_DEF_START "$functionName"
+            PRINT_DEF_ARGS "$functionArgs"
+            PRINT_DEF_END
 
-        ### FUNCTION DEFINITION ###
-        PRINT_DEF_START "$functionName"
-        PRINT_DEF_ARGS "$functionArgs"
-        PRINT_DEF_END
+            ### PRINT DOCSTRING IN BUFFER ###
+            cat "$PYDOC_BUF" >&3
+            #clear docstring buffer
+            > "$PYDOC_BUF"
 
-        PRINT_CTYPE_CONV "$functionArgs"
+            ### CTYPE CONVERSIONS ###
+            PRINT_CTYPE_CONV "$functionArgs"
 
-        ### CALL FUNCTION ###
-        PRINT_CALL_START "$functionName"
-        PRINT_CALL_ARGS "$functionArgs"
-        PRINT_CALL_END
+            ### CALL FUNCTION ###
+            PRINT_CALL_START "$functionName"
+            PRINT_CALL_ARGS "$functionArgs"
+            PRINT_CALL_END
+        fi
     fi
 done < "$1"
 
 # Close the output Python file
 exec 3>&-
+
+rm "$PYDOC_BUF"
 
 exit

@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.13)
 
 project(TDSESolveLinux)
 
+set(CMAKE_CXX_STANDARD 17)
+
 #set compiler
 set(CMAKE_C_COMPILER "/home/jmann/bin/clang")
 set(CMAKE_CXX_COMPILER "/home/jmann/bin/clang++")
@@ -11,9 +13,6 @@ message("C   Compiler: ${CMAKE_C_COMPILER}")
 message("CXX Compiler: ${CMAKE_CXX_COMPILER}")
 message("FTN Compiler: ${CMAKE_Fortran_COMPILER}")
 
-# Compiler options
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=znver2 -mtune=native -DNDEBUG -fopenmp")
 
 #OpenBLAS config
 set(OBLAS_ROOT "/home/jmann")
@@ -26,6 +25,32 @@ set(BOOST_INC "/usr/include/boost")
 
 #AOCC config
 set(AOCC_ROOT "/home/jmann")
+
+#MPI
+find_package(MPI REQUIRED)
+include_directories(SYSTEM ${MPI_INCLUDE_PATH})
+
+#BOOST
+include_directories(${BOOST_INC})
+set(BOOST_LINK_FLAGS "-lboost_system -lboost_filesystem")
+
+#AOCC
+set(AOCC_INC "${AOCC_ROOT}/include")
+set(AOCC_LIB "${AOCC_ROOT}/lib")
+set(AOCC_LIBS "-L${AOCC_LIB} -lomp -lflang -lstdc++")
+include_directories(${AOCC_INC})
+
+#AOCL config
+set(AOCL_INC "${AOCL_ROOT}/include")
+set(AOCL_LIB "${AOCL_ROOT}/lib")
+set(BLIS_INC "${AOCL_INC}/blis")
+include_directories(${AOCL_INC})
+set(AOCL_LIBS "-L${AOCL_LIB} -lfftw3_omp -lfftw3 -lm -lpthread")
+
+#OpenBLAS config
+set(OBLAS_INC "${OBLAS_ROOT}/include")
+set(OBLAS_LIB "${OBLAS_ROOT}/lib")
+set(OBLAS_LIBS "-L${OBLAS_LIB} -lopenblas -lflang -lpthread")
 
 # Set output directory for built executables and libraries
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})

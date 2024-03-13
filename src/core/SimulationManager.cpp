@@ -28,6 +28,13 @@ SimulationManager::SimulationManager(int nPts, double dx, double dt, double maxT
 	nelec = 0;
 }
 
+SimulationManager::SimulationManager(int nPts, double dx, double dt, double maxT, std::function<int(int)> callback, void* args)
+	: args(args)
+{
+	SimulationManager(nPts, dx, dt, maxT, callback);
+
+}
+
 SimulationManager::~SimulationManager()
 {
 	meas->terminate();
@@ -142,12 +149,14 @@ void SimulationManager::runOS_U2TU(int idx) {
 		if (ts[prevPrevIndex()] / maxT * 100.0 > percDone) {
 			//PROGRESS UPDATE
 			//MPI_Ssend(&percDone, 1, MPI_INT, MPI_Root_Proc, MPITag::UpdateSent, MPI_COMM_WORLD);
-			progCallback(percDone);
+			if (progCallback != NULL)
+				progCallback(percDone);
 			percDone++;
 		}
 	}
 	//MPI_Ssend(&percDone, 1, MPI_INT, MPI_Root_Proc, MPITag::UpdateSent, MPI_COMM_WORLD);
-	progCallback(percDone);
+	if (progCallback != NULL)
+		progCallback(percDone);
 	meas->terminate();
 }
 
@@ -177,7 +186,8 @@ void SimulationManager::runOS_UW2TUW(int idx) {
 		if (ts[prevPrevIndex()] / maxT * 100.0 > percDone) {
 			//PROGRESS UPDATE
 			//MPI_Ssend(&percDone, 1, MPI_INT, MPI_Root_Proc, MPITag::UpdateSent, MPI_COMM_WORLD);
-			progCallback(percDone);
+			if (progCallback != NULL)
+				progCallback(percDone);
 			percDone++;
 		}
 	}
@@ -234,4 +244,8 @@ std::complex<double> * SimulationManager::getPsi() {
 
 int SimulationManager::getNElec() {
 	return nelec;
+}
+
+void* SimulationManager::getargs(){
+	return args;
 }

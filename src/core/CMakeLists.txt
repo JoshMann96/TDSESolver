@@ -1,28 +1,5 @@
-#Boost
-include_directories(${BOOST_INC})
-set(BOOST_LINK_FLAGS "-lboost_system -lboost_filesystem")
-
-#MPI Configuration
-find_package(MPI REQUIRED)
-include_directories(SYSTEM ${MPI_INCLUDE_PATH})
-
-#AOCC
-set(AOCC_INC "${AOCC_ROOT}/include")
-set(AOCC_LIB "${AOCC_ROOT}/lib")
-set(AOCC_LIBS "-L${AOCC_LIB} -lomp -lflang -lstdc++")
-include_directories(${AOCC_INC})
-
-#AOCL config
-set(AOCL_INC "${AOCL_ROOT}/include")
-set(AOCL_LIB "${AOCL_ROOT}/lib")
-set(BLIS_INC "${AOCL_INC}/blis")
-include_directories(${AOCL_INC})
-set(AOCL_LIBS "-L${AOCL_LIB} -lfftw3_omp -lfftw3 -lm -lpthread")
-
-#OpenBLAS config
-set(OBLAS_INC "${OBLAS_ROOT}/include")
-set(OBLAS_LIB "${OBLAS_ROOT}/lib")
-set(OBLAS_LIBS "-L${OBLAS_LIB} -lopenblas -lflang -lpthread")
+# Compiler options
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=znver2 -mtune=native -DNDEBUG -fopenmp -fPIC")
 
 #files
 file(GLOB SRC "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
