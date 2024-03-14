@@ -21,7 +21,7 @@ if(EXISTS "${Stubgen_Executable}")
         set(Stubgen_Executable "${CMAKE_SOURCE_DIR}/.venv/Scripts/stubgen.exe")
     endif()
     add_custom_command(TARGET tdsepy POST_BUILD
-        COMMAND ${Stubgen_Executable} -m tdsepy -o .
+        COMMAND ${Stubgen_Executable} --include-docstrings -m tdsepy -o.
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
         COMMENT "Use stubgen to create .pyi for statement completion")
 else()
