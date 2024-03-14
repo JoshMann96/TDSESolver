@@ -28,13 +28,6 @@ SimulationManager::SimulationManager(int nPts, double dx, double dt, double maxT
 	nelec = 0;
 }
 
-SimulationManager::SimulationManager(int nPts, double dx, double dt, double maxT, std::function<int(int)> callback, void* args)
-	: args(args)
-{
-	SimulationManager(nPts, dx, dt, maxT, callback);
-
-}
-
 SimulationManager::~SimulationManager()
 {
 	meas->terminate();
@@ -246,8 +239,4 @@ std::complex<double> * SimulationManager::getPsi() {
 
 int SimulationManager::getNElec() {
 	return nelec;
-}
-
-void* SimulationManager::getargs(){
-	return args;
 }

@@ -2,4 +2,4 @@
 .vscode
 .VSCodeCounter
 .venv
-build
+build*

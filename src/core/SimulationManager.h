@@ -20,15 +20,12 @@ private:
 	std::complex<double> **psis, *scratch1, *scratch2, *tpsi;
 	double getTotalEnergy(std::complex<double> * psi, double * v);
 
-	void* args;
-
 	int getVPAR(int idx, int idxPsi);
 	int stepItPAR(int idx0, int idx1);
 	int measPAR(int idx);
 
 public:
 	SimulationManager(int nPts, double dx, double dt, double maxT, std::function<int(int)> callback);
-	SimulationManager(int nPts, double dx, double dt, double maxT, std::function<int(int)> callback, void* args);
 	~SimulationManager();
 	// Adds a measurer to the simulation.
 	void addMeasurer(Measurers::Measurer * nMeas);
@@ -68,6 +65,4 @@ public:
 	KineticOperators::KineticOperator* getKin() { return kin; }
 
 	Potentials::Potential* getPotPointer() { return pot; }
-
-	void* getargs();
 };
