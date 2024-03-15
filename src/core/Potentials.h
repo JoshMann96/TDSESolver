@@ -114,6 +114,7 @@ namespace Potentials {
 	// Template function for potential (zero potential).
 	class Potential {
 	public:
+		virtual ~Potential() = default;
 		virtual void getV(double t, double * targ, KineticOperators::KineticOperator* kin) = 0;
 		virtual void getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator* kin) = 0;
 		virtual int isDynamic() = 0;

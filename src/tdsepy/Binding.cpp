@@ -7,32 +7,40 @@
 #include "MathTools.h"
 
 // couple particular grid with SimulationManager for ease of use
-class Simulation 
+class PySimulation 
     : public SimulationManager {
     private:
         double* x;
         int nPts;
     public:
-        Simulation(double xmin, double xmax, double dx, double dt, double maxT)
+        PySimulation(double xmin, double xmax, double dx, double dt, double maxT)
             : nPts((int)((xmax-xmin)/dx)), 
               SimulationManager(nPts, dx, dt, maxT, NULL){
                 this->x = new double[nPts];
                 for(int i = 0; i < nPts; i++)
                     this->x[i] = i*dx + xmin;
         }
-        ~Simulation(){delete[] x;}
-        void* getXPtr(){return x;}
+        ~PySimulation(){delete[] x;}
+        double* getXPtr(){return x;}
         std::vector<double> getX(){return std::vector<double>(x, x + nPts);}
-        int checkPtr(void* ix){return reinterpret_cast<double*>(ix) == x;}
+        int findXIdx(double xp){return vtls::findValue(nPts, x, xp);}
+    };
+
+// simplify instantiation of potentials
+class PyFilePotential
+    : public Potentials::FilePotential{
+        public:
+        PyFilePotential(PySimulation sim, double offset, std::string fil, double refPoint)
+            : Potentials::FilePotential(sim.getNumPoints(), sim.getXPtr(), offset, fil.c_str(), sim.findXIdx(refPoint)){}
     };
 
 namespace py = pybind11;
-using namespace pybind11::literals; //easy args
+using namespace py::literals; //easy args
 
 PYBIND11_MODULE(tdsepy, m) {
-    py::class_<Simulation>(m, "Simulation")
+    py::class_<PySimulation>(m, "Simulation")
         .def(py::init<double, double, double, double, double>(), R"V0G0N(
-            Creates a TDSE Simulation instance.
+            Manages TDSE simulations.
 
             Parameters
             ----------
@@ -49,11 +57,31 @@ PYBIND11_MODULE(tdsepy, m) {
 
             Returns
             -------
-            Simulation
-                Instance of TDSE Simulator.)V0G0N",
+            Simulation)V0G0N",
             "xmin"_a, "xmax"_a, "dx"_a, "dt"_a, "maxT"_a)
-        .def("getX", &Simulation::getX)
-        .def("getXPtr", &Simulation::getXPtr)
-        .def("getDX", &Simulation::getDX)
-        .def("checkPtr", &Simulation::checkPtr);
+        .def("getX", &PySimulation::getX)
+        .def("getDX", &PySimulation::getDX);
+    
+    py::class_<Potentials::Potential>(m, "Potential");
+
+    py::class_<PyFilePotential, Potentials::Potential>(m, "FilePotential")
+        .def(py::init<PySimulation, double, const std::string, double>(), R"V0G0N(
+            Includes a static potential as defined in a binary file.
+            See documentation for appropriate file format.
+
+            Parameters
+            ----------
+            sim : Simulation
+                Associated simulation.
+            offset : float
+                Translational offset with respect to input data.
+            fil : str
+                File path with data.
+            refPoint : float
+                Potential reference point.
+
+            Returns
+            -------
+            FilePotential)V0G0N",
+            "sim"_a, "offset"_a, "fil"_a, "refPoint"_a);
 }
