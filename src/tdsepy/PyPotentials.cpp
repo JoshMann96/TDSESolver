@@ -1,5 +1,12 @@
 #include "PyPotentials.h"
 
+std::vector<double> PyFilePotential::getValue(){
+    double* temp = new double[nPts];
+    FilePotential::getV(0.0, temp, nullptr);
+    std::vector out(temp, temp+nPts);
+    return out;
+}
+
 void init_Potentials(py::module &m) {
     py::class_<Potentials::Potential>(m, "Potential");
 
@@ -22,5 +29,6 @@ void init_Potentials(py::module &m) {
             Returns
             -------
             FilePotential)V0G0N",
-            "sim"_a, "offset"_a, "fil"_a, "refPoint"_a);
+            "sim"_a, "offset"_a, "fil"_a, "refPoint"_a)
+        .def("getV", &PyFilePotential::getValue, py::return_value_policy::take_ownership);
 }

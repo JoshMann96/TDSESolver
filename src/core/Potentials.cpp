@@ -1404,7 +1404,6 @@ namespace Potentials {
 			dynamicPots.push_back(pot);
 		}
 		else if (typ == 0) {
-			std::cout << staticPots.size() << std::endl;
 			staticPots.push_back(pot);
 		}
 		else {

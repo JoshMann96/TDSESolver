@@ -1,4 +1,5 @@
 #pragma once
+#include "MathTools.h"
 #include "PyCommon.h"
 #include "SimulationManager.h"
 
@@ -10,8 +11,8 @@ class PySimulation
         int nPts;
     public:
         PySimulation(double xmin, double xmax, double dx, double dt, double maxT)
-            : nPts((int)((xmax-xmin)/dx)), 
-              SimulationManager(nPts, dx, dt, maxT, NULL){
+            : SimulationManager((int)((xmax-xmin)/dx) + 1, dx, dt, maxT, NULL){
+                nPts = getNumPoints();
                 x = new double[nPts];
                 for(int i = 0; i < nPts; i++)
                     x[i] = i*dx + xmin;
