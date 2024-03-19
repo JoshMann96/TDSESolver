@@ -38,9 +38,7 @@ void SimulationManager::addMeasurer(Measurers::Measurer* m) {
 }
 
 void SimulationManager::addPotential(Potentials::Potential* p) {
-	std::cout << "00" << std::endl;
 	pot->addPotential(p);
-	std::cout << "01" << std::endl;
 }
 
 void SimulationManager::addSpatialDamp(double* arr) {

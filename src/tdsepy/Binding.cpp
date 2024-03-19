@@ -16,11 +16,16 @@ class PySimulation
         PySimulation(double xmin, double xmax, double dx, double dt, double maxT)
             : nPts((int)((xmax-xmin)/dx)), 
               SimulationManager(nPts, dx, dt, maxT, NULL){
-                this->x = new double[nPts];
+                x = new double[nPts];
                 for(int i = 0; i < nPts; i++)
-                    this->x[i] = i*dx + xmin;
+                    x[i] = i*dx + xmin;
         }
-        ~PySimulation(){delete[] x;}
+        ~PySimulation(){SimulationManager::~SimulationManager(); delete[] x;}
+
+        void addPotential(Potentials::Potential * pot){
+            SimulationManager::addPotential(pot);
+        }
+
         double* getXPtr(){return x;}
         std::vector<double> getX(){return std::vector<double>(x, x + nPts);}
         int findXIdx(double xp){return vtls::findValue(nPts, x, xp);}
@@ -30,8 +35,8 @@ class PySimulation
 class PyFilePotential
     : public Potentials::FilePotential{
         public:
-        PyFilePotential(PySimulation sim, double offset, std::string fil, double refPoint)
-            : Potentials::FilePotential(sim.getNumPoints(), sim.getXPtr(), offset, fil.c_str(), sim.findXIdx(refPoint)){}
+        PyFilePotential(PySimulation * sim, double offset, std::string fil, double refPoint)
+            : Potentials::FilePotential(sim->getNumPoints(), sim->getXPtr(), offset, fil.c_str(), sim->findXIdx(refPoint)){}
     };
 
 namespace py = pybind11;
@@ -60,12 +65,20 @@ PYBIND11_MODULE(tdsepy, m) {
             Simulation)V0G0N",
             "xmin"_a, "xmax"_a, "dx"_a, "dt"_a, "maxT"_a)
         .def("getX", &PySimulation::getX)
-        .def("getDX", &PySimulation::getDX);
+        .def("getDX", &PySimulation::getDX)
+        .def("addPot", &PySimulation::addPotential, R"V0G0N(
+            Adds potential to the simulation.
+
+            Parameters
+            ----------
+            pot : Potential
+                Potential to be added.)V0G0N",
+            "pot"_a);
     
     py::class_<Potentials::Potential>(m, "Potential");
 
     py::class_<PyFilePotential, Potentials::Potential>(m, "FilePotential")
-        .def(py::init<PySimulation, double, const std::string, double>(), R"V0G0N(
+        .def(py::init<PySimulation*, double, const std::string, double>(), R"V0G0N(
             Includes a static potential as defined in a binary file.
             See documentation for appropriate file format.
 
