@@ -536,7 +536,7 @@ namespace Measurers {
 		void terminate();
 	};
 
-	// Includes sever basic measurements. See cpp file for specifics.
+	// Includes several basic measurements. See cpp file for specifics.
 	class BasicMeasurers :
 		public Measurer {
 	private:

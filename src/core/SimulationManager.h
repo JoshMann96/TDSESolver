@@ -62,6 +62,7 @@ public:
 	// Returns a pointer to the current psis.
 	std::complex<double> * getPsi();
 	int getNElec();
+	int* getNElecPtr();
 	KineticOperators::KineticOperator* getKin() { return kin; }
 
 	Potentials::Potential* getPotPointer() { return pot; }

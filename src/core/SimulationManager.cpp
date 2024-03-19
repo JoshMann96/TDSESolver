@@ -238,3 +238,7 @@ std::complex<double> * SimulationManager::getPsi() {
 int SimulationManager::getNElec() {
 	return nelec;
 }
+
+int* SimulationManager::getNElecPtr(){
+	return &nelec;
+}

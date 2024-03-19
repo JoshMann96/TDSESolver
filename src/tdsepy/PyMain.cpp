@@ -1,6 +1,7 @@
 #include "PyCommon.h"
 #include "PySimulation.h"
 #include "PyPotentials.h"
+#include "PyMeasurers.h"
 
 PYBIND11_MODULE(tdsepy, m) {
     py::module_ mp = m.def_submodule("Potentials", "Potentials for TDSE solver.");
@@ -8,5 +9,6 @@ PYBIND11_MODULE(tdsepy, m) {
 
     init_Simulation(m);
     init_Potentials(mp);
+    init_Measurers(mm);
     //init_Measurers(mm);
 }
