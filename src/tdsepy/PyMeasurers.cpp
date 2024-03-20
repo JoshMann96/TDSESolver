@@ -30,7 +30,6 @@ void init_Measurers(py::module &m) {
              - NSteps   - Number of time steps
              - DX       - Spatial step size
              - DT       - Temporal step size
-             - TS       - Array of time steps
 
             Parameters
             ----------

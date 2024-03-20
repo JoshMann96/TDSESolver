@@ -1165,7 +1165,7 @@ namespace Measurers {
 		meas.push_back(new DX(dx, fol));
 		meas.push_back(new DT(dt, fol));
 		//meas.push_back(new XS(nPts, xs, fol));
-		meas.push_back(new TS(fol));
+		//meas.push_back(new TS(fol));
 	}
 
 	BasicMeasurers::~BasicMeasurers() { terminate(); }
