@@ -74,6 +74,13 @@ class PyExpectE
             : ExpectE(sim->getNumPoints(), sim->getDX(), fol.c_str()){}
     };
 
+class PyExpectE0
+    : public ExpectE0{
+        public:
+        PyExpectE0(PySimulation* sim, std::string fol)
+            : ExpectE0(sim->getNumPoints(), sim->getDX(), fol.c_str()){}
+    };
+
 class PyExpectX
     : public ExpectX{
         public:
@@ -144,4 +151,18 @@ class PyPotT
         public:
         PyPotT(PySimulation* sim, double meaT, int vdNum, std::string name, std::string fol)
             : PotT(sim->getNumPoints(), meaT, vdNum, name.c_str(),fol.c_str()){}
+    };
+
+class PyNElec
+    : public ElectronNumber{
+        public:
+        PyNElec(PySimulation* sim, std::string fol)
+            : ElectronNumber(sim->getNElecPtr(), fol.c_str()){}
+    };
+
+class PyWeights
+    : public WfcRhoWeights{
+        public:
+        PyWeights(PySimulation* sim, std::string fol)
+            : WfcRhoWeights(sim->getNElecPtr(), sim->getNumPoints(), sim->getDX(), sim->getWght(), fol.c_str()){}
     };
