@@ -27,11 +27,9 @@ void init_Measurers(py::module &m) {
         .def(py::init<PySimulation*, std::string>(), R"V0G0N(
             Records basic simulation parameters:
              - nPts     - Number of points in grid
-             - Header   - Header name ("_py_" for Python-based runs)
              - NSteps   - Number of time steps
              - DX       - Spatial step size
              - DT       - Temporal step size
-             - XS       - Array of grid points
              - TS       - Array of time steps
 
             Parameters

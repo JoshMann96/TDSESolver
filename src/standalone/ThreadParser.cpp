@@ -275,7 +275,7 @@ int ThreadParser::addMeasurer(std::string input) {
 	std::vector<double> p = getBlockParameters(meaIdx, meaFields);
 	switch (meaIdx) {
 	case 0:
-		sim->addMeasurer(new Measurers::BasicMeasurers(inputText.c_str(), n, sim->getDX(), sim->getDT(), x, fol));
+		sim->addMeasurer(new Measurers::BasicMeasurers(n, sim->getDX(), sim->getDT(), x, fol));
 		break;
 	case 1:
 		sim->addMeasurer(new Measurers::Vfunct(n, p[0], p[1], sim->getMaxT(), x, fol));

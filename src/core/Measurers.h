@@ -544,7 +544,7 @@ namespace Measurers {
 	public:
 		int isHeavy() { return 0; };
 		int getIndex() { return INT_MIN + 1; };
-		BasicMeasurers(const char * title, int nPts, double dx, double dt, double * xs, const char* fol);
+		BasicMeasurers(int nPts, double dx, double dt, double * xs, const char* fol);
 		~BasicMeasurers();
 		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
 		void terminate();

@@ -1158,13 +1158,13 @@ namespace Measurers {
 	}
 
 
-	BasicMeasurers::BasicMeasurers(const char * title_4char, int nPts, double dx, double dt, double * xs, const char* fol) {
+	BasicMeasurers::BasicMeasurers(int nPts, double dx, double dt, double * xs, const char* fol) {
 		meas.push_back(new NPts(nPts, fol));
-		meas.push_back(new Header(title_4char, fol));
+		//meas.push_back(new Header(title_4char, fol));
 		meas.push_back(new NSteps(fol));
 		meas.push_back(new DX(dx, fol));
 		meas.push_back(new DT(dt, fol));
-		meas.push_back(new XS(nPts, xs, fol));
+		//meas.push_back(new XS(nPts, xs, fol));
 		meas.push_back(new TS(fol));
 	}
 

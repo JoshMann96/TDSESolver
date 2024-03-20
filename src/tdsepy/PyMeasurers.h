@@ -18,5 +18,5 @@ class PyBasic
     : public BasicMeasurers{
         public:
         PyBasic(PySimulation* sim, std::string fol)
-            : BasicMeasurers("_py_", sim->getNumPoints(), sim->getDX(), sim->getDT(), sim->getXPtr(), fol.c_str()){}
+            : BasicMeasurers(sim->getNumPoints(), sim->getDX(), sim->getDT(), sim->getXPtr(), fol.c_str()){}
     };
