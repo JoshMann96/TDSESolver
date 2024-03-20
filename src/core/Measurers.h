@@ -486,11 +486,14 @@ namespace Measurers {
 	private:
 		std::fstream fil;
 		int index = 22;
+		int first = 1;
+		int* nelec;
+		const char* fol;
 		const char* fname = "nelec.tdsePART";
 	public:
 		int isHeavy() { return 0; };
 		int getIndex() { return index; };
-		ElectronNumber(int nelec, const char* fol);
+		ElectronNumber(int* nelec, const char* fol);
 		~ElectronNumber();
 		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
 

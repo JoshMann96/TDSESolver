@@ -50,29 +50,37 @@ namespace Measurers {
 	}
 
 
-	ElectronNumber::ElectronNumber(int nelec, const char* fol) {
-		int l1 = std::strlen(fol), l2 = std::strlen(fname);
-		char* nfil = new char[l1 + l2 + 1];
-		strncpy(nfil, fol, l1);
-		strcpy(&nfil[l1], fname);
-
-		fil = openFile(nfil);
-		delete[] nfil;
-		if (!fil) {
-			std::cout << "Could not open file: " << nfil;
-			std::cin.ignore();
-		}
-
-		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
-		fil.write(reinterpret_cast<char*>(&nelec), sizeof(int));
-		fil.close();
-	}
+	ElectronNumber::ElectronNumber(int* nelec, const char* fol)
+		: fol(fol), nelec(nelec) {}
 
 	ElectronNumber::~ElectronNumber() {
 		terminate();
 	}
 
-	int ElectronNumber::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) { return 1; }
+	int ElectronNumber::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) { 
+		if(first){
+			first = 0;
+
+			int l1 = std::strlen(fol), l2 = std::strlen(fname);
+
+			char* nfil = new char[l1 + l2 + 1];
+			strncpy(nfil, fol, l1);
+			strcpy(&nfil[l1], fname);
+
+			fil = openFile(nfil);
+			delete[] nfil;
+			if (!fil) {
+				std::cout << "Could not open file: " << nfil;
+				std::cin.ignore();
+			}
+
+			fil.write(reinterpret_cast<char*>(&index), sizeof(int));
+			fil.write(reinterpret_cast<char*>(nelec), sizeof(int));
+			fil.close();
+		}
+		
+		return 1; 
+	}
 
 	void ElectronNumber::terminate() {
 		if (fil) fil.close();
