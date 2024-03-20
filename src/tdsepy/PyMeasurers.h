@@ -35,8 +35,6 @@ class PyTS
             : TS(fol.c_str()){}
     };
 
-// ------------ NEED TO IMPLEMENT BELOW IN PyMeasurers.cpp -------------
-
 class PyOrigPot
     : public OrigPot{
         public:
