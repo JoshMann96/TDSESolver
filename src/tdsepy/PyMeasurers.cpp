@@ -25,7 +25,8 @@ void init_Measurers(py::module &m) {
     
     py::class_<PyBasic, Measurer>(m, "Basic")
         .def(py::init<PySimulation*, std::string>(), R"V0G0N(
-            Records basic simulation parameters:
+            Records basic simulation parameters.
+            Grid size and step size in space and time:
              - nPts     - Number of points in grid
              - NSteps   - Number of time steps
              - DX       - Spatial step size
@@ -42,4 +43,34 @@ void init_Measurers(py::module &m) {
             -------
             Basic)V0G0N",
             "sim"_a, "fol"_a);
+    
+    py::class_<PyXS, Measurer>(m, "Xs")
+        .def(py::init<PySimulation*, std::string>(), R"V0G0N(
+            Records spatial grid.
+
+            Parameters
+            ----------
+            sim : Simulation
+                Associated simulation.
+            fol : str
+                Directory to contain file.
+
+            Returns
+            -------
+            Xs)V0G0N",
+            "sim"_a, "fol"_a);
+    
+    py::class_<PyTS, Measurer>(m, "Ts")
+        .def(py::init<std::string>(), R"V0G0N(
+            Records time steps.
+
+            Parameters
+            ----------
+            fol : str
+                Directory to contain file.
+
+            Returns
+            -------
+            Ts)V0G0N",
+            "fol"_a);
 }
