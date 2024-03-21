@@ -1,8 +1,11 @@
 #pragma once
+#include "KineticOperator.h"
 #include "MathTools.h"
 #include "PyCommon.h"
+#include "pybind11/attr.h"
 #include "SimulationManager.h"
 #include "WfcRhoTools.h"
+#include "AbsorptiveRegions.h"
 
 // couple particular grid with SimulationManager for ease of use
 class PySimulation 
@@ -28,10 +31,13 @@ class PySimulation
 
         double* getXPtr(){return x;}
 
-        WfcToRho::Weight* getWght(){return wght;}
+        WfcToRho::Weight* getWght(){return wght;} //LOOK HERE: keep_alive
         void setWght(WfcToRho::Weight* wght){this->wght = wght;}
         WfcToRho::Density* getDens(){return dens;}
         void setDens(WfcToRho::Density* dens){this->dens = dens;}
+
+        void addLeftAbsBdy(double rate, double width){addSpatialDamp(AbsorptiveRegions::getSmoothedSpatialDampDecay(nPts, findXIdx(x[0]+width), 0, rate*getDT()));}
+        void addRightAbsBdy(double rate, double width){addSpatialDamp(AbsorptiveRegions::getSmoothedSpatialDampDecay(nPts, findXIdx(x[nPts-1]-width), nPts-1, rate*getDT()));}
 
         std::vector<double> getX(){return std::vector<double>(x, x + nPts);}
         int findXIdx(double xp){return vtls::findValue(nPts, x, xp);}

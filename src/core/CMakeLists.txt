@@ -1,6 +1,7 @@
 # Compiler options
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=znver2 -mtune=native -DNDEBUG -fopenmp -fPIC")
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -glldb -fopenmp -fPIC")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=znver2 -mtune=native -DNDEBUG -fopenmp -fPIC")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -glldb -fopenmp -fPIC")
+set(CMAKE_BUILD_TYPE Debug)
 
 #files
 file(GLOB SRC "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")

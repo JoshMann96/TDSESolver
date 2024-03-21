@@ -1,7 +1,7 @@
 # Compiler options
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=znver2 -mtune=native -DNDEBUG -fopenmp -fPIC")
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -glldb -fopenmp -fPIC")
-#set(CMAKE_BUILD_TYPE Debug)
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=znver2 -mtune=native -DNDEBUG -fopenmp -fPIC")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -glldb -fopenmp -fPIC")
+set(CMAKE_BUILD_TYPE Debug)
 
 #PYBIND11
 find_package(pybind11)
@@ -18,11 +18,8 @@ target_link_libraries(tdsepy PRIVATE core pybind11::pybind11)
 # Use stubgen to create .pyi files to sit alongside the just-built python module
 set(Stubgen_Executable "${CMAKE_SOURCE_DIR}/.venv/bin/stubgen")
 if(EXISTS "${Stubgen_Executable}")
-    if(WIN32)
-        set(Stubgen_Executable "${CMAKE_SOURCE_DIR}/.venv/Scripts/stubgen.exe")
-    endif()
     add_custom_command(TARGET tdsepy POST_BUILD
-        COMMAND ${Stubgen_Executable} --include-docstrings -p tdsepy -o.
+        COMMAND ${Stubgen_Executable} --include-docstrings -p tdsepy -o .
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
         COMMENT "Use stubgen to create .pyi for statement completion")
 else()

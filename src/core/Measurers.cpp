@@ -1247,7 +1247,9 @@ namespace Measurers {
 		//DELETE INDIVIDUAL MEASURER FILES
 		*/
 
-		for (int i = 0; i < (int)(meas.size()); i++)
-			meas [i] ->terminate();
+		for (int i = (int)(meas.size())-1; i >=0 ; i--){
+			meas[i]->terminate();
+			meas.erase(meas.begin() + i);
+		}
 	}
 }

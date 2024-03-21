@@ -1,7 +1,14 @@
 #include "PySimulation.h"
+#include "KineticOperator.h"
 #include "WfcRhoTools.h"
+#include <memory>
+#include <pybind11/attr.h>
+#include <pybind11/detail/common.h>
 
 void init_Simulation(py::module &m) {
+
+// WEIGHT CALCULATIONS
+
     py::class_<WfcToRho::Weight>(m, "Weight");
 
     py::class_<WfcToRho::FermiGasDistro, WfcToRho::Weight>(m, "FermiGasDistro")
@@ -19,6 +26,8 @@ void init_Simulation(py::module &m) {
             FermiGasDistro)V0G0N",
             "ef"_a);
 
+// DENSITY PROCESSING
+
     py::class_<WfcToRho::Density>(m, "Density");
 
     py::class_<WfcToRho::DirectDensity, WfcToRho::Density>(m, "DirectDensity")
@@ -29,6 +38,32 @@ void init_Simulation(py::module &m) {
             Returns
             -------
             DirectDensity)V0G0N");
+
+// KINETIC OPERATORS
+
+    py::class_<KineticOperators::KineticOperator_PSM>(m, "KineticOperator_PSM");
+
+    py::class_<KineticOperators::KineticOperator_FDM>(m, "KineticOperator_FDM");
+
+    py::class_<KineticOperators::GenDisp_PSM_FreeElec, KineticOperators::KineticOperator_PSM>(m, "PSM_FreeElec")
+        .def(py::init([](PySimulation* sim, double meff){
+            return std::unique_ptr<KineticOperators::GenDisp_PSM_FreeElec>(new KineticOperators::GenDisp_PSM_FreeElec(sim->getNumPoints(), sim->getDX(), sim->getDT(), meff));
+        }), R"V0G0N(
+            Free electron dispersion relation with uniform effective mass using pseudospectral derivatives.
+
+            Parameters
+            ----------
+            sim : Simulation
+                Associated simulation.
+            meff : float
+                Effective mass (1.0 = free electron).
+
+            Returns
+            -------
+            PSM_FreeElec)V0G0N",
+            "sim"_a, "meff"_a);
+
+// SIMULATION
 
     py::class_<PySimulation>(m, "Simulation")
         .def(py::init<double, double, double, double, double>(), R"V0G0N(
@@ -53,7 +88,7 @@ void init_Simulation(py::module &m) {
             "xmin"_a, "xmax"_a, "dx"_a, "dt"_a, "maxT"_a)
         .def("getX", &PySimulation::getX)
         .def("getDX", &PySimulation::getDX)
-        .def("addPot", &PySimulation::addPotential, R"V0G0N(
+        .def("addPot", &PySimulation::addPotential, py::keep_alive<1,2>(), R"V0G0N(
             Adds potential to the simulation.
 
             Parameters
@@ -61,7 +96,7 @@ void init_Simulation(py::module &m) {
             pot : Potential
                 Potential to be added.)V0G0N",
             "pot"_a)
-        .def("addMeas", &PySimulation::addMeasurer, R"V0G0N(
+        .def("addMeas", &PySimulation::addMeasurer, py::keep_alive<1,2>(), R"V0G0N(
             Adds measurer to the simulation.
 
             Parameters
@@ -69,7 +104,7 @@ void init_Simulation(py::module &m) {
             meas : Measurer
                 Measurer to be added.)V0G0N",
             "meas"_a)
-        .def("setDens", &PySimulation::setDens, R"V0G0N(
+        .def("setDens", &PySimulation::setDens, py::keep_alive<1,2>(), R"V0G0N(
             Sets density calculator for simulation.
 
             Parameters
@@ -77,12 +112,60 @@ void init_Simulation(py::module &m) {
             dens : Density
                 Density calculator to be used.)V0G0N",
             "dens"_a)
-        .def("setWght", &PySimulation::setWght, R"V0G0N(
+        .def("setWght", &PySimulation::setWght, py::keep_alive<1,2>(), R"V0G0N(
             Sets state weight calculator for simulation.
 
             Parameters
             ----------
             wght : Weight
                 Weight calculator to be used.)V0G0N",
-            "wght"_a);
+            "wght"_a)
+        .def("setKin", py::overload_cast<KineticOperators::KineticOperator_PSM*>(&PySimulation::setKineticOperator_PSM), R"V0G0N(
+            Sets kinetic operator for simulation.
+
+            Parameters
+            ----------
+            nkin : KineticOperator
+                Kinetic operator to be used.)V0G0N",
+            "nkin"_a)
+        .def("setKin", py::overload_cast<KineticOperators::KineticOperator_FDM*>(&PySimulation::setKineticOperator_FDM), R"V0G0N(
+            Sets kinetic operator for simulation.
+
+            Parameters
+            ----------
+            nkin : KineticOperator
+                Kinetic operator to be used.)V0G0N",
+            "nkin"_a)
+        .def("addLeftAbsBdy", &PySimulation::addLeftAbsBdy, R"V0G0N(
+            Adds absorptive boundary to left side of simulation.
+            Decay is applied by multiplying states near boundary by a number of magnitude less than one.
+            Over a chage of time Dt a stationary wavefunction will be
+                psi = psi_0 sigma(x)^(rate * Dt)
+            With sigma(x) a polynomial smooth function, 1 on the inner boundary and 0 on the outer boundary.
+
+            Parameters
+            ----------
+            rate : float
+                Decay rate.
+            width : float
+                Width of boundary)V0G0N",
+            "rate"_a, "width"_a)
+        .def("addRightAbsBdy", &PySimulation::addLeftAbsBdy, R"V0G0N(
+            Adds absorptive boundary to right side of simulation.
+            Decay is applied by multiplying states near boundary by a number of magnitude less than one.
+            Over a chage of time Dt a stationary wavefunction will be
+                psi = psi_0 sigma(x)^(rate * Dt)
+            With sigma(x) a polynomial smooth function, 1 on the inner boundary and 0 on the outer boundary.
+
+            Parameters
+            ----------
+            rate : float
+                Decay rate.
+            width : float
+                Width of boundary)V0G0N",
+            "rate"_a, "width"_a)
+        .def("finishInit", &PySimulation::finishInitialization, R"V0G0N(
+            Finishes initialization of simulation.)V0G0N");
+        //CONTINUE HERE
+        //.def("eigenSolve", &PySimulation::findEigenStates(double fermie, double w, double maxT, double rate));
 }

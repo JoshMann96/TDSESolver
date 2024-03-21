@@ -9,6 +9,8 @@
     return out;
 }*/
 
+using namespace Potentials;
+
 void init_Potentials(py::module &m) {
 
 // Envelopes
@@ -83,9 +85,9 @@ void init_Potentials(py::module &m) {
 
 // Potentials
 
-    py::class_<Potentials::Potential>(m, "Potential");
+    py::class_<Potential>(m, "Potential");
 
-    py::class_<PyFilePotential, Potentials::Potential>(m, "FilePotential")
+    py::class_<PyFilePotential, Potential>(m, "FilePotential")
         .def(py::init<PySimulation*, double, const std::string, double>(), R"V0G0N(
             Static potential as defined in a binary file.
             See documentation for appropriate file format.
@@ -107,7 +109,7 @@ void init_Potentials(py::module &m) {
             "sim"_a, "offset"_a, "fil"_a, "refPoint"_a);
 
 
-    py::class_<PyJelliumPotential, Potentials::Potential>(m, "JelliumPotential")
+    py::class_<PyJelliumPotential, Potential>(m, "JelliumPotential")
         .def(py::init<PySimulation*, double, double, double, double, double, double>(), R"V0G0N(
             Static Jellium slab potential.
 
@@ -134,7 +136,7 @@ void init_Potentials(py::module &m) {
             "sim"_a, "center"_a, "ef"_a, "w"_a, "backStart"_a, "backWidth"_a, "refPoint"_a);
 
     
-    py::class_<PyPulsePotential, Potentials::Potential>(m, "PulsePotential")
+    py::class_<PyPulsePotential, Potential>(m, "PulsePotential")
         .def(py::init<PySimulation*, ElectricFieldProfiles::ElectricFieldProfile*, Envelopes::Envelope*, double, double, double, double>(), R"V0G0N(
             Pulsed laser potential under dipole approximation. 
 
@@ -160,7 +162,7 @@ void init_Potentials(py::module &m) {
             PulsePotential)V0G0N",
             "sim"_a, "fieldProfile"_a, "env"_a, "phase"_a, "tmax"_a, "lam"_a, "refPoint"_a);
     
-    py::class_<PyCylindricalImagePotential, Potentials::Potential>(m, "CylindricalImagePotential")
+    py::class_<PyCylindricalImagePotential, Potential>(m, "CylindricalImagePotential")
         .def(py::init<PySimulation*, double, double, double, double, double, double, double>(), R"V0G0N(
             Collective image charge potential assuming a cylindrical conductor geometry.
 
@@ -186,5 +188,14 @@ void init_Potentials(py::module &m) {
             Returns
             -------
             CylindricalImagePotentail)V0G0N",
-            "sim"_a, "ef"_a, "w"_a, "rad"_a, "posMin"_a, "posMax"_a, "surfPos"_a, "refPoint"_a);
+            "sim"_a, "ef"_a, "w"_a, "rad"_a, "posMin"_a, "posMax"_a, "surfPos"_a, "refPoint"_a)
+        .def("negatePotential", &PyCylindricalImagePotential::negatePotential, R"V0G0N(
+            Negates potential as evaluated in the Simulation's current state.
+            Intended to be used such that the potential only depends on the change in density, leading the initially calculated eigenstates to be the actual eigenstates before perturbation.
+
+            Parameters
+            ----------
+            sim : Simulation
+                Associated simulation.)V0G0N",
+            "sim"_a);
 }

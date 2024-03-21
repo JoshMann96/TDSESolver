@@ -165,11 +165,12 @@ void init_Measurers(py::module &m) {
     py::class_<PyExpectE, Measurer>(m, "ExpectE")
         .def(py::init<PySimulation*, std::string>(), R"V0G0N(
             Records expectation value of Hamiltonian at each time step.
-            --- WARNING ---
+
+            WARNING
             Uses free-electron 3-point stencil for kinetic energy evaluation.
             This should be changed to use the KineticOperator
             See implementation of ExpectE0
-            ---------------
+            
 
             Parameters
             ----------
@@ -233,7 +234,7 @@ void init_Measurers(py::module &m) {
 
     py::class_<PyExpectA, Measurer>(m, "ExpectA")
         .def(py::init<PySimulation*, std::string>(), R"V0G0N(
-            Records expectation value of acceleration for each tate.
+            Records expectation value of acceleration for each state.
             More precisely, the negative gradient of the potential divided by the electron mass.
 
             Parameters
@@ -330,7 +331,7 @@ void init_Measurers(py::module &m) {
             VDPot)V0G0N",
             "sim"_a, "vdPos"_a, "vdNum"_a, "name"_a, "fol"_a);
 
-    py::class_<PyVDFluxSpec, Measurer>(m, "VDPsi")
+    py::class_<PyVDFluxSpec, Measurer>(m, "VDFluxSpec")
         .def(py::init<PySimulation*, double, int, int, double, std::string, std::string>(), R"V0G0N(
             Virtual detector which measures the bidirectional flux spectrum of the state passing through a point for each state.
             Useful for obtaining electron emission spectra without saving the entire wavefunction history.
@@ -354,7 +355,7 @@ void init_Measurers(py::module &m) {
 
             Returns
             -------
-            VDPsi)V0G0N",
+            VDFluxSpec)V0G0N",
             "sim"_a, "vdPos"_a, "vdNum"_a, "nSamp"_a, "emax"_a, "name"_a, "fol"_a);
 
     py::class_<PyPsiT, Measurer>(m, "PsiT")

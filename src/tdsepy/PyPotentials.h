@@ -5,6 +5,8 @@
 #include "Potentials.h"
 #include "WfcRhoTools.h"
 
+using namespace Potentials;
+
 class PyFileFieldProfile
     : public ElectricFieldProfiles::FileFieldProfile{
         public:
@@ -14,31 +16,35 @@ class PyFileFieldProfile
 
 // simplify instantiation of potentials
 class PyFilePotential
-    : public Potentials::FilePotential{
+    : public FilePotential{
         public:
         PyFilePotential(PySimulation * sim, double offset, std::string fil, double refPoint)
-            : Potentials::FilePotential(sim->getNumPoints(), sim->getXPtr(), offset, fil.c_str(), sim->findXIdx(refPoint)){}
+            : FilePotential(sim->getNumPoints(), sim->getXPtr(), offset, fil.c_str(), sim->findXIdx(refPoint)){}
     };
 
 class PyJelliumPotential
-    : public Potentials::JelliumPotentialBacked{
+    : public JelliumPotentialBacked{
         public:
         PyJelliumPotential(PySimulation * sim, double center, double ef, double w, double backStart, double backWidth, double refPoint)
-            : Potentials::JelliumPotentialBacked(sim->getNumPoints(), sim->getXPtr(), center, ef, w, backStart, backWidth, sim->findXIdx(refPoint)){}
+            : JelliumPotentialBacked(sim->getNumPoints(), sim->getXPtr(), center, ef, w, backStart, backWidth, sim->findXIdx(refPoint)){}
     };
 
 class PyPulsePotential
-    : public Potentials::ElectricFieldProfileToPotential{
+    : public ElectricFieldProfileToPotential{
         public:
         PyPulsePotential(PySimulation* sim, ElectricFieldProfiles::ElectricFieldProfile* fieldProfile, Envelopes::Envelope * env, double phase, double tmax, double lam, double refPoint)
-            : Potentials::ElectricFieldProfileToPotential(sim->getNumPoints(), fieldProfile, sim->getDX(), phase, tmax, lam, env, sim->findXIdx(refPoint)){}
+            : ElectricFieldProfileToPotential(sim->getNumPoints(), fieldProfile, sim->getDX(), phase, tmax, lam, env, sim->findXIdx(refPoint)){}
     };
 
 class PyCylindricalImagePotential
-    : public Potentials::CylindricalImageCharge{
+    : public CylindricalImageCharge{
         public:
         PyCylindricalImagePotential(PySimulation* sim, double ef, double w, double rad, double posMin, double posMax, double surfPos, double refPoint)
-            : Potentials::CylindricalImageCharge(sim->getNumPoints(), sim->getXPtr(), sim->getDX(), sim->getDT(), ef, w, rad, sim->getNElecPtr(), sim->getPotPointer(), sim->getWght(), sim->getDens(), sim->findXIdx(posMin), sim->findXIdx(posMax), sim->findXIdx(surfPos), sim->findXIdx(refPoint)){}
+            : CylindricalImageCharge(sim->getNumPoints(), sim->getXPtr(), sim->getDX(), sim->getDT(), ef, w, rad, sim->getNElecPtr(), sim->getPotPointer(), sim->getWght(), sim->getDens(), sim->findXIdx(posMin), sim->findXIdx(posMax), sim->findXIdx(surfPos), sim->findXIdx(refPoint)){}
+        
+        void negatePotential(PySimulation* sim){
+            CylindricalImageCharge::negateGroundEffects(sim->getPsi(), sim->getKin());
+        }
     };
 
 void init_Potentials(py::module &m);
