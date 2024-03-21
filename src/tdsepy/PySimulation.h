@@ -39,6 +39,10 @@ class PySimulation
         void addLeftAbsBdy(double rate, double width){addSpatialDamp(AbsorptiveRegions::getSmoothedSpatialDampDecay(nPts, findXIdx(x[0]+width), 0, rate*getDT()));}
         void addRightAbsBdy(double rate, double width){addSpatialDamp(AbsorptiveRegions::getSmoothedSpatialDampDecay(nPts, findXIdx(x[nPts-1]-width), nPts-1, rate*getDT()));}
 
+        void findEigenStates(double minE, double maxE){
+            SimulationManager::findEigenStates(minE, maxE, 0.0, 0.0);
+        }
+
         std::vector<double> getX(){return std::vector<double>(x, x + nPts);}
         int findXIdx(double xp){return vtls::findValue(nPts, x, xp);}
     };

@@ -53,7 +53,7 @@ namespace Measurers {
 	private:
 		std::fstream fil;
 		int index = -1;
-		const char* fname = "head.tdsePART";
+		const char* fname = "head.dat";
 	public:
 		int isHeavy() { return 0; };
 
@@ -74,7 +74,7 @@ namespace Measurers {
 	private:
 		std::fstream fil;
 		int index = 0;
-		const char* fname = "nPts.tdsePART";
+		const char* fname = "nPts.dat";
 	public:
 		int isHeavy() { return 0; };
 
@@ -91,7 +91,7 @@ namespace Measurers {
 	private:
 		std::fstream fil;
 		int index = 1;
-		const char* fname = "nSteps.tdsePART";
+		const char* fname = "nSteps.dat";
 		int steps = 0;
 		double tmea = -1;
 	public:
@@ -109,7 +109,7 @@ namespace Measurers {
 	private:
 		std::fstream fil;
 		int index = 2;
-		const char* fname = "dx.tdsePART";
+		const char* fname = "dx.dat";
 	public:
 		int isHeavy() { return 0; };
 		int getIndex() { return index; };
@@ -125,7 +125,7 @@ namespace Measurers {
 	private:
 		std::fstream fil;
 		int index = 3;
-		const char* fname = "dt.tdsePART";
+		const char* fname = "dt.dat";
 	public:
 		int isHeavy() { return 0; };
 		int getIndex() { return index; };
@@ -141,7 +141,7 @@ namespace Measurers {
 	private:
 		std::fstream fil;
 		int index = 4;
-		const char* fname = "xs.tdsePART";
+		const char* fname = "xs.dat";
 	public:
 		int isHeavy() { return 0; };
 		int getIndex() { return index; };
@@ -157,7 +157,7 @@ namespace Measurers {
 	private:
 		std::fstream fil;
 		int index = 5;
-		const char* fname = "ts.tdsePART";
+		const char* fname = "ts.dat";
 		double tmea = -1;
 	public:
 		int isHeavy() { return 0; };
@@ -177,7 +177,7 @@ namespace Measurers {
 		int index = 6;
 		int n;
 		int measured = 0;
-		const char* fname = "v0.tdsePART";
+		const char* fname = "v0.dat";
 	public:
 		int isHeavy() { return 0; };
 
@@ -211,7 +211,7 @@ namespace Measurers {
 		double interval;
 		double mulT;
 		double dt;
-		const char* fname = "psi2t.tdsePART";
+		const char* fname = "psi2t.dat";
 	public:
 		int isHeavy() { return 0; };
 
@@ -232,7 +232,7 @@ namespace Measurers {
 	private:
 		std::fstream fil;
 		int index = 10;
-		const char* fname = "expectE.tdsePART";
+		const char* fname = "expectE.dat";
 		int nPts;
 		double* rho;
 		double dx;
@@ -251,7 +251,7 @@ namespace Measurers {
 	private:
 		std::fstream fil;
 		int index = 11;
-		const char* fname = "expectX.tdsePART";
+		const char* fname = "expectX.dat";
 		double* x;
 		int nPts;
 		double* scratch;
@@ -271,7 +271,7 @@ namespace Measurers {
 	private:
 		std::fstream fil;
 		int index = 12;
-		const char* fname = "expectP.tdsePART";
+		const char* fname = "expectP.dat";
 		int nPts;
 		std::complex<double> *scratch1, *scratch2;
 		double dx;
@@ -290,7 +290,7 @@ namespace Measurers {
 	private:
 		std::fstream fil;
 		int index = 13;
-		const char* fname = "expectA.tdsePART";
+		const char* fname = "expectA.dat";
 		int nPts;
 		double *scratch1, *scratch2;
 		double dx;
@@ -313,7 +313,7 @@ namespace Measurers {
 		double * psi2;
 		int n;
 		int index = 16;
-		const char* fname = "tprob.tdsePART";
+		const char* fname = "tprob.dat";
 	public:
 		int isHeavy() { return 1; };
 
@@ -338,7 +338,7 @@ namespace Measurers {
 		int pos;
 		int index = 14;
 		int vdNum;
-		const char* fname = "jrd.tdsePART";
+		const char* fname = "jrd.dat";
 	public:
 		int isHeavy() { return 0; };
 		int getIndex() { return index; };
@@ -357,7 +357,7 @@ namespace Measurers {
 		int pos;
 		int index = 15;
 		int vdNum;
-		const char* fname = "psird.tdsePART";
+		const char* fname = "psird.dat";
 	public:
 		int isHeavy() { return 0; };
 		int getIndex() { return index; };
@@ -375,7 +375,7 @@ namespace Measurers {
 		int pos;
 		int index = 21;
 		int vdNum;
-		const char* fname = "vrd.tdsePART";
+		const char* fname = "vrd.dat";
 	public:
 		int isHeavy() { return 0; };
 		int getIndex() { return index; };
@@ -397,7 +397,7 @@ namespace Measurers {
 		int celec;
 		double ct;
 		double dw, tmax, tukeyAl=0.05;
-		const char* fname = "fluxspecvd.tdsePART";
+		const char* fname = "fluxspecvd.dat";
 		std::complex<double>* wfcs0, * wfcs1, *phss, cumPotPhs, *phaseCalcExpMul, *temp;
 	public:
 		int isHeavy() { return 0; };
@@ -417,7 +417,7 @@ namespace Measurers {
 		double meaT;
 		int index = 19;
 		int vdNum;
-		const char* fname = "psit.tdsePART";
+		const char* fname = "psit.dat";
 		int done = 0;
 		double curTime=-1;
 	public:
@@ -438,7 +438,7 @@ namespace Measurers {
 		double meaT;
 		int index = 20;
 		int vdNum;
-		const char* fname = "pott.tdsePART";
+		const char* fname = "pott.dat";
 		int done = 0;
 	public:
 		int isHeavy() { return 0; };
@@ -466,7 +466,7 @@ namespace Measurers {
 		double * xs;
 		double * ts;
 		double interval;
-		const char* fname = "Vfunct.tdsePART";
+		const char* fname = "Vfunct.dat";
 	public:
 		int isHeavy() { return 0; };
 
@@ -489,7 +489,7 @@ namespace Measurers {
 		int first = 1;
 		int* nelec;
 		const char* fol;
-		const char* fname = "nelec.tdsePART";
+		const char* fname = "nelec.dat";
 	public:
 		int isHeavy() { return 0; };
 		int getIndex() { return index; };
@@ -505,7 +505,7 @@ namespace Measurers {
 	private:
 		std::fstream fil;
 		int index = 23;
-		const char* fname = "expectE0.tdsePART";
+		const char* fname = "expectE0.dat";
 		int nPts;
 		double dx;
 		double tmea;
@@ -525,7 +525,7 @@ namespace Measurers {
 	private:
 		std::fstream fil;
 		int index = 25;
-		const char* fname = "wghts.tdsePART";
+		const char* fname = "wghts.dat";
 		int *nelecPtr, nPts;
 		double dx;
 		int first = 1;

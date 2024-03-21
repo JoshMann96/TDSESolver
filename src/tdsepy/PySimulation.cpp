@@ -120,7 +120,7 @@ void init_Simulation(py::module &m) {
             wght : Weight
                 Weight calculator to be used.)V0G0N",
             "wght"_a)
-        .def("setKin", py::overload_cast<KineticOperators::KineticOperator_PSM*>(&PySimulation::setKineticOperator_PSM), R"V0G0N(
+        .def("setKin", py::overload_cast<KineticOperators::KineticOperator_PSM*>(&PySimulation::setKineticOperator_PSM), py::keep_alive<1,2>(), R"V0G0N(
             Sets kinetic operator for simulation.
 
             Parameters
@@ -128,7 +128,7 @@ void init_Simulation(py::module &m) {
             nkin : KineticOperator
                 Kinetic operator to be used.)V0G0N",
             "nkin"_a)
-        .def("setKin", py::overload_cast<KineticOperators::KineticOperator_FDM*>(&PySimulation::setKineticOperator_FDM), R"V0G0N(
+        .def("setKin", py::overload_cast<KineticOperators::KineticOperator_FDM*>(&PySimulation::setKineticOperator_FDM), py::keep_alive<1,2>(), R"V0G0N(
             Sets kinetic operator for simulation.
 
             Parameters
@@ -162,10 +162,22 @@ void init_Simulation(py::module &m) {
             rate : float
                 Decay rate.
             width : float
-                Width of boundary)V0G0N",
+                Width of boundary.)V0G0N",
             "rate"_a, "width"_a)
         .def("finishInit", &PySimulation::finishInitialization, R"V0G0N(
-            Finishes initialization of simulation.)V0G0N");
-        //CONTINUE HERE
-        //.def("eigenSolve", &PySimulation::findEigenStates(double fermie, double w, double maxT, double rate));
+            Finishes initialization of simulation.)V0G0N")
+        .def("eigenSolve", &PySimulation::findEigenStates, R"V0G0N(
+            Finds eigenstates of current system, without self-consistent potentials.
+
+            Parameters
+            ----------
+            minE : float
+                Eigenvalue lower bound.
+            maxE : float
+                Eigenvalue upper bound)V0G0N",
+            "minE"_a, "maxE"_a)
+        .def("runOS_U2TU", &PySimulation::runOS_U2TU, R"V0G0N(
+            Runs simulation using operator splitting method. Potential is not updated between kinetic operator propagation steps.)V0G0N")
+        .def("runOS_UW2TUW", &PySimulation::runOS_UW2TUW, R"V0G0N(
+            Runs simulation using operator splitting method. Potential is updated between kinetic operator propagation steps.)V0G0N");
 }

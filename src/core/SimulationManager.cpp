@@ -121,7 +121,7 @@ int SimulationManager::measPAR(int idx) {
 }
 
 //Run simulation using operator splitting Fourier method (applies potential as linear)
-void SimulationManager::runOS_U2TU(int idx) {
+void SimulationManager::runOS_U2TU() {
 	iterateIndex();
 	pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()], kin);
 	kin_psm->stepOS_U2TU(psis[prevIndex()], vs[prevIndex()], spatialDamp, psis[index], nelec);
@@ -140,21 +140,18 @@ void SimulationManager::runOS_U2TU(int idx) {
 
 		iterateIndex();
 		if (ts[prevPrevIndex()] / maxT * 100.0 > percDone) {
-			//PROGRESS UPDATE
-			//MPI_Ssend(&percDone, 1, MPI_INT, MPI_Root_Proc, MPITag::UpdateSent, MPI_COMM_WORLD);
 			if (progCallback != NULL)
 				progCallback(percDone);
 			percDone++;
 		}
 	}
-	//MPI_Ssend(&percDone, 1, MPI_INT, MPI_Root_Proc, MPITag::UpdateSent, MPI_COMM_WORLD);
 	if (progCallback != NULL)
 		progCallback(percDone);
 	meas->terminate();
 }
 
 //Run simulation using operator splitting Fourier method (applies potential as nonlinear, second potential phase is recalculated after propagation phase)
-void SimulationManager::runOS_UW2TUW(int idx) {
+void SimulationManager::runOS_UW2TUW() {
 	tpsi = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nelec);
 	iterateIndex();
 	pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()], kin);
@@ -177,8 +174,6 @@ void SimulationManager::runOS_UW2TUW(int idx) {
 
 		iterateIndex();
 		if (ts[prevPrevIndex()] / maxT * 100.0 > percDone) {
-			//PROGRESS UPDATE
-			//MPI_Ssend(&percDone, 1, MPI_INT, MPI_Root_Proc, MPITag::UpdateSent, MPI_COMM_WORLD);
 			if (progCallback != NULL)
 				progCallback(percDone);
 			percDone++;

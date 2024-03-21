@@ -37,8 +37,8 @@ public:
 	void setKineticOperator_PSM(KineticOperators::KineticOperator_PSM* nkin) { kin = nkin; kin_psm = nkin; }
 	void setKineticOperator_FDM(KineticOperators::KineticOperator_FDM* nkin) { kin = nkin; kin_fdm = nkin; }
 
-	void runOS_U2TU(int idx);
-	void runOS_UW2TUW(int idx);
+	void runOS_U2TU();
+	void runOS_UW2TUW();
 
 	// Finishes initialization of manager (REQUIRED BEFORE RUNNING).
 	void finishInitialization();

@@ -21,9 +21,9 @@ namespace Measurers {
 		char* nfil = new char[l1 + l2 + 10];
 		strncpy(nfil, fol, l1);
 		strncpy(&nfil[l1], filName, l2);
-		strcpy(&nfil[l1 + l2], ".tdsePART");
+		strcpy(&nfil[l1 + l2], ".dat");
 		/*std::stringstream ss;
-		ss << fol << filName << ".tdsePART";
+		ss << fol << filName << ".dat";
 		std::string str = ss.str();
 		const char* nfil = str.c_str();*/
 

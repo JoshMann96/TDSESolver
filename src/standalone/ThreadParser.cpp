@@ -409,11 +409,11 @@ int ThreadParser::readCommand() {
 			spc->at(i)->negateGroundEffects(sim->getPsi(), sim->getKin());
 	else if (std::strstr(flds->at(0).c_str(), "RUN_OS_U2TU")){ //run with operator splitting, no potential update (for linear)
 		MPI_Ssend(nullptr, 0, MPI_INT, MPI_Root_Proc, MPITag::AmSimulating, MPI_COMM_WORLD);
-		sim->runOS_U2TU(mpiJob);
+		sim->runOS_U2TU();
 	}
 	else if (std::strstr(flds->at(0).c_str(), "RUN_OS_UW2TUW")){ //run with operator splitting, potential update (for nonlinear)
 		MPI_Ssend(nullptr, 0, MPI_INT, MPI_Root_Proc, MPITag::AmSimulating, MPI_COMM_WORLD);
-		sim->runOS_UW2TUW(mpiJob);
+		sim->runOS_UW2TUW();
 	}
 	else if (std::strstr(flds->at(0).c_str(), "EXIT")) //all done!
 		return 0;

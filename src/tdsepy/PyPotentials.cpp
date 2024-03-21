@@ -137,7 +137,7 @@ void init_Potentials(py::module &m) {
 
     
     py::class_<PyPulsePotential, Potential>(m, "PulsePotential")
-        .def(py::init<PySimulation*, ElectricFieldProfiles::ElectricFieldProfile*, Envelopes::Envelope*, double, double, double, double>(), R"V0G0N(
+        .def(py::init<PySimulation*, ElectricFieldProfiles::ElectricFieldProfile*, Envelopes::Envelope*, double, double, double, double>(),  py::keep_alive<1,3>(),  py::keep_alive<1,4>(), R"V0G0N(
             Pulsed laser potential under dipole approximation. 
 
             Parameters
