@@ -491,8 +491,8 @@ namespace Measurers {
 		int index = 22;
 		int first = 1;
 		int* nelec;
-		const char* fol;
 		const char* fname = "nelec.dat";
+		char* nfil;
 		void terminate();
 	public:
 		int isHeavy() { return 0; };

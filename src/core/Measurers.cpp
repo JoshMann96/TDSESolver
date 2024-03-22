@@ -53,7 +53,12 @@ namespace Measurers {
 
 
 	ElectronNumber::ElectronNumber(int* nelec, const char* fol)
-		: fol(fol), nelec(nelec) {}
+		: nelec(nelec) {
+			int l1 = std::strlen(fol), l2 = std::strlen(fname);
+			nfil = new char[l1 + l2 + 1];
+			strncpy(nfil, fol, l1);
+			strcpy(&nfil[l1], fname);
+		}
 
 	ElectronNumber::~ElectronNumber() {
 		kill();
@@ -62,11 +67,6 @@ namespace Measurers {
 	int ElectronNumber::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) { 
 		if(first){
 			first = 0;
-
-			int l1 = std::strlen(fol), l2 = std::strlen(fname);
-			char* nfil = new char[l1 + l2 + 1];
-			strncpy(nfil, fol, l1);
-			strcpy(&nfil[l1], fname);
 			
 			fil = openFile(nfil);
 			delete[] nfil;
