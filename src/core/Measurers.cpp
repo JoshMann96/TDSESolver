@@ -1,10 +1,14 @@
 #include "Measurers.h"
+#include <stdexcept>
+#include <system_error>
 
 
 /*Measurer::Measurer() {}
 Measurer::~Measurer() {}
 void Measurer::measure(std::complex<double> * psi, double * v, double t) {}
 void Measurer::terminate() {}*/
+
+
 
 
 //Constant
@@ -18,7 +22,7 @@ namespace Measurers {
 	DoubleConst::DoubleConst(double c, const char* filName, const char* fol) {
 		DoubleConst::c = c;
 		int l1 = std::strlen(fol), l2 = std::strlen(filName);
-		char* nfil = new char[l1 + l2 + 10];
+		char* nfil = new char[l1 + l2 + 4];
 		strncpy(nfil, fol, l1);
 		strncpy(&nfil[l1], filName, l2);
 		strcpy(&nfil[l1 + l2], ".dat");
@@ -36,25 +40,23 @@ namespace Measurers {
 
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 		fil.write(reinterpret_cast<char*>(&c), sizeof c);
-		if (fil) fil.close();
+		fil.close();
 	}
 
 	DoubleConst::~DoubleConst() {
-		terminate();
+		kill();
 	}
 
 	int DoubleConst::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) { return 1; }
 
-	void DoubleConst::terminate() {
-		if (fil) fil.close();
-	}
+	void DoubleConst::terminate() {}
 
 
 	ElectronNumber::ElectronNumber(int* nelec, const char* fol)
 		: fol(fol), nelec(nelec) {}
 
 	ElectronNumber::~ElectronNumber() {
-		terminate();
+		kill();
 	}
 
 	int ElectronNumber::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) { 
@@ -62,11 +64,10 @@ namespace Measurers {
 			first = 0;
 
 			int l1 = std::strlen(fol), l2 = std::strlen(fname);
-
 			char* nfil = new char[l1 + l2 + 1];
 			strncpy(nfil, fol, l1);
 			strcpy(&nfil[l1], fname);
-
+			
 			fil = openFile(nfil);
 			delete[] nfil;
 			if (!fil) {
@@ -82,9 +83,7 @@ namespace Measurers {
 		return 1; 
 	}
 
-	void ElectronNumber::terminate() {
-		if (fil) fil.close();
-	}
+	void ElectronNumber::terminate() {}
 
 	//Header
 	Header::Header(const char* title, const char* fol) {
@@ -107,17 +106,17 @@ namespace Measurers {
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 
 		fil.write(title, sizeof(title));
+
+		fil.close();
 	}
 
 	Header::~Header() {
-		terminate();
+		kill();
 	}
 
 	int Header::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) { return 1; }
 
-	void Header::terminate() {
-		if (fil) fil.close();
-	}
+	void Header::terminate() {}
 
 	//NPts
 	NPts::NPts(int nPts, const char* fol) {
@@ -139,15 +138,15 @@ namespace Measurers {
 
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 		fil.write(reinterpret_cast<char*>(&nPts), sizeof(int));
+
+		fil.close();
 	}
 
 	NPts::~NPts() {
-		terminate();
+		kill();
 	}
 
-	void NPts::terminate() {
-		if (fil) fil.close();
-	}
+	void NPts::terminate() {}
 
 	int NPts::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) { return 1; }
 
@@ -172,11 +171,11 @@ namespace Measurers {
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 	}
 
-	NSteps::~NSteps() { terminate(); }
+	NSteps::~NSteps() { kill(); }
 
 	void NSteps::terminate() {
 		fil.write(reinterpret_cast<char*>(&steps), sizeof(int));
-		if (fil) fil.close();
+		fil.close();
 	}
 
 	int NSteps::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
@@ -207,17 +206,17 @@ namespace Measurers {
 
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 		fil.write(reinterpret_cast<char*>(&dx), sizeof(double));
+
+		fil.close();
 	}
 
 	DX::~DX() {
-		terminate();
+		kill();
 	}
 
 	int DX::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) { return 1; }
 
-	void DX::terminate() {
-		if (fil) fil.close();
-	}
+	void DX::terminate() {}
 
 	//DT
 	DT::DT(double dt, const char* fol) {
@@ -239,17 +238,17 @@ namespace Measurers {
 
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 		fil.write(reinterpret_cast<char*>(&dt), sizeof(double));
+
+		fil.close();
 	}
 
 	DT::~DT() {
-		terminate();
+		kill();
 	}
 
 	int DT::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) { return 1; }
 
-	void DT::terminate() {
-		if (fil) fil.close();
-	}
+	void DT::terminate() {}
 
 	//XS
 	XS::XS(int len, double* xs, const char* fol) {
@@ -271,17 +270,17 @@ namespace Measurers {
 
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 		fil.write(reinterpret_cast<char*>(&xs[0]), sizeof(double)*len);
+
+		fil.close();
 	}
 
 	XS::~XS() {
-		terminate();
+		kill();
 	}
 
 	int XS::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) { return 1; }
 
-	void XS::terminate() {
-		if (fil) fil.close();
-	}
+	void XS::terminate() {}
 
 
 	//TS
@@ -306,7 +305,7 @@ namespace Measurers {
 	}
 
 	TS::~TS() {
-		terminate();
+		kill();
 	}
 
 	int TS::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
@@ -318,7 +317,7 @@ namespace Measurers {
 	}
 
 	void TS::terminate() {
-		if (fil) fil.close();
+		fil.close();
 	}
 
 
@@ -345,21 +344,19 @@ namespace Measurers {
 	}
 
 	OrigPot::~OrigPot() {
-		terminate();
+		kill();
 	}
 
 	int OrigPot::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
 		if (!measured) {
 			fil.write(reinterpret_cast<char*>(&v[0]), sizeof(double)*n);
+			fil.close();
 			measured = 1;
-			return 1;
 		}
-		return 0;
+		return 1;
 	}
 
-	void OrigPot::terminate() {
-		if (fil) fil.close();
-	}
+	void OrigPot::terminate() {}
 
 	//Psi2t
 	Psi2t::Psi2t(int n, int nx, int nt, double maxT, double dt, double * x, const char* fol) {
@@ -403,7 +400,7 @@ namespace Measurers {
 	}
 
 	Psi2t::~Psi2t() {
-		terminate();
+		kill();
 	}
 
 	int Psi2t::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
@@ -431,12 +428,9 @@ namespace Measurers {
 	}
 
 	void Psi2t::terminate() {
-		if (fil) {
-			fil.write(reinterpret_cast<char*>(&xs[0]), sizeof(double)*nx);
-			fil.write(reinterpret_cast<char*>(&ts[0]), sizeof(double)*nt);
-			fil.close();
-		}
-
+		fil.write(reinterpret_cast<char*>(&xs[0]), sizeof(double)*nx);
+		fil.write(reinterpret_cast<char*>(&ts[0]), sizeof(double)*nt);
+		fil.close();
 	}
 
 	ExpectE::ExpectE(int len, double dx, const char* fol) {
@@ -464,7 +458,7 @@ namespace Measurers {
 	}
 
 	ExpectE::~ExpectE() {
-		terminate();
+		kill();
 	}
 
 	int ExpectE::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
@@ -485,7 +479,7 @@ namespace Measurers {
 	}
 
 	void ExpectE::terminate() {
-		if (fil) fil.close();
+		fil.close();
 	}
 
 
@@ -515,7 +509,7 @@ namespace Measurers {
 	}
 
 	ExpectX::~ExpectX() {
-		terminate();
+		kill();
 	}
 
 	int ExpectX::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
@@ -526,7 +520,7 @@ namespace Measurers {
 	}
 
 	void ExpectX::terminate() {
-		if (fil) fil.close();
+		fil.close();
 	}
 
 
@@ -556,7 +550,7 @@ namespace Measurers {
 	}
 
 	ExpectP::~ExpectP() {
-		terminate();
+		kill();
 	}
 
 	int ExpectP::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
@@ -570,7 +564,7 @@ namespace Measurers {
 	}
 
 	void ExpectP::terminate() {
-		if (fil) fil.close();
+		fil.close();
 	}
 
 
@@ -600,7 +594,7 @@ namespace Measurers {
 	}
 
 	ExpectA::~ExpectA() {
-		terminate();
+		kill();
 	}
 
 	int ExpectA::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
@@ -613,7 +607,7 @@ namespace Measurers {
 	}
 
 	void ExpectA::terminate() {
-		if (fil) fil.close();
+		fil.close();
 	}
 
 
@@ -643,7 +637,7 @@ namespace Measurers {
 	}
 
 	TotProb::~TotProb() {
-		terminate();
+		kill();
 	}
 
 	int TotProb::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
@@ -655,7 +649,7 @@ namespace Measurers {
 	}
 
 	void TotProb::terminate() {
-		if (fil) fil.close();
+		fil.close();
 	}
 
 
@@ -691,7 +685,7 @@ namespace Measurers {
 	}
 
 	VDProbCurrent::~VDProbCurrent() {
-		terminate();
+		kill();
 	}
 
 	int VDProbCurrent::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
@@ -703,7 +697,7 @@ namespace Measurers {
 	}
 
 	void VDProbCurrent::terminate() {
-		if (fil) fil.close();
+		fil.close();
 	}
 
 	PsiT::PsiT(int n, double meaT, int vdNum, const char* name, const char* fol) {
@@ -733,7 +727,7 @@ namespace Measurers {
 	}
 
 	PsiT::~PsiT() {
-		terminate();
+		kill();
 	}
 
 	int PsiT::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
@@ -750,7 +744,7 @@ namespace Measurers {
 	}
 
 	void PsiT::terminate() {
-		if (fil) fil.close();
+		fil.close();
 	}
 
 
@@ -781,7 +775,7 @@ namespace Measurers {
 	}
 
 	PotT::~PotT() {
-		terminate();
+		kill();
 	}
 
 	int PotT::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
@@ -794,7 +788,7 @@ namespace Measurers {
 	}
 
 	void PotT::terminate() {
-		if (fil) fil.close();
+		fil.close();
 	}
 
 	VDPsi::VDPsi(int vdPos, int vdNum, const char* name, const char* fol) {
@@ -827,7 +821,7 @@ namespace Measurers {
 	}
 
 	VDPsi::~VDPsi() {
-		terminate();
+		kill();
 	}
 
 	int VDPsi::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
@@ -836,7 +830,7 @@ namespace Measurers {
 	}
 
 	void VDPsi::terminate() {
-		if (fil) fil.close();
+		fil.close();
 	}
 
 	VDPot::VDPot(int vdPos, int vdNum, const char* name, const char* fol) {
@@ -869,7 +863,7 @@ namespace Measurers {
 	}
 
 	VDPot::~VDPot() {
-		terminate();
+		kill();
 	}
 
 	int VDPot::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
@@ -878,7 +872,7 @@ namespace Measurers {
 	}
 
 	void VDPot::terminate() {
-		if (fil) fil.close();
+		fil.close();
 	}
 
 
@@ -923,7 +917,7 @@ namespace Measurers {
 	}
 
 	VDFluxSpec::~VDFluxSpec() {
-		terminate();
+		kill();
 	}
 
 	int VDFluxSpec::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) {
@@ -985,7 +979,7 @@ namespace Measurers {
 	void VDFluxSpec::terminate() {
 		fil.write(reinterpret_cast<char*>(&wfcs0[0]), nelec * nsamp * sizeof(std::complex<double>));
 		fil.write(reinterpret_cast<char*>(&wfcs1[0]), nelec * nsamp * sizeof(std::complex<double>));
-		if (fil) fil.close();
+		fil.close();
 	}
 
 
@@ -1027,7 +1021,7 @@ namespace Measurers {
 	}
 
 	Vfunct::~Vfunct() {
-		terminate();
+		kill();
 	}
 
 	int Vfunct::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
@@ -1053,12 +1047,9 @@ namespace Measurers {
 	}
 
 	void Vfunct::terminate() {
-		if (fil) {
-			fil.write(reinterpret_cast<char*>(&xs[0]), sizeof(double)*nx);
-			fil.write(reinterpret_cast<char*>(&ts[0]), sizeof(double)*nt);
-			fil.close();
-		}
-
+		fil.write(reinterpret_cast<char*>(&xs[0]), sizeof(double)*nx);
+		fil.write(reinterpret_cast<char*>(&ts[0]), sizeof(double)*nt);
+		fil.close();
 	}
 
 	ExpectE0::ExpectE0(int len, double dx, const char* fol) {
@@ -1086,7 +1077,7 @@ namespace Measurers {
 	}
 
 	ExpectE0::~ExpectE0() {
-		terminate();
+		kill();
 	}
 
 	int ExpectE0::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) {
@@ -1113,7 +1104,7 @@ namespace Measurers {
 	}
 
 	void ExpectE0::terminate() {
-		if (fil) fil.close();
+		fil.close();
 	}
 
 
@@ -1138,7 +1129,7 @@ namespace Measurers {
 	}
 
 	WfcRhoWeights::~WfcRhoWeights() {
-		terminate();
+		kill();
 	}
 
 	int WfcRhoWeights::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator * kin) {
@@ -1162,7 +1153,7 @@ namespace Measurers {
 	}
 
 	void WfcRhoWeights::terminate() {
-		if (fil) fil.close();
+		fil.close();
 	}
 
 
@@ -1176,21 +1167,32 @@ namespace Measurers {
 		//meas.push_back(new TS(fol));
 	}
 
-	BasicMeasurers::~BasicMeasurers() { terminate(); }
+	BasicMeasurers::~BasicMeasurers() { kill(); }
 
 	int BasicMeasurers::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
-		for (int i = meas.size() - 1; i >= 0; i--)
-			if (meas.at(i)->measure(psi, v, t, kin) == 1) {
-				meas.at(i)->terminate();
-				meas.erase(meas.begin() + i);
+		for ( auto it = meas.begin(); it != meas.end(); ){
+			if( (*it)->measure(psi, v, t, kin) == 1) {
+				(*it)->kill();
+				delete * it;
+				it = meas.erase(it);
 			}
+			else{
+				++it;
+			}
+		}
+		/*for (int i = meas.size() - 1; i >= 0; i--)
+			if (meas.at(i)->measure(psi, v, t, kin) == 1) {
+				meas.at(i)->kill();
+				delete * meas.at(i);
+				meas.erase(meas.begin() + i);
+			}*/
 		return 0;
 				
 	}
 
 	void BasicMeasurers::terminate() {
 		for (uint i = 0; i < meas.size(); i++)
-			meas[i]->terminate();
+			meas[i]->kill();
 	}
 
 
@@ -1199,7 +1201,7 @@ namespace Measurers {
 	}
 
 	MeasurementManager::~MeasurementManager() {
-		terminate();
+		kill();
 	}
 
 	void MeasurementManager::addMeasurer(Measurer * m) {
@@ -1207,10 +1209,14 @@ namespace Measurers {
 	}
 
 	int MeasurementManager::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
-		for (int i = meas.size()-1; i >= 0; i--) {
-			if (meas[i]->measure(psi, v, t, kin) == 1) {
-				meas[i]->terminate();
-				meas.erase(meas.begin() + i);
+		for ( auto it = meas.begin(); it != meas.end(); ){
+			if( (*it)->measure(psi, v, t, kin) == 1) {
+				(*it)->kill();
+				delete * it;
+				it = meas.erase(it);
+			}
+			else{
+				++it;
 			}
 		}
 		//std::cout << std::flush;
@@ -1218,37 +1224,33 @@ namespace Measurers {
 	}
 
 	int MeasurementManager::measureMany(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin, int nelec, int nPts){
-		for(int i = meas.size()-1; i>=0; i--){
+		for ( auto it = meas.begin(); it != meas.end(); ){
+			for(int j = 0; j < nelec; j++){
+				if( (*it)->measure(&psi[nPts*j], v, t, kin) == 1) {
+					(*it)->kill();
+					delete * it;
+					it = meas.erase(it);
+					--it;
+					break;
+				}
+			}
+			++it;
+		}
+		/*for(int i = meas.size()-1; i>=0; i--){
 			for(int j = 0; j < nelec; j++){
 				if (meas[i]->measure(&psi[nPts*j], v, t, kin) == 1){
-					meas[i]->terminate();
+					meas[i]->kill();
 					meas.erase(meas.begin() + i);
 					break;
 				}
 			}
-		}
+		}*/
 		return 0;
 	}
 
 	void MeasurementManager::terminate() {
-		/*const char* tfiln;
-		std::fstream tfil;
-		fil = std::fstream(fname, std::ios::out | std::ios::binary);
-		for (int i = 0; i < (int)meas.size(); i++) {
-		tfiln = meas[i]->terminate();
-		tfil = std::fstream(tfiln, std::ios::in || std::ios::binary);
-		int size = (int)(tfil.tellg()) + sizeof(int);
-		fil.write(reinterpret_cast<char*>(&size), sizeof(int));
-		fil << tfil.rdbuf();
-		t//fill.close();
-		tfil.clear();
-		}
-		//fill.close();
-		//DELETE INDIVIDUAL MEASURER FILES
-		*/
-
 		for (int i = (int)(meas.size())-1; i >=0 ; i--){
-			meas[i]->terminate();
+			meas[i]->kill();
 			meas.erase(meas.begin() + i);
 		}
 	}

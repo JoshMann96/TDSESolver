@@ -14,6 +14,7 @@
 #include <future>
 #include <cstring>
 #include <string>
+#include <stdexcept>
 
 #include <omp.h>
 

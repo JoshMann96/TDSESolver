@@ -88,6 +88,8 @@ void init_Simulation(py::module &m) {
             -------
             Simulation)V0G0N",
             "xmin"_a, "xmax"_a, "dx"_a, "dt"_a, "maxT"_a, "callback"_a)
+        .def("__enter__", &PySimulation::enter)
+        .def("__exit__", &PySimulation::exit)
         .def("getX", &PySimulation::getX)
         .def("getDX", &PySimulation::getDX)
         .def("addPot", &PySimulation::addPotential, py::keep_alive<1,2>(), R"V0G0N(

@@ -30,7 +30,8 @@ SimulationManager::SimulationManager(int nPts, double dx, double dt, double maxT
 
 SimulationManager::~SimulationManager()
 {
-	meas->terminate();
+	meas->kill();
+	delete meas;
 }
 
 void SimulationManager::addMeasurer(Measurers::Measurer* m) {
@@ -147,7 +148,6 @@ void SimulationManager::runOS_U2TU() {
 	}
 	if (progCallback != NULL)
 		progCallback(percDone);
-	meas->terminate();
 }
 
 //Run simulation using operator splitting Fourier method (applies potential as nonlinear, second potential phase is recalculated after propagation phase)
@@ -179,7 +179,6 @@ void SimulationManager::runOS_UW2TUW() {
 			percDone++;
 		}
 	}
-	meas->terminate();
 }
 
 void SimulationManager::iterateIndex() {
