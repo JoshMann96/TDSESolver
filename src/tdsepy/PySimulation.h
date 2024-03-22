@@ -30,11 +30,11 @@ class PySimulation
 				fftw_import_wisdom_from_filename(wisdomFile);
         }
 
-        ~PySimulation(){fftw_export_wisdom_to_filename(wisdomFile); SimulationManager::~SimulationManager(); delete[] x;}
+        ~PySimulation(){fftw_export_wisdom_to_filename(wisdomFile); delete[] x;}
 
         auto enter(){return py::cast(this);}
 
-        auto exit(py::handle type, py::handle value, py::handle traceback){PySimulation::~PySimulation();};
+        auto exit(py::handle type, py::handle value, py::handle traceback){};
 
         void addPotential(Potentials::Potential * pot){
             SimulationManager::addPotential(pot);

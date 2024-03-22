@@ -4,6 +4,7 @@
 #include <memory>
 #include <pybind11/attr.h>
 #include <pybind11/detail/common.h>
+#include <pybind11/pytypes.h>
 
 void init_Simulation(py::module &m) {
 
