@@ -12,9 +12,8 @@ ThreadParser::~ThreadParser() {
 	delete sim;
 }
 
-int ThreadParser::mpiCallbackFunc(int prog){
+void ThreadParser::mpiCallbackFunc(int prog){
 	MPI_Ssend(&prog, 1, MPI_INT, MPI_Root_Proc, MPITag::UpdateSent, MPI_COMM_WORLD);
-	return 0;
 }
 
 void ThreadParser::executeScript() {

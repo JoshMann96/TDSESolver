@@ -3,6 +3,7 @@
 #include "MathTools.h"
 #include "PyCommon.h"
 #include "pybind11/attr.h"
+#include "pybind11/functional.h"
 #include "SimulationManager.h"
 #include "WfcRhoTools.h"
 #include "AbsorptiveRegions.h"
@@ -15,15 +16,21 @@ class PySimulation
         int nPts;
         WfcToRho::Weight* wght = nullptr;
         WfcToRho::Density* dens = nullptr;
+        char* wisdomFile = new char[50];
     public:
-        PySimulation(double xmin, double xmax, double dx, double dt, double maxT)
-            : SimulationManager((int)((xmax-xmin)/dx) + 1, dx, dt, maxT, NULL){
+        PySimulation(double xmin, double xmax, double dx, double dt, double maxT, const std::function<void(int)> &callback)
+            : SimulationManager((int)((xmax-xmin)/dx) + 1, dx, dt, maxT, callback){
                 nPts = getNumPoints();
                 x = new double[nPts];
                 for(int i = 0; i < nPts; i++)
                     x[i] = i*dx + xmin;
+                
+			    std::snprintf(wisdomFile, 50, "fftw_nt_%04d.wisdom", omp_get_max_threads());
+                fftw_init_threads();
+				fftw_import_wisdom_from_filename(wisdomFile);
         }
-        ~PySimulation(){SimulationManager::~SimulationManager(); delete[] x;}
+
+        ~PySimulation(){fftw_export_wisdom_to_filename(wisdomFile); SimulationManager::~SimulationManager(); delete[] x;}
 
         void addPotential(Potentials::Potential * pot){
             SimulationManager::addPotential(pot);

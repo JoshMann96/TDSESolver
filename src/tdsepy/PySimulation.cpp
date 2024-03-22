@@ -66,7 +66,7 @@ void init_Simulation(py::module &m) {
 // SIMULATION
 
     py::class_<PySimulation>(m, "Simulation")
-        .def(py::init<double, double, double, double, double>(), R"V0G0N(
+        .def(py::init<double, double, double, double, double, std::function<void(int)>>(), R"V0G0N(
             Manages TDSE simulations.
 
             Parameters
@@ -81,11 +81,13 @@ void init_Simulation(py::module &m) {
                 Temporal step size.
             maxT : float
                 Maximum time in simulation (end time).
+            callback : function
+                Callback -- reports percentage complete of time-stepping runs.
 
             Returns
             -------
             Simulation)V0G0N",
-            "xmin"_a, "xmax"_a, "dx"_a, "dt"_a, "maxT"_a)
+            "xmin"_a, "xmax"_a, "dx"_a, "dt"_a, "maxT"_a, "callback"_a)
         .def("getX", &PySimulation::getX)
         .def("getDX", &PySimulation::getDX)
         .def("addPot", &PySimulation::addPotential, py::keep_alive<1,2>(), R"V0G0N(

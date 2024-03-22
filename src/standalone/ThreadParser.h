@@ -31,8 +31,8 @@ private:
 	int mpiJob;
 	
 	//MPI update progress callback
-	int mpiCallbackFunc(int prog);
-	std::function<int(int)> callbackFunc;
+	void mpiCallbackFunc(int prog);
+	std::function<void(int)> callbackFunc;
 
 
 	//Names of absorptive boundary types.
