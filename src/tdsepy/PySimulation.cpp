@@ -14,7 +14,7 @@ void init_Simulation(py::module &m) {
 
     py::class_<WfcToRho::FermiGasDistro, WfcToRho::Weight>(m, "FermiGasDistro")
         .def(py::init<double>(), R"V0G0N(
-            Uses 3-D Fermi gas distribution to convert 1-D wavefunctions to an effective 3-D density.
+            Uses 3-D Fermi gas distribution at zero temperature to convert 1-D wavefunctions to an effective 3-D density.
             Mapping uses wavefunction initial eigenstates.
 
             Parameters

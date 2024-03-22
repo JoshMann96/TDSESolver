@@ -105,8 +105,8 @@ namespace KineticOperators {
 			fftw_plan_with_nthreads(omp_get_max_threads());
 			//std::cout << "Assigned FFTW threads: " << fftw_planner_nthreads() << std:: endl;
 
-			fftwAllForward = fftw_plan_many_dft(1, &nPts, nelec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_FORWARD, FFTW_ESTIMATE);
-			fftwAllBackward = fftw_plan_many_dft(1, &nPts, nelec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_BACKWARD, FFTW_ESTIMATE);
+			fftwAllForward = fftw_plan_many_dft(1, &nPts, nelec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_FORWARD, FFTW_PATIENT);
+			fftwAllBackward = fftw_plan_many_dft(1, &nPts, nelec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_BACKWARD, FFTW_PATIENT);
 			fftw_free(test);
 
 			if (firstStepAll) {
@@ -493,8 +493,8 @@ namespace KineticOperators {
 			fftw_plan_with_nthreads(omp_get_max_threads());
 			//std::cout << "Assigned FFTW threads: " << fftw_planner_nthreads() << std:: endl;
 			
-			fftwAllForward = fftw_plan_many_dft(1, &nPts, nelec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_FORWARD, FFTW_ESTIMATE);
-			fftwAllBackward = fftw_plan_many_dft(1, &nPts, nelec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_BACKWARD, FFTW_ESTIMATE);
+			fftwAllForward = fftw_plan_many_dft(1, &nPts, nelec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_FORWARD, FFTW_PATIENT);
+			fftwAllBackward = fftw_plan_many_dft(1, &nPts, nelec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_BACKWARD, FFTW_PATIENT);
 			fftw_free(test);
 
 			if (osPotentialPhase)
