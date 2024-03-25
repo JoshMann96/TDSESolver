@@ -16,6 +16,7 @@ void Measurer::terminate() {}*/
 namespace Measurers {
 
 	std::fstream openFile(const char* fil) {
+		std::cout << "Openning file: " << fil << std::endl;
 		return std::fstream(fil, std::ios::out | std::ios::binary);
 	}
 
@@ -76,14 +77,13 @@ namespace Measurers {
 			}
 
 			fil.write(reinterpret_cast<char*>(&index), sizeof(int));
-			fil.write(reinterpret_cast<char*>(nelec), sizeof(int));
-			fil.close();
+			fil.write(reinterpret_cast<char*>(&(*nelec)), sizeof(int));
 		}
 		
 		return 1; 
 	}
 
-	void ElectronNumber::terminate() {}
+	void ElectronNumber::terminate() {fil.close();}
 
 	//Header
 	Header::Header(const char* title, const char* fol) {
@@ -350,13 +350,12 @@ namespace Measurers {
 	int OrigPot::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
 		if (!measured) {
 			fil.write(reinterpret_cast<char*>(&v[0]), sizeof(double)*n);
-			fil.close();
 			measured = 1;
 		}
 		return 1;
 	}
 
-	void OrigPot::terminate() {}
+	void OrigPot::terminate() {fil.close();}
 
 	//Psi2t
 	Psi2t::Psi2t(int n, int nx, int nt, double maxT, double dt, double * x, const char* fol) {
@@ -431,6 +430,11 @@ namespace Measurers {
 		fil.write(reinterpret_cast<char*>(&xs[0]), sizeof(double)*nx);
 		fil.write(reinterpret_cast<char*>(&ts[0]), sizeof(double)*nt);
 		fil.close();
+
+		delete[] psi2b;
+		delete[] psi2s;
+		delete[] xs;
+		delete[] ts;
 	}
 
 	ExpectE::ExpectE(int len, double dx, const char* fol) {
@@ -480,6 +484,8 @@ namespace Measurers {
 
 	void ExpectE::terminate() {
 		fil.close();
+
+		delete[] rho;
 	}
 
 
@@ -521,6 +527,9 @@ namespace Measurers {
 
 	void ExpectX::terminate() {
 		fil.close();
+
+		delete[] x;
+		delete[] scratch;
 	}
 
 
@@ -565,6 +574,9 @@ namespace Measurers {
 
 	void ExpectP::terminate() {
 		fil.close();
+
+		delete[] scratch1;
+		delete[] scratch2;
 	}
 
 
@@ -608,6 +620,9 @@ namespace Measurers {
 
 	void ExpectA::terminate() {
 		fil.close();
+
+		delete[] scratch1;
+		delete [] scratch2;
 	}
 
 
@@ -650,6 +665,8 @@ namespace Measurers {
 
 	void TotProb::terminate() {
 		fil.close();
+
+		delete[] psi2;
 	}
 
 
@@ -922,7 +939,10 @@ namespace Measurers {
 
 	int VDFluxSpec::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) {
 		if (first) {
-			nelec = nelecPtr[0];
+			nelec = *nelecPtr;
+
+			std::cout << "NELEC: " << nelec << std::endl;
+
 			wfcs0 = new std::complex<double>[nsamp * nelec];
 			wfcs1 = new std::complex<double>[nsamp * nelec];
 			for (int i = 0; i < nsamp * nelec; i++) {
@@ -980,6 +1000,12 @@ namespace Measurers {
 		fil.write(reinterpret_cast<char*>(&wfcs0[0]), nelec * nsamp * sizeof(std::complex<double>));
 		fil.write(reinterpret_cast<char*>(&wfcs1[0]), nelec * nsamp * sizeof(std::complex<double>));
 		fil.close();
+
+		delete[] wfcs0;
+		delete[] wfcs1;
+		delete[] phss;
+		delete[] phaseCalcExpMul;
+		delete[] temp;
 	}
 
 
@@ -1050,6 +1076,10 @@ namespace Measurers {
 		fil.write(reinterpret_cast<char*>(&xs[0]), sizeof(double)*nx);
 		fil.write(reinterpret_cast<char*>(&ts[0]), sizeof(double)*nt);
 		fil.close();
+
+		delete[] vs;
+		delete[] xs;
+		delete[] ts;
 	}
 
 	ExpectE0::ExpectE0(int len, double dx, const char* fol) {
@@ -1105,6 +1135,8 @@ namespace Measurers {
 
 	void ExpectE0::terminate() {
 		fil.close();
+
+		delete[] rho;
 	}
 
 
@@ -1135,7 +1167,7 @@ namespace Measurers {
 	int WfcRhoWeights::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator * kin) {
 		if (first) {
 			first = 0;
-			int nelec = nelecPtr[0];
+			int nelec = *nelecPtr;
 			fil.write(reinterpret_cast<char*>(&nelec), sizeof(int));
 			double* energies = new double[nelec];
 			double* wghts = new double[nelec];
@@ -1191,8 +1223,11 @@ namespace Measurers {
 	}
 
 	void BasicMeasurers::terminate() {
-		for (uint i = 0; i < meas.size(); i++)
-			meas[i]->kill();
+		for ( auto it = meas.begin(); it != meas.end(); ){
+			(*it)->kill();
+			delete * it;
+			it = meas.erase(it);
+		}
 	}
 
 
@@ -1249,9 +1284,10 @@ namespace Measurers {
 	}
 
 	void MeasurementManager::terminate() {
-		for (int i = (int)(meas.size())-1; i >=0 ; i--){
-			meas[i]->kill();
-			meas.erase(meas.begin() + i);
+		for ( auto it = meas.begin(); it != meas.end(); ){
+			(*it)->kill();
+			delete * it;
+			it = meas.erase(it);
 		}
 	}
 }

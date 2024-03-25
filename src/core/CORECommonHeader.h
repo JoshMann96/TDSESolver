@@ -23,7 +23,6 @@
 #define __restrict
 #endif
 
-
 #include <boost/unordered_map.hpp>
 #include <boost/assign/list_of.hpp>
 

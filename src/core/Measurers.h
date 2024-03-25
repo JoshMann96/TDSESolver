@@ -465,7 +465,6 @@ namespace Measurers {
 		double maxT;
 		int nt;
 		int curIts;
-		double * vb;
 		double * vs;
 		double * xs;
 		double * ts;

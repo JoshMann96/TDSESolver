@@ -1,5 +1,7 @@
 #include "KineticOperator.h"
 
+#define MULTIELEC_FFTW_POLICY FFTW_ESTIMATE
+
 namespace KineticOperators {
 
 	void GenDisp_PSM::stepOS_U2TU(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nelec) {
@@ -105,8 +107,8 @@ namespace KineticOperators {
 			fftw_plan_with_nthreads(omp_get_max_threads());
 			//std::cout << "Assigned FFTW threads: " << fftw_planner_nthreads() << std:: endl;
 
-			fftwAllForward = fftw_plan_many_dft(1, &nPts, nelec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_FORWARD, FFTW_PATIENT);
-			fftwAllBackward = fftw_plan_many_dft(1, &nPts, nelec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_BACKWARD, FFTW_PATIENT);
+			fftwAllForward = fftw_plan_many_dft(1, &nPts, nelec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_FORWARD, MULTIELEC_FFTW_POLICY);
+			fftwAllBackward = fftw_plan_many_dft(1, &nPts, nelec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_BACKWARD, MULTIELEC_FFTW_POLICY);
 			fftw_free(test);
 
 			if (firstStepAll) {
@@ -493,8 +495,8 @@ namespace KineticOperators {
 			fftw_plan_with_nthreads(omp_get_max_threads());
 			//std::cout << "Assigned FFTW threads: " << fftw_planner_nthreads() << std:: endl;
 			
-			fftwAllForward = fftw_plan_many_dft(1, &nPts, nelec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_FORWARD, FFTW_PATIENT);
-			fftwAllBackward = fftw_plan_many_dft(1, &nPts, nelec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_BACKWARD, FFTW_PATIENT);
+			fftwAllForward = fftw_plan_many_dft(1, &nPts, nelec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_FORWARD, MULTIELEC_FFTW_POLICY);
+			fftwAllBackward = fftw_plan_many_dft(1, &nPts, nelec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_BACKWARD, MULTIELEC_FFTW_POLICY);
 			fftw_free(test);
 
 			if (osPotentialPhase)
