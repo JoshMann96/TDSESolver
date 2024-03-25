@@ -185,12 +185,17 @@ int ThreadParser::addAbsEdge(std::string input) {
 	//Once finished here, go add an example use to config_file_samples.cfg
 	int absIdx = parsingTools::findMatch(&input, &absNames);
 	std::vector<double> p = getBlockParameters(absIdx, absFields);
+	double* sd;
 	switch(absIdx) {
 	case 0:
-		sim->addSpatialDamp(AbsorptiveRegions::getSmoothedSpatialDampDecay(n, (int)((x[n - 1] - p[0] - x[0]) / (x[n - 1] - x[0]) * n), n, p[1]));
+		sd = AbsorptiveRegions::getSmoothedSpatialDampDecay(n, (int)((x[n - 1] - p[0] - x[0]) / (x[n - 1] - x[0]) * n), n, p[1]);
+		sim->addSpatialDamp(sd);
+		delete[] sd;
 		break;
 	case 1:
-		sim->addSpatialDamp(AbsorptiveRegions::getSmoothedSpatialDampDecay(n, (int)(p[0] / (x[n - 1] - x[0]) * n), 0, p[1]));
+		sd = AbsorptiveRegions::getSmoothedSpatialDampDecay(n, (int)(p[0] / (x[n - 1] - x[0]) * n), 0, p[1]);
+		sim->addSpatialDamp(sd);
+		delete[] sd;
 		break;
 	}
 	return 1;

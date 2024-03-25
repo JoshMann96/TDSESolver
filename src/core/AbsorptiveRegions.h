@@ -28,6 +28,7 @@ namespace AbsorptiveRegions {
 		double * mask;
 	public:
 		AbsorptiveRegionVelSmooth(double dx, double dt, int nPts, int inner, int outer, double rate);
+		~AbsorptiveRegionVelSmooth(){delete[] mask;}
 		void decay(std::complex<double> * psi);
 	};
 
