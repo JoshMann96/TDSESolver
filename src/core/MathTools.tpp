@@ -4,19 +4,25 @@ namespace vtls{
 		temp1 = reinterpret_cast<std::complex<double>*>(fftw_malloc(sizeof(fftw_complex)*len));
 		temp2 = reinterpret_cast<std::complex<double>*>(fftw_malloc(sizeof(fftw_complex)*len));
 
+		fftw_plan_mutex.lock();
+
 		fftw_plan_with_nthreads(omp_get_max_threads());
 		//std::cout << "Assigned FFTW threads: " << fftw_planner_nthreads() << std:: endl;
 
 		fp = fftw_plan_dft(1, &len, reinterpret_cast<fftw_complex*>(temp1), reinterpret_cast<fftw_complex*>(temp1), FFTW_FORWARD, FFTW_PATIENT);
 		bp = fftw_plan_dft(1, &len, reinterpret_cast<fftw_complex*>(temp2), reinterpret_cast<fftw_complex*>(temp2), FFTW_BACKWARD, FFTW_PATIENT);
+
+		fftw_plan_mutex.unlock();
 	}
 
 	template<class T>
 	Convolver<T>::~Convolver(){
 		fftw_free(temp1);
 		fftw_free(temp2);
+		fftw_plan_mutex.lock();
 		fftw_destroy_plan(fp);
 		fftw_destroy_plan(bp);
+		fftw_plan_mutex.unlock();
 	}
 
 	template<class T>
@@ -40,11 +46,15 @@ namespace vtls{
 		temp1 = reinterpret_cast<std::complex<double>*>(fftw_malloc(sizeof(fftw_complex)*len));
 		temp2 = reinterpret_cast<std::complex<double>*>(fftw_malloc(sizeof(fftw_complex)*len));
 
+		fftw_plan_mutex.lock();
+
 		fftw_plan_with_nthreads(omp_get_max_threads());
 		//std::cout << "Assigned FFTW threads: " << fftw_planner_nthreads() << std:: endl;
 
 		fp = fftw_plan_dft(1, &len, reinterpret_cast<fftw_complex*>(temp1), reinterpret_cast<fftw_complex*>(temp1), FFTW_FORWARD, FFTW_PATIENT);
 		bp = fftw_plan_dft(1, &len, reinterpret_cast<fftw_complex*>(temp2), reinterpret_cast<fftw_complex*>(temp2), FFTW_BACKWARD, FFTW_PATIENT);
+
+		fftw_plan_mutex.unlock();
 
 		vtls::copyArray(len, constArr, temp1);
 		fftw_execute_dft(fp, reinterpret_cast<fftw_complex*>(temp1), reinterpret_cast<fftw_complex*>(temp1));
@@ -54,8 +64,10 @@ namespace vtls{
 	MaskConvolver<T>::~MaskConvolver(){
 		fftw_free(temp1);
 		fftw_free(temp2);
+		fftw_plan_mutex.lock();
 		fftw_destroy_plan(fp);
 		fftw_destroy_plan(bp);
+		fftw_plan_mutex.unlock();
 	}
 
 	template<class T>

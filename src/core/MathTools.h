@@ -3,6 +3,7 @@
 #include <cblas.h>
 #include <omp.h>
 #include <fftw3.h>
+#include <mutex>
 #include "exprtk.hpp"
 
 namespace vtlsInt {
@@ -158,6 +159,7 @@ namespace vtls {
 		int len;
 		fftw_plan fp, bp;
 		std::complex<double> *temp1, *temp2;
+		std::mutex fftw_plan_mutex;
 	public:
 		Convolver<T>(){}
 		Convolver<T>(int len);
@@ -172,6 +174,7 @@ namespace vtls {
 		int len;
 		fftw_plan fp, bp;
 		std::complex<double> *temp1, *temp2;
+		std::mutex fftw_plan_mutex;
 	public:
 		MaskConvolver<T>(int len, T* constArr);
 		~MaskConvolver();

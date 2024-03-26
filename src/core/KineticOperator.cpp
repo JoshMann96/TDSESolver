@@ -1,8 +1,11 @@
 #include "KineticOperator.h"
+#include "fftw3.h"
 
 #define MULTIELEC_FFTW_POLICY FFTW_ESTIMATE
 
 namespace KineticOperators {
+
+	std::mutex fftw_plan_mutex;
 
 	GenDisp_PSM::~GenDisp_PSM(){
 		if (osKineticPhase)
@@ -18,6 +21,7 @@ namespace KineticOperators {
 		if (temp2)
 			fftw_free(temp2);
 
+		fftw_plan_mutex.lock();
 		if(fftwOneForward)
 			fftw_destroy_plan(fftwOneForward);
 		if(fftwOneBackward)
@@ -26,6 +30,7 @@ namespace KineticOperators {
 			fftw_destroy_plan(fftwAllForward);
 		if(fftwAllBackward)
 			fftw_destroy_plan(fftwAllBackward);
+		fftw_plan_mutex.unlock();
 	}
 
 	void GenDisp_PSM::stepOS_U2TU(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nelec) {
@@ -121,6 +126,9 @@ namespace KineticOperators {
 			//DftiSetValue(dftiHandle, DFTI_THREAD_LIMIT, numThreads);
 			DftiCommitDescriptor(dftiHandle);*/
 
+			
+			fftw_plan_mutex.lock();
+
 			//initialize FFTW for performance, find best algo
 			std::complex<double>* test = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nelec);
 			if(fftwAllForward)
@@ -134,6 +142,8 @@ namespace KineticOperators {
 			fftwAllForward = fftw_plan_many_dft(1, &nPts, nelec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_FORWARD, MULTIELEC_FFTW_POLICY);
 			fftwAllBackward = fftw_plan_many_dft(1, &nPts, nelec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_BACKWARD, MULTIELEC_FFTW_POLICY);
 			fftw_free(test);
+
+			fftw_plan_mutex.unlock();
 
 			if (firstStepAll) {
 				if (osPotentialPhase)
@@ -158,6 +168,8 @@ namespace KineticOperators {
 			DftiSetValue(dftiHandleKin, DFTI_BACKWARD_SCALE, 1.0 / nPts);
 			DftiCommitDescriptor(dftiHandleKin);*/
 
+			fftw_plan_mutex.lock();
+
 			if (temp1)
 				fftw_free(temp1); temp1 = nullptr;
 			if (temp2)
@@ -176,6 +188,8 @@ namespace KineticOperators {
 
 			fftwOneForward = fftw_plan_dft(1, &nPts, reinterpret_cast<fftw_complex*>(temp1), reinterpret_cast<fftw_complex*>(temp1), FFTW_FORWARD, FFTW_ESTIMATE);
 			fftwOneBackward = fftw_plan_dft(1, &nPts, reinterpret_cast<fftw_complex*>(temp2), reinterpret_cast<fftw_complex*>(temp2), FFTW_BACKWARD, FFTW_ESTIMATE);
+
+			fftw_plan_mutex.unlock();
 
 			firstStepOne = 0;
 		}
@@ -363,6 +377,7 @@ namespace KineticOperators {
 		if (norms)
 			delete[] norms;
 
+		fftw_plan_mutex.lock();
 		if(fftwOneForward)
 			fftw_destroy_plan(fftwOneForward);
 		if(fftwOneBackward)
@@ -371,6 +386,7 @@ namespace KineticOperators {
 			fftw_destroy_plan(fftwAllForward);
 		if(fftwAllBackward)
 			fftw_destroy_plan(fftwAllBackward);
+		fftw_plan_mutex.unlock();
 	}
 
 	void NonUnifGenDisp_PSM::stepOS_U2TU(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nelec) {
@@ -540,6 +556,8 @@ namespace KineticOperators {
 			DftiSetValue(dftiHandle, DFTI_BACKWARD_SCALE, 1.0 / nPts);
 			//DftiSetValue(dftiHandle, DFTI_THREAD_LIMIT, numThreads);
 			DftiCommitDescriptor(dftiHandle);*/
+			
+			fftw_plan_mutex.lock();
 
 			std::complex<double>* test = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nelec);
 			if(fftwAllForward)
@@ -553,6 +571,8 @@ namespace KineticOperators {
 			fftwAllForward = fftw_plan_many_dft(1, &nPts, nelec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_FORWARD, MULTIELEC_FFTW_POLICY);
 			fftwAllBackward = fftw_plan_many_dft(1, &nPts, nelec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_BACKWARD, MULTIELEC_FFTW_POLICY);
 			fftw_free(test);
+			
+			fftw_plan_mutex.unlock();
 
 			if (osPotentialPhase)
 				fftw_free(osPotentialPhase); osPotentialPhase = nullptr;
@@ -578,6 +598,8 @@ namespace KineticOperators {
 			DftiSetValue(dftiHandleKin, DFTI_BACKWARD_SCALE, 1.0 / nPts);
 			DftiCommitDescriptor(dftiHandleKin);*/
 
+			fftw_plan_mutex.lock();
+
 			if (temp1)
 				fftw_free(temp1); temp1 = nullptr;
 			if (temp2)
@@ -600,6 +622,8 @@ namespace KineticOperators {
 
 			fftwOneForward = fftw_plan_dft(1, &nPts, reinterpret_cast<fftw_complex*>(temp1), reinterpret_cast<fftw_complex*>(temp1), FFTW_FORWARD, FFTW_ESTIMATE);
 			fftwOneBackward = fftw_plan_dft(1, &nPts, reinterpret_cast<fftw_complex*>(temp1), reinterpret_cast<fftw_complex*>(temp2), FFTW_BACKWARD, FFTW_ESTIMATE);
+
+			fftw_plan_mutex.unlock();
 
 			firstStepOne = 0;
 

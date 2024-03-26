@@ -1205,29 +1205,18 @@ namespace Measurers {
 		for ( auto it = meas.begin(); it != meas.end(); ){
 			if( (*it)->measure(psi, v, t, kin) == 1) {
 				(*it)->kill();
-				delete * it;
 				it = meas.erase(it);
 			}
-			else{
+			else
 				++it;
-			}
 		}
-		/*for (int i = meas.size() - 1; i >= 0; i--)
-			if (meas.at(i)->measure(psi, v, t, kin) == 1) {
-				meas.at(i)->kill();
-				delete * meas.at(i);
-				meas.erase(meas.begin() + i);
-			}*/
 		return 0;
-				
 	}
 
 	void BasicMeasurers::terminate() {
-		for ( auto it = meas.begin(); it != meas.end(); ){
-			(*it)->kill();
-			delete * it;
-			it = meas.erase(it);
-		}
+		for(auto m : meas)
+			delete m;
+		meas.clear();
 	}
 
 
@@ -1247,12 +1236,10 @@ namespace Measurers {
 		for ( auto it = meas.begin(); it != meas.end(); ){
 			if( (*it)->measure(psi, v, t, kin) == 1) {
 				(*it)->kill();
-				delete * it;
 				it = meas.erase(it);
 			}
-			else{
+			else
 				++it;
-			}
 		}
 		//std::cout << std::flush;
 		return 0;
@@ -1263,7 +1250,6 @@ namespace Measurers {
 			for(int j = 0; j < nelec; j++){
 				if( (*it)->measure(&psi[nPts*j], v, t, kin) == 1) {
 					(*it)->kill();
-					delete * it;
 					it = meas.erase(it);
 					--it;
 					break;
@@ -1284,10 +1270,8 @@ namespace Measurers {
 	}
 
 	void MeasurementManager::terminate() {
-		for ( auto it = meas.begin(); it != meas.end(); ){
-			(*it)->kill();
-			delete * it;
-			it = meas.erase(it);
-		}
+		for(auto m : meas)
+			delete m;
+		meas.clear();
 	}
 }
