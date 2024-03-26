@@ -20,8 +20,14 @@ set(Stubgen_Executable "${CMAKE_SOURCE_DIR}/.venv/bin/stubgen")
 if(EXISTS "${Stubgen_Executable}")
     add_custom_command(TARGET tdsepy POST_BUILD
         COMMAND ${Stubgen_Executable} --include-docstrings -p tdsepy -o .
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        WORKING_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}
         COMMENT "Use stubgen to create .pyi for statement completion")
 else()
     message( SEND_ERROR "${Stubgen_Executable} does not exist -- .pyi file not generated. Ensure that mypy is installed.")
 endif()
+
+# Copy tdsepy_helpers to build dir
+add_custom_target(tdsepy_helpers ALL DEPENDS tdsepy)
+add_custom_command(TARGET tdsepy_helpers POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory 
+        ${CMAKE_CURRENT_SOURCE_DIR}/tdsepy_helpers/ ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/)

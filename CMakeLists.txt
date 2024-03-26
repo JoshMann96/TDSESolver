@@ -16,6 +16,9 @@ message("C   Compiler: ${CMAKE_C_COMPILER}")
 message("CXX Compiler: ${CMAKE_CXX_COMPILER}")
 message("FTN Compiler: ${CMAKE_Fortran_COMPILER}")
 
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 #OpenBLAS config
 set(OBLAS_ROOT "/home/jmann")
@@ -54,11 +57,6 @@ set(AOCL_LIBS "-L${AOCL_LIB} -lfftw3_omp -lfftw3 -lm -lpthread")
 set(OBLAS_INC "${OBLAS_ROOT}/include")
 set(OBLAS_LIB "${OBLAS_ROOT}/lib")
 set(OBLAS_LIBS "-L${OBLAS_LIB} -lopenblas -lflang -lpthread")
-
-# Set output directory for built executables and libraries
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 add_subdirectory(src)
 
