@@ -940,8 +940,6 @@ namespace Measurers {
 		if (first) {
 			nelec = *nelecPtr;
 
-			std::cout << "NELEC: " << nelec << std::endl;
-
 			wfcs0 = new std::complex<double>[nsamp * nelec];
 			wfcs1 = new std::complex<double>[nsamp * nelec];
 			for (int i = 0; i < nsamp * nelec; i++) {
