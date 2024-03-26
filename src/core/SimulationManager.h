@@ -17,12 +17,20 @@ private:
 	double **vs, *spatialDamp;
 	int nPts, index, nelec;
 	std::function <void(int)> progCallback;
-	std::complex<double> **psis, *scratch1, *scratch2, *tpsi;
+	std::complex<double> *scratch1, *scratch2;
 	double getTotalEnergy(std::complex<double> * psi, double * v);
 
 	int getVPAR(int idx, int idxPsi);
 	int stepItPAR(int idx0, int idx1);
 	int measPAR(int idx);
+
+	std::complex<double> **psis;
+
+	void freePsis(){
+		for(int i = 0; i < 4; i++)
+			if(psis[i])
+				fftw_free(psis[i]); psis[i] = nullptr;
+	}
 
 public:
 	SimulationManager(int nPts, double dx, double dt, double maxT, std::function<void(int)> callback);

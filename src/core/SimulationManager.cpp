@@ -1,4 +1,5 @@
 #include "SimulationManager.h"
+#include "fftw3.h"
 
 //callback sends progress int 0-100 (can be nullptr for no callback)
 SimulationManager::SimulationManager(int nPts, double dx, double dt, double maxT, std::function<void(int)> callback)
@@ -7,6 +8,9 @@ SimulationManager::SimulationManager(int nPts, double dx, double dt, double maxT
 	pot = new Potentials::PotentialManager(nPts);
 	meas = new Measurers::MeasurementManager("");
 	psis = new std::complex<double>*[4];
+	for(int i = 0; i < 4; i++)
+		psis[i] = nullptr;
+
 	vs = new double*[4];
 	ts = new double[4];
 	for (int i = 0; i < 4; i++) {
@@ -32,6 +36,19 @@ SimulationManager::~SimulationManager()
 {
 	meas->kill();
 	delete meas;
+
+	freePsis();
+	delete[] psis;
+
+	for(int i = 0; i < 4; i++)
+		delete[] vs[i];
+	delete[] vs;
+
+	delete[] ts;
+
+	fftw_free(scratch1);
+	fftw_free(scratch2);
+	fftw_free(spatialDamp);
 }
 
 void SimulationManager::addMeasurer(Measurers::Measurer* m) {
@@ -75,12 +92,12 @@ void SimulationManager::findEigenStates(double emin, double emax, double maxT, d
 
 	kin->findEigenStates(vs[index], emin, emax, states, &nelec);
 
+	freePsis();
 	psis[0] = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nelec);
 
 	vtls::copyArray(nPts * nelec, states, psis[0]);
 
-	if (states)
-		fftw_free(states); states = NULL;
+	fftw_free(states);
 
 	for (int i = 0; i < nelec; i++)
 		vtls::normalizeSqrNorm(nPts, &psis[0][i * nPts], dx);
@@ -94,8 +111,8 @@ void SimulationManager::findEigenStates(double emin, double emax, double maxT, d
 
 void SimulationManager::setPsi(std::complex<double>* npsi) {
 	if (!nelec) {
-		psis = new std::complex<double>*[4];
 		nelec = 1;
+		freePsis();
 		for (int i = 0; i < 4; i++) {
 			psis[i] = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts);
 		}
@@ -152,7 +169,7 @@ void SimulationManager::runOS_U2TU() {
 
 //Run simulation using operator splitting Fourier method (applies potential as nonlinear, second potential phase is recalculated after propagation phase)
 void SimulationManager::runOS_UW2TUW() {
-	tpsi = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nelec);
+	std::complex<double>* tpsi = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nelec);
 	iterateIndex();
 	pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()], kin);
 	kin_psm->stepOS_UW2T(psis[prevIndex()], vs[prevIndex()], spatialDamp, tpsi, nelec);
@@ -179,6 +196,8 @@ void SimulationManager::runOS_UW2TUW() {
 			percDone++;
 		}
 	}
+
+	fftw_free(tpsi);
 }
 
 void SimulationManager::iterateIndex() {
