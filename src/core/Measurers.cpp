@@ -16,7 +16,6 @@ void Measurer::terminate() {}*/
 namespace Measurers {
 
 	std::fstream openFile(const char* fil) {
-		std::cout << "Openning file: " << fil << std::endl;
 		return std::fstream(fil, std::ios::out | std::ios::binary);
 	}
 
