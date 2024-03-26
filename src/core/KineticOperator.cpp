@@ -6,17 +6,26 @@ namespace KineticOperators {
 
 	GenDisp_PSM::~GenDisp_PSM(){
 		if (osKineticPhase)
-			fftw_free(osKineticPhase); osKineticPhase = nullptr;
+			fftw_free(osKineticPhase);
 		if (osPotentialPhase)
-			fftw_free(osPotentialPhase); osPotentialPhase = nullptr;
+			fftw_free(osPotentialPhase);
 		if (opMat)
-			fftw_free(opMat); opMat = nullptr;
+			fftw_free(opMat);
 		if (osKineticEnergy)
-			fftw_free(osKineticEnergy); osKineticEnergy = nullptr;
+			fftw_free(osKineticEnergy);
 		if (temp1)
-			fftw_free(temp1); temp1 = nullptr;
+			fftw_free(temp1);
 		if (temp2)
-			fftw_free(temp2); temp2 = nullptr;
+			fftw_free(temp2);
+
+		if(fftwOneForward)
+			fftw_destroy_plan(fftwOneForward);
+		if(fftwOneBackward)
+			fftw_destroy_plan(fftwOneBackward);
+		if(fftwAllForward)
+			fftw_destroy_plan(fftwAllForward);
+		if(fftwAllBackward)
+			fftw_destroy_plan(fftwAllBackward);
 	}
 
 	void GenDisp_PSM::stepOS_U2TU(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nelec) {
@@ -158,9 +167,9 @@ namespace KineticOperators {
 			temp2 = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts);
 
 			if(fftwOneForward)
-				fftw_destroy_plan(fftwOneForward); fftwOneForward=nullptr;
+				fftw_destroy_plan(fftwOneForward); fftwOneForward=NULL;
 			if(fftwOneBackward)
-				fftw_destroy_plan(fftwOneBackward); fftwOneBackward=nullptr;
+				fftw_destroy_plan(fftwOneBackward); fftwOneBackward=NULL;
 
 			//fftw_plan_with_nthreads(omp_get_max_threads());
 			//std::cout << "Assigned FFTW threads: " << fftw_planner_nthreads() << std:: endl;
@@ -334,25 +343,34 @@ namespace KineticOperators {
 
 	NonUnifGenDisp_PSM::~NonUnifGenDisp_PSM(){
 		if (osKineticEnergy)
-			fftw_free(osKineticEnergy); osKineticEnergy = nullptr;
+			fftw_free(osKineticEnergy);
 		if (osPotentialPhase)
-			fftw_free(osPotentialPhase); osPotentialPhase = nullptr;
+			fftw_free(osPotentialPhase);
 		if (opMat)
-			fftw_free(opMat); opMat = nullptr;
+			fftw_free(opMat);
 		if (tempPsi)
-			fftw_free(tempPsi); tempPsi = nullptr;
+			fftw_free(tempPsi);
 		if (tempPsiCum)
-			fftw_free(tempPsiCum); tempPsiCum = nullptr;
+			fftw_free(tempPsiCum);
 		if (temp1)
-			fftw_free(temp1); temp1 = nullptr;
+			fftw_free(temp1);
 		if (temp2)
-			fftw_free(temp2); temp2 = nullptr;
+			fftw_free(temp2);
 		if (temp3)
-			fftw_free(temp3); temp3 = nullptr;
+			fftw_free(temp3);
 		if (osKineticMask)
-			fftw_free(osKineticMask); osKineticMask = nullptr;
+			fftw_free(osKineticMask);
 		if (norms)
-			delete[] norms; norms = nullptr;
+			delete[] norms;
+
+		if(fftwOneForward)
+			fftw_destroy_plan(fftwOneForward);
+		if(fftwOneBackward)
+			fftw_destroy_plan(fftwOneBackward);
+		if(fftwAllForward)
+			fftw_destroy_plan(fftwAllForward);
+		if(fftwAllBackward)
+			fftw_destroy_plan(fftwAllBackward);
 	}
 
 	void NonUnifGenDisp_PSM::stepOS_U2TU(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nelec) {
@@ -525,9 +543,9 @@ namespace KineticOperators {
 
 			std::complex<double>* test = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nelec);
 			if(fftwAllForward)
-				fftw_destroy_plan(fftwAllForward); fftwAllForward=nullptr;
+				fftw_destroy_plan(fftwAllForward); fftwAllForward=NULL;
 			if(fftwAllBackward)
-				fftw_destroy_plan(fftwAllBackward); fftwAllBackward=nullptr;
+				fftw_destroy_plan(fftwAllBackward); fftwAllBackward=NULL;
 
 			fftw_plan_with_nthreads(omp_get_max_threads());
 			//std::cout << "Assigned FFTW threads: " << fftw_planner_nthreads() << std:: endl;

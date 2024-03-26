@@ -27,9 +27,12 @@ private:
 	std::complex<double> **psis;
 
 	void freePsis(){
-		for(int i = 0; i < 4; i++)
-			if(psis[i])
-				fftw_free(psis[i]); psis[i] = nullptr;
+		for(int i = 0; i < 4; i++){
+			if(psis[i]){
+				fftw_free(psis[i]);
+				psis[i] = nullptr;
+			}
+		}
 	}
 
 public:

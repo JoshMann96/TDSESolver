@@ -34,9 +34,6 @@ SimulationManager::SimulationManager(int nPts, double dx, double dt, double maxT
 
 SimulationManager::~SimulationManager()
 {
-	meas->kill();
-	delete meas;
-
 	freePsis();
 	delete[] psis;
 
