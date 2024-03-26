@@ -37,6 +37,7 @@ namespace KineticOperators {
 	protected:
 		GenDisp_PSM(int nPts, double dx, double dt) : nPts(nPts), dx(dx), dt(dt), osKineticEnergy((std::complex<double>*)fftw_malloc(sizeof(std::complex<double>)*nPts)) {};
 	public:
+		~GenDisp_PSM();
 		//Functions useful for updating potential immediately after kinetic phase for nonlinear systems
 		//Half potential then full kinetic (returns in real space)
 		void stepOS_UW2T(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nelec);
@@ -116,6 +117,7 @@ namespace KineticOperators {
 			nPts(nPts), dx(dx), dt(dt), nDisp(nDisp), expOrder(expOrder), forceNorm(forceNormalization), 
 			osKineticEnergy((std::complex<double>*)fftw_malloc(sizeof(std::complex<double>)*nPts*nDisp)), osKineticMask(new double[nPts * nDisp]) {};
 	public:
+		~NonUnifGenDisp_PSM();
 		//Functions useful for updating potential immediately after kinetic phase for nonlinear systems
 		//Half potential then full kinetic (returns in real space)
 		void stepOS_UW2T(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nelec);

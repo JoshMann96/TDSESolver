@@ -4,6 +4,21 @@
 
 namespace KineticOperators {
 
+	GenDisp_PSM::~GenDisp_PSM(){
+		if (osKineticPhase)
+			fftw_free(osKineticPhase); osKineticPhase = nullptr;
+		if (osPotentialPhase)
+			fftw_free(osPotentialPhase); osPotentialPhase = nullptr;
+		if (opMat)
+			fftw_free(opMat); opMat = nullptr;
+		if (osKineticEnergy)
+			fftw_free(osKineticEnergy); osKineticEnergy = nullptr;
+		if (temp1)
+			fftw_free(temp1); temp1 = nullptr;
+		if (temp2)
+			fftw_free(temp2); temp2 = nullptr;
+	}
+
 	void GenDisp_PSM::stepOS_U2TU(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nelec) {
 		initializeAllFFT(nelec);
 
@@ -113,9 +128,9 @@ namespace KineticOperators {
 
 			if (firstStepAll) {
 				if (osPotentialPhase)
-					fftw_free(osPotentialPhase); osPotentialPhase = NULL;
+					fftw_free(osPotentialPhase); osPotentialPhase = nullptr;
 				if (osKineticPhase)
-					fftw_free(osKineticPhase); osKineticPhase = NULL;
+					fftw_free(osKineticPhase); osKineticPhase = nullptr;
 
 				//initialize phase multipliers
 				osPotentialPhase = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts);
@@ -135,17 +150,17 @@ namespace KineticOperators {
 			DftiCommitDescriptor(dftiHandleKin);*/
 
 			if (temp1)
-				fftw_free(temp1); temp1 = NULL;
+				fftw_free(temp1); temp1 = nullptr;
 			if (temp2)
-				fftw_free(temp2); temp2 = NULL;
+				fftw_free(temp2); temp2 = nullptr;
 
 			temp1 = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts);
 			temp2 = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts);
 
 			if(fftwOneForward)
-				fftw_destroy_plan(fftwOneForward); fftwOneForward=NULL;
+				fftw_destroy_plan(fftwOneForward); fftwOneForward=nullptr;
 			if(fftwOneBackward)
-				fftw_destroy_plan(fftwOneBackward); fftwOneBackward=NULL;
+				fftw_destroy_plan(fftwOneBackward); fftwOneBackward=nullptr;
 
 			//fftw_plan_with_nthreads(omp_get_max_threads());
 			//std::cout << "Assigned FFTW threads: " << fftw_planner_nthreads() << std:: endl;
@@ -188,7 +203,7 @@ namespace KineticOperators {
 			initializeOneFFT();
 
 			if(opMat)
-				fftw_free(opMat); opMat = NULL;
+				fftw_free(opMat); opMat = nullptr;
 
 			opMat = (std::complex<double>*)fftw_malloc(sizeof(std::complex<double>)*(nPts*(nPts+1))/2);//new std::complex<double>[(nPts * (nPts+1))/2];
 
@@ -208,7 +223,7 @@ namespace KineticOperators {
 					opMat[(i * i + (2 * d + 3) * i + d * (d + 1)) / 2] = cv;
 			}
 
-			fftw_free(kinDiags); kinDiags = NULL; //delete[] kinDiags;
+			fftw_free(kinDiags); kinDiags = nullptr; //delete[] kinDiags;
 
 		}
 	}
@@ -242,15 +257,15 @@ namespace KineticOperators {
 		nelec = nEigs[0];
 
 		if (work)
-			fftw_free(work); work = NULL;
+			fftw_free(work); work = nullptr;
 		if (work2)
-			fftw_free(work2); work2 = NULL;
+			fftw_free(work2); work2 = nullptr;
 		if (iwork3)
-			fftw_free(iwork3); iwork3 = NULL;
+			fftw_free(iwork3); iwork3 = nullptr;
 		if (eigs)
-			fftw_free(eigs); eigs = NULL;
+			fftw_free(eigs); eigs = nullptr;
 		if (ifail)
-			fftw_free(ifail); ifail = NULL;
+			fftw_free(ifail); ifail = nullptr;
 	}
 
 	double GenDisp_PSM::evaluateKineticEnergy(std::complex<double>* psi) {
@@ -279,7 +294,7 @@ namespace KineticOperators {
 
 		GenDisp_PSM::set_osKineticEnergy(osKineticEnergy);
 		if (osKineticEnergy)
-			fftw_free(osKineticEnergy); osKineticEnergy = NULL;
+			fftw_free(osKineticEnergy); osKineticEnergy = nullptr;
 	}
 
 	GenDisp_PSM_Series::GenDisp_PSM_Series(int nPts, double dx, double dt, int nPoly, double* polyCoeffs) : GenDisp_PSM(nPts, dx, dt) {
@@ -295,7 +310,7 @@ namespace KineticOperators {
 
 		GenDisp_PSM::set_osKineticEnergy(osKineticEnergy);
 		if (osKineticEnergy)
-			fftw_free(osKineticEnergy); osKineticEnergy = NULL;
+			fftw_free(osKineticEnergy); osKineticEnergy = nullptr;
 	}
 
 	GenDisp_PSM_MathExpr::GenDisp_PSM_MathExpr(int nPts, double dx, double dt, std::string expr) : GenDisp_PSM(nPts, dx, dt) {
@@ -312,11 +327,33 @@ namespace KineticOperators {
 
 		GenDisp_PSM::set_osKineticEnergy(osKineticEnergy);
 		if (osKineticEnergy)
-			fftw_free(osKineticEnergy); osKineticEnergy = NULL;
+			fftw_free(osKineticEnergy); osKineticEnergy = nullptr;
 		if (ks)
-			delete[] ks; ks = NULL;
+			delete[] ks; ks = nullptr;
 	}
 
+	NonUnifGenDisp_PSM::~NonUnifGenDisp_PSM(){
+		if (osKineticEnergy)
+			fftw_free(osKineticEnergy); osKineticEnergy = nullptr;
+		if (osPotentialPhase)
+			fftw_free(osPotentialPhase); osPotentialPhase = nullptr;
+		if (opMat)
+			fftw_free(opMat); opMat = nullptr;
+		if (tempPsi)
+			fftw_free(tempPsi); tempPsi = nullptr;
+		if (tempPsiCum)
+			fftw_free(tempPsiCum); tempPsiCum = nullptr;
+		if (temp1)
+			fftw_free(temp1); temp1 = nullptr;
+		if (temp2)
+			fftw_free(temp2); temp2 = nullptr;
+		if (temp3)
+			fftw_free(temp3); temp3 = nullptr;
+		if (osKineticMask)
+			fftw_free(osKineticMask); osKineticMask = nullptr;
+		if (norms)
+			delete[] norms; norms = nullptr;
+	}
 
 	void NonUnifGenDisp_PSM::stepOS_U2TU(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nelec) {
 		initializeAllFFT(nelec);
@@ -488,9 +525,9 @@ namespace KineticOperators {
 
 			std::complex<double>* test = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nelec);
 			if(fftwAllForward)
-				fftw_destroy_plan(fftwAllForward); fftwAllForward=NULL;
+				fftw_destroy_plan(fftwAllForward); fftwAllForward=nullptr;
 			if(fftwAllBackward)
-				fftw_destroy_plan(fftwAllBackward); fftwAllBackward=NULL;
+				fftw_destroy_plan(fftwAllBackward); fftwAllBackward=nullptr;
 
 			fftw_plan_with_nthreads(omp_get_max_threads());
 			//std::cout << "Assigned FFTW threads: " << fftw_planner_nthreads() << std:: endl;
@@ -500,13 +537,13 @@ namespace KineticOperators {
 			fftw_free(test);
 
 			if (osPotentialPhase)
-				fftw_free(osPotentialPhase); osPotentialPhase = NULL;
+				fftw_free(osPotentialPhase); osPotentialPhase = nullptr;
 			if (tempPsi)
-				fftw_free(tempPsi); tempPsi = NULL;
+				fftw_free(tempPsi); tempPsi = nullptr;
 			if (tempPsiCum)
-				fftw_free(tempPsiCum); tempPsiCum = NULL;
+				fftw_free(tempPsiCum); tempPsiCum = nullptr;
 			if (norms)
-				fftw_free(norms); norms = NULL;
+				delete[] norms; norms = nullptr;
 
 			osPotentialPhase = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts);
 			tempPsi = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nelec * nDisp);
@@ -524,11 +561,11 @@ namespace KineticOperators {
 			DftiCommitDescriptor(dftiHandleKin);*/
 
 			if (temp1)
-				fftw_free(temp1); temp1 = NULL;
+				fftw_free(temp1); temp1 = nullptr;
 			if (temp2)
-				fftw_free(temp2); temp2 = NULL;
+				fftw_free(temp2); temp2 = nullptr;
 			if (temp3)
-				fftw_free(temp3); temp3 = NULL;
+				fftw_free(temp3); temp3 = nullptr;
 
 			temp1 = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts);
 			temp2 = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts);
@@ -547,6 +584,13 @@ namespace KineticOperators {
 			fftwOneBackward = fftw_plan_dft(1, &nPts, reinterpret_cast<fftw_complex*>(temp1), reinterpret_cast<fftw_complex*>(temp2), FFTW_BACKWARD, FFTW_ESTIMATE);
 
 			firstStepOne = 0;
+
+			if (temp1)
+				fftw_free(temp1); temp1 = nullptr;
+			if (temp2)
+				fftw_free(temp2); temp2 = nullptr;
+			if (temp3)
+				fftw_free(temp3); temp3 = nullptr;
 		}
 	}
 
@@ -580,7 +624,7 @@ namespace KineticOperators {
 
 			initializeOneFFT();
 			if(opMat)
-				fftw_free(opMat); opMat = NULL;
+				fftw_free(opMat); opMat = nullptr;
 			opMat = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * (nPts * (nPts + 1)) / 2);
 			std::fill_n(opMat, (nPts * (nPts + 1)) / 2, 0.0);
 
@@ -604,11 +648,11 @@ namespace KineticOperators {
 			}
 
 			if (kinDiags)
-				fftw_free(kinDiags); kinDiags = NULL;
+				fftw_free(kinDiags); kinDiags = nullptr;
 			if (kinMat)
-				fftw_free(kinMat); kinMat = NULL;
+				fftw_free(kinMat); kinMat = nullptr;
 			if (temp)
-				fftw_free(temp); temp = NULL;
+				fftw_free(temp); temp = nullptr;
 
 		}
 	}
@@ -636,15 +680,15 @@ namespace KineticOperators {
 		nelec = nEigs[0];
 
 		if (work)
-			fftw_free(work); work = NULL;
+			fftw_free(work); work = nullptr;
 		if (work2)
-			fftw_free(work2); work2 = NULL;
+			fftw_free(work2); work2 = nullptr;
 		if (iwork3)
-			fftw_free(iwork3); iwork3 = NULL;
+			fftw_free(iwork3); iwork3 = nullptr;
 		if (eigs)
-			fftw_free(eigs); eigs = NULL;
+			fftw_free(eigs); eigs = nullptr;
 		if (ifail)
-			fftw_free(ifail); ifail = NULL;
+			fftw_free(ifail); ifail = nullptr;
 	}
 
 	double NonUnifGenDisp_PSM::evaluateKineticEnergy(std::complex<double>* psi) {
@@ -705,9 +749,9 @@ namespace KineticOperators {
 
 		NonUnifGenDisp_PSM::set_osKineticEnergy(osKineticEnergy, mask);
 		if (osKineticEnergy)
-			fftw_free(osKineticEnergy); osKineticEnergy = NULL;
+			fftw_free(osKineticEnergy); osKineticEnergy = nullptr;
 		if (mask)
-			fftw_free(mask); mask = NULL;
+			fftw_free(mask); mask = nullptr;
 	}
 
 	NonUnifGenDisp_PSM_MathExprBoundary::NonUnifGenDisp_PSM_MathExprBoundary(int nPts, double dx, double dt, int expOrder, int forceNormalization, int nDisp, std::vector<std::string> exprs, double* transRates, int* transPoss) : NonUnifGenDisp_PSM(nPts, dx, dt, nDisp, expOrder, forceNormalization) {
@@ -741,9 +785,9 @@ namespace KineticOperators {
 		//set for base class
 		NonUnifGenDisp_PSM::set_osKineticEnergy(osKineticEnergy, mask);
 		if (osKineticEnergy)
-			fftw_free(osKineticEnergy); osKineticEnergy = NULL;
+			fftw_free(osKineticEnergy); osKineticEnergy = nullptr;
 		if (mask)
-			delete[] mask; mask = NULL;
+			delete[] mask; mask = nullptr;
 	}
 
 }
