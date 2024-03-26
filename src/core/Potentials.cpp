@@ -1193,7 +1193,7 @@ namespace Potentials {
 		potTemp = new double[nPts];
 	}
 
-	LinearBulkCylindricalFieldSpaceCharge::~LinearBulkCylindricalFieldSpaceCharge(){
+	LinearBulkCylSectionFieldSpaceCharge::~LinearBulkCylSectionFieldSpaceCharge(){
 		delete[] origPot;
 		delete[] rho;
 		delete[] genTemp;
