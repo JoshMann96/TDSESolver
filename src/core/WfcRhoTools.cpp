@@ -1,4 +1,5 @@
 #include "WfcRhoTools.h"
+#include "fftw3.h"
 
 namespace WfcToRho {
 	void calcEnergies(int nelec, int nPts, double dx, std::complex<double>* psi, double* totPot, KineticOperators::KineticOperator* kin, double* energies) {
@@ -13,19 +14,6 @@ namespace WfcToRho {
 			//potential energy + kinetic energy
 		}
 		delete[] rho;
-
-		/*std::complex<double>* sc1 = new std::complex<double>[nPts];
-		std::complex<double>* sc2 = new std::complex<double>[nPts];
-		for (int i = 0; i < nelec; i++) {
-			vtls::secondDerivative(nPts, &psi[i * nPts], sc1, dx);
-			vtls::scaMulArray(nPts, -PhysCon::hbar * PhysCon::hbar / (2.0 * PhysCon::me), sc1);
-			vtls::seqMulArrays(nPts, totPot, &psi[i * nPts], sc2);
-			vtls::addArrays(nPts, sc2, sc1);
-			for (int j = 0; j < nPts; j++)
-				sc2[j] = std::conj(psi[i * nPts + j]);
-			energies[i] = std::real(vtlsInt::simpsMul(nPts, sc1, sc2, dx));
-		}
-		delete[] sc1, sc2;*/
 	}
 
 
@@ -110,8 +98,15 @@ namespace WfcToRho {
 		delete[] idx;
 	}
 
+	DirectDensity::~DirectDensity(){
+		if(psi2)
+			delete[] psi2;
+	}
+
 	void DirectDensity::calcRho(int nPts, int nelec, double dx, double* weights, std::complex<double>* psi, double* rho) {
 		if (first) {
+			if(psi2)
+				delete[] psi2;
 			psi2 = new double[nPts * nelec];
 			first = 0;
 		}
@@ -125,10 +120,21 @@ namespace WfcToRho {
 		}
 	}
 
+	GaussianSmoothedDensity::~GaussianSmoothedDensity(){
+		if(psi2)
+			fftw_free(psi2);
+		if(tempRho)
+			fftw_free(tempRho);
+		delete conv;
+	}
 
 	void GaussianSmoothedDensity::calcRho(int nPts, int nelec, double dx, double* weights, std::complex<double>* psi, double* rho) {
 		if (first) {
 			//Initialize variables
+			if(psi2)
+				fftw_free(psi2);
+			if(tempRho)
+				fftw_free(tempRho);
 			psi2 = (double*)fftw_malloc(sizeof(double)*nPts*nelec);
 			double* mask = (double*)fftw_malloc(sizeof(double)*nPts);
 			tempRho = (double*)fftw_malloc(sizeof(double)*nPts);
@@ -144,6 +150,8 @@ namespace WfcToRho {
 				
 			//Initialize FFT for convolution
 			conv = new vtls::MaskConvolver<double>(nPts, mask);
+
+			delete[] mask;
 		}
 
 		std::fill_n(tempRho, nPts, 0);

@@ -43,8 +43,9 @@ namespace WfcToRho {
 	{
 	private:
 		int first = 1;
-		double* psi2;
+		double* psi2=nullptr;
 	public:
+		~DirectDensity();
 		void calcRho(int nPts, int nelec, double dx, double* weights, std::complex<double>* psi, double* rho);
 	};
 
@@ -53,10 +54,11 @@ namespace WfcToRho {
 	{
 	private:
 		int first = 1;
-		double *psi2, *tempRho, sig;
+		double *psi2=nullptr, *tempRho=nullptr, sig;
 		vtls::MaskConvolver<double>* conv;
 	public:
 		GaussianSmoothedDensity(double sig) : sig(sig) {}
+		~GaussianSmoothedDensity();
 		void calcRho(int nPts, int nelec, double dx, double* weights, std::complex<double>* psi, double* rho);
 	};
 }
