@@ -27,7 +27,7 @@ void init_Measurers(py::module &m) {
         .def(py::init<PySimulation*, std::string>(), R"V0G0N(
             Records basic simulation parameters.
             Grid size and step size in space and time:
-             - nPts     - Number of points in grid
+             - NPts     - Number of points in grid
              - NSteps   - Number of time steps
              - DX       - Spatial step size
              - DT       - Temporal step size

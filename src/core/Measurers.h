@@ -318,7 +318,7 @@ namespace Measurers {
 		double * psi2;
 		int n;
 		int index = 16;
-		const char* fname = "tprob.dat";
+		const char* fname = "totProb.dat";
 		void terminate();
 	public:
 		int isHeavy() { return 1; };
