@@ -13,7 +13,8 @@ def pond_a(emax, lam):
 
 def runSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:float=5.51*1.602e-19, wf:float=5.1*1.602e-19, tau:float=8*1e-15, data_fol:str="data/", callback=None, 
                   target_total_truncation_error:float = 0.01, min_emitted_energy:float=1.602e-19, target_elec_num:float = 50, abs_width:float=20e-9, min_timesteps:int=2000, measure_density:bool=True):
-    """Runs a rescattering simulation while recording various quantites. Current quantities being output:
+    """Runs a rescattering simulation while recording various quantites. 
+        Current quantities being output:
         nPts, nSteps, dx, dt, <a>, nElec, VDFluxSpec, Weights
         Optional: Psi2t, Vfunct (via parameter measure_density)
         
@@ -21,28 +22,42 @@ def runSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:float=5
 
         PARAMETERS
         ----------
-        emax (float, optional): Peak electric field. Defaults to 20e9.
-        lam (float, optional): Laser wavelength. Defaults to 800e-9.
-        rad (float, optional): Apex radius of curvature (for collective image fields). Defaults to 20e-9.
-        ef (float, optional): Fermi energy. Defaults to 5.51*1.602e-19.
-        wf (float, optional): Work function. Defaults to 5.1*1.602e-19.
-        tau (float, optional): Full-width half-max power. Defaults to 8*1e-15.
-        data_fol (str, optional): Folder to store output data in. Defaults to "data/".
-        callback (_type_, optional): Callback function which must take an integer between 0 and 100, inclusive.
+        emax : float
+            Peak electric field. Defaults to 20e9.
+        lam : float 
+            Laser wavelength. Defaults to 800e-9.
+        rad : float
+            Apex radius of curvature (for collective image fields). Defaults to 20e-9.
+        ef : float
+            Fermi energy. Defaults to 5.51*1.602e-19.
+        wf : float
+            Work function. Defaults to 5.1*1.602e-19.
+        tau : float
+             Full-width half-max power. Defaults to 8*1e-15.
+        data_fol : str 
+            Folder to store output data in. Defaults to "data/".
+        callback 
+            Callback function which must take an integer between 0 and 100, inclusive.
             callback is called during time-stepping with the current percentage complete, as an integer. 
             Defaults to None.
-        target_total_truncation_error (float, optional): Upper bound for total relative truncation error of the wavefunction. Defaults to 0.01.
-        min_emitted_energy (float, optional): Minumum emittable energy. 
+        target_total_truncation_error : float
+            Upper bound for total relative truncation error of the wavefunction. Defaults to 0.01.
+        min_emitted_energy : float
+            Minumum emittable energy. 
             Sets temporal length of simulation such that a particle emitted with this energy at the peak of the laser pulse reaches the rightmost boundary before timestepping stops. 
             Defaults to 1.602e-19.
-        target_elec_num (float, optional): Target number of states. 
+        target_elec_num : float
+            Target number of states. 
             Sets the width of the Jellium slab such that there are about this many 1-D states below the Fermi level. Actual number of states may deviate.
             Defaults to 50.
-        abs_width (float, optional): Width of the absorptive boundary. Defaults to 20e-9.
-        min_timesteps (int, optional): Minimum number of timesteps. 
+        abs_width : float
+            Width of the absorptive boundary. Defaults to 20e-9.
+        min_timesteps : int
+            Minimum number of timesteps. 
             Overrides target_total_truncation_error if the number of timesteps would be too few. 
             Defaults to 2000.
-        measure_density (bool, optional): Whether to use the Psi2t and Vfunct measurers. Defaults to True.
+        measure_density : bool
+            Whether to use the Psi2t and Vfunct measurers. Defaults to True.
     """    
     
     
@@ -51,12 +66,13 @@ def runSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:float=5
     ### GET SIMULATION PARAMETERS ###
     
     #simulation must hold 2 ponderomotive amplitudes, and must prevent 10Up electrons from emitting for 2*tau from their emission
-    #   xmax = 2*ap + 2*tau*sqrt(2/m*10Up)
+    #for low-field limit, must also have 5 penetration depths at Fermi level (assuming square well)
+    #   xmax = 2*ap + 2*tau*sqrt(2/m*10Up) + 5/sqrt(2*m*W/hbar^2)
     #must have enough time after 5*tau (center) for min_emitted_energy to escape
     #   duration = 5*tau + xmax / sqrt(2/m * min_emitted_energy)
     
     peak_t = 5*tau
-    xmax = 2*pond_a(emax, lam) + 2*tau*np.sqrt(2.0/cons.m_e * 10.0 * pond_U(emax, lam))
+    xmax = 2*pond_a(emax, lam) + 2*tau*np.sqrt(2.0/cons.m_e * 10.0 * pond_U(emax, lam)) + 5/np.sqrt(2.0*cons.m_e*wf)*cons.hbar
     duration = peak_t + xmax / np.sqrt(2/cons.m_e * min_emitted_energy)
     
     #well must be large enough to store target_elec_num electrons
@@ -123,6 +139,8 @@ def runSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:float=5
         sim.addMeas(Measurers.Vfunct(sim, 800, 800, data_fol))
     sim.addMeas(Measurers.VDFluxSpec(sim, xmax, 0, 10000, 1000*1.602e-19, "vacc", data_fol))
     sim.addMeas(Measurers.Weights(sim, data_fol))
+
+    ### SET KINETIC OPERATOR, ADD ABSORPTIVE BOUNDARIES ###
 
     sim.setKin(PSM_FreeElec(sim, 1.0))
 
