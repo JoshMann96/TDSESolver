@@ -45,6 +45,7 @@ def runSimulation(emax=20e9, lam=800e-9, rad=20e-9, ef=5.51*1.602e-19, wf=5.1*1.
     #   V' is maximum potential gradient
     #       max for Jellium (Hartrees):
     #       (E_f + W)^2/4 / (2 (E_f+W)/kf - 1)
+    #       and combine with max for field
     
     efw_h = ef + wf / cons.physical_constants["Hartree energy"][0]
     kf_h = np.sqrt(ef/cons.physical_constants["Hartree energy"][0])
@@ -56,7 +57,8 @@ def runSimulation(emax=20e9, lam=800e-9, rad=20e-9, ef=5.51*1.602e-19, wf=5.1*1.
     gradient_resolution = max_jel_grad + cons.e*emax
 
     dx = np.sqrt( cons.hbar**2/(2*cons.m_e*energy_resolution) )
-    dt = np.sqrt( target_total_truncation_error * 24.0 * cons.hbar * cons.m_e / (duration * max_jel_grad**2) )
+    dt = np.sqrt( target_total_truncation_error * 24.0 * cons.hbar * cons.m_e / \
+        (duration * (max_jel_grad + cons.e*emax)**2) )
     dt = min(duration/min_timesteps, dt)
 
     ### INITIALIZE SIMULATION ###
