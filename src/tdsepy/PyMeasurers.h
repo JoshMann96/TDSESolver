@@ -152,10 +152,10 @@ class PyPotT
     };
 
 class PyNElec
-    : public ElectronNumber{
+    : public NElec{
         public:
         PyNElec(PySimulation* sim, std::string fol)
-            : ElectronNumber(sim->getNElecPtr(), fol.c_str()){}
+            : NElec(sim->getNElecPtr(), fol.c_str()){}
     };
 
 class PyWeights

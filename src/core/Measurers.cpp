@@ -52,7 +52,7 @@ namespace Measurers {
 	void DoubleConst::terminate() {}
 
 
-	ElectronNumber::ElectronNumber(int* nElec, const char* fol)
+	NElec::NElec(int* nElec, const char* fol)
 		: nElec(nElec) {
 			int l1 = std::strlen(fol), l2 = std::strlen(fname);
 			nfil = new char[l1 + l2 + 1];
@@ -60,11 +60,11 @@ namespace Measurers {
 			strcpy(&nfil[l1], fname);
 		}
 
-	ElectronNumber::~ElectronNumber() {
+	NElec::~NElec() {
 		kill();
 	}
 
-	int ElectronNumber::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) { 
+	int NElec::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) { 
 		if(first){
 			first = 0;
 			
@@ -82,7 +82,7 @@ namespace Measurers {
 		return 1; 
 	}
 
-	void ElectronNumber::terminate() {fil.close();}
+	void NElec::terminate() {fil.close();}
 
 	//Header
 	Header::Header(const char* title, const char* fol) {

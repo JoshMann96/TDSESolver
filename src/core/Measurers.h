@@ -483,7 +483,7 @@ namespace Measurers {
 		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
 	};
 
-	class ElectronNumber :
+	class NElec :
 		public Measurer {
 	private:
 		std::fstream fil;
@@ -496,8 +496,8 @@ namespace Measurers {
 	public:
 		int isHeavy() { return 0; };
 		int getIndex() { return index; };
-		ElectronNumber(int* nElec, const char* fol);
-		~ElectronNumber();
+		NElec(int* nElec, const char* fol);
+		~NElec();
 		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
 	};
 
