@@ -1,7 +1,10 @@
 import sys, os
 sys.setdlopenflags(os.RTLD_GLOBAL | os.RTLD_LAZY)
 
-from tdsepy import *
+try :
+    from tdsepy import *
+except ImportError:
+    from ..lib.tdsepy import *
 import numpy as np
 import scipy.constants as cons
 
@@ -12,7 +15,7 @@ def pond_a(emax, lam):
     return cons.e * emax * lam**2 / (cons.m_e * (2*cons.pi*cons.c)**2)
 
 def runSimulation(emax=20e9, lam=800e-9, rad=20e-9, ef=5.51*1.602e-19, wf=5.1*1.602e-19, tau=8*1e-15, data_fol="data/", callback=None, 
-                  target_total_truncation_error = 0.01, min_emitted_energy=1.602e-19, target_elec_num=50, abs_width=20e-9, measure_density=True):
+                  target_total_truncation_error = 0.01, min_emitted_energy=1.602e-19, target_elec_num=50, abs_width=20e-9, min_timesteps=2000, measure_density=True):
     os.makedirs(data_fol, exist_ok=True)
     
     ### GET SIMULATION PARAMETERS ###
@@ -51,15 +54,10 @@ def runSimulation(emax=20e9, lam=800e-9, rad=20e-9, ef=5.51*1.602e-19, wf=5.1*1.
     max_energy = 10*pond_U(emax, lam)
     energy_resolution = 2*max_energy + ef + wf
     gradient_resolution = max_jel_grad + cons.e*emax
-    
-    print(max_energy/1.602e-19)
-    print(energy_resolution/1.602e-19)
-    print(gradient_resolution/1.602e-19*1e-9)
-    
+
     dx = np.sqrt( cons.hbar**2/(2*cons.m_e*energy_resolution) )
     dt = np.sqrt( target_total_truncation_error * 24.0 * cons.hbar * cons.m_e / (duration * max_jel_grad**2) )
-
-    print(dx, dt)
+    dt = min(duration/min_timesteps, dt)
 
     ### INITIALIZE SIMULATION ###
 
