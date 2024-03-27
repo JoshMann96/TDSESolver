@@ -1,4 +1,5 @@
 #include "Measurers.h"
+#include <iostream>
 #include <stdexcept>
 #include <system_error>
 
@@ -170,7 +171,7 @@ namespace Measurers {
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 	}
 
-	NSteps::~NSteps() { kill(); }
+	NSteps::~NSteps() {kill();}
 
 	void NSteps::terminate() {
 		fil.write(reinterpret_cast<char*>(&steps), sizeof(int));
@@ -1211,8 +1212,10 @@ namespace Measurers {
 	}
 
 	void BasicMeasurers::terminate() {
-		for(auto m : meas)
+		for(Measurer* m : meas){
+			m->kill();
 			delete m;
+		}
 		meas.clear();
 	}
 
@@ -1267,8 +1270,10 @@ namespace Measurers {
 	}
 
 	void MeasurementManager::terminate() {
-		for(auto m : meas)
+		for(Measurer* m : meas){
+			m->kill();
 			delete m;
+		}
 		meas.clear();
 	}
 }
