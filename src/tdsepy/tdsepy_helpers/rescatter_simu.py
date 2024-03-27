@@ -5,6 +5,7 @@ sys.path.insert(0, "/home/jmann/TDSESolveLinux/build/lib")
 from tdsepy import *
 import numpy as np
 import scipy.constants as cons
+import json
 
 def pond_U(emax, lam):
     return cons.e**2 * emax**2 * lam**2 / (4* cons.m_e * (2*cons.pi*cons.c)**2)
@@ -12,12 +13,83 @@ def pond_U(emax, lam):
 def pond_a(emax, lam):
     return cons.e * emax * lam**2 / (cons.m_e * (2*cons.pi*cons.c)**2)
 
-def runSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:float=5.51*1.602e-19, wf:float=5.1*1.602e-19, tau:float=8*1e-15, data_fol:str="data/", callback=None, 
+def runSimSweepFields(emaxs:list, lam:float=800e-9, rad:float=20e-9, ef:float=5.51*1.602e-19, wf:float=5.1*1.602e-19, tau:float=8*1e-15, data_fol:str="data/", callback=None, 
+                  target_total_truncation_error:float = 0.01, min_emitted_energy:float=1.602e-19, target_elec_num:float = 50, abs_width:float=20e-9, min_timesteps:int=2000, measure_density:bool=True)
+    """Runs a series of rescattering simulations within a range of peak field strengths.
+        Current quantities being output:
+        nPts, nSteps, dx, dt, <a>, nElec, VDFluxSpec, Weights
+        Optional: Psi2t, Vfunct (via parameter measure_density)
+        
+        Parameters 'emax' through 'tau' are also saved as constants for each simulation.
+        
+        Parameters 'emaxs' through 'tau' are also saved under data_fol.
+        
+        All parameters are in SI units.
+
+        PARAMETERS
+        ----------
+        emaxs : list
+            Peak electric fields to sweep over.
+        lam : float 
+            Laser wavelength. Defaults to 800e-9.
+        rad : float
+            Apex radius of curvature (for collective image fields). Defaults to 20e-9.
+        ef : float
+            Fermi energy. Defaults to 5.51*1.602e-19.
+        wf : float
+            Work function. Defaults to 5.1*1.602e-19.
+        tau : float
+             Full-width half-max power. Defaults to 8*1e-15.
+        data_fol : str 
+            Folder to store output data in. Defaults to "data/".
+        callback 
+            Callback function which must take an integer between 0 and 100, inclusive.
+            callback is called during time-stepping with the current percentage complete, as an integer. 
+            Defaults to None.
+        target_total_truncation_error : float
+            Upper bound for total relative truncation error of the wavefunction. Defaults to 0.01.
+        min_emitted_energy : float
+            Minumum emittable energy. 
+            Sets temporal length of simulation such that a particle emitted with this energy at the peak of the laser pulse reaches the rightmost boundary before timestepping stops. 
+            Defaults to 1.602e-19.
+        target_elec_num : float
+            Target number of states. 
+            Sets the width of the Jellium slab such that there are about this many 1-D states below the Fermi level. Actual number of states may deviate.
+            Defaults to 50.
+        abs_width : float
+            Width of the absorptive boundary. Defaults to 20e-9.
+        min_timesteps : int
+            Minimum number of timesteps. 
+            Overrides target_total_truncation_error if the number of timesteps would be too few. 
+            Defaults to 2000.
+        measure_density : bool
+            Whether to use the Psi2t and Vfunct measurers. Defaults to True.
+    """    
+    os.makedirs(data_fol, exist_ok=True)
+    if data_fol[-1] != '/':
+        data_fol += '/'
+    with open(f"{data_fol}params.json", 'w') as fil:
+        simParams = {
+            'emaxs' : emaxs,
+            'lam' : lam,
+            'rad' : rad,
+            'ef' : ef,
+            'wf' : wf,
+            'tau' : tau
+        }
+        json.dump(simParams, fil)
+    for (i, emax) in enumerate(emaxs):
+        runSingleSimulation(emax, lam, rad, ef, wf, tau, f"{data_fol}{i}/", callback, target_total_truncation_error, min_emitted_energy, target_elec_num, abs_width, min_timesteps, measure_density)
+    
+    
+def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:float=5.51*1.602e-19, wf:float=5.1*1.602e-19, tau:float=8*1e-15, data_fol:str="data/", callback=None, 
                   target_total_truncation_error:float = 0.01, min_emitted_energy:float=1.602e-19, target_elec_num:float = 50, abs_width:float=20e-9, min_timesteps:int=2000, measure_density:bool=True):
     """Runs a rescattering simulation while recording various quantites. 
         Current quantities being output:
         nPts, nSteps, dx, dt, <a>, nElec, VDFluxSpec, Weights
         Optional: Psi2t, Vfunct (via parameter measure_density)
+        
+        Parameters 'emax' through 'tau' are also saved as constants.
         
         All parameters are in SI units.
 
@@ -143,6 +215,13 @@ def runSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:float=5
         sim.addMeas(Measurers.Vfunct(sim, 800, 800, data_fol))
     sim.addMeas(Measurers.VDFluxSpec(sim, xmax, 0, 10000, 1000*1.602e-19, "vacc", data_fol))
     sim.addMeas(Measurers.Weights(sim, data_fol))
+    
+    sim.addMeas(Measurers.Constant(emax, "emax", data_fol))
+    sim.addMeas(Measurers.Constant(lam, "lam", data_fol))
+    sim.addMeas(Measurers.Constant(rad, "rad", data_fol))
+    sim.addMeas(Measurers.Constant(ef, "ef", data_fol))
+    sim.addMeas(Measurers.Constant(wf, "wf", data_fol))
+    sim.addMeas(Measurers.Constant(tau, "tau", data_fol))
 
     ### SET KINETIC OPERATOR, ADD ABSORPTIVE BOUNDARIES ###
 
