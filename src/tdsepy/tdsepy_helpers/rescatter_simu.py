@@ -14,7 +14,7 @@ def pond_a(emax, lam):
     return cons.e * emax * lam**2 / (cons.m_e * (2*cons.pi*cons.c)**2)
 
 def runSimSweepFields(emaxs:list, lam:float=800e-9, rad:float=20e-9, ef:float=5.51*1.602e-19, wf:float=5.1*1.602e-19, tau:float=8*1e-15, data_fol:str="data/", callback=None, 
-                  target_total_truncation_error:float = 0.01, min_emitted_energy:float=1.602e-19, target_elec_num:float = 50, abs_width:float=20e-9, min_timesteps:int=2000, measure_density:bool=True)
+                  target_total_truncation_error:float = 0.01, min_emitted_energy:float=1.602e-19, target_elec_num:float = 50, abs_width:float=20e-9, min_timesteps:int=2000, measure_density:bool=True):
     """Runs a series of rescattering simulations within a range of peak field strengths.
         Current quantities being output:
         nPts, nSteps, dx, dt, <a>, nElec, VDFluxSpec, Weights
@@ -22,7 +22,7 @@ def runSimSweepFields(emaxs:list, lam:float=800e-9, rad:float=20e-9, ef:float=5.
         
         Parameters 'emax' through 'tau' are also saved as constants for each simulation.
         
-        Parameters 'emaxs' through 'tau' are also saved under data_fol.
+        Parameters 'emaxs' through 'tau' are also saved as a dict in data_fol/params.json.
         
         All parameters are in SI units.
 
@@ -68,16 +68,9 @@ def runSimSweepFields(emaxs:list, lam:float=800e-9, rad:float=20e-9, ef:float=5.
     os.makedirs(data_fol, exist_ok=True)
     if data_fol[-1] != '/':
         data_fol += '/'
+    paramDict = locals()
     with open(f"{data_fol}params.json", 'w') as fil:
-        simParams = {
-            'emaxs' : emaxs,
-            'lam' : lam,
-            'rad' : rad,
-            'ef' : ef,
-            'wf' : wf,
-            'tau' : tau
-        }
-        json.dump(simParams, fil)
+        json.dump(paramDict, fil)
     for (i, emax) in enumerate(emaxs):
         runSingleSimulation(emax, lam, rad, ef, wf, tau, f"{data_fol}{i}/", callback, target_total_truncation_error, min_emitted_energy, target_elec_num, abs_width, min_timesteps, measure_density)
     
@@ -135,7 +128,8 @@ def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:f
     
     
     os.makedirs(data_fol, exist_ok=True)
-    
+    if data_fol[-1] != '/':
+        data_fol += '/'
     ### GET SIMULATION PARAMETERS ###
     
     #simulation must hold 2 ponderomotive amplitudes, and must prevent 10Up electrons from emitting for 2*tau from their emission
@@ -202,8 +196,6 @@ def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:f
     sim.addPot(jellPot)
     sim.addPot(fieldPot)
     sim.addPot(imagPot)
-    
-    sim.addLeftAbsBdy()
 
     ### INITIALIZE MEASURERS ###
 
