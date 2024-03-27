@@ -1,6 +1,7 @@
 import sys, os
 sys.setdlopenflags(os.RTLD_GLOBAL | os.RTLD_LAZY)
 
+sys.path.insert(0, "/home/jmann/TDSESolveLinux/build/lib")
 from tdsepy import *
 import numpy as np
 import scipy.constants as cons
@@ -18,7 +19,7 @@ def runSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:float=5
         nPts, nSteps, dx, dt, <a>, nElec, VDFluxSpec, Weights
         Optional: Psi2t, Vfunct (via parameter measure_density)
         
-        All arguments are in SI units.
+        All parameters are in SI units.
 
         PARAMETERS
         ----------
@@ -86,7 +87,7 @@ def runSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:float=5
     #dx must be able to resolve maximum energy scale:
     #   20 U_p, E_f + W, 
     #dt must be chosen to get small total error
-    # error = dt^2 t / (24 hbar m) * V'^2 < 0.01
+    # TE = dt^2 t / (24 hbar m) * V'^2 < target_total_truncation_error
     #   t is length of simu
     #   V' is maximum potential gradient
     #       max for Jellium (Hartrees):
@@ -96,7 +97,8 @@ def runSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:float=5
     efw_h = ef + wf / cons.physical_constants["Hartree energy"][0]
     kf_h = np.sqrt(ef/cons.physical_constants["Hartree energy"][0])
     max_jel_grad = efw_h**2/(4*(2*efw_h/kf_h-1)) \
-        * cons.physical_constants["Hartree energy"][0] * cons.physical_constants["hartree-inverse meter relationship"][0]
+        * cons.physical_constants["Hartree energy"][0] \
+            * cons.physical_constants["hartree-inverse meter relationship"][0]
         
     max_energy = 10*pond_U(emax, lam)
     energy_resolution = 2*max_energy + ef + wf
@@ -128,6 +130,8 @@ def runSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:float=5
     sim.addPot(jellPot)
     sim.addPot(fieldPot)
     sim.addPot(imagPot)
+    
+    sim.addLeftAbsBdy()
 
     ### INITIALIZE MEASURERS ###
 
