@@ -1,7 +1,7 @@
 #include "KineticOperator.h"
 #include "fftw3.h"
 
-#define MULTIELEC_FFTW_POLICY FFTW_ESTIMATE
+#define MULTIELEC_FFTW_POLICY FFTW_PATIENT
 
 namespace KineticOperators {
 
