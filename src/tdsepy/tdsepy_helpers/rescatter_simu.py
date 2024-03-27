@@ -13,7 +13,7 @@ def pond_U(emax, lam):
 def pond_a(emax, lam):
     return cons.e * emax * lam**2 / (cons.m_e * (2*cons.pi*cons.c)**2)
 
-def runSimSweepFields(emaxs:list, lam:float=800e-9, rad:float=20e-9, ef:float=5.51*1.602e-19, wf:float=5.1*1.602e-19, tau:float=8*1e-15, data_fol:str="data/", callback=None, 
+def runSimSweepFields(emaxs:list, lam:float=800e-9, rad:float=20e-9, ef:float=5.51*1.602e-19, wf:float=5.1*1.602e-19, tau:float=8e-15, data_fol:str="data/", callback=None, 
                   target_total_truncation_error:float = 0.01, min_emitted_energy:float=1.602e-19, target_elec_num:float = 50, abs_width:float=20e-9, min_timesteps:int=2000, measure_density:bool=True):
     """Runs a series of rescattering simulations within a range of peak field strengths.
         Current quantities being output:
@@ -39,9 +39,11 @@ def runSimSweepFields(emaxs:list, lam:float=800e-9, rad:float=20e-9, ef:float=5.
         wf : float
             Work function. Defaults to 5.1*1.602e-19.
         tau : float
-             Full-width half-max power. Defaults to 8*1e-15.
+             Full-width half-max power. Defaults to 8e-15.
         data_fol : str 
-            Folder to store output data in. Defaults to "data/".
+            Folder to store output data in.
+            May include final '/', or not.
+            Defaults to "data/".
         callback 
             Callback function which must take an integer between 0 and 100, inclusive.
             callback is called during time-stepping with the current percentage complete, as an integer. 
@@ -68,14 +70,17 @@ def runSimSweepFields(emaxs:list, lam:float=800e-9, rad:float=20e-9, ef:float=5.
     os.makedirs(data_fol, exist_ok=True)
     if data_fol[-1] != '/':
         data_fol += '/'
+        
     paramDict = locals()
+    del paramDict["callback"]
+    
     with open(f"{data_fol}params.json", 'w') as fil:
         json.dump(paramDict, fil)
     for (i, emax) in enumerate(emaxs):
         runSingleSimulation(emax, lam, rad, ef, wf, tau, f"{data_fol}{i}/", callback, target_total_truncation_error, min_emitted_energy, target_elec_num, abs_width, min_timesteps, measure_density)
     
     
-def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:float=5.51*1.602e-19, wf:float=5.1*1.602e-19, tau:float=8*1e-15, data_fol:str="data/", callback=None, 
+def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:float=5.51*1.602e-19, wf:float=5.1*1.602e-19, tau:float=8e-15, data_fol:str="data/", callback=None, 
                   target_total_truncation_error:float = 0.01, min_emitted_energy:float=1.602e-19, target_elec_num:float = 50, abs_width:float=20e-9, min_timesteps:int=2000, measure_density:bool=True):
     """Runs a rescattering simulation while recording various quantites. 
         Current quantities being output:
@@ -99,9 +104,11 @@ def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:f
         wf : float
             Work function. Defaults to 5.1*1.602e-19.
         tau : float
-             Full-width half-max power. Defaults to 8*1e-15.
+             Full-width half-max power. Defaults to 8e-15.
         data_fol : str 
-            Folder to store output data in. Defaults to "data/".
+            Folder to store output data in.
+            May include final '/', or not.
+            Defaults to "data/".
         callback 
             Callback function which must take an integer between 0 and 100, inclusive.
             callback is called during time-stepping with the current percentage complete, as an integer. 
