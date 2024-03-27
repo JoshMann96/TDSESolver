@@ -1,10 +1,7 @@
 import sys, os
 sys.setdlopenflags(os.RTLD_GLOBAL | os.RTLD_LAZY)
 
-try :
-    from tdsepy import *
-except ImportError:
-    from ..lib.tdsepy import *
+from tdsepy import *
 import numpy as np
 import scipy.constants as cons
 
@@ -14,8 +11,41 @@ def pond_U(emax, lam):
 def pond_a(emax, lam):
     return cons.e * emax * lam**2 / (cons.m_e * (2*cons.pi*cons.c)**2)
 
-def runSimulation(emax=20e9, lam=800e-9, rad=20e-9, ef=5.51*1.602e-19, wf=5.1*1.602e-19, tau=8*1e-15, data_fol="data/", callback=None, 
-                  target_total_truncation_error = 0.01, min_emitted_energy=1.602e-19, target_elec_num=50, abs_width=20e-9, min_timesteps=2000, measure_density=True):
+def runSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:float=5.51*1.602e-19, wf:float=5.1*1.602e-19, tau:float=8*1e-15, data_fol:str="data/", callback=None, 
+                  target_total_truncation_error:float = 0.01, min_emitted_energy:float=1.602e-19, target_elec_num:float = 50, abs_width:float=20e-9, min_timesteps:int=2000, measure_density:bool=True):
+    """Runs a rescattering simulation while recording various quantites. Current quantities being output:
+        nPts, nSteps, dx, dt, <a>, nElec, VDFluxSpec, Weights
+        Optional: Psi2t, Vfunct (via parameter measure_density)
+        
+        All arguments are in SI units.
+
+        PARAMETERS
+        ----------
+        emax (float, optional): Peak electric field. Defaults to 20e9.
+        lam (float, optional): Laser wavelength. Defaults to 800e-9.
+        rad (float, optional): Apex radius of curvature (for collective image fields). Defaults to 20e-9.
+        ef (float, optional): Fermi energy. Defaults to 5.51*1.602e-19.
+        wf (float, optional): Work function. Defaults to 5.1*1.602e-19.
+        tau (float, optional): Full-width half-max power. Defaults to 8*1e-15.
+        data_fol (str, optional): Folder to store output data in. Defaults to "data/".
+        callback (_type_, optional): Callback function which must take an integer between 0 and 100, inclusive.
+            callback is called during time-stepping with the current percentage complete, as an integer. 
+            Defaults to None.
+        target_total_truncation_error (float, optional): Upper bound for total relative truncation error of the wavefunction. Defaults to 0.01.
+        min_emitted_energy (float, optional): Minumum emittable energy. 
+            Sets temporal length of simulation such that a particle emitted with this energy at the peak of the laser pulse reaches the rightmost boundary before timestepping stops. 
+            Defaults to 1.602e-19.
+        target_elec_num (float, optional): Target number of states. 
+            Sets the width of the Jellium slab such that there are about this many 1-D states below the Fermi level. Actual number of states may deviate.
+            Defaults to 50.
+        abs_width (float, optional): Width of the absorptive boundary. Defaults to 20e-9.
+        min_timesteps (int, optional): Minimum number of timesteps. 
+            Overrides target_total_truncation_error if the number of timesteps would be too few. 
+            Defaults to 2000.
+        measure_density (bool, optional): Whether to use the Psi2t and Vfunct measurers. Defaults to True.
+    """    
+    
+    
     os.makedirs(data_fol, exist_ok=True)
     
     ### GET SIMULATION PARAMETERS ###
@@ -111,3 +141,5 @@ def runSimulation(emax=20e9, lam=800e-9, rad=20e-9, ef=5.51*1.602e-19, wf=5.1*1.
     sim.runOS_UW2TUW()
 
     print("\tDone!")
+
+# /runSimulation/
