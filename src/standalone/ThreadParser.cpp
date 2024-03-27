@@ -92,49 +92,49 @@ int ThreadParser::addPotential(std::string input) {
 		break;
 	case 13:
 	{
-		Potentials::SurfaceSpaceCharge* pot = new Potentials::SurfaceSpaceCharge(n, sim->getDX(), p[0], nelec, sim->getPotPointer(), wght, dens, vtls::findValue(n, x, p[1]), vtls::findValue(n, x, p[2]), vtls::findValue(n, x, p[3]));
+		Potentials::SurfaceSpaceCharge* pot = new Potentials::SurfaceSpaceCharge(n, sim->getDX(), p[0], nElec, sim->getPotPointer(), wght, dens, vtls::findValue(n, x, p[1]), vtls::findValue(n, x, p[2]), vtls::findValue(n, x, p[3]));
 		sim->addPotential(pot);
 		spc->push_back(pot);
 		break;
 	}
 	case 12:
 	{
-		Potentials::FullCylindricalSpaceCharge* pot = new Potentials::FullCylindricalSpaceCharge(n, x, sim->getDX(), p[0], p[1], nelec, sim->getPotPointer(), wght, dens, vtls::findValue(n, x, p[3]), vtls::findValue(n, x, p[4]), vtls::findValue(n, x, p[2]), vtls::findValue(n, x, p[5]));
+		Potentials::FullCylindricalSpaceCharge* pot = new Potentials::FullCylindricalSpaceCharge(n, x, sim->getDX(), p[0], p[1], nElec, sim->getPotPointer(), wght, dens, vtls::findValue(n, x, p[3]), vtls::findValue(n, x, p[4]), vtls::findValue(n, x, p[2]), vtls::findValue(n, x, p[5]));
 		sim->addPotential(pot);
 		spc->push_back(pot);
 		break;
 	}
 	case 14:
 	{
-		Potentials::LinearBulkCylindricalFieldSpaceCharge* pot = new Potentials::LinearBulkCylindricalFieldSpaceCharge(n, x, sim->getDX(), sim->getDT(), p[0], p[1], nelec, sim->getPotPointer(), wght, dens, vtls::findValue(n, x, p[3]), vtls::findValue(n, x, p[4]), vtls::findValue(n, x, p[2]), 1, vtls::findValue(n, x, p[5]));
+		Potentials::LinearBulkCylindricalFieldSpaceCharge* pot = new Potentials::LinearBulkCylindricalFieldSpaceCharge(n, x, sim->getDX(), sim->getDT(), p[0], p[1], nElec, sim->getPotPointer(), wght, dens, vtls::findValue(n, x, p[3]), vtls::findValue(n, x, p[4]), vtls::findValue(n, x, p[2]), 1, vtls::findValue(n, x, p[5]));
 		sim->addPotential(pot);
 		spc->push_back(pot);
 		break;
 	}
 	case 15:
 	{
-		Potentials::LinearBulkCylSectionFieldSpaceCharge* pot = new Potentials::LinearBulkCylSectionFieldSpaceCharge(n, x, sim->getDX(), p[0], p[1], p[3], nelec, sim->getPotPointer(), wght, dens, vtls::findValue(n, x, p[2]), vtls::findValue(n, x, p[4]));
+		Potentials::LinearBulkCylSectionFieldSpaceCharge* pot = new Potentials::LinearBulkCylSectionFieldSpaceCharge(n, x, sim->getDX(), p[0], p[1], p[3], nElec, sim->getPotPointer(), wght, dens, vtls::findValue(n, x, p[2]), vtls::findValue(n, x, p[4]));
 		sim->addPotential(pot);
 		spc->push_back(pot);
 		break;
 	}
 	case 16:
 	{
-		Potentials::DielectricBulkCylindricalFieldSpaceCharge* pot = new Potentials::DielectricBulkCylindricalFieldSpaceCharge(n, x, sim->getDX(), sim->getDT(), p[0], p[1], p[5], p[6], nelec, sim->getPotPointer(), wght, dens, vtls::findValue(n, x, p[3]), vtls::findValue(n, x, p[4]), vtls::findValue(n, x, p[2]), vtls::findValue(n, x, p[7]));
+		Potentials::DielectricBulkCylindricalFieldSpaceCharge* pot = new Potentials::DielectricBulkCylindricalFieldSpaceCharge(n, x, sim->getDX(), sim->getDT(), p[0], p[1], p[5], p[6], nElec, sim->getPotPointer(), wght, dens, vtls::findValue(n, x, p[3]), vtls::findValue(n, x, p[4]), vtls::findValue(n, x, p[2]), vtls::findValue(n, x, p[7]));
 		sim->addPotential(pot);
 		spc->push_back(pot);
 		break;
 	}
 	case 17:
 	{
-		Potentials::OhmicRetardingPotential* pot = new Potentials::OhmicRetardingPotential(n, sim->getDX(), p[1], p[2], nelec, sim->getPotPointer(), wght, dens, vtls::findValue(n, x, p[0]), vtls::findValue(n, x, p[3]));
+		Potentials::OhmicRetardingPotential* pot = new Potentials::OhmicRetardingPotential(n, sim->getDX(), p[1], p[2], nElec, sim->getPotPointer(), wght, dens, vtls::findValue(n, x, p[0]), vtls::findValue(n, x, p[3]));
 		sim->addPotential(pot);
 		spc->push_back(pot);
 		break;
 	}
 	case 18:
 	{
-		Potentials::CylindricalImageCharge* pot = new Potentials::CylindricalImageCharge(n, x, sim->getDX(), sim->getDT(), p[1], p[0], p[2], nelec, sim->getPotPointer(), wght, dens, vtls::findValue(n, x, p[4]), vtls::findValue(n, x, p[5]), vtls::findValue(n, x, p[3]), vtls::findValue(n, x, p[6]));
+		Potentials::CylindricalImageCharge* pot = new Potentials::CylindricalImageCharge(n, x, sim->getDX(), sim->getDT(), p[1], p[0], p[2], nElec, sim->getPotPointer(), wght, dens, vtls::findValue(n, x, p[4]), vtls::findValue(n, x, p[5]), vtls::findValue(n, x, p[3]), vtls::findValue(n, x, p[6]));
 		sim->addPotential(pot);
 		spc->push_back(pot);
 		break;
@@ -369,10 +369,10 @@ int ThreadParser::addMeasurer(std::string input) {
 		break;
 	}
 	case 26:
-		sim->addMeasurer(new Measurers::VDFluxSpec(vtls::findValue(n, x, p[2]), p[1], nelec, p[4], p[3], sim->getMaxT(), inputText.c_str(), fol));
+		sim->addMeasurer(new Measurers::VDFluxSpec(vtls::findValue(n, x, p[2]), p[1], nElec, p[4], p[3], sim->getMaxT(), inputText.c_str(), fol));
 		break;
 	case 27:
-		sim->addMeasurer(new Measurers::WfcRhoWeights(nelec, n, sim->getDX(), wght, fol));
+		sim->addMeasurer(new Measurers::WfcRhoWeights(nElec, n, sim->getDX(), wght, fol));
 		break;
 	}
 	return 1;
@@ -406,7 +406,7 @@ int ThreadParser::readCommand() {
 		MPI_Ssend(nullptr, 0, MPI_INT, MPI_Root_Proc, MPITag::AmEigenSolving, MPI_COMM_WORLD); //tell root am eigensolving
 		sim->findEigenStates(parseVal(flds->at(1)), parseVal(flds->at(2)), 0, 0); //find eigenstates between selected energies
 		sim->addMeasurer(new Measurers::ElectronNumber(sim->getNElecPtr(), fol)); //add electron number measurer
-		nelec[0] = sim->getNElec(); //set own value for number of electrons
+		nElec[0] = sim->getNElec(); //set own value for number of electrons
 	}
 	else if (std::strstr(flds->at(0).c_str(), "NEGATE_SELF_POT_INITIAL_STATE")) //subtract potential generated by ground-state charge distro
 		for (int i = 0; i < spc->size(); i++)

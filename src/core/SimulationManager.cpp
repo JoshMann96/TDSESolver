@@ -29,7 +29,7 @@ SimulationManager::SimulationManager(int nPts, double dx, double dt, double maxT
 	progCallback = callback;
 
 	index = 0;
-	nelec = 0;
+	nElec = 0;
 }
 
 SimulationManager::~SimulationManager()
@@ -69,7 +69,7 @@ void SimulationManager::finishInitialization() {
 //SHOULD USE KIN METHOD OR WFCRHOTOOLS
 double SimulationManager::getTotalEnergy(std::complex<double> * psi, double * v) {
 	double totE = 0.0;
-	for (int i = 0; i < nelec; i++) {
+	for (int i = 0; i < nElec; i++) {
 		vtls::secondDerivative(nPts, &psi[i*nPts], scratch1, dx);
 		vtls::scaMulArray(nPts, -PhysCon::hbar*PhysCon::hbar / (2.0*PhysCon::me), scratch1);
 		vtls::seqMulArrays(nPts, v, &psi[i*nPts], scratch2);
@@ -87,28 +87,28 @@ void SimulationManager::findEigenStates(double emin, double emax, double maxT, d
 
 	std::complex<double>* states = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nPts);
 
-	kin->findEigenStates(vs[index], emin, emax, states, &nelec);
+	kin->findEigenStates(vs[index], emin, emax, states, &nElec);
 
 	freePsis();
-	psis[0] = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nelec);
+	psis[0] = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nElec);
 
-	vtls::copyArray(nPts * nelec, states, psis[0]);
+	vtls::copyArray(nPts * nElec, states, psis[0]);
 
 	fftw_free(states);
 
-	for (int i = 0; i < nelec; i++)
+	for (int i = 0; i < nElec; i++)
 		vtls::normalizeSqrNorm(nPts, &psis[0][i * nPts], dx);
 
 	for (int i = 1; i < 4; i++) {
-		psis[i] = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nelec);
-		vtls::copyArray(nPts * nelec, psis[0], psis[i]);
+		psis[i] = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nElec);
+		vtls::copyArray(nPts * nElec, psis[0], psis[i]);
 	}
 
 }
 
 void SimulationManager::setPsi(std::complex<double>* npsi) {
-	if (!nelec) {
-		nelec = 1;
+	if (!nElec) {
+		nElec = 1;
 		freePsis();
 		for (int i = 0; i < 4; i++) {
 			psis[i] = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts);
@@ -129,7 +129,7 @@ int SimulationManager::getVPAR(int idx, int idxPsi) {
 
 int SimulationManager::measPAR(int idx) {
 	auto strt = std::chrono::high_resolution_clock::now();
-	meas->measureMany(psis[idx], vs[idx], ts[idx], kin, nelec, nPts);
+	meas->measureMany(psis[idx], vs[idx], ts[idx], kin, nElec, nPts);
 	auto end = std::chrono::high_resolution_clock::now();
 	auto dur = std::chrono::duration_cast<std::chrono::microseconds>(end - strt);
 	return dur.count();
@@ -139,7 +139,7 @@ int SimulationManager::measPAR(int idx) {
 void SimulationManager::runOS_U2TU() {
 	iterateIndex();
 	pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()], kin);
-	kin_psm->stepOS_U2TU(psis[prevIndex()], vs[prevIndex()], spatialDamp, psis[index], nelec);
+	kin_psm->stepOS_U2TU(psis[prevIndex()], vs[prevIndex()], spatialDamp, psis[index], nElec);
 	iterateIndex();
 
 	int percDone = 0;
@@ -149,7 +149,7 @@ void SimulationManager::runOS_U2TU() {
 		f1 = std::async(rM, this, prevPrevIndex());
 
 		pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()], kin);
-		kin_psm->stepOS_U2TU(psis[prevIndex()], vs[prevIndex()], spatialDamp, psis[index], nelec);
+		kin_psm->stepOS_U2TU(psis[prevIndex()], vs[prevIndex()], spatialDamp, psis[index], nElec);
 
 		f1.get();
 
@@ -166,12 +166,12 @@ void SimulationManager::runOS_U2TU() {
 
 //Run simulation using operator splitting Fourier method (applies potential as nonlinear, second potential phase is recalculated after propagation phase)
 void SimulationManager::runOS_UW2TUW() {
-	std::complex<double>* tpsi = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nelec);
+	std::complex<double>* tpsi = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nElec);
 	iterateIndex();
 	pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()], kin);
-	kin_psm->stepOS_UW2T(psis[prevIndex()], vs[prevIndex()], spatialDamp, tpsi, nelec);
+	kin_psm->stepOS_UW2T(psis[prevIndex()], vs[prevIndex()], spatialDamp, tpsi, nElec);
 	pot->getV(tpsi, ts[prevIndex()], vs[prevIndex()], kin);
-	kin_psm->stepOS_UW(tpsi, vs[prevIndex()], spatialDamp, psis[index], nelec);
+	kin_psm->stepOS_UW(tpsi, vs[prevIndex()], spatialDamp, psis[index], nElec);
 	iterateIndex();
 
 	int percDone = 0;
@@ -181,9 +181,9 @@ void SimulationManager::runOS_UW2TUW() {
 		f1 = std::async(rM, this, prevPrevIndex());
 
 		pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()], kin);
-		kin_psm->stepOS_UW2T(psis[prevIndex()], vs[prevIndex()], spatialDamp, tpsi, nelec);
+		kin_psm->stepOS_UW2T(psis[prevIndex()], vs[prevIndex()], spatialDamp, tpsi, nElec);
 		pot->getV(tpsi, ts[prevIndex()], vs[prevIndex()], kin);
-		kin_psm->stepOS_UW(tpsi, vs[prevIndex()], spatialDamp, psis[index], nelec);
+		kin_psm->stepOS_UW(tpsi, vs[prevIndex()], spatialDamp, psis[index], nElec);
 		f1.get();
 
 		iterateIndex();
@@ -246,9 +246,9 @@ std::complex<double> * SimulationManager::getPsi() {
 }
 
 int SimulationManager::getNElec() {
-	return nelec;
+	return nElec;
 }
 
 int* SimulationManager::getNElecPtr(){
-	return &nelec;
+	return &nElec;
 }

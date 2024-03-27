@@ -502,12 +502,12 @@ namespace Potentials {
 	*/
 
 
-	SurfaceSpaceCharge::SurfaceSpaceCharge(int nPts, double dx, double ef, int* nelec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int posMin, int posMax, int refPoint) {
+	SurfaceSpaceCharge::SurfaceSpaceCharge(int nPts, double dx, double ef, int* nElec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int posMin, int posMax, int refPoint) {
 		SurfaceSpaceCharge::nPts = nPts;
 		SurfaceSpaceCharge::dx = dx;
 		SurfaceSpaceCharge::ef = ef;
 		SurfaceSpaceCharge::refPoint = refPoint;
-		SurfaceSpaceCharge::nelecPtr = nelec;
+		SurfaceSpaceCharge::nelecPtr = nElec;
 		SurfaceSpaceCharge::totPot = totPot;
 		SurfaceSpaceCharge::wght = wght;
 		SurfaceSpaceCharge::dens = dens;
@@ -559,20 +559,20 @@ namespace Potentials {
 
 	void SurfaceSpaceCharge::doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
 		first = 0;
-		nelec = *nelecPtr;
-		prefactor = new double[nelec];
-		double* energies = new double[nelec];
+		nElec = *nelecPtr;
+		prefactor = new double[nElec];
+		double* energies = new double[nElec];
 		double* v0w = new double[nPts];
 		totPot->getV(0, v0w, kin);
-		WfcToRho::calcEnergies(nelec, nPts, dx, psi, v0w, kin, energies);
-		wght->calcWeights(nelec, energies, prefactor);
+		WfcToRho::calcEnergies(nElec, nPts, dx, psi, v0w, kin, energies);
+		wght->calcWeights(nElec, energies, prefactor);
 		delete[] energies;
 		delete[] v0w;
 	}
 
 	void SurfaceSpaceCharge::calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator* kin) {
 		if (first) doFirst(psi, kin);
-		dens->calcRho(nPts, nelec, dx, prefactor, psi, rho);
+		dens->calcRho(nPts, nElec, dx, prefactor, psi, rho);
 		for (int i = 0; i < posMin; i++)
 			rho[i] = 0;
 		for (int i = posMax; i < nPts; i++)
@@ -584,12 +584,12 @@ namespace Potentials {
 	}
 
 
-	FullCylindricalSpaceCharge::FullCylindricalSpaceCharge(int nPts, double * x, double dx, double ef, double r, int* nelec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int posMin, int posMax, int surfPos, int refPoint) {
+	FullCylindricalSpaceCharge::FullCylindricalSpaceCharge(int nPts, double * x, double dx, double ef, double r, int* nElec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int posMin, int posMax, int surfPos, int refPoint) {
 		FullCylindricalSpaceCharge::nPts = nPts;
 		FullCylindricalSpaceCharge::dx = dx;
 		FullCylindricalSpaceCharge::ef = ef;
 		FullCylindricalSpaceCharge::refPoint = refPoint;
-		FullCylindricalSpaceCharge::nelecPtr = nelec;
+		FullCylindricalSpaceCharge::nelecPtr = nElec;
 		FullCylindricalSpaceCharge::totPot = totPot;
 		FullCylindricalSpaceCharge::r = r;
 		FullCylindricalSpaceCharge::wght = wght;
@@ -653,22 +653,22 @@ namespace Potentials {
 
 	void FullCylindricalSpaceCharge::doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
 		first = 0;
-		nelec = nelecPtr[0];
-		prefactor = new double[nelec];
-		double* energies = new double[nelec];
+		nElec = nelecPtr[0];
+		prefactor = new double[nElec];
+		double* energies = new double[nElec];
 		double* v0w = new double[nPts];
 		totPot->getV(0, v0w, kin);
-		WfcToRho::calcEnergies(nelec, nPts, dx, psi, v0w, kin, energies);
-		wght->calcWeights(nelec, energies, prefactor);
+		WfcToRho::calcEnergies(nElec, nPts, dx, psi, v0w, kin, energies);
+		wght->calcWeights(nElec, energies, prefactor);
 		delete[] energies;
 		delete[] v0w;
-		//calcFermiBoxDimensionalityConversion(nelec, nPts, dx, ef, psi, totPot, prefactor);
+		//calcFermiBoxDimensionalityConversion(nElec, nPts, dx, ef, psi, totPot, prefactor);
 	}
 
 	void FullCylindricalSpaceCharge::calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator* kin) {
 		if (first) doFirst(psi, kin);
 		//Caclulate 3-D density, only for within bounds
-		dens->calcRho(nPts, nelec, dx, prefactor, psi, rho);
+		dens->calcRho(nPts, nElec, dx, prefactor, psi, rho);
 		for (int i = 0; i < posMin; i++)
 			rho[i] = 0;
 		for (int i = posMax; i < nPts; i++)
@@ -687,13 +687,13 @@ namespace Potentials {
 	}
 
 
-	LinearBulkCylindricalFieldSpaceCharge::LinearBulkCylindricalFieldSpaceCharge(int nPts, double* x, double dx, double dt, double ef, double rad, int* nelec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int posMin, int posMax, int surfPos, int trackInnerLoss, int refPoint) {
+	LinearBulkCylindricalFieldSpaceCharge::LinearBulkCylindricalFieldSpaceCharge(int nPts, double* x, double dx, double dt, double ef, double rad, int* nElec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int posMin, int posMax, int surfPos, int trackInnerLoss, int refPoint) {
 		LinearBulkCylindricalFieldSpaceCharge::nPts = nPts;
 		LinearBulkCylindricalFieldSpaceCharge::dx = dx;
 		LinearBulkCylindricalFieldSpaceCharge::dt = dt;
 		LinearBulkCylindricalFieldSpaceCharge::ef = ef;
 		LinearBulkCylindricalFieldSpaceCharge::refPoint = refPoint;
-		LinearBulkCylindricalFieldSpaceCharge::nelecPtr = nelec;
+		LinearBulkCylindricalFieldSpaceCharge::nelecPtr = nElec;
 		LinearBulkCylindricalFieldSpaceCharge::totPot = totPot;
 		LinearBulkCylindricalFieldSpaceCharge::rad = rad;
 		LinearBulkCylindricalFieldSpaceCharge::wght = wght;
@@ -762,16 +762,16 @@ namespace Potentials {
 	void LinearBulkCylindricalFieldSpaceCharge::doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
 		first = 0;
 		lostCharge = 0.0;
-		nelec = nelecPtr[0];
-		prefactor = new double[nelec];
-		double* energies = new double[nelec];
+		nElec = nelecPtr[0];
+		prefactor = new double[nElec];
+		double* energies = new double[nElec];
 		double* v0w = new double[nPts];
 		totPot->getV(0, v0w, kin);
-		WfcToRho::calcEnergies(nelec, nPts, dx, psi, v0w, kin, energies);
-		wght->calcWeights(nelec, energies, prefactor);
+		WfcToRho::calcEnergies(nElec, nPts, dx, psi, v0w, kin, energies);
+		wght->calcWeights(nElec, energies, prefactor);
 
 		//get location and size of starting charge
-		dens->calcRho(nPts, nelec, dx, prefactor, psi, rho);
+		dens->calcRho(nPts, nElec, dx, prefactor, psi, rho);
 		for (int i = 0; i < nPts; i++)
 			chargeCenterD += rho[i] * i;
 		chargeCenterD /= vtlsInt::rSum(nPts, rho, 1.0);
@@ -785,14 +785,14 @@ namespace Potentials {
 
 		delete[] energies;
 		delete[] v0w;
-		//calcFermiBoxDimensionalityConversion(nelec, nPts, dx, ef, psi, totPot, prefactor);
+		//calcFermiBoxDimensionalityConversion(nElec, nPts, dx, ef, psi, totPot, prefactor);
 	}
 
 	void LinearBulkCylindricalFieldSpaceCharge::calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator* kin) {
 		//auto t1 = std::chrono::system_clock::now();
 		if (first) doFirst(psi, kin);
 		//Caclulate 3-D density, only for within bounds
-		dens->calcRho(nPts, nelec, dx, prefactor, psi, rho);
+		dens->calcRho(nPts, nElec, dx, prefactor, psi, rho);
 		//Replenish charge in slab only
 		//vtls::scaAddArray(chargeWidth * 2, lostCharge / dx / (double)(chargeWidth * 2), &rho[chargeCenter - chargeWidth]);
 		for (int i = 0; i < posMin; i++)
@@ -800,7 +800,7 @@ namespace Potentials {
 		for (int i = posMax; i < nPts; i++)
 			rho[i] = 0;
 		if (trackInnerLoss)
-			for (int i = 0; i < nelec; i++)
+			for (int i = 0; i < nElec; i++)
 				lostCharge -= dt / 2.0 * PhysCon::hbar / PhysCon::me * std::imag(std::conj(psi[i*nPts + posMin]) * (psi[i * nPts + posMin + 1] - psi[i * nPts + posMin - 1]) / (2.0 * dx)) * prefactor[i];
 		//FACTOR OF 2 ONLY WORKS FOR CALCULATIONS WHICH EVALUATE POTENTIAL TWICE
 		//SHOULD BE SEPARATED INTO A VIRTUAL DETECTOR WHICH IS ONLY EVALUATED ONCE PER TIME-STEP
@@ -852,14 +852,14 @@ namespace Potentials {
 	}
 
 
-	CylindricalImageCharge::CylindricalImageCharge(int nPts, double* x, double dx, double dt, double ef, double w, double rad, int* nelec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int posMin, int posMax, int surfPos, int refPoint) {
+	CylindricalImageCharge::CylindricalImageCharge(int nPts, double* x, double dx, double dt, double ef, double w, double rad, int* nElec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int posMin, int posMax, int surfPos, int refPoint) {
 		CylindricalImageCharge::nPts = nPts;
 		CylindricalImageCharge::dx = dx;
 		CylindricalImageCharge::dt = dt;
 		CylindricalImageCharge::ef = ef;
 		CylindricalImageCharge::w = w;
 		CylindricalImageCharge::refPoint = refPoint;
-		CylindricalImageCharge::nelecPtr = nelec;
+		CylindricalImageCharge::nelecPtr = nElec;
 		CylindricalImageCharge::totPot = totPot;
 		CylindricalImageCharge::rad = rad;
 		CylindricalImageCharge::wght = wght;
@@ -934,29 +934,29 @@ namespace Potentials {
 	void CylindricalImageCharge::doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
 		first = 0;
 		emittedCharge = 0.0;
-		nelec = nelecPtr[0];
-		prefactor = new double[nelec];
-		double* energies = new double[nelec];
+		nElec = nelecPtr[0];
+		prefactor = new double[nElec];
+		double* energies = new double[nElec];
 		double* v0w = new double[nPts];
 		totPot->getV(0, v0w, kin);
-		WfcToRho::calcEnergies(nelec, nPts, dx, psi, v0w, kin, energies);
-		wght->calcWeights(nelec, energies, prefactor);
+		WfcToRho::calcEnergies(nElec, nPts, dx, psi, v0w, kin, energies);
+		wght->calcWeights(nElec, energies, prefactor);
 
 		delete[] energies;
 		delete[] v0w;
-		//calcFermiBoxDimensionalityConversion(nelec, nPts, dx, ef, psi, totPot, prefactor);
+		//calcFermiBoxDimensionalityConversion(nElec, nPts, dx, ef, psi, totPot, prefactor);
 	}
 
 	void CylindricalImageCharge::calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator* kin) {
 		//auto t1 = std::chrono::system_clock::now();
 		if (first) doFirst(psi, kin);
 		//Caclulate 3-D density, only for within bounds
-		dens->calcRho(nPts, nelec, dx, prefactor, psi, rho);
+		dens->calcRho(nPts, nElec, dx, prefactor, psi, rho);
 		for (int i = 0; i < posMin; i++)
 			rho[i] = 0;
 		for (int i = posMax; i < nPts; i++)
 			rho[i] = 0;
-		for (int i = 0; i < nelec; i++)
+		for (int i = 0; i < nElec; i++)
 				emittedCharge += dt / 2.0 * PhysCon::hbar / PhysCon::me * std::imag(std::conj(psi[i * nPts + posMax]) * (psi[i * nPts + posMax + 1] - psi[i * nPts + posMax - 1]) / (2.0 * dx)) * prefactor[i];
 		//FACTOR OF 2 ONLY WORKS FOR CALCULATIONS WHICH EVALUATE POTENTIAL TWICE
 		//SHOULD BE SEPARATED INTO A VIRTUAL DETECTOR WHICH IS ONLY EVALUATED ONCE PER TIME-STEP
@@ -983,13 +983,13 @@ namespace Potentials {
 	}
 
 
-	DielectricBulkCylindricalFieldSpaceCharge::DielectricBulkCylindricalFieldSpaceCharge(int nPts, double* x, double dx, double dt, double ef, double rad, double wellWidth, double dampRate, int* nelec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int posMin, int posMax, int surfPos, int refPoint) {
+	DielectricBulkCylindricalFieldSpaceCharge::DielectricBulkCylindricalFieldSpaceCharge(int nPts, double* x, double dx, double dt, double ef, double rad, double wellWidth, double dampRate, int* nElec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int posMin, int posMax, int surfPos, int refPoint) {
 		DielectricBulkCylindricalFieldSpaceCharge::nPts = nPts;
 		DielectricBulkCylindricalFieldSpaceCharge::dx = dx;
 		DielectricBulkCylindricalFieldSpaceCharge::dt = dt;
 		DielectricBulkCylindricalFieldSpaceCharge::ef = ef;
 		DielectricBulkCylindricalFieldSpaceCharge::refPoint = refPoint;
-		DielectricBulkCylindricalFieldSpaceCharge::nelecPtr = nelec;
+		DielectricBulkCylindricalFieldSpaceCharge::nelecPtr = nElec;
 		DielectricBulkCylindricalFieldSpaceCharge::totPot = totPot;
 		DielectricBulkCylindricalFieldSpaceCharge::rad = rad;
 		DielectricBulkCylindricalFieldSpaceCharge::wght = wght;
@@ -1070,17 +1070,17 @@ namespace Potentials {
 
 	void DielectricBulkCylindricalFieldSpaceCharge::doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
 		first = 0;
-		nelec = nelecPtr[0];
-		prefactor = new double[nelec];
-		double* energies = new double[nelec];
+		nElec = nelecPtr[0];
+		prefactor = new double[nElec];
+		double* energies = new double[nElec];
 		double* v0w = new double[nPts];
 		totPot->getV(0, v0w, kin);
-		WfcToRho::calcEnergies(nelec, nPts, dx, psi, v0w, kin, energies);
-		wght->calcWeights(nelec, energies, prefactor);
+		WfcToRho::calcEnergies(nElec, nPts, dx, psi, v0w, kin, energies);
+		wght->calcWeights(nElec, energies, prefactor);
 		delete[] energies;
 		delete[] v0w;
 
-		dens->calcRho(nPts, nelec, dx, prefactor, psi, rho);
+		dens->calcRho(nPts, nElec, dx, prefactor, psi, rho);
 		//pol = vtlsInt::trapzMul(nPts, xs, rho, dx);
 
 		if (wellWidth <= 0) {
@@ -1098,7 +1098,7 @@ namespace Potentials {
 		//auto t1 = std::chrono::system_clock::now();
 		if (first) doFirst(psi, kin);
 		//Caclulate 3-D density, only for within bounds
-		dens->calcRho(nPts, nelec, dx, prefactor, psi, rho);
+		dens->calcRho(nPts, nElec, dx, prefactor, psi, rho);
 		for (int i = 0; i < posMin; i++)
 			rho[i] = 0;
 		for (int i = posMax; i < nPts; i++)
@@ -1149,12 +1149,12 @@ namespace Potentials {
 	}
 
 
-	LinearBulkCylSectionFieldSpaceCharge::LinearBulkCylSectionFieldSpaceCharge(int nPts, double* x, double dx, double ef, double rad, double theta0, int* nelec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int surfPos, int refPoint) {
+	LinearBulkCylSectionFieldSpaceCharge::LinearBulkCylSectionFieldSpaceCharge(int nPts, double* x, double dx, double ef, double rad, double theta0, int* nElec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int surfPos, int refPoint) {
 		LinearBulkCylSectionFieldSpaceCharge::nPts = nPts;
 		LinearBulkCylSectionFieldSpaceCharge::dx = dx;
 		LinearBulkCylSectionFieldSpaceCharge::ef = ef;
 		LinearBulkCylSectionFieldSpaceCharge::rad = rad;
-		LinearBulkCylSectionFieldSpaceCharge::nelecPtr = nelec;
+		LinearBulkCylSectionFieldSpaceCharge::nelecPtr = nElec;
 		LinearBulkCylSectionFieldSpaceCharge::totPot = totPot;
 		LinearBulkCylSectionFieldSpaceCharge::surfPos = surfPos;
 		LinearBulkCylSectionFieldSpaceCharge::refPoint = refPoint;
@@ -1230,23 +1230,23 @@ namespace Potentials {
 
 	void LinearBulkCylSectionFieldSpaceCharge::doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
 		first = 0;
-		nelec = nelecPtr[0];
-		prefactor = new double[nelec];
-		double* energies = new double[nelec];
+		nElec = nelecPtr[0];
+		prefactor = new double[nElec];
+		double* energies = new double[nElec];
 		double* v0w = new double[nPts];
 		totPot->getV(0, v0w, kin);
-		WfcToRho::calcEnergies(nelec, nPts, dx, psi, v0w, kin, energies);
-		wght->calcWeights(nelec, energies, prefactor);
+		WfcToRho::calcEnergies(nElec, nPts, dx, psi, v0w, kin, energies);
+		wght->calcWeights(nElec, energies, prefactor);
 		delete[] energies;
 		delete[] v0w;
-		//calcFermiBoxDimensionalityConversion(nelec, nPts, dx, ef, psi, totPot, prefactor);
+		//calcFermiBoxDimensionalityConversion(nElec, nPts, dx, ef, psi, totPot, prefactor);
 	}
 
 	void LinearBulkCylSectionFieldSpaceCharge::calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator* kin) {
 		//auto t1 = std::chrono::system_clock::now();
 		if (first) doFirst(psi, kin);
 		//Caclulate 3-D density
-		dens->calcRho(nPts, nelec, dx, prefactor, psi, rho);
+		dens->calcRho(nPts, nElec, dx, prefactor, psi, rho);
 		//auto t2 = std::chrono::system_clock::now();
 		std::fill_n(targ, nPts, 0);
 		std::fill_n(potTemp, nPts, 0);
@@ -1283,7 +1283,7 @@ namespace Potentials {
 	}
 
 
-	OhmicRetardingPotential::OhmicRetardingPotential(int nPts, double dx, double transLen, double resistivity, int* nelec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int surfPos, int refPoint) : nPts(nPts), dx(dx), wght(wght), dens(dens), totPot(totPot), refPoint(refPoint), nelecPtr(nelec) {
+	OhmicRetardingPotential::OhmicRetardingPotential(int nPts, double dx, double transLen, double resistivity, int* nElec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int surfPos, int refPoint) : nPts(nPts), dx(dx), wght(wght), dens(dens), totPot(totPot), refPoint(refPoint), nelecPtr(nElec) {
 		probCur = new double[nPts];
 		mask = new double[nPts];
 		temp = new std::complex<double>[nPts];
@@ -1307,7 +1307,7 @@ namespace Potentials {
 			doFirst(psi, kin);
 
 		std::fill_n(probCur, nPts, 0.0);
-		for (int i = 0; i < nelec; i++) {
+		for (int i = 0; i < nElec; i++) {
 			vtls::firstDerivative(nPts, &psi[nPts * i], temp, dx*PhysCon::me/PhysCon::hbar/prefactor[i]);
 			vtls::seqMulArrays(nPts, &psi[nPts * i], temp);
 			vtls::addArraysImag(nPts, temp, probCur);
@@ -1322,13 +1322,13 @@ namespace Potentials {
 
 	void OhmicRetardingPotential::doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
 		first = 0;
-		nelec = *nelecPtr;
-		prefactor = new double[nelec];
-		double* energies = new double[nelec];
+		nElec = *nelecPtr;
+		prefactor = new double[nElec];
+		double* energies = new double[nElec];
 		double* v0w = new double[nPts];
 		totPot->getV(0, v0w, kin);
-		WfcToRho::calcEnergies(nelec, nPts, dx, psi, v0w, kin, energies);
-		wght->calcWeights(nelec, energies, prefactor);
+		WfcToRho::calcEnergies(nElec, nPts, dx, psi, v0w, kin, energies);
+		wght->calcWeights(nElec, energies, prefactor);
 		delete[] energies;
 		delete[] v0w;
 	}

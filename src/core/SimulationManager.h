@@ -15,7 +15,7 @@ private:
 	KineticOperators::KineticOperator_FDM* kin_fdm;
 	double *ts, maxT, dt, dx;
 	double **vs, *spatialDamp;
-	int nPts, index, nelec;
+	int nPts, index, nElec;
 	std::function <void(int)> progCallback;
 	std::complex<double> *scratch1, *scratch2;
 	double getTotalEnergy(std::complex<double> * psi, double * v);

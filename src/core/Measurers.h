@@ -395,7 +395,7 @@ namespace Measurers {
 		public Measurer {
 	private:
 		std::fstream fil;
-		int pos, nelec, *nelecPtr, nsamp, first=1;
+		int pos, nElec, *nelecPtr, nsamp, first=1;
 		int index = 24;
 		int vdNum;
 		int celec;
@@ -407,7 +407,7 @@ namespace Measurers {
 	public:
 		int isHeavy() { return 0; };
 		int getIndex() { return index; };
-		VDFluxSpec(int vdPos, int vdNum, int* nelec, int nsamp, double emax, double tmax, const char* name, const char* fol);
+		VDFluxSpec(int vdPos, int vdNum, int* nElec, int nsamp, double emax, double tmax, const char* name, const char* fol);
 		~VDFluxSpec();
 		int measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin);
 	};
@@ -489,14 +489,14 @@ namespace Measurers {
 		std::fstream fil;
 		int index = 22;
 		int first = 1;
-		int* nelec;
-		const char* fname = "nelec.dat";
+		int* nElec;
+		const char* fname = "nElec.dat";
 		char* nfil;
 		void terminate();
 	public:
 		int isHeavy() { return 0; };
 		int getIndex() { return index; };
-		ElectronNumber(int* nelec, const char* fol);
+		ElectronNumber(int* nElec, const char* fol);
 		~ElectronNumber();
 		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
 	};
@@ -576,6 +576,6 @@ namespace Measurers {
 
 		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
 
-		int measureMany(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin, int nelec, int nPts);
+		int measureMany(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin, int nElec, int nPts);
 	};
 }

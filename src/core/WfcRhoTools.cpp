@@ -2,13 +2,13 @@
 #include "fftw3.h"
 
 namespace WfcToRho {
-	void calcEnergies(int nelec, int nPts, double dx, std::complex<double>* psi, double* totPot, KineticOperators::KineticOperator* kin, double* energies) {
-		if (nelec < 1) {
+	void calcEnergies(int nElec, int nPts, double dx, std::complex<double>* psi, double* totPot, KineticOperators::KineticOperator* kin, double* energies) {
+		if (nElec < 1) {
 			std::cout << "calcEnergies: Number of electrons is not finite! Failed to initialize." << std::endl;
 			throw -1;
 		}
 		double* rho = new double[nPts];
-		for (int i = 0; i < nelec; i++) {
+		for (int i = 0; i < nElec; i++) {
 			vtls::normSqr(nPts, &psi[i * nPts], rho);
 			energies[i] = vtlsInt::rSumMul(nPts, rho, totPot, dx) + kin->evaluateKineticEnergy(&psi[i*nPts]);
 			//potential energy + kinetic energy
@@ -17,10 +17,10 @@ namespace WfcToRho {
 	}
 
 
-	void FermiGasDistro::calcWeights(int nelec, double* energies, double* weights) {
+	void FermiGasDistro::calcWeights(int nElec, double* energies, double* weights) {
 		double minE = energies[0], maxE = energies[0];
 		//Find min/max energy
-		for (int i = 0; i < nelec; i++) {
+		for (int i = 0; i < nElec; i++) {
 			if (energies[i] > maxE)
 				maxE = energies[i];
 			if (energies[i] < minE)
@@ -28,15 +28,15 @@ namespace WfcToRho {
 		}
 		//Find center of Fermi slab, and set new 0-energy accoridngly, and convert to Fermi energy difference
 		double bottom = (maxE + minE) / 2 - ef / 2;
-		for (int i = 0; i < nelec; i++)
+		for (int i = 0; i < nElec; i++)
 			weights[i] = ef - (energies[i] - bottom);
 		//Get factored prefactor
 		double fact = 0;
-		for (int i = 0; i < nelec; i++)
+		for (int i = 0; i < nElec; i++)
 			fact += weights[i];
-		fact = 2 / (3 * PhysCon::pi) * PhysCon::me * ef / (PhysCon::hbar * PhysCon::hbar) * nelec / fact;
+		fact = 2 / (3 * PhysCon::pi) * PhysCon::me * ef / (PhysCon::hbar * PhysCon::hbar) * nElec / fact;
 		//Combine factored prefactor with energy difference
-		for (int i = 0; i < nelec; i++)
+		for (int i = 0; i < nElec; i++)
 			weights[i] *= fact;
 	}
 
@@ -65,26 +65,26 @@ namespace WfcToRho {
 		delete[] fE;
 	}
 
-	void FromDOS::calcWeights(int nelec, double* energies, double* weights) {
+	void FromDOS::calcWeights(int nElec, double* energies, double* weights) {
 		//approximate effective width of well... will need to be reconsidered if using non square-ish wells
 		//corrects for lost normalized density for larger wells (densities should be O(1))
-		//double leff = PhysCon::hbar * 2.0 * PhysCon::pi * nelec / (2.0 * std::sqrt(2.0 * ef * PhysCon::me));
+		//double leff = PhysCon::hbar * 2.0 * PhysCon::pi * nElec / (2.0 * std::sqrt(2.0 * ef * PhysCon::me));
 
-		if (nelec == 1) {
+		if (nElec == 1) {
 			std::cout << "FromDOS: Only single electron provided, weight set to total DOS from energies[0]-ef to energies[0]" << std::endl;
 			weights[0] = leff * (dosISpline(energies[0]) - dosISpline(energies[0]-ef));
 			return;
 		}
 
 		//sort energy
-		int* idx = new int[nelec];
-		for (int i = 0; i < nelec; i++)
+		int* idx = new int[nElec];
+		for (int i = 0; i < nElec; i++)
 			idx[i] = i;
-		vtls::insertSort_idxs(nelec, energies, idx);
+		vtls::insertSort_idxs(nElec, energies, idx);
 
 		//represented energies are half-way between adjacent energies
 		//eg, if we have energy states E = 0, 1, 3, then the state of energy 1 represents energies 2 <- 0.5
-		for (int i = 1; i < nelec - 1; i++) {
+		for (int i = 1; i < nElec - 1; i++) {
 			weights[idx[i]] = leff * (dosISpline((energies[i] + energies[i + 1]) / 2.0) - dosISpline((energies[i] + energies[i - 1]) / 2.0));
 		}
 
@@ -93,7 +93,7 @@ namespace WfcToRho {
 		weights[idx[0]] = leff * (dosISpline((energies[0] + energies[1]) / 2.0) - dosISpline((3.0 * energies[0] - energies[1]) / 2.0));
 
 		//the top state is similar to the bottom state
-		weights[idx[nelec - 1]] = leff * (dosISpline((3.0 * energies[nelec - 1] - energies[nelec - 2]) / 2.0) - dosISpline((energies[nelec - 1] + energies[nelec - 2]) / 2.0));
+		weights[idx[nElec - 1]] = leff * (dosISpline((3.0 * energies[nElec - 1] - energies[nElec - 2]) / 2.0) - dosISpline((energies[nElec - 1] + energies[nElec - 2]) / 2.0));
 
 		delete[] idx;
 	}
@@ -103,17 +103,17 @@ namespace WfcToRho {
 			delete[] psi2;
 	}
 
-	void DirectDensity::calcRho(int nPts, int nelec, double dx, double* weights, std::complex<double>* psi, double* rho) {
+	void DirectDensity::calcRho(int nPts, int nElec, double dx, double* weights, std::complex<double>* psi, double* rho) {
 		if (first) {
 			if(psi2)
 				delete[] psi2;
-			psi2 = new double[nPts * nelec];
+			psi2 = new double[nPts * nElec];
 			first = 0;
 		}
 
 		std::fill_n(rho, nPts, 0);
-		vtls::normSqr(nPts * nelec, psi, psi2);
-		for (int i = 0; i < nelec; i++) {
+		vtls::normSqr(nPts * nElec, psi, psi2);
+		for (int i = 0; i < nElec; i++) {
 			double pref = weights[i];
 			for (int j = 0; j < nPts; j++)
 				rho[j] += psi2[i * nPts + j] * pref;
@@ -128,14 +128,14 @@ namespace WfcToRho {
 		delete conv;
 	}
 
-	void GaussianSmoothedDensity::calcRho(int nPts, int nelec, double dx, double* weights, std::complex<double>* psi, double* rho) {
+	void GaussianSmoothedDensity::calcRho(int nPts, int nElec, double dx, double* weights, std::complex<double>* psi, double* rho) {
 		if (first) {
 			//Initialize variables
 			if(psi2)
 				fftw_free(psi2);
 			if(tempRho)
 				fftw_free(tempRho);
-			psi2 = (double*)fftw_malloc(sizeof(double)*nPts*nelec);
+			psi2 = (double*)fftw_malloc(sizeof(double)*nPts*nElec);
 			double* mask = (double*)fftw_malloc(sizeof(double)*nPts);
 			tempRho = (double*)fftw_malloc(sizeof(double)*nPts);
 			first = 0;
@@ -155,8 +155,8 @@ namespace WfcToRho {
 		}
 
 		std::fill_n(tempRho, nPts, 0);
-		vtls::normSqr(nPts * nelec, psi, psi2);
-		for (int i = 0; i < nelec; i++) {
+		vtls::normSqr(nPts * nElec, psi, psi2);
+		for (int i = 0; i < nElec; i++) {
 			double pref = weights[i];
 			for (int j = 0; j < nPts; j++)
 				tempRho[j] += psi2[i * nPts + j] * pref;

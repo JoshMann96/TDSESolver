@@ -52,8 +52,8 @@ namespace Measurers {
 	void DoubleConst::terminate() {}
 
 
-	ElectronNumber::ElectronNumber(int* nelec, const char* fol)
-		: nelec(nelec) {
+	ElectronNumber::ElectronNumber(int* nElec, const char* fol)
+		: nElec(nElec) {
 			int l1 = std::strlen(fol), l2 = std::strlen(fname);
 			nfil = new char[l1 + l2 + 1];
 			strncpy(nfil, fol, l1);
@@ -76,7 +76,7 @@ namespace Measurers {
 			}
 
 			fil.write(reinterpret_cast<char*>(&index), sizeof(int));
-			fil.write(reinterpret_cast<char*>(&(*nelec)), sizeof(int));
+			fil.write(reinterpret_cast<char*>(&(*nElec)), sizeof(int));
 		}
 		
 		return 1; 
@@ -892,11 +892,11 @@ namespace Measurers {
 	}
 
 
-	VDFluxSpec::VDFluxSpec(int vdPos, int vdNum, int* nelec, int nsamp, double emax, double tmax, const char* name, const char* fol) {
+	VDFluxSpec::VDFluxSpec(int vdPos, int vdNum, int* nElec, int nsamp, double emax, double tmax, const char* name, const char* fol) {
 		VDFluxSpec::pos = vdPos;
 		VDFluxSpec::vdNum = vdNum;
 		VDFluxSpec::dw = emax / PhysCon::hbar / nsamp;
-		VDFluxSpec::nelecPtr = nelec;
+		VDFluxSpec::nelecPtr = nElec;
 		VDFluxSpec::nsamp = nsamp;
 		VDFluxSpec::tmax = tmax;
 
@@ -938,11 +938,11 @@ namespace Measurers {
 
 	int VDFluxSpec::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) {
 		if (first) {
-			nelec = *nelecPtr;
+			nElec = *nelecPtr;
 
-			wfcs0 = new std::complex<double>[nsamp * nelec];
-			wfcs1 = new std::complex<double>[nsamp * nelec];
-			for (int i = 0; i < nsamp * nelec; i++) {
+			wfcs0 = new std::complex<double>[nsamp * nElec];
+			wfcs1 = new std::complex<double>[nsamp * nElec];
+			for (int i = 0; i < nsamp * nElec; i++) {
 				wfcs0[i] = 0;
 				wfcs1[i] = 0;
 			}
@@ -986,7 +986,7 @@ namespace Measurers {
 			wfcs1[celec * nsamp + i] += psi[pos+1] * phss[i];
 		}*/
 		celec++;
-		if (celec == nelec){
+		if (celec == nElec){
 			celec = 0;
 		}
 
@@ -994,8 +994,8 @@ namespace Measurers {
 	}
 
 	void VDFluxSpec::terminate() {
-		fil.write(reinterpret_cast<char*>(&wfcs0[0]), nelec * nsamp * sizeof(std::complex<double>));
-		fil.write(reinterpret_cast<char*>(&wfcs1[0]), nelec * nsamp * sizeof(std::complex<double>));
+		fil.write(reinterpret_cast<char*>(&wfcs0[0]), nElec * nsamp * sizeof(std::complex<double>));
+		fil.write(reinterpret_cast<char*>(&wfcs1[0]), nElec * nsamp * sizeof(std::complex<double>));
 		fil.close();
 
 		delete[] wfcs0;
@@ -1164,14 +1164,14 @@ namespace Measurers {
 	int WfcRhoWeights::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator * kin) {
 		if (first) {
 			first = 0;
-			int nelec = *nelecPtr;
-			fil.write(reinterpret_cast<char*>(&nelec), sizeof(int));
-			double* energies = new double[nelec];
-			double* wghts = new double[nelec];
-			WfcToRho::calcEnergies(nelec, nPts, dx, psi, v, kin, energies);
-			wght->calcWeights(nelec, energies, wghts);
+			int nElec = *nelecPtr;
+			fil.write(reinterpret_cast<char*>(&nElec), sizeof(int));
+			double* energies = new double[nElec];
+			double* wghts = new double[nElec];
+			WfcToRho::calcEnergies(nElec, nPts, dx, psi, v, kin, energies);
+			wght->calcWeights(nElec, energies, wghts);
 
-			fil.write(reinterpret_cast<char*>(&wghts[0]), sizeof(double)* nelec);
+			fil.write(reinterpret_cast<char*>(&wghts[0]), sizeof(double)* nElec);
 
 			delete[] energies;
 			delete[] wghts;
@@ -1242,9 +1242,9 @@ namespace Measurers {
 		return 0;
 	}
 
-	int MeasurementManager::measureMany(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin, int nelec, int nPts){
+	int MeasurementManager::measureMany(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin, int nElec, int nPts){
 		for ( auto it = meas.begin(); it != meas.end(); ){
-			for(int j = 0; j < nelec; j++){
+			for(int j = 0; j < nElec; j++){
 				if( (*it)->measure(&psi[nPts*j], v, t, kin) == 1) {
 					(*it)->kill();
 					it = meas.erase(it);
@@ -1255,7 +1255,7 @@ namespace Measurers {
 			++it;
 		}
 		/*for(int i = meas.size()-1; i>=0; i--){
-			for(int j = 0; j < nelec; j++){
+			for(int j = 0; j < nElec; j++){
 				if (meas[i]->measure(&psi[nPts*j], v, t, kin) == 1){
 					meas[i]->kill();
 					meas.erase(meas.begin() + i);

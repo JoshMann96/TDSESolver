@@ -26,7 +26,7 @@ private:
 	char * fol;
 	int n;
 	std::string inputText = "";
-	int* nelec = new int[1];
+	int* nElec = new int[1];
 	//std::mutex* mtx;
 	int mpiJob;
 	

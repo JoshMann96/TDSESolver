@@ -33,8 +33,8 @@ namespace KineticOperators {
 		fftw_plan_mutex.unlock();
 	}
 
-	void GenDisp_PSM::stepOS_U2TU(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nelec) {
-		initializeAllFFT(nelec);
+	void GenDisp_PSM::stepOS_U2TU(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec) {
+		initializeAllFFT(nElec);
 
 		std::complex<double> vcnst = -PhysCon::im * dt / PhysCon::hbar / 2.0;
 #pragma omp parallel for
@@ -42,7 +42,7 @@ namespace KineticOperators {
 			osPotentialPhase[i] = std::exp(vcnst * v[i]) * spatialDamp[i];
 
 #pragma omp parallel for
-		for (int i = 0; i < nelec; i++) {
+		for (int i = 0; i < nElec; i++) {
 			for (int j = 0; j < nPts; j++) {
 				targ[i * nPts + j] = psi0[i * nPts + j] * osPotentialPhase[j];
 			}
@@ -53,7 +53,7 @@ namespace KineticOperators {
 		executeAllFFTForward(targ);
 
 #pragma omp parallel for
-		for (int i = 0; i < nelec; i++) {
+		for (int i = 0; i < nElec; i++) {
 			for (int j = 0; j < nPts; j++) {
 				targ[i * nPts + j] *= osKineticPhase[j];
 			}
@@ -64,7 +64,7 @@ namespace KineticOperators {
 
 		//Apply half of phase contribution from potential, apply DFT normalization
 #pragma omp parallel for
-		for (int i = 0; i < nelec; i++) {
+		for (int i = 0; i < nElec; i++) {
 			for (int j = 0; j < nPts; j++) {
 				targ[i * nPts + j] *= osPotentialPhase[j];
 			}
@@ -72,8 +72,8 @@ namespace KineticOperators {
 
 	}
 
-	void GenDisp_PSM::stepOS_UW2T(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nelec) {
-		initializeAllFFT(nelec);
+	void GenDisp_PSM::stepOS_UW2T(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec) {
+		initializeAllFFT(nElec);
 
 		std::complex<double> vcnst = -PhysCon::im * dt / PhysCon::hbar / 2.0;
 #pragma omp parallel for
@@ -81,7 +81,7 @@ namespace KineticOperators {
 			osPotentialPhase[i] = std::exp(vcnst * v[i]) * spatialDamp[i];
 
 #pragma omp parallel for
-		for (int i = 0; i < nelec; i++) {
+		for (int i = 0; i < nElec; i++) {
 			for (int j = 0; j < nPts; j++) {
 				targ[i * nPts + j] = psi0[i * nPts + j] * osPotentialPhase[j];
 			}
@@ -92,7 +92,7 @@ namespace KineticOperators {
 		executeAllFFTForward(targ);
 
 #pragma omp parallel for
-		for (int i = 0; i < nelec; i++) {
+		for (int i = 0; i < nElec; i++) {
 			for (int j = 0; j < nPts; j++) {
 				targ[i * nPts + j] *= osKineticPhase[j];
 			}
@@ -102,25 +102,25 @@ namespace KineticOperators {
 		executeAllFFTBackward(targ);
 	}
 
-	void GenDisp_PSM::stepOS_UW(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nelec) {
+	void GenDisp_PSM::stepOS_UW(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec) {
 		std::complex<double> vcnst = -PhysCon::im * dt / PhysCon::hbar / 2.0;
 #pragma omp parallel for
 		for (int i = 0; i < nPts; i++)
 			osPotentialPhase[i] = std::exp(vcnst * v[i]) * spatialDamp[i];
 
 #pragma omp parallel for
-		for (int i = 0; i < nelec; i++) {
+		for (int i = 0; i < nElec; i++) {
 			for (int j = 0; j < nPts; j++) {
 				targ[i * nPts + j] = psi0[i * nPts + j] * osPotentialPhase[j];
 			}
 		}
 	}
 
-	void GenDisp_PSM::initializeAllFFT(int nelec) {
-		if (firstStepAll || GenDisp_PSM::nelec != nelec) {
-			GenDisp_PSM::nelec = nelec;
+	void GenDisp_PSM::initializeAllFFT(int nElec) {
+		if (firstStepAll || GenDisp_PSM::nElec != nElec) {
+			GenDisp_PSM::nElec = nElec;
 			/*DftiCreateDescriptor(&dftiHandle, DFTI_DOUBLE, DFTI_COMPLEX, 1, nPts);
-			DftiSetValue(dftiHandle, DFTI_NUMBER_OF_TRANSFORMS, nelec);
+			DftiSetValue(dftiHandle, DFTI_NUMBER_OF_TRANSFORMS, nElec);
 			DftiSetValue(dftiHandle, DFTI_INPUT_DISTANCE, nPts);
 			DftiSetValue(dftiHandle, DFTI_BACKWARD_SCALE, 1.0 / nPts);
 			//DftiSetValue(dftiHandle, DFTI_THREAD_LIMIT, numThreads);
@@ -130,7 +130,7 @@ namespace KineticOperators {
 			fftw_plan_mutex.lock();
 
 			//initialize FFTW for performance, find best algo
-			std::complex<double>* test = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nelec);
+			std::complex<double>* test = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nElec);
 			if(fftwAllForward)
 				fftw_destroy_plan(fftwAllForward); fftwAllForward=NULL;
 			if(fftwAllBackward)
@@ -139,8 +139,8 @@ namespace KineticOperators {
 			fftw_plan_with_nthreads(omp_get_max_threads());
 			//std::cout << "Assigned FFTW threads: " << fftw_planner_nthreads() << std:: endl;
 
-			fftwAllForward = fftw_plan_many_dft(1, &nPts, nelec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_FORWARD, MULTIELEC_FFTW_POLICY);
-			fftwAllBackward = fftw_plan_many_dft(1, &nPts, nelec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_BACKWARD, MULTIELEC_FFTW_POLICY);
+			fftwAllForward = fftw_plan_many_dft(1, &nPts, nElec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_FORWARD, MULTIELEC_FFTW_POLICY);
+			fftwAllBackward = fftw_plan_many_dft(1, &nPts, nElec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_BACKWARD, MULTIELEC_FFTW_POLICY);
 			fftw_free(test);
 
 			fftw_plan_mutex.unlock();
@@ -202,7 +202,7 @@ namespace KineticOperators {
 	void GenDisp_PSM::executeAllFFTBackward(std::complex<double>* targ){
 		fftw_execute_dft(fftwAllBackward, reinterpret_cast<fftw_complex*>(targ), reinterpret_cast<fftw_complex*>(targ));
 #pragma omp parallel for
-		for(int i = 0; i < nelec; i++)
+		for(int i = 0; i < nElec; i++)
 			vtls::scaMulArray(nPts, 1.0/nPts, &targ[i*nPts]);
 	}
 
@@ -277,7 +277,7 @@ namespace KineticOperators {
 
 		clearOpMat();
 
-		nelec = nEigs[0];
+		nElec = nEigs[0];
 
 		if (work)
 			fftw_free(work); work = nullptr;
@@ -389,8 +389,8 @@ namespace KineticOperators {
 		fftw_plan_mutex.unlock();
 	}
 
-	void NonUnifGenDisp_PSM::stepOS_U2TU(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nelec) {
-		initializeAllFFT(nelec);
+	void NonUnifGenDisp_PSM::stepOS_U2TU(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec) {
+		initializeAllFFT(nElec);
 
 		std::complex<double> vcnst = -PhysCon::im * dt / PhysCon::hbar / 2.0;
 #pragma omp parallel for
@@ -398,7 +398,7 @@ namespace KineticOperators {
 			osPotentialPhase[i] = std::exp(vcnst * v[i]) * std::sqrt(spatialDamp[i]);
 
 #pragma omp parallel for collapse(2)
-		for (int i = 0; i < nelec; i++) {
+		for (int i = 0; i < nElec; i++) {
 			for (int j = 0; j < nPts; j++) {
 				targ[i * nPts + j] = psi0[i * nPts + j] * osPotentialPhase[j];
 			}
@@ -407,49 +407,49 @@ namespace KineticOperators {
 		//get original norm if requested
 		if (forceNorm)
 #pragma omp parallel for
-			for (int i = 0; i < nelec; i++)
+			for (int i = 0; i < nElec; i++)
 				norms[i] = vtls::getNorm(nPts, &targ[i*nPts], dx);
 
 		//Apply each order of kinetic exponential
 		//DftiComputeForward(dftiHandle, targ);
 		executeAllFFTForward(targ);
 
-		vtls::copyArray(nPts * nelec, targ, tempPsiCum);
+		vtls::copyArray(nPts * nElec, targ, tempPsiCum);
 		for (int o = 1; o <= expOrder; o++) {
 			for (int d = 0; d < nDisp; d++) {
 				//apply half current dispersion kinetic energy
 #pragma omp parallel for
-				for (int i = 0; i < nelec; i++)
-					vtls::seqMulArrays(nPts, &osKineticEnergy[d * nPts], &tempPsiCum[i * nPts], &tempPsi[i * nPts + d * nPts * nelec]);
+				for (int i = 0; i < nElec; i++)
+					vtls::seqMulArrays(nPts, &osKineticEnergy[d * nPts], &tempPsiCum[i * nPts], &tempPsi[i * nPts + d * nPts * nElec]);
 
 				//back to real space
-				//DftiComputeBackward(dftiHandle, &tempPsi[d * nPts * nelec]);
-				executeAllFFTBackward(&tempPsi[d * nPts * nelec]);
+				//DftiComputeBackward(dftiHandle, &tempPsi[d * nPts * nElec]);
+				executeAllFFTBackward(&tempPsi[d * nPts * nElec]);
 				//apply mask
 #pragma omp parallel for
-				for (int i = 0; i < nelec; i++)
-					vtls::seqMulArrays(nPts, &osKineticMask[d * nPts], &tempPsi[i * nPts + d * nPts * nelec]);
+				for (int i = 0; i < nElec; i++)
+					vtls::seqMulArrays(nPts, &osKineticMask[d * nPts], &tempPsi[i * nPts + d * nPts * nElec]);
 
 				//back to recip space
-				//DftiComputeForward(dftiHandle, &tempPsi[d * nPts * nelec]);
-				executeAllFFTForward(&tempPsi[d * nPts * nelec]);
+				//DftiComputeForward(dftiHandle, &tempPsi[d * nPts * nElec]);
+				executeAllFFTForward(&tempPsi[d * nPts * nElec]);
 				//apply rest of kinetic energy
 #pragma omp parallel for
-				for (int i = 0; i < nelec; i++)
-					vtls::seqMulArrays(nPts, &osKineticEnergy[d * nPts], &tempPsi[i * nPts + d * nPts * nelec]);
+				for (int i = 0; i < nElec; i++)
+					vtls::seqMulArrays(nPts, &osKineticEnergy[d * nPts], &tempPsi[i * nPts + d * nPts * nElec]);
 			}
 			//reset cumulative psi to first contribution
-			vtls::copyArray(nPts * nelec, tempPsi, tempPsiCum);
+			vtls::copyArray(nPts * nElec, tempPsi, tempPsiCum);
 
 			//combine all the other new psi components
 			for (int d = 1; d < nDisp; d++)
-				vtls::addArrays(nPts * nelec, &tempPsi[d * nPts * nelec], tempPsiCum);
+				vtls::addArrays(nPts * nElec, &tempPsi[d * nPts * nElec], tempPsiCum);
 
 			//apply factor (becomes factorial with multiple applications)
-			vtls::scaMulArray(nPts * nelec, (-PhysCon::im * dt / PhysCon::hbar) / (double)o, tempPsiCum);
+			vtls::scaMulArray(nPts * nElec, (-PhysCon::im * dt / PhysCon::hbar) / (double)o, tempPsiCum);
 
 			//and add contribution to result
-			vtls::addArrays(nPts * nelec, tempPsiCum, targ);
+			vtls::addArrays(nPts * nElec, tempPsiCum, targ);
 		}
 
 		//DftiComputeBackward(dftiHandle, targ);
@@ -457,20 +457,20 @@ namespace KineticOperators {
 		//restore norm if requested, else apply DFT normalization
 		if (forceNorm)
 #pragma omp parallel for
-			for (int i = 0; i < nelec; i++)
+			for (int i = 0; i < nElec; i++)
 				vtls::setNorm(nPts, &targ[i * nPts], dx, norms[i]);
 
 		//Apply half of phase contribution from potential
 #pragma omp parallel for collapse(2)
-		for (int i = 0; i < nelec; i++) {
+		for (int i = 0; i < nElec; i++) {
 			for (int j = 0; j < nPts; j++) {
 				targ[i * nPts + j] *= osPotentialPhase[j];
 			}
 		}
 	}
 
-	void NonUnifGenDisp_PSM::stepOS_UW2T(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nelec) {
-		initializeAllFFT(nelec);
+	void NonUnifGenDisp_PSM::stepOS_UW2T(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec) {
+		initializeAllFFT(nElec);
 
 		std::complex<double> vcnst = -PhysCon::im * dt / PhysCon::hbar / 2.0;
 #pragma omp parallel for
@@ -478,7 +478,7 @@ namespace KineticOperators {
 			osPotentialPhase[i] = std::exp(vcnst * v[i]) * std::sqrt(spatialDamp[i]);
 
 #pragma omp parallel for
-		for (int i = 0; i < nelec; i++) {
+		for (int i = 0; i < nElec; i++) {
 			for (int j = 0; j < nPts; j++) {
 				targ[i * nPts + j] = psi0[i * nPts + j] * osPotentialPhase[j];
 			}
@@ -487,40 +487,40 @@ namespace KineticOperators {
 		//get original norm if requested
 		if (forceNorm)
 #pragma omp parallel for
-			for (int i = 0; i < nelec; i++)
+			for (int i = 0; i < nElec; i++)
 				norms[i] = vtls::getNorm(nPts, &targ[i * nPts], dx);
 
 		//Apply each order of kinetic exponential
 		//DftiComputeForward(dftiHandle, targ);
 		executeAllFFTForward(targ);
-		vtls::copyArray(nPts * nelec, targ, tempPsiCum);
+		vtls::copyArray(nPts * nElec, targ, tempPsiCum);
 		for (int o = 1; o <= expOrder; o++) {
 			for (int d = 0; d < nDisp; d++) {
 				//apply half current dispersion kinetic energy
-				for (int i = 0; i < nelec; i++)
-					vtls::seqMulArrays(nPts, &osKineticEnergy[d * nPts], &tempPsiCum[i * nPts], &tempPsi[i * nPts + d * nPts * nelec]);
+				for (int i = 0; i < nElec; i++)
+					vtls::seqMulArrays(nPts, &osKineticEnergy[d * nPts], &tempPsiCum[i * nPts], &tempPsi[i * nPts + d * nPts * nElec]);
 				//back to real space
-				//DftiComputeBackward(dftiHandle, &tempPsi[d * nPts * nelec]);
-				executeAllFFTBackward(&tempPsi[d * nPts * nelec]);
+				//DftiComputeBackward(dftiHandle, &tempPsi[d * nPts * nElec]);
+				executeAllFFTBackward(&tempPsi[d * nPts * nElec]);
 				//apply mask
-				for (int i = 0; i < nelec; i++)
-					vtls::seqMulArrays(nPts, &osKineticMask[d * nPts], &tempPsi[i * nPts + d * nPts * nelec]);
+				for (int i = 0; i < nElec; i++)
+					vtls::seqMulArrays(nPts, &osKineticMask[d * nPts], &tempPsi[i * nPts + d * nPts * nElec]);
 				//back to recip space
-				//DftiComputeForward(dftiHandle, &tempPsi[d * nPts * nelec]);
-				executeAllFFTForward(&tempPsi[d * nPts * nelec]);
+				//DftiComputeForward(dftiHandle, &tempPsi[d * nPts * nElec]);
+				executeAllFFTForward(&tempPsi[d * nPts * nElec]);
 				//apply rest of kinetic energy
-				for (int i = 0; i < nelec; i++)
-					vtls::seqMulArrays(nPts, &osKineticEnergy[d * nPts], &tempPsi[i * nPts + d * nPts * nelec]);
+				for (int i = 0; i < nElec; i++)
+					vtls::seqMulArrays(nPts, &osKineticEnergy[d * nPts], &tempPsi[i * nPts + d * nPts * nElec]);
 			}
 			//reset cumulative psi to first contribution
-			vtls::copyArray(nPts * nelec, tempPsi, tempPsiCum);
+			vtls::copyArray(nPts * nElec, tempPsi, tempPsiCum);
 			//combine all the other new psi components
 			for (int d = 1; d < nDisp; d++)
-				vtls::addArrays(nPts * nelec, &tempPsi[d * nPts * nelec], tempPsiCum);
+				vtls::addArrays(nPts * nElec, &tempPsi[d * nPts * nElec], tempPsiCum);
 			//apply factor (becomes factorial with multiple applications)
-			vtls::scaMulArray(nPts * nelec, (-PhysCon::im * dt / PhysCon::hbar) / (double)o, tempPsiCum);
+			vtls::scaMulArray(nPts * nElec, (-PhysCon::im * dt / PhysCon::hbar) / (double)o, tempPsiCum);
 			//and add contribution to result
-			vtls::addArrays(nPts * nelec, tempPsiCum, targ);
+			vtls::addArrays(nPts * nElec, tempPsiCum, targ);
 		}
 
 		//DftiComputeBackward(dftiHandle, targ);
@@ -529,29 +529,29 @@ namespace KineticOperators {
 		//restore norm if requested
 		if (forceNorm)
 #pragma omp parallel for
-			for (int i = 0; i < nelec; i++)
+			for (int i = 0; i < nElec; i++)
 				vtls::setNorm(nPts, &targ[i * nPts], dx, norms[i]);
 	}
 
-	void NonUnifGenDisp_PSM::stepOS_UW(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nelec) {
+	void NonUnifGenDisp_PSM::stepOS_UW(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec) {
 		std::complex<double> vcnst = -PhysCon::im * dt / PhysCon::hbar / 2.0;
 #pragma omp parallel for
 		for (int i = 0; i < nPts; i++)
 			osPotentialPhase[i] = std::exp(vcnst * v[i]) * std::sqrt(spatialDamp[i]);
 
 #pragma omp parallel for
-		for (int i = 0; i < nelec; i++) {
+		for (int i = 0; i < nElec; i++) {
 			for (int j = 0; j < nPts; j++) {
 				targ[i * nPts + j] = psi0[i * nPts + j] * osPotentialPhase[j];
 			}
 		}
 	}
 
-	void NonUnifGenDisp_PSM::initializeAllFFT(int nelec) {
-		if (firstStepAll || NonUnifGenDisp_PSM::nelec != nelec) {
-			NonUnifGenDisp_PSM::nelec = nelec;
+	void NonUnifGenDisp_PSM::initializeAllFFT(int nElec) {
+		if (firstStepAll || NonUnifGenDisp_PSM::nElec != nElec) {
+			NonUnifGenDisp_PSM::nElec = nElec;
 			/*DftiCreateDescriptor(&dftiHandle, DFTI_DOUBLE, DFTI_COMPLEX, 1, nPts);
-			DftiSetValue(dftiHandle, DFTI_NUMBER_OF_TRANSFORMS, nelec);
+			DftiSetValue(dftiHandle, DFTI_NUMBER_OF_TRANSFORMS, nElec);
 			DftiSetValue(dftiHandle, DFTI_INPUT_DISTANCE, nPts);
 			DftiSetValue(dftiHandle, DFTI_BACKWARD_SCALE, 1.0 / nPts);
 			//DftiSetValue(dftiHandle, DFTI_THREAD_LIMIT, numThreads);
@@ -559,7 +559,7 @@ namespace KineticOperators {
 			
 			fftw_plan_mutex.lock();
 
-			std::complex<double>* test = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nelec);
+			std::complex<double>* test = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nElec);
 			if(fftwAllForward)
 				fftw_destroy_plan(fftwAllForward); fftwAllForward=NULL;
 			if(fftwAllBackward)
@@ -568,8 +568,8 @@ namespace KineticOperators {
 			fftw_plan_with_nthreads(omp_get_max_threads());
 			//std::cout << "Assigned FFTW threads: " << fftw_planner_nthreads() << std:: endl;
 			
-			fftwAllForward = fftw_plan_many_dft(1, &nPts, nelec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_FORWARD, MULTIELEC_FFTW_POLICY);
-			fftwAllBackward = fftw_plan_many_dft(1, &nPts, nelec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_BACKWARD, MULTIELEC_FFTW_POLICY);
+			fftwAllForward = fftw_plan_many_dft(1, &nPts, nElec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_FORWARD, MULTIELEC_FFTW_POLICY);
+			fftwAllBackward = fftw_plan_many_dft(1, &nPts, nElec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_BACKWARD, MULTIELEC_FFTW_POLICY);
 			fftw_free(test);
 			
 			fftw_plan_mutex.unlock();
@@ -584,9 +584,9 @@ namespace KineticOperators {
 				delete[] norms; norms = nullptr;
 
 			osPotentialPhase = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts);
-			tempPsi = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nelec * nDisp);
-			tempPsiCum = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nelec);
-			norms = new double[nelec];
+			tempPsi = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nElec * nDisp);
+			tempPsiCum = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nElec);
+			norms = new double[nElec];
 
 			firstStepAll = 0;
 		}
@@ -643,7 +643,7 @@ namespace KineticOperators {
 	void NonUnifGenDisp_PSM::executeAllFFTBackward(std::complex<double>* targ){
 		fftw_execute_dft(fftwAllBackward, reinterpret_cast<fftw_complex*>(targ), reinterpret_cast<fftw_complex*>(targ));
 #pragma omp parallel for
-		for(int i = 0; i < nelec; i++)
+		for(int i = 0; i < nElec; i++)
 			vtls::scaMulArray(nPts, 1.0/nPts, &targ[i*nPts]);
 	}
 
@@ -719,7 +719,7 @@ namespace KineticOperators {
 
 		clearOpMat();
 
-		nelec = nEigs[0];
+		nElec = nEigs[0];
 
 		if (work)
 			fftw_free(work); work = nullptr;

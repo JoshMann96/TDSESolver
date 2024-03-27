@@ -22,12 +22,12 @@ namespace KineticOperators {
 	public:
 		//Functions useful for updating potential immediately after kinetic phase for nonlinear systems
 		//Half potential then full kinetic (returns in real space)
-		virtual void stepOS_UW2T(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nelec) = 0;
+		virtual void stepOS_UW2T(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec) = 0;
 		//Half potential
-		virtual void stepOS_UW(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nelec) = 0;
+		virtual void stepOS_UW(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec) = 0;
 
 		//Full OSFM step
-		virtual void stepOS_U2TU(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nelec) = 0;
+		virtual void stepOS_U2TU(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec) = 0;
 	};
 
 
@@ -40,12 +40,12 @@ namespace KineticOperators {
 		~GenDisp_PSM();
 		//Functions useful for updating potential immediately after kinetic phase for nonlinear systems
 		//Half potential then full kinetic (returns in real space)
-		void stepOS_UW2T(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nelec);
+		void stepOS_UW2T(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec);
 		//Half potential
-		void stepOS_UW(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nelec);
+		void stepOS_UW(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec);
 
 		//Full OSFM step
-		void stepOS_U2TU(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nelec);
+		void stepOS_U2TU(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec);
 
 		std::complex<double>* getOperatorMatrix() {
 			calcOpMat();
@@ -71,14 +71,14 @@ namespace KineticOperators {
 		fftw_plan fftwAllForward=NULL, fftwAllBackward=NULL, fftwOneForward=NULL, fftwOneBackward=NULL;
 
 
-		int nPts, nelec;
+		int nPts, nElec;
 		std::complex<double> *osKineticPhase = nullptr, * osPotentialPhase = nullptr, *opMat = nullptr;
 		std::complex<double>* osKineticEnergy = nullptr;
 		std::complex<double>* temp1 = nullptr, *temp2 = nullptr;
 		double dx, dt;
 
 		void calcOpMat();
-		void initializeAllFFT(int nelec);
+		void initializeAllFFT(int nElec);
 		void initializeOneFFT();
 		void executeAllFFTForward(std::complex<double>* targ);
 		void executeAllFFTBackward(std::complex<double>* targ);
@@ -120,12 +120,12 @@ namespace KineticOperators {
 		~NonUnifGenDisp_PSM();
 		//Functions useful for updating potential immediately after kinetic phase for nonlinear systems
 		//Half potential then full kinetic (returns in real space)
-		void stepOS_UW2T(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nelec);
+		void stepOS_UW2T(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec);
 		//Half potential
-		void stepOS_UW(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nelec);
+		void stepOS_UW(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec);
 
 		//Full OSFM step
-		void stepOS_U2TU(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nelec);
+		void stepOS_U2TU(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec);
 
 		std::complex<double>* getOperatorMatrix() {
 			calcOpMat();
@@ -154,7 +154,7 @@ namespace KineticOperators {
 		//DFTI_DESCRIPTOR_HANDLE dftiHandle = 0, dftiHandleMat = 0, dftiHandleKin = 0;
 		fftw_plan fftwAllForward=NULL, fftwAllBackward=NULL, fftwOneForward=NULL, fftwOneBackward=NULL;
 
-		int nPts, nelec, nDisp, expOrder, forceNorm;
+		int nPts, nElec, nDisp, expOrder, forceNorm;
 		std::complex<double>* osPotentialPhase = nullptr, * opMat = nullptr;
 		std::complex<double>* osKineticEnergy = nullptr;
 		std::complex<double>* tempPsi = nullptr, *tempPsiCum = nullptr;
@@ -163,7 +163,7 @@ namespace KineticOperators {
 		double dx, dt;
 
 		void calcOpMat();
-		void initializeAllFFT(int nelec);
+		void initializeAllFFT(int nElec);
 		void initializeOneFFT();
 		void executeAllFFTForward(std::complex<double>* targ);
 		void executeAllFFTBackward(std::complex<double>* targ);

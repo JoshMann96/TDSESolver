@@ -4,12 +4,12 @@
 
 // Different ways of calculating weights (w*|psi(x)|^2 = rho(x) [e/m^3]) for density functional potentials
 namespace WfcToRho {
-	void calcEnergies(int nelec, int nPts, double dx, std::complex<double>* psi, double* totPot, KineticOperators::KineticOperator* kin, double* energies);
+	void calcEnergies(int nElec, int nPts, double dx, std::complex<double>* psi, double* totPot, KineticOperators::KineticOperator* kin, double* energies);
 
 	// Template function for Weight (will result in error if weight is needed and this is used).
 	class Weight {
 	public:
-		virtual void calcWeights(int nelec, double* energies, double* weights) = 0;
+		virtual void calcWeights(int nElec, double* energies, double* weights) = 0;
 	};
 
 	class FermiGasDistro :
@@ -19,7 +19,7 @@ namespace WfcToRho {
 		double ef;
 	public:
 		FermiGasDistro(double ef) : ef(ef) {}
-		void calcWeights(int nelec, double* energies, double* weights);
+		void calcWeights(int nElec, double* energies, double* weights);
 	};
 
 	class FromDOS :
@@ -30,12 +30,12 @@ namespace WfcToRho {
 		boost::math::interpolators::cardinal_cubic_b_spline<double> dosISpline;
 	public:
 		FromDOS(double fl, double ef, double leff, const char* fil);
-		void calcWeights(int nelec, double* energies, double* weights);
+		void calcWeights(int nElec, double* energies, double* weights);
 	};
 
 	class Density {
 	public:
-		virtual void calcRho(int nPts, int nelec, double dx, double* weights, std::complex<double>* psi, double* rho) = 0;
+		virtual void calcRho(int nPts, int nElec, double dx, double* weights, std::complex<double>* psi, double* rho) = 0;
 	};
 
 	class DirectDensity :
@@ -46,7 +46,7 @@ namespace WfcToRho {
 		double* psi2=nullptr;
 	public:
 		~DirectDensity();
-		void calcRho(int nPts, int nelec, double dx, double* weights, std::complex<double>* psi, double* rho);
+		void calcRho(int nPts, int nElec, double dx, double* weights, std::complex<double>* psi, double* rho);
 	};
 
 	class GaussianSmoothedDensity :
@@ -59,6 +59,6 @@ namespace WfcToRho {
 	public:
 		GaussianSmoothedDensity(double sig) : sig(sig) {}
 		~GaussianSmoothedDensity();
-		void calcRho(int nPts, int nelec, double dx, double* weights, std::complex<double>* psi, double* rho);
+		void calcRho(int nPts, int nElec, double dx, double* weights, std::complex<double>* psi, double* rho);
 	};
 }
