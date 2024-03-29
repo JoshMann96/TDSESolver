@@ -70,7 +70,9 @@ def runSimSweepFields(emaxs:list, lam:float=800e-9, rad:float=20e-9, ef:float=5.
     os.makedirs(data_fol, exist_ok=True)
     if data_fol[-1] != '/':
         data_fol += '/'
-        
+    
+    emaxs = list(emaxs)
+    
     paramDict = locals()
     del paramDict["callback"]
     
