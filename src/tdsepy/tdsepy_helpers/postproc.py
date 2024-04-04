@@ -73,12 +73,17 @@ def plotFluxSpectrum(fol:str, vdNum = 0, elecNum = -1, minE:float = 0, maxE:floa
         fol (str): Folder containing data.
         vdNum (int, optional): Virtual detector index. Defaults to 0.
         elecNum (int | list, optional): Selected electron states. -1 to include all, or a list to include selected states. Defaults to -1.
-        minE (int, optional) [eV]: Minimum signed kinetic energy. Defaults to 0.
+        minE (float, optional) [eV]: Minimum signed kinetic energy. Defaults to 0.
         maxE (float, optional) [eV]: Maximum signed kinetic energy. Defaults to 500 eV.
     """
     es, yld = getFluxSpectrum(fol, vdNum, minE, maxE)
     
-    yld = np.sum(yld, axis=0)
+    if type(elecNum) is list:
+        yld = np.sum(yld[np.array(elecNum), :], axis=0)
+    elif elecNum == -1:
+        yld = np.sum(yld, axis=0)
+    else:
+        yld = yld[elecNum, :]
     
     plt.semilogy(es, yld)
     
