@@ -30,11 +30,11 @@ def readData(fil:BufferedReader, dtype:Literal["int", "double", "char"], shape=1
         case "double":
             dat = np.array(np.fromfile(fil, np.float64, np.prod(shape)))
         case "char":
-            dat = np.array(np.fromfile(fil, np.byte, np.prod(shape)))
-            dat = ''.join([it for it in dat])
+            dat = np.array(np.fromfile(fil, np.ubyte, np.prod(shape)))
+            dat = ''.join([chr(it) for it in dat])
         case "complex":
             dat = np.array(np.fromfile(fil, np.double, np.prod(shape)*2))
-            dat = dat[0:2:-1] + 1.0j*dat[1:2:-1]
+            dat = dat[0:-1:2] + 1.0j*dat[1:-1:2]
     
     if np.prod(shape) == 1:
         dat = dat[0]
