@@ -20,7 +20,7 @@ _CONSTANT_DTYPES = {
     "nSteps" : "int"
 }
 
-def readData(fil:BufferedReader, dtype:Literal["int", "double"], shape=1):
+def readData(fil:BufferedReader, dtype:Literal["int", "double", "char"], shape=1):
     if shape is not tuple:
         shape = (shape)
         
@@ -29,10 +29,16 @@ def readData(fil:BufferedReader, dtype:Literal["int", "double"], shape=1):
             dat = np.array(np.fromfile(fil, np.int32, np.prod(shape)))
         case "double":
             dat = np.array(np.fromfile(fil, np.float64, np.prod(shape)))
+        case "char":
+            dat = np.array(np.fromfile(fil, np.byte, np.prod(shape)))
+            dat = ''.join([it for it in dat])
+        case "complex":
+            dat = np.array(np.fromfile(fil, np.double, np.prod(shape)*2))
+            dat = dat[0:2:-1] + 1.0j*dat[1:2:-1]
     
     if np.prod(shape) == 1:
         dat = dat[0]
-    else:
+    elif dtype != "char":
         dat = np.reshape(dat, shape)
     
     return dat
@@ -76,3 +82,17 @@ def getWghts(fol:str):
         nElec = readData(fil, "int")
         wghts = readData(fil, "double", nElec)
     return wghts, typ
+
+def getFluxSpecVD(fol:str, vdNum:int=0):
+    nElec,_ = getConstant("nElec", fol)
+    with open(combinePath(fol, f"{vdNum:d}" + "fluxspecvd.dat"), 'rb') as fil:
+        typ = readData(fil, "int")
+        readData(fil, "int") #skip VD index
+        name = readData(fil, "char", 4)
+        posIdx = readData(fil, "int", 1)
+        nSamp = readData(fil, "int", 1)
+        maxE = readData(fil, "double", 1)
+        
+        dftl = readData(fil, "complex", nElec*nSamp)
+        dftr = readData(fil, "complex", nElec*nSamp)
+    return dftl, dftr, maxE, posIdx, name, typ
