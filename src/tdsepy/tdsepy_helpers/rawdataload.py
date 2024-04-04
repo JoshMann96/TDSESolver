@@ -34,7 +34,7 @@ def readData(fil:BufferedReader, dtype:Literal["int", "double", "char"], shape=1
             dat = ''.join([chr(it) for it in dat])
         case "complex":
             dat = np.array(np.fromfile(fil, np.double, np.prod(shape)*2))
-            dat = dat[0:-1:2] + 1.0j*dat[1:-1:2]
+            dat = dat[0::2] + 1.0j*dat[1::2]
     
     if np.prod(shape) == 1:
         dat = dat[0]
@@ -93,6 +93,6 @@ def getFluxSpecVD(fol:str, vdNum:int=0):
         nSamp = readData(fil, "int", 1)
         maxE = readData(fil, "double", 1)
         
-        dftl = readData(fil, "complex", nElec*nSamp)
-        dftr = readData(fil, "complex", nElec*nSamp)
+        dftl = readData(fil, "complex", (nElec, nSamp))
+        dftr = readData(fil, "complex", (nElec, nSamp))
     return dftl, dftr, maxE, posIdx, name, typ
