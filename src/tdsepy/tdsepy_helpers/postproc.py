@@ -54,4 +54,9 @@ def getFluxSpectrum(fol:str, vdNum = 0, elecNum = -1, minE = 0, maxE:float = 500
     r = (phist*dftl - phi*dftr  )*muldiv
     l = (-phi*dftl  + phist*dftr)*muldiv
     
-    nes = np.concatenate((np.flip(ces), np.array([0]), ces))
+    es = np.concatenate((np.flip(ces), np.array([0]), ces))
+    
+    return es, yld
+    
+def plotFluxSpectrum(fol:str, vdNum = 0, elecNum = -1, minE = 0, maxE:float = 500):
+    pass
