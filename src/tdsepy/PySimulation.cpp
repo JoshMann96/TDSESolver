@@ -153,7 +153,7 @@ void init_Simulation(py::module &m) {
             width : float
                 Width of boundary)V0G0N",
             "rate"_a, "width"_a)
-        .def("addRightAbsBdy", &PySimulation::addLeftAbsBdy, R"V0G0N(
+        .def("addRightAbsBdy", &PySimulation::addRightAbsBdy, R"V0G0N(
             Adds absorptive boundary to right side of simulation.
             Decay is applied by multiplying states near boundary by a number of magnitude less than one.
             Over a chage of time Dt a stationary wavefunction will be
