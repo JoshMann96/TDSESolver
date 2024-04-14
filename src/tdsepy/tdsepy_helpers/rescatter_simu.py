@@ -215,6 +215,7 @@ def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:f
     sim.addMeas(Measurers.Basic(sim, data_fol))
     sim.addMeas(Measurers.ExpectA(sim, data_fol))
     sim.addMeas(Measurers.NElec(sim, data_fol))
+    sim.addMeas(Measurers.ExpectE0(sim, data_fol))
     if measure_density:
         sim.addMeas(Measurers.Psi2t(sim, 800, 800, data_fol))
         sim.addMeas(Measurers.Vfunct(sim, 800, 800, data_fol))

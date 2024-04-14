@@ -2,6 +2,7 @@ from io import BufferedReader
 import json
 import numpy as np
 from typing import Literal
+import os
 
 _INT_SIZE = np.dtype(np.int32).itemsize
 _DOUBLE_SIZE = np.dtype(np.float64).itemsize
@@ -96,3 +97,13 @@ def getFluxSpecVD(fol:str, vdNum:int=0):
         dftl = readData(fil, "complex", (nElec, nSamp))
         dftr = readData(fil, "complex", (nElec, nSamp))
     return dftl, dftr, maxE, posIdx, name, typ
+
+def getExpectE0(fol:str):
+    nElec,_ = getConstant("nElec", fol)
+    with open(combinePath(fol, "expectE0.dat"), 'rb') as fil:
+        typ = readData(fil, "int")
+        e0 = readData(fil, "double", nElec)
+    return e0, typ
+
+def getSubFols(basefol:str):
+    return [os.path.join(basefol, o) + "/" for o in os.listdir(basefol) if os.path.isdir(os.path.join(basefol,o))]
