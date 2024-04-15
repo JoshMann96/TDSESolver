@@ -104,6 +104,3 @@ def getExpectE0(fol:str):
         typ = readData(fil, "int")
         e0 = readData(fil, "double", nElec)
     return e0, typ
-
-def getSubFols(basefol:str):
-    return [os.path.join(basefol, o) + "/" for o in os.listdir(basefol) if os.path.isdir(os.path.join(basefol,o))]

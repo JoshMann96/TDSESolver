@@ -1,4 +1,3 @@
-import json
 from .rawdataload import *
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
@@ -19,8 +18,8 @@ def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=20, vmax:float=2
     s = plt.pcolormesh(xs, ts, np.log10(np.tensordot(wghts, dat, (0,0))), cmap=cmap, vmin=vmin, vmax=vmax)
     plt.show()
     
-def get1DFluxSpectrum(fol:str, vdNum:int = 0, minE:float = 0, maxE:float = 500):
-    """Gets the bidirectional density flux spectrum with respect to the signed kinetic energy (sgn(E) = sgn(k))
+def get1DStateFluxSpectrum(fol:str, vdNum:int = 0, minE:float = 0, maxE:float = 500):
+    """Gets the bidirectional density flux spectrum with respect to the signed kinetic energy (sgn(E) = sgn(k)) for each state.
 
     Args:
         fol (str): Folder containing data.
@@ -28,7 +27,7 @@ def get1DFluxSpectrum(fol:str, vdNum:int = 0, minE:float = 0, maxE:float = 500):
         minE (float, optional) [eV]: Minimum signed kinetic energy. Defaults to 0.
         maxE (float, optional) [eV]: Maximum signed kinetic energy. Defaults to 500.
     Returns:
-        es [eV]: Signed kinetic energy.
+        es [eV]: Signed kinetic energy, shape (nSamp).
         yld [ 1 / m^2 eV ]: Weighed bidirectional flux spectrum, shape (nElec, nSamp).
     """
     dftl, dftr, maxE_ = getFluxSpecVD(fol, vdNum)[0:3]
@@ -65,7 +64,31 @@ def get1DFluxSpectrum(fol:str, vdNum:int = 0, minE:float = 0, maxE:float = 500):
     yld = interp1d(nes, yld, axis=-1)(es)*np.broadcast_to(wghts[:,None], (len(wghts), len(es)))
     
     return es, yld
+   
+def get1DTotalFluxSpectrum(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0, maxE:float = 500):
+    """Gets the bidirectional density flux spectrum with respect to the signed kinetic energy (sgn(E) = sgn(k)) summed over all states.
+
+    Args:
+        fol (str): Folder containing data.
+        vdNum (int, optional): Virtual detector index. Defaults to 0.
+        minE (float, optional) [eV]: Minimum signed kinetic energy. Defaults to 0.
+        maxE (float, optional) [eV]: Maximum signed kinetic energy. Defaults to 500.
+    Returns:
+        es [eV]: Signed kinetic energy, shape (nSamp).
+        yld [ 1 / m^2 eV ]: Weighed bidirectional flux spectrum, shape (nSamp).
+    """
     
+    es, spc = get1DStateFluxSpectrum(fol, vdNum, minE, maxE)
+    
+    if type(elecNum) is list:
+        spc = np.sum(spc[np.array(elecNum), :], axis=0)
+    elif elecNum == -1:
+        spc = np.sum(spc, axis=0)
+    else:
+        spc = spc[elecNum, :]
+    
+    return es, spc
+
 def plot1DFluxSpectrum(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0, maxE:float = 500):
     """Plots the bidirectional density flux spectrum with respect to the signed kinetic energy (sgn(E) = sgn(k))
 
@@ -76,16 +99,9 @@ def plot1DFluxSpectrum(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0, max
         minE (float, optional) [eV]: Minimum signed kinetic energy. Defaults to 0.
         maxE (float, optional) [eV]: Maximum signed kinetic energy. Defaults to 500.
     """
-    es, yld = get1DFluxSpectrum(fol, vdNum, minE, maxE)
+    (es, spc) = get1DTotalFluxSpectrum(fol, vdNum, minE, maxE)
     
-    if type(elecNum) is list:
-        yld = np.sum(yld[np.array(elecNum), :], axis=0)
-    elif elecNum == -1:
-        yld = np.sum(yld, axis=0)
-    else:
-        yld = yld[elecNum, :]
-    
-    plt.semilogy(es, yld)
+    plt.semilogy(es, spc)
     
     plt.show()
     
@@ -101,7 +117,7 @@ def get1DStateYield(fol:str, vdNum:int = 0, minE:float = 0, maxE:float=500):
     Returns:
         yld [ 1 / m^2 ]: Weighed yield, shape (nElec).
     """    
-    es, spc = get1DFluxSpectrum(fol, vdNum, minE, maxE)
+    es, spc = get1DStateFluxSpectrum(fol, vdNum, minE, maxE)
     return np.trapz(x = es, y = spc, axis=1)
 
 def get1DTotalYield(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0, maxE:float = 500):

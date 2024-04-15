@@ -6,12 +6,125 @@ from tdsepy import *
 import numpy as np
 import scipy.constants as cons
 import json
+import time
+from mpi4py.futures import MPIPoolExecutor
+from mpi4py import MPI
 
 def pond_U(emax, lam):
     return cons.e**2 * emax**2 * lam**2 / (4* cons.m_e * (2*cons.pi*cons.c)**2)
 
 def pond_a(emax, lam):
     return cons.e * emax * lam**2 / (cons.m_e * (2*cons.pi*cons.c)**2)
+
+
+def runSimSweepFieldsMPI(name, emaxs:list, lam:float=800e-9, rad:float=20e-9, ef:float=5.51*1.602e-19, wf:float=5.1*1.602e-19, tau:float=8e-15, data_fol:str="data/", callback=None, 
+                  target_total_truncation_error:float = 0.01, min_emitted_energy:float=1.602e-19, target_elec_num:float = 50, abs_width:float=20e-9, abs_rate:float=5.2e15, min_timesteps:int=2000, measure_density:bool=True):
+    """Runs a series of rescattering simulations within a range of peak field strengths.
+        Runs multiple calculations at a time via MPI.
+        Current quantities being output:
+        nPts, nSteps, dx, dt, <a>, nElec, VDFluxSpec, Weights
+        Optional: Psi2t, Vfunct (via parameter measure_density)
+        
+        Parameters 'emax' through 'tau' are also saved as constants for each simulation.
+        
+        Parameters 'emaxs' through 'tau' are also saved as a dict in data_fol/params.json.
+        
+        All parameters are in SI units.
+
+        PARAMETERS
+        ----------
+        emaxs : list
+            Peak electric fields to sweep over.
+        lam : float 
+            Laser wavelength. Defaults to 800e-9.
+        rad : float
+            Apex radius of curvature (for collective image fields). Defaults to 20e-9.
+        ef : float
+            Fermi energy. Defaults to 5.51*1.602e-19.
+        wf : float
+            Work function. Defaults to 5.1*1.602e-19.
+        tau : float
+             Full-width half-max power. Defaults to 8e-15.
+        data_fol : str 
+            Folder to store output data in.
+            May include final '/', or not.
+            Defaults to "data/".
+        callback 
+            Callback function which must take an integer between 0 and 100, inclusive.
+            callback is called during time-stepping with the current percentage complete, as an integer. 
+            Defaults to None.
+        target_total_truncation_error : float
+            Upper bound for total relative truncation error of the wavefunction. Defaults to 0.01.
+        min_emitted_energy : float
+            Minumum emittable energy. 
+            Sets temporal length of simulation such that a particle emitted with this energy at the peak of the laser pulse reaches the rightmost boundary before timestepping stops. 
+            Defaults to 1.602e-19.
+        target_elec_num : float
+            Target number of states. 
+            Sets the width of the Jellium slab such that there are about this many 1-D states below the Fermi level. Actual number of states may deviate.
+            Defaults to 50.
+        abs_width : float
+            Width of the absorptive boundary. Defaults to 20e-9.
+        abs_rate : float
+            Rate of absorption. Defaults to 5.2e15.
+        min_timesteps : int
+            Minimum number of timesteps. 
+            Overrides target_total_truncation_error if the number of timesteps would be too few. 
+            Defaults to 2000.
+        measure_density : bool
+            Whether to use the Psi2t and Vfunct measurers. Defaults to True.
+    """   
+    
+    print("I GOT HERE 1")
+    
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    
+    print("I GOT HERE 2")
+    
+    if rank == 0:
+        os.makedirs(data_fol, exist_ok=True)
+        if data_fol[-1] != '/':
+            data_fol += '/'
+        
+        emaxs = list(emaxs)
+        
+        paramDict = locals()
+        del paramDict["callback"]
+        del paramDict["comm"]
+        del paramDict["rank"]
+        if "runSim" in paramDict.keys():
+            del paramDict["runSim"]
+        
+        
+        
+        with open(f"{data_fol}params.json", 'w') as fil:
+            json.dump(paramDict, fil)
+            
+    print("I GOT HERE 3")
+    
+    runSim = lambda i, emax : runSimTimed(i, emax, lam, rad, ef, wf, tau, data_fol, callback, target_total_truncation_error, min_emitted_energy, target_elec_num, abs_width, abs_rate, min_timesteps, measure_density)
+    
+    if name == '__main__':
+        with MPIPoolExecutor() as executor:
+            print("I GOT HERE 4")
+            
+            res = executor.starmap(runSim, enumerate(emaxs))
+            for r in res: pass
+            
+            print("I GOT HERE 5")
+
+def runSimTimed(i, emax, lam, rad, ef, wf, tau, data_fol, callback, target_total_truncation_error, min_emitted_energy, target_elec_num, abs_width, abs_rate, min_timesteps, measure_density):
+        strt = time.time()
+        runSingleSimulation(emax, lam, rad, ef, wf, tau, f"{data_fol}{i}/", callback, target_total_truncation_error, min_emitted_energy, target_elec_num, abs_width, abs_rate, min_timesteps, measure_density)
+        stop = time.time()
+        dur = stop-strt
+        
+        if dur > 3600:
+            print(f"{i:3d}:{dur/3600:.2f} h")
+        else:
+            print(f'{i:3d}{dur:.1f} s')
+        print() 
 
 def runSimSweepFields(emaxs:list, lam:float=800e-9, rad:float=20e-9, ef:float=5.51*1.602e-19, wf:float=5.1*1.602e-19, tau:float=8e-15, data_fol:str="data/", callback=None, 
                   target_total_truncation_error:float = 0.01, min_emitted_energy:float=1.602e-19, target_elec_num:float = 50, abs_width:float=20e-9, abs_rate:float=5.2e15, min_timesteps:int=2000, measure_density:bool=True):
@@ -69,6 +182,7 @@ def runSimSweepFields(emaxs:list, lam:float=800e-9, rad:float=20e-9, ef:float=5.
         measure_density : bool
             Whether to use the Psi2t and Vfunct measurers. Defaults to True.
     """    
+    
     os.makedirs(data_fol, exist_ok=True)
     if data_fol[-1] != '/':
         data_fol += '/'
@@ -81,11 +195,23 @@ def runSimSweepFields(emaxs:list, lam:float=800e-9, rad:float=20e-9, ef:float=5.
     with open(f"{data_fol}params.json", 'w') as fil:
         json.dump(paramDict, fil)
     for (i, emax) in enumerate(emaxs):
+        print(f"{i:3d}/{len(emaxs):3d}")
+        strt = time.time()
         runSingleSimulation(emax, lam, rad, ef, wf, tau, f"{data_fol}{i}/", callback, target_total_truncation_error, min_emitted_energy, target_elec_num, abs_width, abs_rate, min_timesteps, measure_density)
+        stop = time.time()
+        if callback is not None:
+            print()
+        
+        dur = stop-strt
+        if dur > 3600:
+            print(f"{dur/3600:.2f} h")
+        else:
+            print(f'{dur:.1f} s')
+        print()
     
     
 def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:float=5.51*1.602e-19, wf:float=5.1*1.602e-19, tau:float=8e-15, data_fol:str="data/", callback=None, 
-                  target_total_truncation_error:float = 0.01, min_emitted_energy:float=1.602e-19, target_elec_num:float = 50, abs_width:float=20e-9, abs_rate:float=5.2e15, min_timesteps:int=2000, measure_density:bool=True):
+                  target_total_truncation_error:float = 0.01, min_emitted_energy:float=1.602e-19, target_elec_num:float = 50, abs_width:float=20e-9, abs_rate:float=5.2e15, min_timesteps:int=2000, measure_density:bool=True, verbose:bool=False):
     """Runs a rescattering simulation while recording various quantites. 
         Current quantities being output:
         nPts, nSteps, dx, dt, <a>, nElec, VDFluxSpec, Weights
@@ -139,6 +265,11 @@ def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:f
             Whether to use the Psi2t and Vfunct measurers. Defaults to True.
     """    
     
+    
+    if verbose:
+        message = print
+    else:
+        message = lambda *args: None
     
     os.makedirs(data_fol, exist_ok=True)
     if data_fol[-1] != '/':
@@ -238,18 +369,18 @@ def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:f
 
     ### RUN SIMULATION ###
 
-    print("\tFinishing initialization...")
+    message("\tFinishing initialization...")
     sim.finishInit()
 
-    print("\tEigensolving...")
+    message("\tEigensolving...")
     sim.eigenSolve(-wf-ef, -wf)
 
-    print("\tNegating self-consistent potentials...")
+    message("\tNegating self-consistent potentials...")
     imagPot.negatePotential(sim)
     
-    print("\tSimulating...")
+    message("\tSimulating...")
     sim.runOS_UW2TUW()
 
-    print("\tDone!")
+    message("\tDone!")
 
 # /runSimulation/
