@@ -99,7 +99,7 @@ def plot1DFluxSpectrum(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0, max
         minE (float, optional) [eV]: Minimum signed kinetic energy. Defaults to 0.
         maxE (float, optional) [eV]: Maximum signed kinetic energy. Defaults to 500.
     """
-    (es, spc) = get1DTotalFluxSpectrum(fol, vdNum, minE, maxE)
+    es, spc = get1DTotalFluxSpectrum(fol, vdNum, elecNum, minE, maxE)
     
     plt.semilogy(es, spc)
     

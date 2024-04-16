@@ -185,7 +185,7 @@ def runSimSweepFields(emaxs:list, lam:float=800e-9, rad:float=20e-9, ef:float=5.
         if dur > 3600:
             print(f"{dur/3600:.2f} h")
         else:
-            print(f'{dur:.1f} s')
+            print(f'{dur:.2f} s')
         print()
     
     

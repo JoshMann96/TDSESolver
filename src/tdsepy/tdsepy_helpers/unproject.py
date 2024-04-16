@@ -17,8 +17,8 @@ import matplotlib.pyplot as pls
 def getSubFols(basefol:str):
     return [os.path.join(basefol, o) + "/" for o in os.listdir(basefol) if os.path.isdir(os.path.join(basefol,o))]
 
-def getRadialSpectrum(superfol:str, vdNum:int=0, minE:float=0, maxE:float=600, outputMaxE:float=600, 
-                      fieldMax:float=80e9, fieldProfile=lambda theta:np.cos(theta), nTheta=100, nRadial=200):
+def getRadialSpectrum(superfol:str, vdNum:int=0, minE:float=0, maxE:float=1200, outputMaxE:float=600, 
+                      fieldMax:float=80e9, fieldProfile=lambda theta:np.cos(theta), nTheta=400, nRadial=400):
     
     if outputMaxE > maxE:
         raise ValueError("outputMaxE must be less than or equal to maxE")
@@ -28,9 +28,9 @@ def getRadialSpectrum(superfol:str, vdNum:int=0, minE:float=0, maxE:float=600, o
     nFols = len(fols)
     
     #get total flux spectrum, summed over states, take log10
-    (ess, spcs) = zip(*[((res := get1DStateFluxSpectrum(fol, vdNum, minE, maxE))[0], np.log10(np.sum(res[1], axis=0).squeeze())) for fol in fols])
+    ess, spcs = zip(*[((res := get1DTotalFluxSpectrum(fol, vdNum, -1, minE, maxE))[0], np.log10(res[1])) for fol in fols])
     minSpc = min([min(spc) for spc in spcs])
-    eMaxs = [getConstant("emax", fol) for fol in fols]
+    eMaxs = [getConstant("emax", fol)[0] for fol in fols]
     
     #other stuff probably for MTE calculation, probably for other function
     #stateYlds = [get1DStateYield(fol, vdNum, minE, maxE) for fol in fols]
@@ -42,7 +42,7 @@ def getRadialSpectrum(superfol:str, vdNum:int=0, minE:float=0, maxE:float=600, o
     nR = max([len(spc) for spc in spcs])
     spc_pu = np.zeros((nFols, nR))
     eval_ponds = np.linspace(0, maxE / fieldMax**2, nR)
-    for (i,(eMax, es, spc)) in enumerate(zip(eMax, ess, spcs)):
+    for i, (eMax, es, spc) in enumerate(zip(eMaxs, ess, spcs)):
         if eMax == 0:
             spc_pu[i,:] = minSpc
         else:
@@ -50,21 +50,15 @@ def getRadialSpectrum(superfol:str, vdNum:int=0, minE:float=0, maxE:float=600, o
             spc_pu[i,:] = f(eval_ponds)
     
     #sort by field
-    sort_idx = np.argsort(eMax)
+    sort_idx = np.argsort(eMaxs)
     spc_pu = np.array(spc_pu[sort_idx,:])
-    eMax = np.array(eMax[sort_idx])
+    eMaxs = np.array(eMaxs)[sort_idx]
     
     #interpolate between spectra
     thetas = np.linspace(np.pi/2, 0, nTheta)
     eval_fields = fieldMax*np.array([fieldProfile(theta) for theta in thetas])
-    f = interpolate.RectBivariateSpline(eMax, eval_ponds, spc_pu)
+    f = interpolate.RectBivariateSpline(eMaxs, eval_ponds, spc_pu)
     spc_pu = f(eval_fields, eval_ponds)
-    
-    
-    ##test
-    plt.pcolor(eval_fields, eval_ponds, spc_pu)
-    plt.show()
-    ## NEED TO TEST HERE, SEE IF PLOTS LOOK REASONABLE
     
     #map spectra back to eV on uniform grid
     es = np.linspace(0.0, outputMaxE, nRadial)
@@ -72,7 +66,26 @@ def getRadialSpectrum(superfol:str, vdNum:int=0, minE:float=0, maxE:float=600, o
     for i in range(nTheta):
         f = interpolate.interp1d(eval_ponds * eval_fields[i]**2, spc_pu[i,:], kind='linear', fill_value=minSpc, bounds_error=False)
         spc[i,:] = f(es)
+
+    return thetas, eval_fields, es, spc
     
-    return eval_fields, es, spc
+def plotRadialSpectrum(superfol:str, vdNum:int=0, minE:float=0, maxE:float=1200, outputMaxE:float=600, 
+                      fieldMax:float=80e9, fieldProfile=lambda theta:np.cos(theta), nTheta=400, nRadial=400):
     
+    thetas, _, es, spc = getRadialSpectrum(superfol=superfol, vdNum=vdNum, minE=minE, maxE=maxE, outputMaxE=outputMaxE, 
+                      fieldMax=fieldMax, fieldProfile=fieldProfile, nTheta=nTheta, nRadial=nRadial)
     
+    #duplicate for full 180 degrees
+    spc = np.concatenate((spc, np.flip(spc[:-1,:], axis=0)), axis=0)
+    thetas = np.concatenate((thetas, -np.flip(thetas[:-1])))
+    
+    #plot
+    fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
+    ax.set(thetamin=-90, thetamax=90, theta_zero_location='N')
+    im=ax.pcolormesh(thetas, es, spc.T, cmap = 'inferno', vmin=24)
+    #colorbar
+    cax = fig.add_axes([0.85, 0.27, 0.03, 0.5])
+    fig.colorbar(im, cax=cax, orientation='vertical')
+    cax.set_title(r"log$_{10}$ $I$ ($e$ m$^{-2}$ eV$^{-1}$)")
+    
+    plt.show()
