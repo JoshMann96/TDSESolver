@@ -70,7 +70,8 @@ def getRadialSpectrum(superfol:str, vdNum:int=0, minE:float=0, maxE:float=1200, 
     return thetas, eval_fields, es, spc
     
 def plotRadialSpectrum(superfol:str, vdNum:int=0, minE:float=0, maxE:float=1200, outputMaxE:float=600, 
-                      fieldMax:float=80e9, fieldProfile=lambda theta:np.cos(theta), nTheta=400, nRadial=400):
+                      fieldMax:float=80e9, fieldProfile=lambda theta:np.cos(theta), nTheta=400, nRadial=400,
+                      vmin:float=20, vmax:float=27):
     
     thetas, _, es, spc = getRadialSpectrum(superfol=superfol, vdNum=vdNum, minE=minE, maxE=maxE, outputMaxE=outputMaxE, 
                       fieldMax=fieldMax, fieldProfile=fieldProfile, nTheta=nTheta, nRadial=nRadial)
@@ -82,7 +83,7 @@ def plotRadialSpectrum(superfol:str, vdNum:int=0, minE:float=0, maxE:float=1200,
     #plot
     fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
     ax.set(thetamin=-90, thetamax=90, theta_zero_location='N')
-    im=ax.pcolormesh(thetas, es, spc.T, cmap = 'inferno', vmin=24)
+    im=ax.pcolormesh(thetas, es, spc.T, cmap = 'inferno', vmin=vmin, vmax=vmax)
     #colorbar
     cax = fig.add_axes([0.85, 0.27, 0.03, 0.5])
     fig.colorbar(im, cax=cax, orientation='vertical')
