@@ -17,7 +17,7 @@ def pond_a(emax, lam):
 
 
 def runSimSweepFieldsMPI(emaxs:list, lam:float=800e-9, rad:float=20e-9, ef:float=5.51*1.602e-19, wf:float=5.1*1.602e-19, tau:float=8e-15, data_fol:str="data/", callback=None, 
-                  target_total_truncation_error:float = 0.01, min_emitted_energy:float=1.602e-19, target_elec_num:float = 50, abs_width:float=20e-9, abs_rate:float=5.2e15, min_timesteps:int=2000, measure_density:bool=True):
+                  target_total_truncation_error:float = 0.01, min_emitted_energy:float=1.602e-19, target_elec_num:float = 50, abs_width:float=20e-9, abs_rate:float=5e17, min_timesteps:int=2000, measure_density:bool=True):
     """Runs a series of rescattering simulations within a range of peak field strengths.
         Runs SLURM_NTASKS simulations at a time.
         Current quantities being output:
@@ -65,7 +65,7 @@ def runSimSweepFieldsMPI(emaxs:list, lam:float=800e-9, rad:float=20e-9, ef:float
         abs_width : float
             Width of the absorptive boundary. Defaults to 20e-9.
         abs_rate : float
-            Rate of absorption. Defaults to 5.2e15.
+            Rate of absorption. Defaults to 5e17.
         min_timesteps : int
             Minimum number of timesteps. 
             Overrides target_total_truncation_error if the number of timesteps would be too few. 
@@ -106,7 +106,7 @@ def runSimTimed(i, emax, lam, rad, ef, wf, tau, data_fol, callback, target_total
         print() 
 
 def runSimSweepFields(emaxs:list, lam:float=800e-9, rad:float=20e-9, ef:float=5.51*1.602e-19, wf:float=5.1*1.602e-19, tau:float=8e-15, data_fol:str="data/", callback=None, 
-                  target_total_truncation_error:float = 0.01, min_emitted_energy:float=1.602e-19, target_elec_num:float = 50, abs_width:float=20e-9, abs_rate:float=5.2e15, min_timesteps:int=2000, measure_density:bool=True):
+                  target_total_truncation_error:float = 0.01, min_emitted_energy:float=1.602e-19, target_elec_num:float = 50, abs_width:float=20e-9, abs_rate:float=5e17, min_timesteps:int=2000, measure_density:bool=True):
     """Runs a series of rescattering simulations within a range of peak field strengths.
         Current quantities being output:
         nPts, nSteps, dx, dt, <a>, nElec, VDFluxSpec, Weights
@@ -153,7 +153,7 @@ def runSimSweepFields(emaxs:list, lam:float=800e-9, rad:float=20e-9, ef:float=5.
         abs_width : float
             Width of the absorptive boundary. Defaults to 20e-9.
         abs_rate : float
-            Rate of absorption. Defaults to 5.2e15.
+            Rate of absorption. Defaults to 5e17.
         min_timesteps : int
             Minimum number of timesteps. 
             Overrides target_total_truncation_error if the number of timesteps would be too few. 
@@ -190,7 +190,7 @@ def runSimSweepFields(emaxs:list, lam:float=800e-9, rad:float=20e-9, ef:float=5.
     
     
 def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:float=5.51*1.602e-19, wf:float=5.1*1.602e-19, tau:float=8e-15, data_fol:str="data/", callback=None, 
-                  target_total_truncation_error:float = 0.01, min_emitted_energy:float=1.602e-19, target_elec_num:float = 50, abs_width:float=20e-9, abs_rate:float=5.2e15, min_timesteps:int=2000, measure_density:bool=True, verbose:bool=False):
+                  target_total_truncation_error:float = 0.01, min_emitted_energy:float=1.602e-19, target_elec_num:float = 50, abs_width:float=20e-9, abs_rate:float=5e17, min_timesteps:int=2000, measure_density:bool=True, verbose:bool=False):
     """Runs a rescattering simulation while recording various quantites. 
         Current quantities being output:
         nPts, nSteps, dx, dt, <a>, nElec, VDFluxSpec, Weights
@@ -235,7 +235,7 @@ def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:f
         abs_width : float
             Width of the absorptive boundary. Defaults to 20e-9.
         abs_rate : float
-            Rate of absorption. Defaults to 5.2e15.
+            Rate of absorption. Defaults to 5e17.
         min_timesteps : int
             Minimum number of timesteps. 
             Overrides target_total_truncation_error if the number of timesteps would be too few. 
@@ -310,7 +310,7 @@ def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:f
     jellPot = Potentials.JelliumPotential(sim, 0, ef, wf, -well_width, jell_back, xmax)
     fieldPot = Potentials.PulsePotential(
         sim, 
-        Potentials.FileFieldProfile(sim, 0.0, xmax - 2*abs_width, xmin, abs_width, emax, "au35_cr5_si_800nm.field"),
+        Potentials.FileFieldProfile(sim, 0.0, xmax - abs_width, xmin, abs_width, emax, "au35_cr5_si_800nm.field"),
         Potentials.CosSquaredEnvelope(tau, peak_t),
         np.pi/2, peak_t, lam, xmax)
     imagPot = Potentials.CylindricalImagePotential(
@@ -338,6 +338,8 @@ def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:f
     sim.addMeas(Measurers.Constant(ef, "ef", data_fol))
     sim.addMeas(Measurers.Constant(wf, "wf", data_fol))
     sim.addMeas(Measurers.Constant(tau, "tau", data_fol))
+    sim.addMeas(Measurers.Constant(abs_width, "abs_width", data_fol))
+    sim.addMeas(Measurers.Constant(abs_rate, "abs_rate", data_fol))
 
     ### SET KINETIC OPERATOR, ADD ABSORPTIVE BOUNDARIES ###
 

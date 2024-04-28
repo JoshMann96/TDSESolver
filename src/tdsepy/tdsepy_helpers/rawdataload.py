@@ -6,7 +6,7 @@ import os
 
 _INT_SIZE = np.dtype(np.int32).itemsize
 _DOUBLE_SIZE = np.dtype(np.float64).itemsize
-_CONSTANT_NAMES = Literal["dx", "dt", "emax", "lam", "tau", "rad", "ef", "wf", "nElec", "nPts", "nSteps"]
+_CONSTANT_NAMES = Literal["dx", "dt", "emax", "lam", "tau", "rad", "ef", "wf", "nElec", "nPts", "nSteps", "abs_rate", "abs_width"]
 _CONSTANT_DTYPES = {
     "dx" : "double",
     "dt" : "double",
@@ -18,7 +18,9 @@ _CONSTANT_DTYPES = {
     "wf" : "double",
     "nElec" : "int",
     "nPts" : "int",
-    "nSteps" : "int"
+    "nSteps" : "int",
+    "abs_rate" : "double",
+    "abs_width" : "double"
 }
 
 def readData(fil:BufferedReader, dtype:Literal["int", "double", "char"], shape=1):

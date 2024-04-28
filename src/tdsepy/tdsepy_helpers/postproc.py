@@ -146,6 +146,7 @@ def get1DTotalYield(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0, maxE:f
 
 def getIntrinsicMTEs(fol:str):
     """Gets intrinsic mean transverse energy (MTE) due to transverse crystal momentum in material, assuming the free electron gas model.
+        Vacuum must be potential reference level.
 
     Args:
         fol (str): Folder containing data.
@@ -153,9 +154,9 @@ def getIntrinsicMTEs(fol:str):
     Returns:
         mtes [J]: Intrinsic MTE of each state, shape (nElec).
     """    
-    e0s = getExpectE0(fol)
-    ef = getConstant("ef", fol)
-    wf = getConstant("wf", fol)
+    e0s,_ = getExpectE0(fol)
+    ef,_ = getConstant("ef", fol)
+    wf,_ = getConstant("wf", fol)
     e0s += ef + wf
     
     mtes = 0.5*(ef - e0s)
