@@ -1,8 +1,8 @@
 #!/usr/bin/bash
-#SBATCH --job-name=tdse              
+#SBATCH --job-name=tdse
 #SBATCH --nodes=1                     # number of nodes to use
-#SBATCH --cpus-per-task=64           # CPUs per NODE (normally per task, but 'overcommit' overridesthis
-#SBATCH --ntasks=1                   # number of calculation processes +1
+#SBATCH --cpus-per-task=64           
+#SBATCH --ntasks=1                   # number of total calculation processes
 #SBATCH --mem=65536                   # typical simu takes 1.5GB during eigensolving phase
 #SBATCH --output=logs/%j.log
 #SBATCH --error=logs/%j.err

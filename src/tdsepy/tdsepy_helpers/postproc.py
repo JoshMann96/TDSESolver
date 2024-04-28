@@ -1,9 +1,8 @@
-import json
 from .rawdataload import *
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 
-def plotElectronDensity(fol, elecNum = -1, vmin=20, vmax=27, cmap="magma"):
+def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=20, vmax:float=27, cmap="magma"):
     dat, xs, ts, _ = getPsi2t(fol)
     wghts, _ = getWghts(fol)
     
@@ -19,16 +18,16 @@ def plotElectronDensity(fol, elecNum = -1, vmin=20, vmax=27, cmap="magma"):
     s = plt.pcolormesh(xs, ts, np.log10(np.tensordot(wghts, dat, (0,0))), cmap=cmap, vmin=vmin, vmax=vmax)
     plt.show()
     
-def getFluxSpectrum(fol:str, vdNum = 0, minE = 0, maxE:float = 500):
-    """Gets the bidirectional density flux spectrum with respect to the signed kinetic energy (sgn(E) = sgn(k))
+def get1DStateFluxSpectrum(fol:str, vdNum:int = 0, minE:float = 0, maxE:float = 500):
+    """Gets the bidirectional density flux spectrum with respect to the signed kinetic energy (sgn(E) = sgn(k)) for each state.
 
     Args:
         fol (str): Folder containing data.
         vdNum (int, optional): Virtual detector index. Defaults to 0.
-        minE (int, optional) [eV]: Minimum signed kinetic energy. Defaults to 0.
-        maxE (float, optional) [eV]: Maximum signed kinetic energy. Defaults to 500 eV.
+        minE (float, optional) [eV]: Minimum signed kinetic energy. Defaults to 0.
+        maxE (float, optional) [eV]: Maximum signed kinetic energy. Defaults to 500.
     Returns:
-        es [eV]: Signed kinetic energy.
+        es [eV]: Signed kinetic energy, shape (nSamp).
         yld [ 1 / m^2 eV ]: Weighed bidirectional flux spectrum, shape (nElec, nSamp).
     """
     dftl, dftr, maxE_ = getFluxSpecVD(fol, vdNum)[0:3]
@@ -65,8 +64,32 @@ def getFluxSpectrum(fol:str, vdNum = 0, minE = 0, maxE:float = 500):
     yld = interp1d(nes, yld, axis=-1)(es)*np.broadcast_to(wghts[:,None], (len(wghts), len(es)))
     
     return es, yld
+   
+def get1DTotalFluxSpectrum(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0, maxE:float = 500):
+    """Gets the bidirectional density flux spectrum with respect to the signed kinetic energy (sgn(E) = sgn(k)) summed over all states.
+
+    Args:
+        fol (str): Folder containing data.
+        vdNum (int, optional): Virtual detector index. Defaults to 0.
+        minE (float, optional) [eV]: Minimum signed kinetic energy. Defaults to 0.
+        maxE (float, optional) [eV]: Maximum signed kinetic energy. Defaults to 500.
+    Returns:
+        es [eV]: Signed kinetic energy, shape (nSamp).
+        yld [ 1 / m^2 eV ]: Weighed bidirectional flux spectrum, shape (nSamp).
+    """
     
-def plotFluxSpectrum(fol:str, vdNum = 0, elecNum = -1, minE:float = 0, maxE:float = 500):
+    es, spc = get1DStateFluxSpectrum(fol, vdNum, minE, maxE)
+    
+    if type(elecNum) is list:
+        spc = np.sum(spc[np.array(elecNum), :], axis=0)
+    elif elecNum == -1:
+        spc = np.sum(spc, axis=0)
+    else:
+        spc = spc[elecNum, :]
+    
+    return es, spc
+
+def plot1DFluxSpectrum(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0, maxE:float = 500):
     """Plots the bidirectional density flux spectrum with respect to the signed kinetic energy (sgn(E) = sgn(k))
 
     Args:
@@ -74,17 +97,68 @@ def plotFluxSpectrum(fol:str, vdNum = 0, elecNum = -1, minE:float = 0, maxE:floa
         vdNum (int, optional): Virtual detector index. Defaults to 0.
         elecNum (int | list, optional): Selected electron states. -1 to include all, or a list to include selected states. Defaults to -1.
         minE (float, optional) [eV]: Minimum signed kinetic energy. Defaults to 0.
-        maxE (float, optional) [eV]: Maximum signed kinetic energy. Defaults to 500 eV.
+        maxE (float, optional) [eV]: Maximum signed kinetic energy. Defaults to 500.
     """
-    es, yld = getFluxSpectrum(fol, vdNum, minE, maxE)
+    es, spc = get1DTotalFluxSpectrum(fol, vdNum, elecNum, minE, maxE)
     
-    if type(elecNum) is list:
-        yld = np.sum(yld[np.array(elecNum), :], axis=0)
-    elif elecNum == -1:
-        yld = np.sum(yld, axis=0)
-    else:
-        yld = yld[elecNum, :]
-    
-    plt.semilogy(es, yld)
+    plt.semilogy(es, spc)
     
     plt.show()
+    
+def get1DStateYield(fol:str, vdNum:int = 0, minE:float = 0, maxE:float=500):
+    """Gets yield for each 1-D state within energy range.
+
+    Args:
+        fol (str): Folder containing data.
+        vdNum (int, optional): Virtual detector index. Defaults to 0.
+        minE (float, optional) [eV]: Minimum signed kinetic energy. Defaults to 0.
+        maxE (float, optional) [eV]: Maximum signed kinetic energy. Defaults to 500.
+
+    Returns:
+        yld [ 1 / m^2 ]: Weighed yield, shape (nElec).
+    """    
+    es, spc = get1DStateFluxSpectrum(fol, vdNum, minE, maxE)
+    return np.trapz(x = es, y = spc, axis=1)
+
+def get1DTotalYield(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0, maxE:float = 500):
+    """Gets total yield for selected 1-D states within energy range.
+
+    Args:
+        fol (str): Folder containing data.
+        vdNum (int, optional): Virtual detector index. Defaults to 0.
+        elecNum (int | list, optional): Selected electron states. -1 to include all, or a list to include selected states. Defaults to -1.
+        minE (float, optional) [eV]: Minimum signed kinetic energy. Defaults to 0.
+        maxE (float, optional) [eV]: Maximum signed kinetic energy. Defaults to 500.
+        
+    Returns:
+        yld [ 1 / m^2 ]: Weighed yield.
+    """    
+    ylds = get1DStateYield(fol, vdNum, minE, maxE)
+    
+    if type(elecNum) is list:
+        yld = np.sum(ylds[elecNum])
+    elif elecNum == -1:
+        yld = np.sum(ylds)
+    else:
+        yld = ylds[elecNum]
+        
+    return yld
+
+def getIntrinsicMTEs(fol:str):
+    """Gets intrinsic mean transverse energy (MTE) due to transverse crystal momentum in material, assuming the free electron gas model.
+        Vacuum must be potential reference level.
+
+    Args:
+        fol (str): Folder containing data.
+
+    Returns:
+        mtes [J]: Intrinsic MTE of each state, shape (nElec).
+    """    
+    e0s,_ = getExpectE0(fol)
+    ef,_ = getConstant("ef", fol)
+    wf,_ = getConstant("wf", fol)
+    e0s += ef + wf
+    
+    mtes = 0.5*(ef - e0s)
+    return mtes
+
