@@ -2,7 +2,25 @@ from .rawdataload import *
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 
-def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=20, vmax:float=27, cmap="magma"):
+def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=20, vmax:float=27, cmap="magma", plot:bool = True):
+    """Plots the 1-D collective electron density as a function of time for a selection of states.
+
+    Args:
+        fol (str): Folder containing data.
+        elecNum (int | list , optional): Selected 1-D state. 
+                                    Integer for a selected single state.
+                                    List for multiple selected states.
+                                    -1 for all states. Defaults to -1.
+        vmin (float, optional): Log-scale minimum value. Defaults to 20.
+        vmax (float, optional): Log-scale maximum value. Defaults to 27.
+        cmap (str, optional): Colormap. Defaults to "magma".
+        plot (bool, optional): Run plt.show(). Defaults to True.
+        
+    Returns:
+        fig: Matplotlib figure.
+        ax: Matplotlib axis.
+    """
+    
     dat, xs, ts, _ = getPsi2t(fol)
     wghts, _ = getWghts(fol)
     
@@ -16,7 +34,11 @@ def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=20, vmax:float=2
         wghts[elecNum] = desWght
     
     s = plt.pcolormesh(xs, ts, np.log10(np.tensordot(wghts, dat, (0,0))), cmap=cmap, vmin=vmin, vmax=vmax)
-    plt.show()
+    
+    if plot:
+        plt.show()
+    
+    return plt.gcf(), plt.gca()
     
 def get1DStateFluxSpectrum(fol:str, vdNum:int = 0, minE:float = 0, maxE:float = 500):
     """Gets the bidirectional density flux spectrum with respect to the signed kinetic energy (sgn(E) = sgn(k)) for each state.
@@ -89,7 +111,7 @@ def get1DTotalFluxSpectrum(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0,
     
     return es, spc
 
-def plot1DFluxSpectrum(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0, maxE:float = 500):
+def plot1DFluxSpectrum(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0, maxE:float = 500, plot:bool = True):
     """Plots the bidirectional density flux spectrum with respect to the signed kinetic energy (sgn(E) = sgn(k))
 
     Args:
@@ -103,7 +125,10 @@ def plot1DFluxSpectrum(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0, max
     
     plt.semilogy(es, spc)
     
-    plt.show()
+    if plot:
+        plt.show()
+    else:
+        return plt.gcf(), plt.gca()
     
 def get1DStateYield(fol:str, vdNum:int = 0, minE:float = 0, maxE:float=500):
     """Gets yield for each 1-D state within energy range.

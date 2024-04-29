@@ -18,7 +18,26 @@ import scipy.constants as cons
 def getSubFols(basefol:str):
     return [os.path.join(basefol, o) + "/" for o in os.listdir(basefol) if os.path.isdir(os.path.join(basefol,o))]
 
-def loadRadialSpectrumData(superfol:str, vdNum:int=0, minE:float=0, maxE:float=1200, calcYldMTE:bool=False):
+def loadRadialSpectrumData(superfol:str, vdNum:int=0, minE:float=0, maxE:float=1200):
+    """
+    Load radial spectrum data.
+
+    Args:
+        superfol (str): The superfolder path.
+        vdNum (int, optional): The virtual detector number. Defaults to 0.
+        minE (float, optional): The minimum energy. Defaults to 0.
+        maxE (float, optional): The maximum energy. Defaults to 1200.
+
+    Returns:
+        ess (list): Energy axes.
+        spcs (list): Spectral intensities.
+        eMaxs (list): Max field values.
+        imtes (list): Intrinsic mean transverse energies.
+        nFols (int): The number of samples.
+        maxE (float): The maximum energy value.
+
+    """
+    
     fols = getSubFols(superfol)
     nFols = len(fols)
     
@@ -26,9 +45,8 @@ def loadRadialSpectrumData(superfol:str, vdNum:int=0, minE:float=0, maxE:float=1
     ess, spcs = zip(*[((res := get1DTotalFluxSpectrum(fol, vdNum, -1, minE, maxE))[0], np.log10(res[1])) for fol in fols])
     eMaxs = [getConstant("emax", fol)[0] for fol in fols]
     
-    if calcYldMTE:
-        stateYlds = [get1DStateYield(fol, vdNum, minE, maxE) for fol in fols]
-        imtes = [np.sum(yld * getIntrinsicMTEs(fol)/cons.e / np.sum(yld))  for (yld, fol) in zip(stateYlds, fols)]
+    stateYlds = [get1DStateYield(fol, vdNum, minE, maxE) for fol in fols]
+    imtes = [np.sum(yld * getIntrinsicMTEs(fol)/cons.e / np.sum(yld))  for (yld, fol) in zip(stateYlds, fols)]
     
     return ess, spcs, eMaxs, imtes, nFols, maxE
     
@@ -107,7 +125,7 @@ def getRadialSpectrum(radialSpectrumData, outputMaxE:float=600,
     
 def plotRadialSpectrum(superfol:str, vdNum:int=0, minE:float=0, maxE:float=1200, outputMaxE:float=600, 
                       fieldMax:float=80e9, fieldProfile=lambda theta:np.cos(theta), nTheta=400, nRadial=400,
-                      vmin:float=20, vmax:float=27):
+                      vmin:float=20, vmax:float=27, show:bool=True):
     
     thetas, _, es, spc = getRadialSpectrum(superfol=superfol, vdNum=vdNum, minE=minE, maxE=maxE, outputMaxE=outputMaxE, 
                       fieldMax=fieldMax, fieldProfile=fieldProfile, nTheta=nTheta, nRadial=nRadial)
@@ -125,11 +143,39 @@ def plotRadialSpectrum(superfol:str, vdNum:int=0, minE:float=0, maxE:float=1200,
     fig.colorbar(im, cax=cax, orientation='vertical')
     cax.set_title(r"log$_{10}$ $I$ ($e$ m$^{-2}$ eV$^{-1}$)")
     
-    plt.show()
+    if show:
+        plt.show()
+    
+    return fig, ax
 
 def calcBrightness(radialSpectrumData, outputMaxE:float=600, 
                       fieldMax:float=80e9, fieldProfile=lambda theta:np.cos(theta), nTheta=400, nRadial=400,
                       structureDim:int=1, structureRadius:float=20e-9, illuminationLength:float=1e-6):
+    """Calculates the electron brightness of laser-field emission from a nanotip or nanoblade.
+
+    Args:
+        radialSpectrumData (tuple): The radial spectrum data from loadRadialSpectrumData.
+        outputMaxE (float, optional) [eV]: Maximum energy to use for calculation. Defaults to 600.
+        fieldMax (float, optional) [V/m]: Maximum field strength. Defaults to 80e9.
+        fieldProfile (_type_, optional): Field profile about apex (theta=0). Defaults to lambdatheta:np.cos(theta).
+        nTheta (int, optional): Number of angular samples. Defaults to 400.
+        nRadial (int, optional): Number of radial (energy) samples. Defaults to 400.
+        structureDim (int, optional): Dimension of structure. 0 = tip, 1 = blade. Defaults to 1.
+        structureRadius (float, optional) [m]: Apex radius of curvature. Defaults to 20e-9.
+        illuminationLength (float, optional) [m]: Length of illumination of 1D (blade) structure. Defaults to 1e-6.
+
+    Raises:
+        ValueError: structureDim must be 0 (tip) or 1 (blade)
+
+    Returns:
+        b4 (float): 4D brightness.
+        yld (float): Electron yield.
+        eps_x (float): Normalized emittance in x.
+        eps_y (float): Normalized emittance in y.
+        mte_curv (float): Curvature mean transverse energy.
+        mte_int (float): Intrinsic mean transverse energy.
+    """
+    
     
     yld, mte_curv, mte_int, rms_x = getRadialSpectrum(radialSpectrumData=radialSpectrumData, outputMaxE=outputMaxE, 
                       fieldMax=fieldMax, fieldProfile=fieldProfile, nTheta=nTheta, nRadial=nRadial, calcYldMTE=True, structureDim=structureDim)[-4:]
