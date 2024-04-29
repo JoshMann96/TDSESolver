@@ -189,7 +189,7 @@ def runSimSweepFields(emaxs:list, lam:float=800e-9, rad:float=20e-9, ef:float=5.
         print()
     
     
-def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:float=5.51*1.602e-19, wf:float=5.1*1.602e-19, tau:float=8e-15, data_fol:str="data/", callback=None, 
+def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:float=5.51*1.602e-19, wf:float=5.1*1.602e-19, tau:float=8e-15, cep:float=np.pi/2, data_fol:str="data/", callback=None, 
                   target_total_truncation_error:float = 0.01, min_emitted_energy:float=1.602e-19, target_elec_num:float = 50, abs_width:float=20e-9, abs_rate:float=5e17, min_timesteps:int=2000, measure_density:bool=True, verbose:bool=False):
     """Runs a rescattering simulation while recording various quantites. 
         Current quantities being output:
@@ -213,7 +213,9 @@ def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:f
         wf : float
             Work function. Defaults to 5.1*1.602e-19.
         tau : float
-             Full-width half-max power. Defaults to 8e-15.
+            Full-width half-max power. Defaults to 8e-15.
+        cep : float
+            Carrier envelope phase. Defaults to pi/2.
         data_fol : str 
             Folder to store output data in.
             May include final '/', or not.
@@ -312,7 +314,7 @@ def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:f
         sim, 
         Potentials.FileFieldProfile(sim, 0.0, xmax - abs_width, xmin, abs_width, emax, "au35_cr5_si_800nm.field"),
         Potentials.CosSquaredEnvelope(tau, peak_t),
-        np.pi/2, peak_t, lam, xmax)
+        cep, peak_t, lam, xmax)
     imagPot = Potentials.CylindricalImagePotential(
         sim, ef, wf, rad, xmin, xmax, 0.0, xmax)
 
@@ -338,6 +340,7 @@ def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:f
     sim.addMeas(Measurers.Constant(ef, "ef", data_fol))
     sim.addMeas(Measurers.Constant(wf, "wf", data_fol))
     sim.addMeas(Measurers.Constant(tau, "tau", data_fol))
+    sim.addMeas(Measurers.Constant(cep, "cep", data_fol))
     sim.addMeas(Measurers.Constant(abs_width, "abs_width", data_fol))
     sim.addMeas(Measurers.Constant(abs_rate, "abs_rate", data_fol))
 

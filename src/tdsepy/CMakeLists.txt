@@ -32,5 +32,5 @@ add_custom_target(tdsepy_helpers ALL DEPENDS tdsepy)
 #    COMMAND ${CMAKE_COMMAND} -E copy_directory 
 #        ${CMAKE_CURRENT_SOURCE_DIR}/tdsepy_helpers/ ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/)
 add_custom_command(TARGET tdsepy_helpers POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E create_symlink 
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_CURRENT_SOURCE_DIR}/tdsepy_helpers ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/tdsepy_helpers)
