@@ -1,7 +1,7 @@
 import sys, os
 sys.setdlopenflags(os.RTLD_GLOBAL | os.RTLD_LAZY)
 
-from tdsepy import *
+from ...tdsepy import *
 import numpy as np
 import scipy.constants as cons
 import json

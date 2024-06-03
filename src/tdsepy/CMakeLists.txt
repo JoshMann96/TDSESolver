@@ -13,7 +13,7 @@ file(GLOB HRP "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp")
 file(GLOB IMP "${CMAKE_CURRENT_SOURCE_DIR}/*.tpp")
 file(GLOB HDR "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 
-pybind11_add_module(tdsepy SHARED ${SRC} ${IMP} ${HRP} ${HDR} )
+pybind11_add_module(tdsepy SHARED ${SRC} ${IMP} ${HRP} ${HDR})
 target_link_libraries(tdsepy PRIVATE core pybind11::pybind11)
 
 # Use stubgen to create .pyi files to sit alongside the just-built python module
