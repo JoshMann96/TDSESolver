@@ -1,13 +1,12 @@
 import sys, os
 sys.setdlopenflags(os.RTLD_GLOBAL | os.RTLD_LAZY)
 
-sys.path.insert(0, "/home/jmann/TDSESolveLinux/build/lib")
 from tdsepy import *
 import numpy as np
 import scipy.constants as cons
 import json
 import time
-from multiprocess import Pool
+#from multiprocess import Pool
 
 def pond_U(emax, lam):
     return cons.e**2 * emax**2 * lam**2 / (4* cons.m_e * (2*cons.pi*cons.c)**2)
@@ -15,10 +14,10 @@ def pond_U(emax, lam):
 def pond_a(emax, lam):
     return cons.e * emax * lam**2 / (cons.m_e * (2*cons.pi*cons.c)**2)
 
-
+"""
 def runSimSweepFieldsMPI(emaxs:list, lam:float=800e-9, rad:float=20e-9, ef:float=5.51*1.602e-19, wf:float=5.1*1.602e-19, tau:float=8e-15, data_fol:str="data/", callback=None, 
                   target_total_truncation_error:float = 0.01, min_emitted_energy:float=1.602e-19, target_elec_num:float = 50, abs_width:float=20e-9, abs_rate:float=5e17, min_timesteps:int=2000, measure_density:bool=True):
-    """Runs a series of rescattering simulations within a range of peak field strengths.
+""""""Runs a series of rescattering simulations within a range of peak field strengths.
         Runs SLURM_NTASKS simulations at a time.
         Current quantities being output:
         nPts, nSteps, dx, dt, <a>, nElec, VDFluxSpec, Weights
@@ -72,7 +71,7 @@ def runSimSweepFieldsMPI(emaxs:list, lam:float=800e-9, rad:float=20e-9, ef:float
             Defaults to 2000.
         measure_density : bool
             Whether to use the Psi2t and Vfunct measurers. Defaults to True.
-    """   
+""""""   
     
     os.makedirs(data_fol, exist_ok=True)
     if data_fol[-1] != '/':
@@ -91,7 +90,7 @@ def runSimSweepFieldsMPI(emaxs:list, lam:float=800e-9, rad:float=20e-9, ef:float
     runSim = lambda i, emax : runSimTimed(i, emax, lam, rad, ef, wf, tau, data_fol, callback, target_total_truncation_error, min_emitted_energy, target_elec_num, abs_width, abs_rate, min_timesteps, measure_density)
     with Pool(int(os.environ['SLURM_NTASKS'])) as pool:
         pool.starmap(runSim, enumerate(emaxs))
-    
+"""
 
 def runSimTimed(i, emax, lam, rad, ef, wf, tau, data_fol, callback, target_total_truncation_error, min_emitted_energy, target_elec_num, abs_width, abs_rate, min_timesteps, measure_density):
         strt = time.time()
@@ -312,7 +311,7 @@ def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:f
     jellPot = Potentials.JelliumPotential(sim, 0, ef, wf, -well_width, jell_back, xmax)
     fieldPot = Potentials.PulsePotential(
         sim, 
-        Potentials.FileFieldProfile(sim, 0.0, xmax - abs_width, xmin, abs_width, emax, "au35_cr5_si_800nm.field"),
+        Potentials.FileFieldProfile(sim, 0.0, xmax, xmin, abs_width, emax, "au35_cr5_si_800nm.field"),
         Potentials.CosSquaredEnvelope(tau, peak_t),
         cep, peak_t, lam, xmax)
     imagPot = Potentials.CylindricalImagePotential(
