@@ -4,8 +4,12 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=znver2 -mtune=native -DNDEBUG
 #set(CMAKE_BUILD_TYPE Debug)
 
 #PYBIND11
+message(STATUS "BEGINNING PYBIND STUFF")
+set(Python_ROOT_DIR ${CMAKE_SOURCE_DIR}/.venv)
+find_package(Python COMPONENTS Interpreter Development REQUIRED)
 set(pybind11_DIR ${CMAKE_SOURCE_DIR}/.venv/lib/python3.10/site-packages/pybind11/share/cmake/pybind11/)
 find_package(pybind11 REQUIRED)
+message(STATUS "ENDING PYBIND STUFF")
 
 #files
 file(GLOB SRC "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
