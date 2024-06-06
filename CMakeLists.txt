@@ -51,12 +51,14 @@ set(AOCL_INC "${AOCL_ROOT}/include")
 set(AOCL_LIB "${AOCL_ROOT}/lib")
 set(BLIS_INC "${AOCL_INC}/blis")
 include_directories(${AOCL_INC})
-set(AOCL_LIBS "-L${AOCL_LIB} -lfftw3_omp -lfftw3 -lm -lpthread")
+set(AOCL_LIBS "-L${AOCL_LIB} -lfftw3_omp -lfftw3 -lm")
 
 #OpenBLAS config
 set(OBLAS_INC "${OBLAS_ROOT}/include")
 set(OBLAS_LIB "${OBLAS_ROOT}/lib")
-set(OBLAS_LIBS "-L${OBLAS_LIB} -lopenblas -lflang -lpthread")
+set(OBLAS_LIBS "-L${OBLAS_LIB} -lopenblas -lflang")
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=znver2 -mtune=native -DNDEBUG -fopenmp -fPIC")
 
 add_subdirectory(src)
 
