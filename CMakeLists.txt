@@ -8,9 +8,9 @@ set(CMAKE_CXX_STANDARD 17)
 #set(CMAKE_C_COMPILER "/home/jmann/bin/clang")
 #set(CMAKE_CXX_COMPILER "/home/jmann/bin/clang++")
 #set(CMAKE_Fortran_COMPILER "/home/jmann/bin/flang")
-set(CMAKE_C_COMPILER "/usr/bin/gcc")
-set(CMAKE_CXX_COMPILER "/usr/bin/g++")
-set(CMAKE_Fortran_COMPILER "/usr/bin/gfortran")
+#set(CMAKE_C_COMPILER "/usr/bin/gcc")
+#set(CMAKE_CXX_COMPILER "/usr/bin/g++")
+#set(CMAKE_Fortran_COMPILER "/usr/bin/gfortran")
 
 message("C   Compiler: ${CMAKE_C_COMPILER}")
 message("CXX Compiler: ${CMAKE_CXX_COMPILER}")
@@ -56,7 +56,10 @@ set(AOCL_LIBS "-L${AOCL_LIB} -lfftw3_omp -lfftw3 -lm")
 #OpenBLAS config
 set(OBLAS_INC "${OBLAS_ROOT}/include")
 set(OBLAS_LIB "${OBLAS_ROOT}/lib")
-set(OBLAS_LIBS "-L${OBLAS_LIB} -lopenblas -lflang")
+find_library(OBLAS_LIBS
+  NAMES openblas libopenblas
+  HINTS ${OBLAS_LIB}
+)
 
 #OMP
 find_library(OMP_LIBS

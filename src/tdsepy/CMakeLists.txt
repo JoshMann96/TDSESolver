@@ -10,8 +10,11 @@ file(GLOB HRP "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp")
 file(GLOB IMP "${CMAKE_CURRENT_SOURCE_DIR}/*.tpp")
 file(GLOB HDR "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 
+set(TDSEPY_OUTER_DIRECTORY ${CMAKE_BINARY_DIR}/lib/tdsepy)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${TDSEPY_OUTER_DIRECTORY}/tdsepy)
+
 pybind11_add_module(_tdsepy SHARED ${SRC} ${IMP} ${HRP} ${HDR})
-target_link_libraries(_tdsepy PRIVATE core pybind11::pybind11 ${OMP_LIBS})
+target_link_libraries(_tdsepy PRIVATE core pybind11::pybind11 ${OMP_LIBS} ${OBLAS_LIBS})
 
 # Use stubgen to create .pyi files to sit alongside the just-built python module
 set(Stubgen_Executable "${CMAKE_SOURCE_DIR}/.venv/bin/stubgen")
@@ -29,8 +32,8 @@ add_custom_target(tdsepy_helpers ALL DEPENDS _tdsepy)
 
 add_custom_command(TARGET tdsepy_helpers POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_CURRENT_SOURCE_DIR}/helpers ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/tdsepy/helpers)
+        ${CMAKE_CURRENT_SOURCE_DIR}/helpers ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/helpers)
 
 # Copy setup.py and __init__.py to build directory
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/setup.py ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/tdsepy/setup.py COPYONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/__init__.py ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/tdsepy/__init__.py COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/setup.py ${TDSEPY_OUTER_DIRECTORY}/setup.py COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/__init__.py ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/__init__.py COPYONLY)
