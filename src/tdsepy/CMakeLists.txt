@@ -1,10 +1,8 @@
 #PYBIND11
-message(STATUS "BEGINNING PYBIND STUFF")
 set(Python_ROOT_DIR ${CMAKE_SOURCE_DIR}/.venv)
 find_package(Python COMPONENTS Interpreter Development REQUIRED)
 set(pybind11_DIR ${CMAKE_SOURCE_DIR}/.venv/lib/python3.10/site-packages/pybind11/share/cmake/pybind11/)
 find_package(pybind11 REQUIRED)
-message(STATUS "ENDING PYBIND STUFF")
 
 #files
 file(GLOB SRC "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
@@ -13,7 +11,7 @@ file(GLOB IMP "${CMAKE_CURRENT_SOURCE_DIR}/*.tpp")
 file(GLOB HDR "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 
 pybind11_add_module(_tdsepy SHARED ${SRC} ${IMP} ${HRP} ${HDR})
-target_link_libraries(_tdsepy PRIVATE core pybind11::pybind11)
+target_link_libraries(_tdsepy PRIVATE core pybind11::pybind11 ${OMP_LIBS})
 
 # Use stubgen to create .pyi files to sit alongside the just-built python module
 set(Stubgen_Executable "${CMAKE_SOURCE_DIR}/.venv/bin/stubgen")

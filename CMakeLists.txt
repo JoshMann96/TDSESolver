@@ -5,12 +5,12 @@ project(TDSESolveLinux)
 set(CMAKE_CXX_STANDARD 17)
 
 #set compiler
-set(CMAKE_C_COMPILER "/home/jmann/bin/clang")
-set(CMAKE_CXX_COMPILER "/home/jmann/bin/clang++")
-set(CMAKE_Fortran_COMPILER "/home/jmann/bin/flang")
-#set(CMAKE_C_COMPILER "/usr/bin/gcc")
-#set(CMAKE_CXX_COMPILER "/usr/bin/g++")
-#set(CMAKE_Fortran_COMPILER "/usr/bin/gfortran")
+#set(CMAKE_C_COMPILER "/home/jmann/bin/clang")
+#set(CMAKE_CXX_COMPILER "/home/jmann/bin/clang++")
+#set(CMAKE_Fortran_COMPILER "/home/jmann/bin/flang")
+set(CMAKE_C_COMPILER "/usr/bin/gcc")
+set(CMAKE_CXX_COMPILER "/usr/bin/g++")
+set(CMAKE_Fortran_COMPILER "/usr/bin/gfortran")
 
 message("C   Compiler: ${CMAKE_C_COMPILER}")
 message("CXX Compiler: ${CMAKE_CXX_COMPILER}")
@@ -58,7 +58,13 @@ set(OBLAS_INC "${OBLAS_ROOT}/include")
 set(OBLAS_LIB "${OBLAS_ROOT}/lib")
 set(OBLAS_LIBS "-L${OBLAS_LIB} -lopenblas -lflang")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=znver2 -mtune=native -DNDEBUG -fopenmp -fPIC")
+#OMP
+find_library(OMP_LIBS
+  NAMES omp libomp libgomp gomp
+  HINTS /home/jmann/lib
+)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=znver2 -mtune=native -DNDEBUG -fPIC -fopenmp")
 
 add_subdirectory(src)
 
