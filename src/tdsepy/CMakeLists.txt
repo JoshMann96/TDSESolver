@@ -37,3 +37,7 @@ add_custom_command(TARGET tdsepy_helpers POST_BUILD
 # Copy setup.py and __init__.py to build directory
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/setup.py ${TDSEPY_OUTER_DIRECTORY}/setup.py COPYONLY)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/__init__.py ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/__init__.py COPYONLY)
+
+# Create a py.typed file
+add_custom_command(TARGET tdsepy POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E touch ${TDSEPY_OUTER_DIRECTORY}/tdsepy/py.typed)

@@ -7,7 +7,7 @@ setup(
     author='Joshua Mann',
     author_email='jomann@ucla.edu',
     packages=["tdsepy", "tdsepy.helpers"],
-    package_data={"tdsepy": ["tdsepy/*.pyi", "py.typed"]},
+    package_data={"tdsepy": ["**/py.typed", "**/*.pyi"]},
     install_requires=[
         'numpy',
         'scipy',
