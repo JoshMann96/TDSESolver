@@ -1,1 +1,1 @@
-from ._tdsepy import *
+from .tdsepy import *

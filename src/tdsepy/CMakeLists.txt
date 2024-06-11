@@ -13,14 +13,14 @@ file(GLOB HDR "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 set(TDSEPY_OUTER_DIRECTORY ${CMAKE_BINARY_DIR}/lib/tdsepy)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${TDSEPY_OUTER_DIRECTORY}/tdsepy)
 
-pybind11_add_module(_tdsepy SHARED ${SRC} ${IMP} ${HRP} ${HDR})
-target_link_libraries(_tdsepy PRIVATE core pybind11::pybind11 ${OMP_LIBS} ${OBLAS_LIBS})
+pybind11_add_module(tdsepy SHARED ${SRC} ${IMP} ${HRP} ${HDR})
+target_link_libraries(tdsepy PRIVATE core pybind11::pybind11 ${OMP_LIBS} ${OBLAS_LIBS})
 
 # Use stubgen to create .pyi files to sit alongside the just-built python module
 set(Stubgen_Executable "${CMAKE_SOURCE_DIR}/.venv/bin/stubgen")
 if(EXISTS "${Stubgen_Executable}")
-    add_custom_command(TARGET _tdsepy POST_BUILD
-        COMMAND ${Stubgen_Executable} --include-docstrings -m _tdsepy -o .
+    add_custom_command(TARGET tdsepy POST_BUILD
+        COMMAND ${Stubgen_Executable} --include-docstrings -p tdsepy -o ..
         WORKING_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}
         COMMENT "Use stubgen to create .pyi for statement completion")
 else()
@@ -28,7 +28,7 @@ else()
 endif()
 
 # Copy tdsepy_helpers to build dir
-add_custom_target(tdsepy_helpers ALL DEPENDS _tdsepy)
+add_custom_target(tdsepy_helpers ALL DEPENDS tdsepy)
 
 add_custom_command(TARGET tdsepy_helpers POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
