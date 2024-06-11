@@ -14,7 +14,7 @@ set(TDSEPY_OUTER_DIRECTORY ${CMAKE_BINARY_DIR}/lib/tdsepy)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${TDSEPY_OUTER_DIRECTORY}/tdsepy)
 
 pybind11_add_module(tdsepy SHARED ${SRC} ${IMP} ${HRP} ${HDR})
-target_link_libraries(tdsepy PRIVATE core pybind11::pybind11 ${OMP_LIBS} ${OBLAS_LIBS})
+target_link_libraries(tdsepy PRIVATE core pybind11::pybind11 ${OMP_LIBS} ${OBLAS_LIBS} ${AOCL_LIBS})
 
 # Use stubgen to create .pyi files to sit alongside the just-built python module
 set(Stubgen_Executable "${CMAKE_SOURCE_DIR}/.venv/bin/stubgen")
