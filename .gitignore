@@ -5,3 +5,5 @@
 build*
 scratch
 **__pycache__
+fftw3
+freshpy

@@ -1,5 +1,8 @@
 #include "KineticOperator.h"
 #include "fftw3.h"
+#include <omp.h>
+#include <fftw3.h>
+#include <lapack.h>
 
 #define MULTIELEC_FFTW_POLICY FFTW_PATIENT
 
