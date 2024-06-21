@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.19)
 
 project(TDSESolveLinux)
 
@@ -30,7 +30,7 @@ set(pybind11_DIR ${CMAKE_SOURCE_DIR}/.venv/lib/python3.11/site-packages/pybind11
 
 
 #pybind11
-find_package(Python COMPONENTS Interpreter Development REQUIRED)
+set(PYTHON_EXECUTABLE ${Python_ROOT_DIR}/bin/python3)
 find_package(pybind11 REQUIRED)
 
 #OMP
