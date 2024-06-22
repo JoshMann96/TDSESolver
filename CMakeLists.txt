@@ -17,7 +17,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 #OpenBLAS config
 set(OBLAS_ROOT "/home/jmann")
-set(FFTW_ROOT "/home/jmann")
 
 # Boost config
 set(BOOST_INC "/usr/include/boost")
@@ -45,10 +44,35 @@ include_directories(${BOOST_INC})
 set(BOOST_LINK_FLAGS "-lboost_system -lboost_filesystem")
 
 #FFTW config
-set(FFTW_INC "${FFTW_ROOT}/include")
-set(FFTW_LIB "${FFTW_ROOT}/lib")
-include_directories(${FFTW_INC})
-set(FFTW_LIBS "-L${FFTW_LIB} -lfftw3_omp -lfftw3 -lm")
+find_package(PkgConfig REQUIRED)     
+pkg_check_modules(FFTW IMPORTED_TARGET REQUIRED fftw3)
+          
+if(NOT FFTW_ROOT AND DEFINED ENV{FFTWDIR})
+    set(FFTW_ROOT $ENV{FFTWDIR})
+endif()
+          
+find_library(
+    FFTW_DOUBLE_OMP_LIB
+    NAMES "fftw3_omp"
+    PATHS ${PKG_FFTW_LIBRARY_DIRS} ${LIB_INSTALL_DIR}
+)
+          
+if (FFTW_DOUBLE_OMP_LIB)
+    set(FFTW_DOUBLE_OMP_LIB_FOUND TRUE)
+    set(FFTW_LIBRARIES ${FFTW_LIBRARIES} ${FFTW_DOUBLE_OMP_LIB})
+    add_library(FFTW::DoubleOMP INTERFACE IMPORTED)
+    set_target_properties(FFTW::DoubleOMP
+        PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${FFTW_INCLUDE_DIRS}"
+        INTERFACE_LINK_LIBRARIES "${FFTW_DOUBLE_OMP_LIB}"
+    )
+else()
+    set(FFTW_DOUBLE_OMP_LIB_FOUND FALSE)
+endif()
+
+#set(FFTW_INC "${FFTW_ROOT}/include")
+#set(FFTW_LIB "${FFTW_ROOT}/lib")
+#include_directories(${FFTW_INC})
+#set(FFTW_LIBS "-L${FFTW_LIB} -lfftw3_omp -lfftw3 -lm")
 
 #OpenBLAS config
 set(OBLAS_INC "${OBLAS_ROOT}/include")
