@@ -1,4 +1,4 @@
-""" Maps 1-D TDSE outputs to 2-D results (i.e., for nanoblades).
+""" Maps 1-D TDSE outputs to 2-D or 3-D results (i.e., for nanoblades).
     Essentially the inverse of a projection.
     Data should be structured as:
     superfol/

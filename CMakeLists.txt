@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.19)
 
-project(TDSESolveLinux)
+project(TDSESolver)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -21,12 +21,14 @@ set(OBLAS_ROOT "/home/jmann")
 # Boost config
 set(BOOST_INC "/usr/include/boost")
 
-#PYBIND11
-set(Python_ROOT_DIR ${CMAKE_SOURCE_DIR}/.venv)
-set(pybind11_DIR ${CMAKE_SOURCE_DIR}/.venv/lib/python3.11/site-packages/pybind11/share/cmake/pybind11/)
+# CPU type
+set(CPU_MARCH "znver2")
 
 ###################################
 
+#PYBIND11
+set(Python_ROOT_DIR ${CMAKE_SOURCE_DIR}/.venv)
+set(pybind11_DIR ${CMAKE_SOURCE_DIR}/.venv/lib/python3.$ENV{PYTHON_SUBVERSION_NUMBER}/site-packages/pybind11/share/cmake/pybind11/)
 
 #pybind11
 set(PYTHON_EXECUTABLE ${Python_ROOT_DIR}/bin/python3)
@@ -83,6 +85,6 @@ find_library(OBLAS_LIBS
   HINTS ${OBLAS_LIB}
 )
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lstdc++ -O3 -march=znver2 -mtune=native -fPIC -fopenmp")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lstdc++ -O3 -march=${CPU_MARCH} -mtune=native -fPIC -fopenmp")
 
 add_subdirectory(src)
