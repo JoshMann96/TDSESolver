@@ -1,7 +1,7 @@
 #pragma once
 #include "CORECommonHeader.h"
 #include "WfcRhoTools.h"
-
+				 
 // Electric field profiles for use of creating potentials.
 namespace ElectricFieldProfiles {
 	// Template class (no field).

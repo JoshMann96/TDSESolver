@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.19)
+cmake_minimum_required(VERSION 3.21)
 
 project(TDSESolver)
 
@@ -12,25 +12,13 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-
-### MODIFY FOR YOUR SYSTEM HERE ###
-
-#OpenBLAS config
-set(OBLAS_ROOT "/home/jmann")
-
-# Boost config
-set(BOOST_INC "/usr/include/boost")
-
 # CPU type
-set(CPU_MARCH "znver2")
-
-###################################
+set(CPU_MARCH "native")
 
 #PYBIND11
 set(Python_ROOT_DIR ${CMAKE_SOURCE_DIR}/.venv)
 set(pybind11_DIR ${CMAKE_SOURCE_DIR}/.venv/lib/python3.$ENV{PYTHON_SUBVERSION_NUMBER}/site-packages/pybind11/share/cmake/pybind11/)
 
-#pybind11
 set(PYTHON_EXECUTABLE ${Python_ROOT_DIR}/bin/python3)
 find_package(pybind11 REQUIRED)
 
@@ -42,8 +30,9 @@ find_package(MPI REQUIRED)
 include_directories(SYSTEM ${MPI_INCLUDE_PATH})
 
 #BOOST
-include_directories(${BOOST_INC})
-set(BOOST_LINK_FLAGS "-lboost_system -lboost_filesystem")
+find_package(Boost REQUIRED
+    COMPONENTS system filesystem)
+include_directories(${BOOST_INCLUDE_DIRS})
 
 #FFTW config
 find_package(PkgConfig REQUIRED)     
@@ -71,19 +60,9 @@ else()
     set(FFTW_DOUBLE_OMP_LIB_FOUND FALSE)
 endif()
 
-#set(FFTW_INC "${FFTW_ROOT}/include")
-#set(FFTW_LIB "${FFTW_ROOT}/lib")
-#include_directories(${FFTW_INC})
-#set(FFTW_LIBS "-L${FFTW_LIB} -lfftw3_omp -lfftw3 -lm")
-
 #OpenBLAS config
-set(OBLAS_INC "${OBLAS_ROOT}/include")
-set(OBLAS_LIB "${OBLAS_ROOT}/lib")
-find_library(OBLAS_LIBS
-  NAMES openblas libopenblas
-  REQUIRED
-  HINTS ${OBLAS_LIB}
-)
+set(BLA_VENDOR OpenBLAS)
+find_package(BLAS REQUIRED)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lstdc++ -O3 -march=${CPU_MARCH} -mtune=native -fPIC -fopenmp")
 

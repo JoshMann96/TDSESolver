@@ -1,5 +1,6 @@
 #include "Potentials.h"
 #include <bits/types/FILE.h>
+#include "blas_externs.h"
 
 namespace Potentials {
 	FilePotential::FilePotential(int nPts, double * x, double offset, const char * fil, int refPoint) {

@@ -2,17 +2,8 @@
 #include <iostream>
 #include <stdexcept>
 #include <system_error>
+#include "blas_externs.h"
 
-
-/*Measurer::Measurer() {}
-Measurer::~Measurer() {}
-void Measurer::measure(std::complex<double> * psi, double * v, double t) {}
-void Measurer::terminate() {}*/
-
-
-
-
-//Constant
 
 namespace Measurers {
 

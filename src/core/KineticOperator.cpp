@@ -2,7 +2,7 @@
 #include "fftw3.h"
 #include <omp.h>
 #include <fftw3.h>
-#include <lapack.h>
+#include "blas_externs.h"
 
 #define MULTIELEC_FFTW_POLICY FFTW_PATIENT
 

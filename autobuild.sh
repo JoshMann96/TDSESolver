@@ -22,7 +22,7 @@ then echo "build folder already exists. Refreshing..." & rm -r build
 fi
 mkdir build
 
-cmake -S . -B build
+cmake -S . -B build "$@"
 cd build
 make -j 8
 
@@ -35,3 +35,5 @@ echo "To install to a custom venv"
 echo "    1. source the desired venv"
 echo "    2. cd to build/lib/tdsepy"
 echo "    3. run 'pip install .'"
+
+deactivate

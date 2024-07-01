@@ -1,5 +1,5 @@
 #include "MathTools.h"
-
+#include "blas_externs.h"
 
 namespace vtls {
 

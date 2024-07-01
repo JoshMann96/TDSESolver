@@ -1,8 +1,6 @@
 #pragma once
 #include "CORECommonHeader.h"
 
-#define dcomplex double __complex__
-
 namespace KineticOperators {
 
 	class KineticOperator

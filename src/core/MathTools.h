@@ -1,10 +1,10 @@
 #pragma once
 #include "CORECommonHeader.h"
-#include <cblas.h>
 #include <omp.h>
 #include <fftw3.h>
 #include <mutex>
 #include "exprtk.hpp"
+
 
 namespace vtlsInt {
 	// Riemann integration.
