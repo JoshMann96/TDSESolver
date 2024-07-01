@@ -26,7 +26,12 @@ find_package(pybind11 REQUIRED)
 find_package(OpenMP REQUIRED)
 
 #MPI
-find_package(MPI REQUIRED)
+if(NOT MPI_PATH)
+    find_package(MPI REQUIRED)
+else()
+    find_package(MPI REQUIRED
+        HINTS ${MPI_PATH})
+endif()
 include_directories(SYSTEM ${MPI_INCLUDE_PATH})
 
 #BOOST
@@ -62,7 +67,14 @@ endif()
 
 #OpenBLAS config
 set(BLA_VENDOR OpenBLAS)
-find_package(BLAS REQUIRED)
+if(NOT BLAS_HINTS)
+    find_package(BLAS REQUIRED)
+    set(BLAS_LIBRARIES BLAS::BLAS)
+else()
+    find_library(BLAS_LIBRARIES
+        NAMES openblas libopenblas
+        HINTS ${BLAS_HINTS})
+endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lstdc++ -O3 -march=${CPU_MARCH} -mtune=native -fPIC -fopenmp")
 
