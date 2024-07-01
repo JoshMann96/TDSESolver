@@ -3,7 +3,6 @@
 #include <omp.h>
 #include <fftw3.h>
 #include <mutex>
-#include "exprtk.hpp"
 
 
 namespace vtlsInt {
@@ -205,7 +204,8 @@ namespace vtls {
 
 	template <typename T, typename U>
 	void evalMathExpr(int len, const char* var, T* vals, std::string expr, U* res) {
-		typedef exprtk::symbol_table<T> symbol_table_t;
+		throw std::runtime_error("exprtk functionality has been removed for 'vtls::evalMathExpr'. Future versions should implements lambdas from pybind11.");
+		/*typedef exprtk::symbol_table<T> symbol_table_t;
 		typedef exprtk::expression<T>   expression_t;
 		typedef exprtk::parser<T>       parser_t;
 
@@ -223,7 +223,7 @@ namespace vtls {
 		for (int i = 0; i < len; i++) {
 			cval = vals[i];
 			res[i] = (U)(expression.value());
-		}
+		}*/
 	}
 
 	template <typename T, typename U>
