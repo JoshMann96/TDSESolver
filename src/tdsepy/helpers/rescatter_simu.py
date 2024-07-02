@@ -254,50 +254,10 @@ def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:f
     os.makedirs(data_fol, exist_ok=True)
     if data_fol[-1] != '/':
         data_fol += '/'
-    ### GET SIMULATION PARAMETERS ###
-    
-    #simulation must hold 2 ponderomotive amplitudes, and must prevent 10Up electrons from emitting for 2*tau from their emission
-    #for low-field limit, must also have 5 penetration depths at Fermi level (assuming square well)
-    #   xmax = 2*ap + 2*tau*sqrt(2/m*10Up) + 5/sqrt(2*m*W/hbar^2)
-    #must have enough time after 5*tau (center) for min_emitted_energy to escape
-    #   duration = 5*tau + xmax / sqrt(2/m * min_emitted_energy)
-    
-    peak_t = 5*tau
-    xmax = 2*pond_a(emax, lam) + 2*tau*np.sqrt(2.0/cons.m_e * 10.0 * pond_U(emax, lam)) + 5/np.sqrt(2.0*cons.m_e*wf)*cons.hbar
-    duration = peak_t + xmax / np.sqrt(2/cons.m_e * min_emitted_energy)
-    
-    #well must be large enough to store target_elec_num electrons
-    # nelec = sqrt(ef*8*m/(h^2)*l^2))
-    # -> l = h nelec / sqrt(8 ef m)
-    
-    well_width = cons.h * target_elec_num / np.sqrt(8 * ef * cons.m_e)
-    jell_back = well_width/4.0
-    xmin = -well_width - jell_back
-    
-    #dx must be able to resolve maximum energy scale:
-    #   20 U_p, E_f + W, 
-    #dt must be chosen to get small total error
-    # TE = dt^2 t / (24 hbar m) * V'^2 < target_total_truncation_error
-    #   t is length of simu
-    #   V' is maximum potential gradient
-    #       max for Jellium (Hartrees):
-    #       (E_f + W)^2/4 / (2 (E_f+W)/kf - 1)
-    #       and combine with max for field
-    
-    efw_h = ef + wf / cons.physical_constants["Hartree energy"][0]
-    kf_h = np.sqrt(ef/cons.physical_constants["Hartree energy"][0])
-    max_jel_grad = efw_h**2/(4*(2*efw_h/kf_h-1)) \
-        * cons.physical_constants["Hartree energy"][0] \
-            * cons.physical_constants["hartree-inverse meter relationship"][0]
-        
-    max_energy = 10*pond_U(emax, lam)
-    energy_resolution = 2*max_energy + ef + wf
-    gradient_resolution = max_jel_grad + cons.e*emax
 
-    dx = np.sqrt( cons.hbar**2/(2*cons.m_e*energy_resolution) )
-    dt = np.sqrt( target_total_truncation_error * 24.0 * cons.hbar * cons.m_e / \
-        (duration * (max_jel_grad + cons.e*emax)**2) )
-    dt = min(duration/min_timesteps, dt)
+    ### GET SIMULATION PARAMETERS ###
+    peak_t = 5*tau
+    xmin, xmax, duration, dx, dt, well_width, jell_back, peak_t = getSimulationParameters(emax, lam, ef, wf, tau, peak_t, min_emitted_energy, target_elec_num, target_total_truncation_error, min_timesteps)
 
     ### INITIALIZE SIMULATION ###
 
@@ -367,3 +327,50 @@ def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:f
     message("\tDone!")
 
 # /runSimulation/
+
+def getSimulationParameters(emax:float, lam:float, ef:float, wf:float, tau:float, peak_t:float, min_emitted_energy:float=1.602e-19, target_elec_num:int=50, target_total_truncation_error:float=0.01, min_timesteps:int=2000):
+    ### GET SIMULATION PARAMETERS ###
+    
+    #simulation must hold 2 ponderomotive amplitudes, and must prevent 10Up electrons from emitting for 2*tau from their emission
+    #for low-field limit, must also have 5 penetration depths at Fermi level (assuming square well)
+    #   xmax = 2*ap + 2*tau*sqrt(2/m*10Up) + 5/sqrt(2*m*W/hbar^2)
+    #must have enough time after 5*tau (center) for min_emitted_energy to escape
+    #   duration = 5*tau + xmax / sqrt(2/m * min_emitted_energy)
+    
+    xmax = 2*pond_a(emax, lam) + 2*tau*np.sqrt(2.0/cons.m_e * 10.0 * pond_U(emax, lam)) + 5/np.sqrt(2.0*cons.m_e*wf)*cons.hbar
+    duration = peak_t + xmax / np.sqrt(2/cons.m_e * min_emitted_energy)
+    
+    #well must be large enough to store target_elec_num electrons
+    # nelec = sqrt(ef*8*m/(h^2)*l^2))
+    # -> l = h nelec / sqrt(8 ef m)
+    
+    well_width = cons.h * target_elec_num / np.sqrt(8 * ef * cons.m_e)
+    jell_back = well_width/4.0
+    xmin = -well_width - jell_back
+    
+    #dx must be able to resolve maximum energy scale:
+    #   20 U_p, E_f + W, 
+    #dt must be chosen to get small total error
+    # TE = dt^2 t / (24 hbar m) * V'^2 < target_total_truncation_error
+    #   t is length of simu
+    #   V' is maximum potential gradient
+    #       max for Jellium (Hartrees):
+    #       (E_f + W)^2/4 / (2 (E_f+W)/kf - 1)
+    #       and combine with max for field
+    
+    efw_h = ef + wf / cons.physical_constants["Hartree energy"][0]
+    kf_h = np.sqrt(ef/cons.physical_constants["Hartree energy"][0])
+    max_jel_grad = efw_h**2/(4*(2*efw_h/kf_h-1)) \
+        * cons.physical_constants["Hartree energy"][0] \
+            * cons.physical_constants["hartree-inverse meter relationship"][0]
+        
+    max_energy = 10*pond_U(emax, lam)
+    energy_resolution = 2*max_energy + ef + wf
+    gradient_resolution = max_jel_grad + cons.e*emax
+
+    dx = np.sqrt( cons.hbar**2/(2*cons.m_e*energy_resolution) )
+    dt = np.sqrt( target_total_truncation_error * 24.0 * cons.hbar * cons.m_e / \
+        (duration * (max_jel_grad + cons.e*emax)**2) )
+    dt = min(duration/min_timesteps, dt)
+    
+    return xmin, xmax, duration, dx, dt, well_width, jell_back, peak_t
