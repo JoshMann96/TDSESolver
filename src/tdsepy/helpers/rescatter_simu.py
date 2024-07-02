@@ -257,7 +257,7 @@ def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:f
 
     ### GET SIMULATION PARAMETERS ###
     peak_t = 5*tau
-    xmin, xmax, duration, dx, dt, well_width, jell_back, peak_t = getSimulationParameters(emax, lam, ef, wf, tau, peak_t, min_emitted_energy, target_elec_num, target_total_truncation_error, min_timesteps)
+    xmin, xmax, duration, dx, dt, max_energy, well_width, jell_back, peak_t = getSimulationParameters(emax, lam, ef, wf, tau, peak_t, min_emitted_energy, target_elec_num, target_total_truncation_error, min_timesteps)
 
     ### INITIALIZE SIMULATION ###
 
@@ -290,7 +290,7 @@ def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:f
     if measure_density:
         sim.addMeas(Measurers.Psi2t(sim, 800, 800, data_fol))
         sim.addMeas(Measurers.Vfunct(sim, 800, 800, data_fol))
-    sim.addMeas(Measurers.VDFluxSpec(sim, xmax, 0, 10000, 1000*1.602e-19, "vacc", data_fol))
+    sim.addMeas(Measurers.VDFluxSpec(sim, xmax, 0, 10000, max_energy, "vacc", data_fol))
     sim.addMeas(Measurers.Weights(sim, data_fol))
     
     sim.addMeas(Measurers.Constant(emax, "emax", data_fol))
@@ -373,4 +373,4 @@ def getSimulationParameters(emax:float, lam:float, ef:float, wf:float, tau:float
         (duration * (max_jel_grad + cons.e*emax)**2) )
     dt = min(duration/min_timesteps, dt)
     
-    return xmin, xmax, duration, dx, dt, well_width, jell_back, peak_t
+    return xmin, xmax, duration, dx, dt, max_energy, well_width, jell_back, peak_t

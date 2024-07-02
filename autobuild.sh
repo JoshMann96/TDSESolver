@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # This script is used to build the project and create a Python virtual environment (venv).
-# To install to a custom venv, cd to build/lib/tdsepy and run `pip install .`
+# To install to a custom venv, cd to build/lib/tdsepy and run `pip install -e .`
 
 # This project uses CMake's find_package functionality for the following (required) packages
 # OpenMP
@@ -41,6 +41,6 @@ echo "BUILD COMPLETE"
 echo "To install to a custom venv"
 echo "    1. source the desired venv"
 echo "    2. cd to build/lib/tdsepy"
-echo "    3. run 'pip install .'"
+echo "    3. run 'pip install -e .'"
 
 deactivate
