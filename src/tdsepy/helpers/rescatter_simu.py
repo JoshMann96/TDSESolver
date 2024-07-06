@@ -257,7 +257,7 @@ def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:f
 
     ### GET SIMULATION PARAMETERS ###
     peak_t = 5*tau
-    xmin, xmax, duration, dx, dt, max_energy, well_width, jell_back, peak_t = getSimulationParameters(emax, lam, ef, wf, tau, peak_t, min_emitted_energy, target_elec_num, target_total_truncation_error, min_timesteps)
+    xmin, xmax, duration, dx, dt, max_energy, well_width, jell_back = getSimulationParameters(emax, lam, ef, wf, tau, peak_t, min_emitted_energy, target_elec_num, target_total_truncation_error, min_timesteps)
 
     ### INITIALIZE SIMULATION ###
 
@@ -290,7 +290,7 @@ def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:f
     if measure_density:
         sim.addMeas(Measurers.Psi2t(sim, 800, 800, data_fol))
         sim.addMeas(Measurers.Vfunct(sim, 800, 800, data_fol))
-    sim.addMeas(Measurers.VDFluxSpec(sim, xmax, 0, 10000, max_energy, "vacc", data_fol))
+    sim.addMeas(Measurers.VDFluxSpec(sim, xmax, 0, 10000, max_energy*1.5, "vacc", data_fol))
     sim.addMeas(Measurers.Weights(sim, data_fol))
     
     sim.addMeas(Measurers.Constant(emax, "emax", data_fol))
@@ -329,6 +329,31 @@ def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:f
 # /runSimulation/
 
 def getSimulationParameters(emax:float, lam:float, ef:float, wf:float, tau:float, peak_t:float, min_emitted_energy:float=1.602e-19, target_elec_num:int=50, target_total_truncation_error:float=0.01, min_timesteps:int=2000):
+    """Calculates desirable simulation parameters for a rescattering simulation.
+
+    Args:
+        emax (float): Electric field amplitude.
+        lam (float): Wavelength.
+        ef (float): Fermi energy.
+        wf (float): Work function.
+        tau (float): Full-width half-max power.
+        peak_t (float): Time of envelope maximum.
+        min_emitted_energy (float, optional): Minimum emitted energy to wait for. Defaults to 1.602e-19.
+        target_elec_num (int, optional): Target number of eigenstates. Defaults to 50.
+        target_total_truncation_error (float, optional): Target total truncation error. Defaults to 0.01.
+        min_timesteps (int, optional): Minimum timesteps. Defaults to 2000.
+
+    Returns:
+        xmin : Minimum x position.
+        xmax : Maximum x position.
+        duration : Duration of simulation.
+        dx : x grid spacing.
+        dt : Time step.
+        max_energy : Maximum emitted energy (10 Up).
+        well_width : Width of Jellium slab.
+        jell_back : Width of Jellium backing.
+    """
+    
     ### GET SIMULATION PARAMETERS ###
     
     #simulation must hold 2 ponderomotive amplitudes, and must prevent 10Up electrons from emitting for 2*tau from their emission
@@ -373,4 +398,4 @@ def getSimulationParameters(emax:float, lam:float, ef:float, wf:float, tau:float
         (duration * (max_jel_grad + cons.e*emax)**2) )
     dt = min(duration/min_timesteps, dt)
     
-    return xmin, xmax, duration, dx, dt, max_energy, well_width, jell_back, peak_t
+    return xmin, xmax, duration, dx, dt, max_energy, well_width, jell_back

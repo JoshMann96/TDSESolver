@@ -25,9 +25,10 @@ pip3 install --upgrade pip
 pip3 install -r requirements.txt
 
 if [ -d build ];
-then echo "build folder already exists. Refreshing..." & rm -r build
-fi
+then echo "build folder already exists."
+else
 mkdir build
+fi
 
 cmake -S . -B build "$@"
 cd build
