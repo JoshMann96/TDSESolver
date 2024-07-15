@@ -127,7 +127,8 @@ def plotRadialSpectrum(superfol:str, vdNum:int=0, minE:float=0, maxE:float=1200,
                       fieldMax:float=80e9, fieldProfile=lambda theta:np.cos(theta), nTheta=400, nRadial=400,
                       vmin:float=20, vmax:float=27, show:bool=True):
     
-    thetas, _, es, spc = getRadialSpectrum(superfol=superfol, vdNum=vdNum, minE=minE, maxE=maxE, outputMaxE=outputMaxE, 
+    radspecdat = loadRadialSpectrumData(superfol=superfol, vdNum=vdNum, minE=minE, maxE=maxE)
+    thetas, _, es, spc = getRadialSpectrum(radspecdat, outputMaxE=outputMaxE, 
                       fieldMax=fieldMax, fieldProfile=fieldProfile, nTheta=nTheta, nRadial=nRadial)
     
     #duplicate for full 180 degrees

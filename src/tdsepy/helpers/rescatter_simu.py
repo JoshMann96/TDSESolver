@@ -395,7 +395,7 @@ def getSimulationParameters(emax:float, lam:float, ef:float, wf:float, tau:float
 
     dx = np.sqrt( cons.hbar**2/(2*cons.m_e*energy_resolution) )
     dt = np.sqrt( target_total_truncation_error * 24.0 * cons.hbar * cons.m_e / \
-        (duration * (max_jel_grad + cons.e*emax)**2) )
+        (duration * (gradient_resolution)**2) )
     dt = min(duration/min_timesteps, dt)
     
     return xmin, xmax, duration, dx, dt, max_energy, well_width, jell_back
