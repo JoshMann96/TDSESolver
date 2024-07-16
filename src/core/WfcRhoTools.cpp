@@ -1,5 +1,6 @@
 #include "WfcRhoTools.h"
 #include "fftw3.h"
+#include <stdexcept>
 
 namespace WfcToRho {
 	void calcEnergies(int nElec, int nPts, double dx, std::complex<double>* psi, double* totPot, KineticOperators::KineticOperator* kin, double* energies) {
@@ -120,6 +121,48 @@ namespace WfcToRho {
 		}
 	}
 
+	CylindricalDensity::CylindricalDensity(Density* baseDens, double center, double radius, double minX) : baseDens(baseDens), center(center), radius(radius), minX(minX) {};
+
+	CylindricalDensity::~CylindricalDensity(){
+		delete baseDens;
+		if (thinning)
+			fftw_free(thinning);
+	}
+
+	void CylindricalDensity::doFirst(int nPts, double dx) {
+		if(thinning)
+			delete[] thinning;
+		thinning = (double*) fftw_malloc(sizeof(double)*nPts);
+
+		std::fill_n(thinning, nPts, 1.0);
+
+		if(radius > dx/2){
+			startIndex = std::max(0, (int)std::floor((center + radius - minX) / dx));
+			endIndex = nPts;
+		}
+		else if(radius < -dx/2){
+			startIndex = 0;
+			endIndex = std::min(nPts, (int)std::ceil((center + radius - minX) / dx));
+		}
+		else
+			throw std::runtime_error("CylindricalDensity: Radius must be larger than half of grid size.");
+		
+		for(int i = startIndex; i < endIndex; i++)
+			thinning[i] = radius / (i * dx - center - minX);
+	}
+
+	void CylindricalDensity::calcRho(int nPts, int nElec, double dx, double* weights, std::complex<double>* psi, double* rho) {
+		if (first){
+			doFirst(nPts, dx);
+			first = 0;
+		}
+
+		baseDens->calcRho(nPts, nElec, dx, weights, psi, rho);
+
+		for (int i = startIndex; i < endIndex; i++)
+			rho[i] *= thinning[i];
+	}
+	
 	GaussianSmoothedDensity::~GaussianSmoothedDensity(){
 		if(psi2)
 			fftw_free(psi2);

@@ -1,5 +1,6 @@
 #include "Potentials.h"
 #include <bits/types/FILE.h>
+#include "MathTools.h"
 #include "blas_externs.h"
 
 namespace Potentials {
@@ -883,6 +884,8 @@ namespace Potentials {
 		rho = new double[nPts];
 		lrxr = new double[nPts];
 		nsMask = new double[nPts];
+		dethin = new double[nPts];
+
 
 		for (int i = 0; i < nPts; i++)
 			if (x[i] - x[surfPos] <= -rad)
@@ -894,6 +897,9 @@ namespace Potentials {
 			nsMask[i] = 0.0;
 		for (int i = surfPos; i < nPts; i++)
 			nsMask[i] = 1.0 - std::exp(-2 * std::sqrt(2.0 * PhysCon::me * w) / PhysCon::hbar * (i - surfPos) * dx);
+
+		for (int i = 0; i < nPts; i++)
+			dethin[i] = i >= surfPos ? 1 + (i-surfPos)*dx/rad : 1.0;
 	}
 
 	CylindricalImageCharge::~CylindricalImageCharge(){
@@ -958,11 +964,15 @@ namespace Potentials {
 		for (int i = posMax; i < nPts; i++)
 			rho[i] = 0;
 		for (int i = 0; i < nElec; i++)
-				emittedCharge += dt / 2.0 * PhysCon::hbar / PhysCon::me * std::imag(std::conj(psi[i * nPts + posMax]) * (psi[i * nPts + posMax + 1] - psi[i * nPts + posMax - 1]) / (2.0 * dx)) * prefactor[i];
+			emittedCharge += dt / 2.0 * PhysCon::hbar / PhysCon::me * std::imag(std::conj(psi[i * nPts + posMax]) * (psi[i * nPts + posMax + 1] - psi[i * nPts + posMax - 1]) / (2.0 * dx)) * prefactor[i];
 		//FACTOR OF 2 ONLY WORKS FOR CALCULATIONS WHICH EVALUATE POTENTIAL TWICE
 		//SHOULD BE SEPARATED INTO A VIRTUAL DETECTOR WHICH IS ONLY EVALUATED ONCE PER TIME-STEP
 		//auto t2 = std::chrono::system_clock::now();
 		std::fill_n(targ, nPts, 0);
+
+		// below was designed assuming that rho did not already include geometric thinning
+		// now that it does, we need to adjust the density provided
+		vtls::seqMulArrays(nPts, dethin, rho);
 
 		//ORIGINAL ATTEMPT
 		//CALCULATE FIELDS FROM FIELD ELECTRONS

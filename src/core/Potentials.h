@@ -293,6 +293,7 @@ namespace Potentials {
 		int isDynamic();
 	};
 
+	// need to account for new density calculation including dispersion
 	class SurfaceSpaceCharge :
 		public WaveFunctionSelfPotential
 	{
@@ -321,6 +322,7 @@ namespace Potentials {
 		int isDynamic();
 	};
 
+	// need to account for new density calculation including dispersion
 	class FullCylindricalSpaceCharge :
 		public WaveFunctionSelfPotential
 	{
@@ -341,6 +343,7 @@ namespace Potentials {
 		int isDynamic();
 	};
 
+	// need to account for new density calculation including dispersion
 	class LinearBulkCylindricalFieldSpaceCharge :
 		public WaveFunctionSelfPotential
 	{
@@ -364,12 +367,13 @@ namespace Potentials {
 		int isDynamic();
 	};
 
+	// TODO: account for new density calculation including dispersion
 	class CylindricalImageCharge :
 		public WaveFunctionSelfPotential
 	{
 	private:
 		int nPts, refPoint, * nelecPtr, nElec, first = 1, posMin, posMax, surfPos;
-		double dx, dt, ef, w, rad, * prefactor=nullptr, * origPot, * potTemp, * genTemp, * lrxr, * rho, *nsMask;
+		double dx, dt, ef, w, rad, * prefactor=nullptr, * origPot, * potTemp, * genTemp, * lrxr, * rho, *nsMask, *dethin;
 		double emittedCharge = 0.0;
 		void calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator* kin);
 		void doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin);
@@ -385,6 +389,7 @@ namespace Potentials {
 		int isDynamic();
 	};
 
+	// need to account for new density calculation including dispersion
 	class DielectricBulkCylindricalFieldSpaceCharge :
 		public WaveFunctionSelfPotential
 	{
@@ -406,6 +411,7 @@ namespace Potentials {
 		int isDynamic();
 	};
 
+	// need to account for new density calculation including dispersion
 	class LinearBulkCylSectionFieldSpaceCharge :
 		public WaveFunctionSelfPotential
 	{

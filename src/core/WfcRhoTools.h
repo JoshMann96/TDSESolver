@@ -49,6 +49,22 @@ namespace WfcToRho {
 		void calcRho(int nPts, int nElec, double dx, double* weights, std::complex<double>* psi, double* rho);
 	};
 
+	class CylindricalDensity :
+		public Density
+	{
+	private:
+		Density* baseDens;
+		double center, radius, minX;
+		int startIndex, endIndex;
+		double* thinning=nullptr;
+		int first = 1;
+	public:
+		CylindricalDensity(Density* baseDens, double center, double radius, double minX);
+		~CylindricalDensity();
+		void calcRho(int nPts, int nElec, double dx, double* weights, std::complex<double>* psi, double* rho);
+		void doFirst(int nPts, double dx);
+	};
+
 	class GaussianSmoothedDensity :
 		public Density
 	{
