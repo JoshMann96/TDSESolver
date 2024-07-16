@@ -263,7 +263,7 @@ def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:f
 
     sim = Simulation(xmin=xmin-abs_width, xmax=xmax+abs_width, dx=dx, dt=dt, maxT=duration, callback=callback)
     
-    sim.setDens(DirectDensity())
+    sim.setDens(CylindricalDensity(DirectDensity(), -rad, rad, xmin-abs_width))
     sim.setWght(FermiGasDistro(ef))
 
     ### INITIALIZE POTENTIALS ###
