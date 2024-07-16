@@ -124,7 +124,6 @@ namespace WfcToRho {
 	CylindricalDensity::CylindricalDensity(Density* baseDens, double center, double radius, double minX) : baseDens(baseDens), center(center), radius(radius), minX(minX) {};
 
 	CylindricalDensity::~CylindricalDensity(){
-		delete baseDens;
 		if (thinning)
 			fftw_free(thinning);
 	}
