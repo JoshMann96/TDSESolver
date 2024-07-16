@@ -41,7 +41,7 @@ void init_Simulation(py::module &m) {
             DirectDensity)V0G0N");
     
     py::class_<WfcToRho::CylindricalDensity, WfcToRho::Density>(m, "CylindricalDensity")
-        .def(py::init<WfcToRho::Density*, double, double, double>(), R"V0G0N(
+        .def(py::init<WfcToRho::Density*, double, double, double>(), py::keep_alive<1,2>(), R"V0G0N(
             Applies geometric dispersion to density assuming a cylindrical geometry (azimuthal symmetry) with some definite radius.
 
             Parameters
