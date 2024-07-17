@@ -130,7 +130,7 @@ namespace WfcToRho {
 
 	void CylindricalDensity::doFirst(int nPts, double dx) {
 		if(thinning)
-			delete[] thinning;
+			fftw_free(thinning);
 		thinning = (double*) fftw_malloc(sizeof(double)*nPts);
 
 		std::fill_n(thinning, nPts, 1.0);
