@@ -121,7 +121,7 @@ namespace WfcToRho {
 		}
 	}
 
-	CylindricalDensity::CylindricalDensity(Density* baseDens, double center, double radius, double minX) : baseDens(baseDens), center(center), radius(radius), minX(minX) {};
+	CylindricalDensity::CylindricalDensity(double center, double radius, double minX) : center(center), radius(radius), minX(minX) {};
 
 	CylindricalDensity::~CylindricalDensity(){
 		if (thinning)
@@ -129,6 +129,8 @@ namespace WfcToRho {
 	}
 
 	void CylindricalDensity::doFirst(int nPts, double dx) {
+		if(baseDens == nullptr)
+			throw std::runtime_error("CylindricalDensity: Base density calculator must be set with setBaseDens before use.");
 		if(thinning)
 			fftw_free(thinning);
 		thinning = (double*) fftw_malloc(sizeof(double)*nPts);

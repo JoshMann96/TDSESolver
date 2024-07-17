@@ -41,13 +41,12 @@ void init_Simulation(py::module &m) {
             DirectDensity)V0G0N");
     
     py::class_<WfcToRho::CylindricalDensity, WfcToRho::Density>(m, "CylindricalDensity")
-        .def(py::init<WfcToRho::Density*, double, double, double>(), py::keep_alive<1,2>(), R"V0G0N(
+        .def(py::init<double, double, double>(), R"V0G0N(
             Applies geometric dispersion to density assuming a cylindrical geometry (azimuthal symmetry) with some definite radius.
+
 
             Parameters
             ----------
-            baseDens : Density
-                Base density calculator used for calculating the unthinned density.
             center : float
                 Center of azimuthal symmetry.
             radius : float 
@@ -58,7 +57,15 @@ void init_Simulation(py::module &m) {
             Returns
             -------
             CylindricalDensity)V0G0N",
-            "baseDens"_a, "center"_a, "radius"_a, "minX"_a);
+            "center"_a, "radius"_a, "minX"_a)
+        .def("setBaseDensity", &WfcToRho::CylindricalDensity::setBaseDens, py::keep_alive<1,2>(), R"V0G0N(
+            Sets base density calculator which is then modified according to a cylindrical geometry.
+
+            Parameters
+            ----------
+            baseDens : Density
+                Density calculator to be used.)V0G0N",
+            "baseDens"_a);
             
 // KINETIC OPERATORS
 
