@@ -1,9 +1,14 @@
 from .rawdataload import *
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
+from scipy import constants as cons
 
-def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=20, vmax:float=27, cmap="magma", ax = None):
+def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=-11, vmax:float=-4, cmap="magma", ax = None):
     """Plots the 1-D collective electron density as a function of time for a selection of states.
+    AXIS | VAR | UNIT
+       x |  x  | nm
+       y |  t  | fs
+       z |  n  | 1/a0^3
 
     Args:
         fol (str): Folder containing data.
@@ -38,7 +43,7 @@ def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=20, vmax:float=2
     if ax is None:
         fig, ax = plt.subplots()
         
-    im = ax.pcolormesh(xs, ts, np.log10(np.tensordot(wghts, dat, (0,0))), cmap=cmap, vmin=vmin, vmax=vmax)
+    im = ax.pcolormesh(xs*1e9, ts*1e15, np.log10(np.tensordot(wghts, dat, (0,0))*(cons.physical_constants["atomic unit of length"][0]**3)), cmap=cmap, vmin=vmin, vmax=vmax)
     
     if fig is not None:
         return im, fig, ax
@@ -47,6 +52,10 @@ def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=20, vmax:float=2
 
 def plotPotential(fol:str, ax = None):
     """Plots the potential as a function of time.
+    AXIS | VAR | UNIT
+       x |  x  | nm
+       y |  t  | fs
+       z |  U  | eV
 
     Args:
         fol (str): Folder containing data.
@@ -58,7 +67,7 @@ def plotPotential(fol:str, ax = None):
     if ax is None:
         fig, ax = plt.subplots()
         
-    im = ax.pcolormesh(xs, ts, dat)
+    im = ax.pcolormesh(xs*1e9, ts*1e15, dat/cons.eV)
     
     if fig is not None:
         return im, fig, ax
@@ -140,7 +149,10 @@ def get1DTotalFluxSpectrum(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0,
 
 def plot1DFluxSpectrum(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0, maxE:float = 500, ax = None):
     """Plots the bidirectional density flux spectrum with respect to the signed kinetic energy (sgn(E) = sgn(k))
-
+    AXIS | VAR | UNIT
+       x |  E  | eV
+       y | flx | 1 / m^2 eV
+       
     Args:
         fol (str): Folder containing data.
         vdNum (int, optional): Virtual detector index. Defaults to 0.
