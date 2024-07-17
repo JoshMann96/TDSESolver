@@ -1053,7 +1053,7 @@ namespace Potentials {
 		switch (typ) {
 		case LDAFunctionalType::X_SLATER: // slater exchange
 		{
-			double coef = -0.75*std::pow(3.0/PhysCon::pi, 1.0/3) * PhysCon::auE_ha * PhysCon::a0; //convert linear density to a.u., then energy to SI
+			double coef = -std::pow(3.0/PhysCon::pi, 1.0/3) * PhysCon::auE_ha * PhysCon::a0; //convert linear density to a.u., then to energy in SI
 			for (int i = 0; i < nPts; i++)
 				targ[i] = coef * std::pow(rho[i], 1.0/3);
 			break;
@@ -1063,7 +1063,7 @@ namespace Potentials {
 			double aa = 0.031091, al = 0.21370, be1 = 7.5957, be2 = 3.5876, be3 = 1.6382, be4 = 0.49294;
 			
 			double crs, crho, q0, q1, q1p, drsdrho;
-			double smallRho = std::pow(1e10, -3);
+			double smallRho = 1e-10;
 			for(int i = 0; i < nPts; i++){
 				crho = rho[i] * std::pow(PhysCon::a0,3);
 				if(crho < smallRho){
