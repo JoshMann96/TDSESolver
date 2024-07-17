@@ -84,7 +84,7 @@ def getVfunct(fol:str):
         typ = readData(fil, "int")
         nx = readData(fil, "int")
         nt = readData(fil, "int")
-        dat = readData(fil, "double", nx*nt)
+        dat = readData(fil, "double", (nt, nx))
         xs = readData(fil, "double", nx)
         ts = readData(fil, "double", nt)
     return dat, xs, ts, typ
