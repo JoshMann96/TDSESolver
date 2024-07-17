@@ -910,6 +910,7 @@ namespace Potentials {
 		delete[] rho;
 		delete[] lrxr;
 		delete[] nsMask;
+		delete[] dethin;
 		if(prefactor)
 			delete[] prefactor; prefactor = nullptr;
 	}
