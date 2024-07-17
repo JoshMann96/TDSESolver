@@ -367,7 +367,6 @@ namespace Potentials {
 		int isDynamic();
 	};
 
-	// TODO: account for new density calculation including dispersion
 	class CylindricalImageCharge :
 		public WaveFunctionSelfPotential
 	{
@@ -383,6 +382,35 @@ namespace Potentials {
 	public:
 		CylindricalImageCharge(int nPts, double* x, double dx, double dt, double ef, double w, double rad, int* nElec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int posMin, int posMax, int surfPos, int refPoint);
 		~CylindricalImageCharge();
+		void negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator* kin);
+		void getV(double t, double* targ, KineticOperators::KineticOperator* kin);
+		void getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator* kin);
+		int isDynamic();
+	};
+
+
+
+	enum class LDAFunctionalType {
+		X_SLATER,
+		C_PW
+	};
+	class LDAFunctional :
+		public WaveFunctionSelfPotential
+	{
+	private:
+		int nPts, refPoint, * nelecPtr, nElec, first = 1;
+		double * origPot, * rho, dx;
+		double * prefactor = nullptr;
+		void calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator* kin);
+		void doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin);
+		Potential* totPot;
+		WfcToRho::Weight* wght;
+		WfcToRho::Density* dens;
+
+		LDAFunctionalType typ;
+	public:
+		LDAFunctional(LDAFunctionalType typ, int nPts, double dx, int* nElec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int refPoint);
+		~LDAFunctional();
 		void negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator* kin);
 		void getV(double t, double* targ, KineticOperators::KineticOperator* kin);
 		void getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator* kin);

@@ -276,10 +276,14 @@ def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:f
         cep, peak_t, lam, xmax)
     imagPot = Potentials.CylindricalImagePotential(
         sim, ef, wf, rad, xmin, xmax, 0.0, xmax)
+    xPot = Potentials.LDAFunctional(sim, Potentials.X_SLATER, xmax)
+    cPot = Potentials.LDAFunctional(sim, Potentials.C_PW, xmax)
 
     sim.addPot(jellPot)
     sim.addPot(fieldPot)
     sim.addPot(imagPot)
+    sim.addPot(xPot)
+    sim.addPot(cPot)
 
     ### INITIALIZE MEASURERS ###
 

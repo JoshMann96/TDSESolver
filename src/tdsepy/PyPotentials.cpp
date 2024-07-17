@@ -198,4 +198,38 @@ void init_Potentials(py::module &m) {
             sim : Simulation
                 Associated simulation.)V0G0N",
             "sim"_a);
+
+    py::class_<PyLDAFunctional, Potential>(m, "LDAFunctional")
+        .def(py::init<PySimulation*, LDAFunctionalType, double>(), R"V0G0N(
+            Local density approximation (LDA) functional potential.
+
+            Parameters
+            ----------
+            sim : Simulation
+                Associated simulation.
+            typ : LDAFunctionalType
+                Type of LDA functional. Choices include:
+                    X_SLATER : Slater exchange.
+                    C_PW : Perdew-Wang correlation.
+            refPoint : float
+                Potential reference point.
+
+            Returns
+            -------
+            LDAFunctional)V0G0N",
+            "sim"_a, "typ"_a, "refPoint"_a)
+        .def("negatePotential", &PyLDAFunctional::negatePotential, R"V0G0N(
+            Negates potential as evaluated in the Simulation's current state.
+            Intended to be used such that the potential only depends on the change in density, leading the initially calculated eigenstates to be the actual eigenstates before perturbation.
+
+            Parameters
+            ----------
+            sim : Simulation
+                Associated simulation.)V0G0N",
+            "sim"_a);
+            
+    py::enum_<LDAFunctionalType>(m, "LDAFunctionalType")
+        .value("X_SLATER", LDAFunctionalType::X_SLATER)
+        .value("C_PW", LDAFunctionalType::C_PW)
+        .export_values();
 }

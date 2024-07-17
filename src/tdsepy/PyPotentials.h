@@ -47,4 +47,15 @@ class PyCylindricalImagePotential
         }
     };
 
+class PyLDAFunctional
+    : public LDAFunctional{
+        public:
+        PyLDAFunctional(PySimulation* sim, LDAFunctionalType typ, double refPoint)
+            : LDAFunctional(typ, sim->getNumPoints(), sim->getDX(), sim->getNElecPtr(), sim->getPotPointer(), sim->getWght(), sim->getDens(), sim->findXIdx(refPoint)){}
+        
+        void negatePotential(PySimulation* sim){
+            LDAFunctional::negateGroundEffects(sim->getPsi(), sim->getKin());
+        }
+    };
+
 void init_Potentials(py::module &m);

@@ -1,6 +1,7 @@
 #include "Potentials.h"
 #include <bits/types/FILE.h>
 #include "MathTools.h"
+#include "PhysCon.h"
 #include "blas_externs.h"
 
 namespace Potentials {
@@ -992,6 +993,96 @@ namespace Potentials {
 		//Apply final constants
 		vtls::scaMulArray(nPts, -PhysCon::qe * PhysCon::qe / PhysCon::e0, targ);
 	}
+
+	LDAFunctional::LDAFunctional(LDAFunctionalType typ, int nPts, double dx, int* nElec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int refPoint)
+	: typ(typ), nPts(nPts), dx(dx), refPoint(refPoint), nelecPtr(nElec), totPot(totPot), wght(wght), dens(dens) {
+		origPot = new double[nPts];
+		std::fill_n(origPot, nPts, 0.0);
+		rho = new double[nPts];
+	}
+
+	LDAFunctional::~LDAFunctional(){
+		delete[] origPot;
+		delete[] rho;
+		if(prefactor)
+			delete[] prefactor;
+	};
+
+	void LDAFunctional::negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
+		calcPot(psi, origPot, kin);
+	}
+
+	void LDAFunctional::getV(double t, double* targ, KineticOperators::KineticOperator* kin) {
+		std::fill_n(targ, nPts, 0.0);
+	}
+
+	void LDAFunctional::getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator* kin) {
+		calcPot(psi, targ, kin);
+		double ref = targ[refPoint] - origPot[refPoint];
+		for (int i = 0; i < nPts; i++)
+			targ[i] -= origPot[i] + ref;
+	}
+
+	int LDAFunctional::isDynamic() {
+		return 2;
+	}
+
+	void LDAFunctional::doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
+		nElec = nelecPtr[0];
+		if(prefactor)
+			delete[] prefactor;
+		prefactor = new double[nElec];
+		double* energies = new double[nElec];
+		double* v0w = new double[nPts];
+		totPot->getV(0, v0w, kin);
+		WfcToRho::calcEnergies(nElec, nPts, dx, psi, v0w, kin, energies);
+		wght->calcWeights(nElec, energies, prefactor);
+		delete[] energies;
+		delete[] v0w;
+	}
+
+	void LDAFunctional::calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator* kin) {
+		if(first){
+			doFirst(psi, kin);
+			first = 0;
+		}
+		
+		dens->calcRho(nPts, *nelecPtr, dx, prefactor, psi, rho);
+
+		switch (typ) {
+		case LDAFunctionalType::X_SLATER: // slater exchange
+		{
+			double coef = -0.75*std::pow(3.0/PhysCon::pi, 1.0/3) * PhysCon::auE_ha * PhysCon::a0; //convert linear density to a.u., then energy to SI
+			for (int i = 0; i < nPts; i++)
+				targ[i] = coef * std::pow(rho[i], 1.0/3);
+			break;
+		}
+		case LDAFunctionalType::C_PW: // PW correlation
+		{
+			double aa = 0.031091, al = 0.21370, be1 = 7.5957, be2 = 3.5876, be3 = 1.6382, be4 = 0.49294;
+			
+			double crs, crho, q0, q1, q1p, drsdrho;
+			double smallRho = std::pow(1e10, -3);
+			for(int i = 0; i < nPts; i++){
+				crho = rho[i] * std::pow(PhysCon::a0,3);
+				if(crho < smallRho){
+					targ[i] = PhysCon::auE_ha * al/be4*std::pow(4.0*PhysCon::pi/3.0 * crho, 2.0/3);
+				} else{
+					crs = std::pow(0.75/(PhysCon::pi * crho), 1.0/3) / PhysCon::a0;
+					drsdrho = - crs / (3.0 * crho);
+					q0 = -2*aa*(1+al*crs);
+					q1 = 2*aa*(be1*std::sqrt(crs) + be2*crs + be3*std::pow(crs, 3.0/2) + be4*std::pow(crs, 2));
+					q1p= aa*(be1/std::sqrt(crs) + 2*be2 + 3*be3*std::sqrt(crs) + 4*be4*crs);
+
+					targ[i] = PhysCon::auE_ha * (-2*aa*al*std::log(1.0+1.0/q1) - q0*q1p/(q1*(q1+1.0))) * drsdrho;
+				}
+			}
+			break;
+		}
+		}
+
+	}
+
 
 
 	DielectricBulkCylindricalFieldSpaceCharge::DielectricBulkCylindricalFieldSpaceCharge(int nPts, double* x, double dx, double dt, double ef, double rad, double wellWidth, double dampRate, int* nElec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int posMin, int posMax, int surfPos, int refPoint) {
