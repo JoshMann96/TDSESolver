@@ -119,6 +119,7 @@ def get1DTotalFluxSpectrum(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0,
     Args:
         fol (str): Folder containing data.
         vdNum (int, optional): Virtual detector index. Defaults to 0.
+        elecNum (int | list, optional): Selected electron states. -1 to include all, or a list to include selected states. Defaults to -1.
         minE (float, optional) [eV]: Minimum signed kinetic energy. Defaults to 0.
         maxE (float, optional) [eV]: Maximum signed kinetic energy. Defaults to 500.
     Returns:
