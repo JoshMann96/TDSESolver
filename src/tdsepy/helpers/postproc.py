@@ -2,7 +2,7 @@ from .rawdataload import *
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 
-def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=20, vmax:float=27, cmap="magma", plot:bool = True):
+def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=20, vmax:float=27, cmap="magma", ax = None):
     """Plots the 1-D collective electron density as a function of time for a selection of states.
 
     Args:
@@ -14,11 +14,12 @@ def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=20, vmax:float=2
         vmin (float, optional): Log-scale minimum value. Defaults to 20.
         vmax (float, optional): Log-scale maximum value. Defaults to 27.
         cmap (str, optional): Colormap. Defaults to "magma".
-        plot (bool, optional): Run plt.show(). Defaults to True.
+        ax (axis, optional): Axis to plot on. Defaults to None (create own fig, ax and return).
         
     Returns:
-        fig: Matplotlib figure.
-        ax: Matplotlib axis.
+        if plot is None:
+            fig: Matplotlib figure.
+            ax: Matplotlib axis.
     """
     
     dat, xs, ts, _ = getPsi2t(fol)
@@ -33,27 +34,36 @@ def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=20, vmax:float=2
         wghts *= 0
         wghts[elecNum] = desWght
     
-    s = plt.pcolormesh(xs, ts, np.log10(np.tensordot(wghts, dat, (0,0))), cmap=cmap, vmin=vmin, vmax=vmax)
+    fig = None
+    if ax is None:
+        fig, ax = plt.subplots()
+        
+    im = ax.pcolormesh(xs, ts, np.log10(np.tensordot(wghts, dat, (0,0))), cmap=cmap, vmin=vmin, vmax=vmax)
     
-    if plot:
-        plt.show()
-    
-    return plt.gcf(), plt.gca()
+    if fig is not None:
+        return im, fig, ax
+    else:
+        return im
 
-def plotPotential(fol:str, plot:bool=True):
+def plotPotential(fol:str, ax = None):
     """Plots the potential as a function of time.
 
     Args:
         fol (str): Folder containing data.
-        plot (bool, optional): Run plt.show(). Defaults to True.
+        ax (axis, optional): Axis to plot on. Defaults to None (create own fig, ax and return).
     """
     dat, xs, ts, _ = getVfunct(fol)
-    plt.pcolormesh(xs, ts, dat)
     
-    if plot:
-        plt.show()
+    fig = None
+    if ax is None:
+        fig, ax = plt.subplots()
+        
+    im = ax.pcolormesh(xs, ts, dat)
     
-    return plt.gcf(), plt.gca()
+    if fig is not None:
+        return im, fig, ax
+    else:
+        return im
     
     
 def get1DStateFluxSpectrum(fol:str, vdNum:int = 0, minE:float = 0, maxE:float = 500):
@@ -127,7 +137,7 @@ def get1DTotalFluxSpectrum(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0,
     
     return es, spc
 
-def plot1DFluxSpectrum(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0, maxE:float = 500, plot:bool = True):
+def plot1DFluxSpectrum(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0, maxE:float = 500, ax = None):
     """Plots the bidirectional density flux spectrum with respect to the signed kinetic energy (sgn(E) = sgn(k))
 
     Args:
@@ -136,15 +146,20 @@ def plot1DFluxSpectrum(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0, max
         elecNum (int | list, optional): Selected electron states. -1 to include all, or a list to include selected states. Defaults to -1.
         minE (float, optional) [eV]: Minimum signed kinetic energy. Defaults to 0.
         maxE (float, optional) [eV]: Maximum signed kinetic energy. Defaults to 500.
+        ax (axis, optional): Axis to plot on. Defaults to None (create own fig, ax and return).
     """
     es, spc = get1DTotalFluxSpectrum(fol, vdNum, elecNum, minE, maxE)
     
-    plt.semilogy(es, spc)
+    fig = None
+    if ax is None:
+        fig, ax = plt.subplots()
     
-    if plot:
-        plt.show()
+    im = ax.semilogy(es, spc)
+    
+    if fig is not None:
+        return im, fig, ax
     else:
-        return plt.gcf(), plt.gca()
+        return im
     
 def get1DStateYield(fol:str, vdNum:int = 0, minE:float = 0, maxE:float=500):
     """Gets yield for each 1-D state within energy range.
