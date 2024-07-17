@@ -79,6 +79,16 @@ def getPsi2t(fol:str):
         ts = readData(fil, "double", nt)
     return dat, xs, ts, typ
 
+def getVfunct(fol:str):
+    with open(combinePath(fol, "Vfunct.dat"), 'rb') as fil:
+        typ = readData(fil, "int")
+        nx = readData(fil, "int")
+        nt = readData(fil, "int")
+        dat = readData(fil, "double", nx*nt)
+        xs = readData(fil, "double", nx)
+        ts = readData(fil, "double", nt)
+    return dat, xs, ts, typ
+
 def getWghts(fol:str):
     with open(combinePath(fol, "wghts.dat"), 'rb') as fil:
         typ = readData(fil, "int")

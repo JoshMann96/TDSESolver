@@ -39,6 +39,22 @@ def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=20, vmax:float=2
         plt.show()
     
     return plt.gcf(), plt.gca()
+
+def plotPotential(fol:str, plot:bool=True):
+    """Plots the potential as a function of time.
+
+    Args:
+        fol (str): Folder containing data.
+        plot (bool, optional): Run plt.show(). Defaults to True.
+    """
+    dat, xs, ts, _ = getVfunct(fol)
+    plt.pcolormesh(xs, ts, dat)
+    
+    if plot:
+        plt.show()
+    
+    return plt.gcf(), plt.gca()
+    
     
 def get1DStateFluxSpectrum(fol:str, vdNum:int = 0, minE:float = 0, maxE:float = 500):
     """Gets the bidirectional density flux spectrum with respect to the signed kinetic energy (sgn(E) = sgn(k)) for each state.
