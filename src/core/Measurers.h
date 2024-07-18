@@ -17,7 +17,7 @@ namespace Measurers {
 		virtual void terminate() = 0;
 	public:
 		//Measurer();
-		virtual ~Measurer() = 0;
+		virtual ~Measurer() = default;
 		// Required function that takes a measurement whenever called.
 		virtual int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) = 0;
 		// Required function which terminates the measurer (closes file).
