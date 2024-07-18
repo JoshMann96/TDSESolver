@@ -101,6 +101,8 @@ namespace vtlsPrnt {
 				std::cout << "#";
 			std::cout << std::endl;
 		}
+
+		delete[] nArr;
 	}
 
 	void printGraph(int n, std::complex<double>* __restrict arr0) {
@@ -118,5 +120,8 @@ namespace vtlsPrnt {
 				std::cout << "#";
 			std::cout << std::endl;
 		}
+
+		delete[] arr;
+		delete[] nArr;
 	}
 }

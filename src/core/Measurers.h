@@ -17,7 +17,7 @@ namespace Measurers {
 		virtual void terminate() = 0;
 	public:
 		//Measurer();
-		//~Measurer();
+		virtual ~Measurer() = 0;
 		// Required function that takes a measurement whenever called.
 		virtual int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) = 0;
 		// Required function which terminates the measurer (closes file).
@@ -403,7 +403,7 @@ namespace Measurers {
 		double ct;
 		double dw, tmax, tukeyAl=0.05;
 		const char* fname = "fluxspecvd.dat";
-		std::complex<double>* wfcs0, * wfcs1, *phss, cumPotPhs, *phaseCalcExpMul, *temp;
+		std::complex<double>* wfcs0 = nullptr, * wfcs1 = nullptr, *phss, cumPotPhs, *phaseCalcExpMul, *temp;
 		void terminate();
 	public:
 		int isHeavy() { return 0; };
@@ -492,7 +492,7 @@ namespace Measurers {
 		int first = 1;
 		int* nElec;
 		const char* fname = "nElec.dat";
-		char* nfil;
+		char* nfil = nullptr;
 		void terminate();
 	public:
 		int isHeavy() { return 0; };

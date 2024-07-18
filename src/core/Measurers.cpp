@@ -54,6 +54,8 @@ namespace Measurers {
 
 	NElec::~NElec() {
 		kill();
+		if(nfil)
+			delete[] nfil; nfil = nullptr;
 	}
 
 	int NElec::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) { 
@@ -61,7 +63,7 @@ namespace Measurers {
 			first = 0;
 			
 			fil = openFile(nfil);
-			delete[] nfil;
+			delete[] nfil; nfil = nullptr;
 			if (!fil) {
 				std::cout << "Could not open file: " << nfil;
 				std::cin.ignore();
@@ -391,6 +393,11 @@ namespace Measurers {
 
 	Psi2t::~Psi2t() {
 		kill();
+
+		delete[] psi2b;
+		delete[] psi2s;
+		delete[] xs;
+		delete[] ts;
 	}
 
 	int Psi2t::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
@@ -421,11 +428,6 @@ namespace Measurers {
 		fil.write(reinterpret_cast<char*>(&xs[0]), sizeof(double)*nx);
 		fil.write(reinterpret_cast<char*>(&ts[0]), sizeof(double)*nt);
 		fil.close();
-
-		delete[] psi2b;
-		delete[] psi2s;
-		delete[] xs;
-		delete[] ts;
 	}
 
 	ExpectE::ExpectE(int len, double dx, const char* fol) {
@@ -454,6 +456,8 @@ namespace Measurers {
 
 	ExpectE::~ExpectE() {
 		kill();
+
+		delete[] rho;
 	}
 
 	int ExpectE::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
@@ -475,8 +479,6 @@ namespace Measurers {
 
 	void ExpectE::terminate() {
 		fil.close();
-
-		delete[] rho;
 	}
 
 
@@ -507,6 +509,8 @@ namespace Measurers {
 
 	ExpectX::~ExpectX() {
 		kill();
+
+		delete[] scratch;
 	}
 
 	int ExpectX::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
@@ -518,9 +522,6 @@ namespace Measurers {
 
 	void ExpectX::terminate() {
 		fil.close();
-
-		delete[] x;
-		delete[] scratch;
 	}
 
 
@@ -551,6 +552,9 @@ namespace Measurers {
 
 	ExpectP::~ExpectP() {
 		kill();
+
+		delete[] scratch1;
+		delete[] scratch2;
 	}
 
 	int ExpectP::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
@@ -565,9 +569,6 @@ namespace Measurers {
 
 	void ExpectP::terminate() {
 		fil.close();
-
-		delete[] scratch1;
-		delete[] scratch2;
 	}
 
 
@@ -598,6 +599,9 @@ namespace Measurers {
 
 	ExpectA::~ExpectA() {
 		kill();
+
+		delete[] scratch1;
+		delete [] scratch2;
 	}
 
 	int ExpectA::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
@@ -611,9 +615,6 @@ namespace Measurers {
 
 	void ExpectA::terminate() {
 		fil.close();
-
-		delete[] scratch1;
-		delete [] scratch2;
 	}
 
 
@@ -644,6 +645,8 @@ namespace Measurers {
 
 	TotProb::~TotProb() {
 		kill();
+
+		delete[] psi2;
 	}
 
 	int TotProb::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
@@ -656,8 +659,6 @@ namespace Measurers {
 
 	void TotProb::terminate() {
 		fil.close();
-
-		delete[] psi2;
 	}
 
 
@@ -926,18 +927,32 @@ namespace Measurers {
 
 	VDFluxSpec::~VDFluxSpec() {
 		kill();
+
+		if(wfcs0)
+			delete[] wfcs0; wfcs0 = nullptr;
+		if(wfcs1)
+			delete[] wfcs1; wfcs1 = nullptr;
+		delete[] phss;
+		delete[] phaseCalcExpMul;
+		delete[] temp;
 	}
 
 	int VDFluxSpec::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) {
 		if (first) {
 			nElec = *nelecPtr;
 
+			if(wfcs0)
+				delete[] wfcs0;
+			if(wfcs1)
+				delete[] wfcs1;
 			wfcs0 = new std::complex<double>[nsamp * nElec];
 			wfcs1 = new std::complex<double>[nsamp * nElec];
+
 			for (int i = 0; i < nsamp * nElec; i++) {
 				wfcs0[i] = 0;
 				wfcs1[i] = 0;
 			}
+
 			celec = 0;
 			first = 0;
 			ct = 0;
@@ -989,12 +1004,6 @@ namespace Measurers {
 		fil.write(reinterpret_cast<char*>(&wfcs0[0]), nElec * nsamp * sizeof(std::complex<double>));
 		fil.write(reinterpret_cast<char*>(&wfcs1[0]), nElec * nsamp * sizeof(std::complex<double>));
 		fil.close();
-
-		delete[] wfcs0;
-		delete[] wfcs1;
-		delete[] phss;
-		delete[] phaseCalcExpMul;
-		delete[] temp;
 	}
 
 
@@ -1037,6 +1046,10 @@ namespace Measurers {
 
 	Vfunct::~Vfunct() {
 		kill();
+
+		delete[] vs;
+		delete[] xs;
+		delete[] ts;
 	}
 
 	int Vfunct::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
@@ -1065,10 +1078,6 @@ namespace Measurers {
 		fil.write(reinterpret_cast<char*>(&xs[0]), sizeof(double)*nx);
 		fil.write(reinterpret_cast<char*>(&ts[0]), sizeof(double)*nt);
 		fil.close();
-
-		delete[] vs;
-		delete[] xs;
-		delete[] ts;
 	}
 
 	ExpectE0::ExpectE0(int len, double dx, const char* fol) {
@@ -1097,6 +1106,8 @@ namespace Measurers {
 
 	ExpectE0::~ExpectE0() {
 		kill();
+
+		delete[] rho;
 	}
 
 	int ExpectE0::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) {
@@ -1124,8 +1135,6 @@ namespace Measurers {
 
 	void ExpectE0::terminate() {
 		fil.close();
-
-		delete[] rho;
 	}
 
 
@@ -1203,10 +1212,8 @@ namespace Measurers {
 	}
 
 	void BasicMeasurers::terminate() {
-		for(Measurer* m : meas){
-			m->kill();
+		for(Measurer* m : meas)
 			delete m;
-		}
 		meas.clear();
 	}
 
@@ -1226,7 +1233,7 @@ namespace Measurers {
 	int MeasurementManager::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
 		for ( auto it = meas.begin(); it != meas.end(); ){
 			if( (*it)->measure(psi, v, t, kin) == 1) {
-				(*it)->kill();
+				delete *it;
 				it = meas.erase(it);
 			}
 			else
@@ -1240,7 +1247,7 @@ namespace Measurers {
 		for ( auto it = meas.begin(); it != meas.end(); ){
 			for(int j = 0; j < nElec; j++){
 				if( (*it)->measure(&psi[nPts*j], v, t, kin) == 1) {
-					(*it)->kill();
+					delete *it;
 					it = meas.erase(it);
 					--it;
 					break;
@@ -1261,10 +1268,8 @@ namespace Measurers {
 	}
 
 	void MeasurementManager::terminate() {
-		for(Measurer* m : meas){
-			m->kill();
+		for(Measurer* m : meas)
 			delete m;
-		}
 		meas.clear();
 	}
 }
