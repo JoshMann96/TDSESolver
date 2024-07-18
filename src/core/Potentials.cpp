@@ -1515,12 +1515,6 @@ namespace Potentials {
 	}
 
 	CompositePotential::~CompositePotential(){
-		for (int i = 0; i < numSPots; i++)
-			delete staticPots[i];
-		for (int i = 0; i < numDPots; i++)
-			delete dynamicPots[i];
-		for (int i = 0; i < numWPots; i++)
-			delete waveFuncDependentPots[i];
 		delete[] staticPots;
 		delete[] dynamicPots;
 		delete[] waveFuncDependentPots;

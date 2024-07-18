@@ -1233,7 +1233,7 @@ namespace Measurers {
 	int MeasurementManager::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
 		for ( auto it = meas.begin(); it != meas.end(); ){
 			if( (*it)->measure(psi, v, t, kin) == 1) {
-				delete *it;
+				(*it)->kill();
 				it = meas.erase(it);
 			}
 			else
@@ -1247,7 +1247,7 @@ namespace Measurers {
 		for ( auto it = meas.begin(); it != meas.end(); ){
 			for(int j = 0; j < nElec; j++){
 				if( (*it)->measure(&psi[nPts*j], v, t, kin) == 1) {
-					delete *it;
+					(*it)->kill();
 					it = meas.erase(it);
 					--it;
 					break;
@@ -1268,8 +1268,6 @@ namespace Measurers {
 	}
 
 	void MeasurementManager::terminate() {
-		for(Measurer* m : meas)
-			delete m;
 		meas.clear();
 	}
 }
