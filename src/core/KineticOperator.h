@@ -110,7 +110,8 @@ namespace KineticOperators {
 	protected:
 		NonUnifGenDisp_PSM(int nPts, double dx, double dt, int nDisp, int expOrder, int forceNormalization) : 
 			nPts(nPts), dx(dx), dt(dt), nDisp(nDisp), expOrder(expOrder), forceNorm(forceNormalization), 
-			osKineticEnergy((std::complex<double>*)fftw_malloc(sizeof(std::complex<double>)*nPts*nDisp)), osKineticMask(new double[nPts * nDisp]) {};
+			osKineticEnergy((std::complex<double>*)fftw_malloc(sizeof(std::complex<double>)*nPts*nDisp)),
+			osKineticMask((double*)fftw_malloc(sizeof(double)*nPts*nDisp)) {};
 	public:
 		~NonUnifGenDisp_PSM();
 		//Functions useful for updating potential immediately after kinetic phase for nonlinear systems

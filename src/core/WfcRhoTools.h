@@ -64,7 +64,7 @@ namespace WfcToRho {
 		void calcRho(int nPts, int nElec, double dx, double* weights, std::complex<double>* psi, double* rho);
 		void doFirst(int nPts, double dx);
 
-		void setBaseDens(Density* baseDens) { this->baseDens = baseDens; };
+		void setBaseDens(Density* baseDens) { this->baseDens = baseDens; first = 1; };
 	};
 
 	class GaussianSmoothedDensity :

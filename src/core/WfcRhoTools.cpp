@@ -1,4 +1,5 @@
 #include "WfcRhoTools.h"
+#include "MathTools.h"
 #include "fftw3.h"
 #include <stdexcept>
 
@@ -125,15 +126,16 @@ namespace WfcToRho {
 
 	CylindricalDensity::~CylindricalDensity(){
 		if (thinning)
-			fftw_free(thinning);
+			delete[] thinning;
 	}
 
 	void CylindricalDensity::doFirst(int nPts, double dx) {
+		first = 0;
 		if(baseDens == nullptr)
 			throw std::runtime_error("CylindricalDensity: Base density calculator must be set with setBaseDens before use.");
 		if(thinning)
-			fftw_free(thinning);
-		thinning = (double*) fftw_malloc(sizeof(double)*nPts);
+			delete[] thinning;
+		thinning = new double[nPts];
 
 		std::fill_n(thinning, nPts, 1.0);
 
@@ -153,15 +155,12 @@ namespace WfcToRho {
 	}
 
 	void CylindricalDensity::calcRho(int nPts, int nElec, double dx, double* weights, std::complex<double>* psi, double* rho) {
-		if (first){
+		if (first)
 			doFirst(nPts, dx);
-			first = 0;
-		}
 
 		baseDens->calcRho(nPts, nElec, dx, weights, psi, rho);
 
-		for (int i = startIndex; i < endIndex; i++)
-			rho[i] *= thinning[i];
+		vtls::seqMulArrays(endIndex-startIndex, &thinning[startIndex], &rho[startIndex]);
 	}
 	
 	GaussianSmoothedDensity::~GaussianSmoothedDensity(){
