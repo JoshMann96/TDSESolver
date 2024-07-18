@@ -34,11 +34,14 @@ SimulationManager::SimulationManager(int nPts, double dx, double dt, double maxT
 
 SimulationManager::~SimulationManager()
 {
+	delete meas;
+	delete pot;
+
 	freePsis();
 	delete[] psis;
 
 	for(int i = 0; i < 4; i++)
-		delete[] vs[i];
+		fftw_free(vs[i]);
 	delete[] vs;
 
 	delete[] ts;

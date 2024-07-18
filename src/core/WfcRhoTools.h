@@ -73,7 +73,7 @@ namespace WfcToRho {
 	private:
 		int first = 1;
 		double *psi2=nullptr, *tempRho=nullptr, sig;
-		vtls::MaskConvolver<double>* conv;
+		vtls::MaskConvolver<double>* conv = nullptr;
 	public:
 		GaussianSmoothedDensity(double sig) : sig(sig) {}
 		~GaussianSmoothedDensity();

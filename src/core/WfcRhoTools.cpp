@@ -168,7 +168,8 @@ namespace WfcToRho {
 			fftw_free(psi2);
 		if(tempRho)
 			fftw_free(tempRho);
-		delete conv;
+		if(conv)
+			delete conv;
 	}
 
 	void GaussianSmoothedDensity::calcRho(int nPts, int nElec, double dx, double* weights, std::complex<double>* psi, double* rho) {
@@ -192,9 +193,11 @@ namespace WfcToRho {
 				mask[nPts/2] = 1.0 / (sig/dx * std::sqrt(2.0 * PhysCon::pi)) * std::exp(-0.5 / (sig * sig) * (nPts * nPts / 4.0 * dx * dx));
 				
 			//Initialize FFT for convolution
+			if(conv)
+				delete conv;
 			conv = new vtls::MaskConvolver<double>(nPts, mask);
 
-			delete[] mask;
+			fftw_free(mask);
 		}
 
 		std::fill_n(tempRho, nPts, 0);

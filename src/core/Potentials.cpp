@@ -1,5 +1,6 @@
 #include "Potentials.h"
 #include <bits/types/FILE.h>
+#include <stdexcept>
 #include "MathTools.h"
 #include "PhysCon.h"
 #include "blas_externs.h"
@@ -532,6 +533,9 @@ namespace Potentials {
 		delete[] fldTot;
 		delete[] origPot;
 		delete[] rho;
+
+		if(prefactor)
+			delete[] prefactor; prefactor = nullptr;
 	}
 
 	void SurfaceSpaceCharge::negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
@@ -563,6 +567,8 @@ namespace Potentials {
 	void SurfaceSpaceCharge::doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
 		first = 0;
 		nElec = *nelecPtr;
+		if(prefactor)
+			delete[] prefactor; prefactor = nullptr;
 		prefactor = new double[nElec];
 		double* energies = new double[nElec];
 		double* v0w = new double[nPts];
@@ -657,9 +663,13 @@ namespace Potentials {
 	void FullCylindricalSpaceCharge::doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
 		first = 0;
 		nElec = nelecPtr[0];
+
+		if(prefactor)
+			delete[] prefactor; prefactor = nullptr;
 		prefactor = new double[nElec];
 		double* energies = new double[nElec];
 		double* v0w = new double[nPts];
+
 		totPot->getV(0, v0w, kin);
 		WfcToRho::calcEnergies(nElec, nPts, dx, psi, v0w, kin, energies);
 		wght->calcWeights(nElec, energies, prefactor);
@@ -766,9 +776,13 @@ namespace Potentials {
 		first = 0;
 		lostCharge = 0.0;
 		nElec = nelecPtr[0];
+
+		if(prefactor)
+			delete[] prefactor; prefactor = nullptr;
 		prefactor = new double[nElec];
 		double* energies = new double[nElec];
 		double* v0w = new double[nPts];
+
 		totPot->getV(0, v0w, kin);
 		WfcToRho::calcEnergies(nElec, nPts, dx, psi, v0w, kin, energies);
 		wght->calcWeights(nElec, energies, prefactor);
@@ -944,9 +958,13 @@ namespace Potentials {
 		first = 0;
 		emittedCharge = 0.0;
 		nElec = nelecPtr[0];
+
+		if(prefactor)
+			delete[] prefactor; prefactor = nullptr;
 		prefactor = new double[nElec];
 		double* energies = new double[nElec];
 		double* v0w = new double[nPts];
+
 		totPot->getV(0, v0w, kin);
 		WfcToRho::calcEnergies(nElec, nPts, dx, psi, v0w, kin, energies);
 		wght->calcWeights(nElec, energies, prefactor);
@@ -1030,11 +1048,13 @@ namespace Potentials {
 
 	void LDAFunctional::doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
 		nElec = nelecPtr[0];
+
 		if(prefactor)
 			delete[] prefactor;
 		prefactor = new double[nElec];
 		double* energies = new double[nElec];
 		double* v0w = new double[nPts];
+
 		totPot->getV(0, v0w, kin);
 		WfcToRho::calcEnergies(nElec, nPts, dx, psi, v0w, kin, energies);
 		wght->calcWeights(nElec, energies, prefactor);
@@ -1174,9 +1194,13 @@ namespace Potentials {
 	void DielectricBulkCylindricalFieldSpaceCharge::doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
 		first = 0;
 		nElec = nelecPtr[0];
+
+		if(prefactor)
+			delete[] prefactor; prefactor = nullptr;
 		prefactor = new double[nElec];
 		double* energies = new double[nElec];
 		double* v0w = new double[nPts];
+
 		totPot->getV(0, v0w, kin);
 		WfcToRho::calcEnergies(nElec, nPts, dx, psi, v0w, kin, energies);
 		wght->calcWeights(nElec, energies, prefactor);
@@ -1334,9 +1358,13 @@ namespace Potentials {
 	void LinearBulkCylSectionFieldSpaceCharge::doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
 		first = 0;
 		nElec = nelecPtr[0];
+
+		if(prefactor)
+			delete[] prefactor; prefactor = nullptr;
 		prefactor = new double[nElec];
 		double* energies = new double[nElec];
 		double* v0w = new double[nPts];
+
 		totPot->getV(0, v0w, kin);
 		WfcToRho::calcEnergies(nElec, nPts, dx, psi, v0w, kin, energies);
 		wght->calcWeights(nElec, energies, prefactor);
@@ -1426,9 +1454,13 @@ namespace Potentials {
 	void OhmicRetardingPotential::doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
 		first = 0;
 		nElec = *nelecPtr;
+
+		if(prefactor)
+			delete[] prefactor; prefactor = nullptr;
 		prefactor = new double[nElec];
 		double* energies = new double[nElec];
 		double* v0w = new double[nPts];
+
 		totPot->getV(0, v0w, kin);
 		WfcToRho::calcEnergies(nElec, nPts, dx, psi, v0w, kin, energies);
 		wght->calcWeights(nElec, energies, prefactor);
@@ -1483,6 +1515,16 @@ namespace Potentials {
 	}
 
 	CompositePotential::~CompositePotential(){
+		for (int i = 0; i < numSPots; i++)
+			delete staticPots[i];
+		for (int i = 0; i < numDPots; i++)
+			delete dynamicPots[i];
+		for (int i = 0; i < numWPots; i++)
+			delete waveFuncDependentPots[i];
+		delete[] staticPots;
+		delete[] dynamicPots;
+		delete[] waveFuncDependentPots;
+
 		delete[] v0;
 		delete[] nv;
 	}
@@ -1551,25 +1593,21 @@ namespace Potentials {
 			dpots[i] = dynamicPots[i];
 		for (int i = 0; i < nw; i++)
 			wpots[i] = waveFuncDependentPots[i];
-		pot = new CompositePotential(nPts, ns, nd, nw, kin, spots, dpots, wpots);
+		pot = new CompositePotential(nPts, ns, nd, nw, kin, spots, dpots, wpots); //takes ownership of potential arrays
 	}
 
 	void PotentialManager::getV(double t, double * targ, KineticOperators::KineticOperator* kin) {
 		if (pot)
 			pot->getV(t, targ, kin);
-		else {
-			std::cout << "Must run finishAddingPotentials() function on PotentialManager before using getV()." << std::endl;
-			throw -1;
-		}
+		else
+			throw std::runtime_error("Must run finishAddingPotentials() function on PotentialManager before using getV().");
 	}
 
 	void PotentialManager::getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator* kin) {
 		if (pot)
 			pot->getV(psi, t, targ, kin);
-		else {
-			std::cout << "Must run finishAddingPotentials() function on PotentialManager before using getV()." << std::endl;
-			throw -1;
-		}
+		else
+			throw std::runtime_error("Must run finishAddingPotentials() function on PotentialManager before using getV().");
 	}
 
 	int PotentialManager::isDynamic() {
@@ -1608,6 +1646,10 @@ namespace ElectricFieldProfiles {
 		}
 	}
 
+	CylindricalToLinearProfile::~CylindricalToLinearProfile() {
+		delete[] fs;
+	}
+
 	std::complex<double> * CylindricalToLinearProfile::getProfile() {
 		return fs;
 	}
@@ -1634,6 +1676,10 @@ namespace ElectricFieldProfiles {
 					1716.0*std::pow(k, 7));
 			}
 		}
+	}
+
+	CylindricalToCutoffProfile::~CylindricalToCutoffProfile() {
+		delete[] fs;
 	}
 
 	std::complex<double> * CylindricalToCutoffProfile::getProfile() {
@@ -1726,6 +1772,10 @@ namespace ElectricFieldProfiles {
 		delete[] fim;
 	}
 
+	FileFieldProfile::~FileFieldProfile() {
+		delete[] fs;
+	}
+
 	std::complex<double> * FileFieldProfile::getProfile() {
 		return fs;
 	}
@@ -1743,6 +1793,10 @@ namespace ElectricFieldProfiles {
 			else
 				fs[i] = eMax / r * std::exp(-(maxX - r) / r) * (maxX - xn);
 		}
+	}
+
+	ExponentialToLinearProfile::~ExponentialToLinearProfile() {
+		delete[] fs;
 	}
 
 	std::complex<double>* ExponentialToLinearProfile::getProfile() {

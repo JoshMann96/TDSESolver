@@ -29,6 +29,7 @@ namespace ElectricFieldProfiles {
 		std::complex<double> * fs;
 	public:
 		CylindricalToLinearProfile(int nPts, double * x, double minX, double maxX, double r, double eMax, double enhFact);
+		~CylindricalToLinearProfile();
 		std::complex<double> * getProfile();
 	};
 
@@ -38,6 +39,7 @@ namespace ElectricFieldProfiles {
 		std::complex<double> * fs;
 	public:
 		CylindricalToCutoffProfile(int nPts, double * x, double minX, double maxX, double r, double eMax, double enhFact, double decayLength);
+		~CylindricalToCutoffProfile();
 		std::complex<double> * getProfile();
 	};
 
@@ -47,6 +49,7 @@ namespace ElectricFieldProfiles {
 		std::complex<double> * fs;
 	public:
 		InMetalFieldProfile(int nPts, double * x, double minX, double maxX, double eMax, double lam, std::complex<double> er, double cond);
+		~InMetalFieldProfile();
 		std::complex<double> * getProfile();
 	};
 
@@ -56,6 +59,7 @@ namespace ElectricFieldProfiles {
 		std::complex<double>* fs;
 	public:
 		ExponentialToLinearProfile(int nPts, double* x, double minX, double maxX, double r, double eMax);
+		~ExponentialToLinearProfile();
 		std::complex<double>* getProfile();
 	};
 
@@ -64,7 +68,8 @@ namespace ElectricFieldProfiles {
 		std::complex<double> * fs;
 	public:
 		FileFieldProfile(int nPts, double * x, double offset, double rightDecayPos, double leftDecayPos, double decayLength, double emax, const char * fil);
-		virtual std::complex<double> * getProfile();
+		~FileFieldProfile();
+		std::complex<double> * getProfile();
 	};
 }
 
@@ -304,7 +309,7 @@ namespace Potentials {
 		int* nelecPtr;
 		int nElec;
 		int first = 1;
-		double* prefactor, *rho;
+		double* prefactor = nullptr, *rho;
 		double* origPot;
 		int posMin, posMax;
 		void calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator* kin);
