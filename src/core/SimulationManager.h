@@ -29,7 +29,7 @@ private:
 	void freePsis(){
 		for(int i = 0; i < 4; i++){
 			if(psis[i]){
-				fftw_free(psis[i]);
+				sq_free(psis[i]);
 				psis[i] = nullptr;
 			}
 		}

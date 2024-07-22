@@ -1,5 +1,5 @@
 #include "SimulationManager.h"
-#include "fftw3.h"
+#include "PhysCon.h"
 
 //callback sends progress int 0-100 (can be nullptr for no callback)
 SimulationManager::SimulationManager(int nPts, double dx, double dt, double maxT, std::function<void(int)> callback)
@@ -7,19 +7,19 @@ SimulationManager::SimulationManager(int nPts, double dx, double dt, double maxT
 {
 	pot = new Potentials::PotentialManager(nPts);
 	meas = new Measurers::MeasurementManager("");
-	psis = new std::complex<double>*[4];
+	psis = (std::complex<double>**) sq_malloc(sizeof(std::complex<double>*)*4);
 	for(int i = 0; i < 4; i++)
 		psis[i] = nullptr;
 
-	vs = new double*[4];
-	ts = new double[4];
+	vs = (double**) sq_malloc(sizeof(double*)*4);
+	ts = (double*) sq_malloc(sizeof(double)*4);
 	for (int i = 0; i < 4; i++) {
-		vs[i] = (double*) fftw_malloc(sizeof(double) * nPts);
+		vs[i] = (double*) sq_malloc(sizeof(double) * nPts);
 		ts[i] = i * dt;
 	}
-	scratch1 = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts);
-	scratch2 = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts);
-	spatialDamp = (double*) fftw_malloc(sizeof(double) * nPts);
+	scratch1 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts);
+	scratch2 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts);
+	spatialDamp = (double*) sq_malloc(sizeof(double) * nPts);
 	std::fill_n(spatialDamp, nPts, 1.0);
 	/*
 	SimulationManager::maxT = maxT; SimulationManager::dt = dt; SimulationManager::dx = dx; SimulationManager::nPts = nPts;
@@ -34,21 +34,21 @@ SimulationManager::SimulationManager(int nPts, double dx, double dt, double maxT
 
 SimulationManager::~SimulationManager()
 {
-	delete meas;
-	delete pot;
-
-	freePsis();
-	delete[] psis;
-
 	for(int i = 0; i < 4; i++)
-		fftw_free(vs[i]);
-	delete[] vs;
+		sq_free(vs[i]);
+	sq_free(vs);
+	
+	freePsis();
+	sq_free(psis);
 
-	delete[] ts;
+	sq_free(ts);
 
-	fftw_free(scratch1);
-	fftw_free(scratch2);
-	fftw_free(spatialDamp);
+	sq_free(scratch1);
+	sq_free(scratch2);
+	sq_free(spatialDamp);
+	
+	delete meas;
+	delete pot;	
 }
 
 void SimulationManager::addMeasurer(Measurers::Measurer* m) {
@@ -88,22 +88,22 @@ double SimulationManager::getTotalEnergy(std::complex<double> * psi, double * v)
 void SimulationManager::findEigenStates(double emin, double emax, double maxT, double rate) {
 	pot->getV(0.0, vs[index], kin);
 
-	std::complex<double>* states = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nPts);
+	std::complex<double>* states = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nPts);
 
 	kin->findEigenStates(vs[index], emin, emax, states, &nElec);
 
 	freePsis();
-	psis[0] = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nElec);
+	psis[0] = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nElec);
 
 	vtls::copyArray(nPts * nElec, states, psis[0]);
 
-	fftw_free(states);
+	sq_free(states);
 
 	for (int i = 0; i < nElec; i++)
 		vtls::normalizeSqrNorm(nPts, &psis[0][i * nPts], dx);
 
 	for (int i = 1; i < 4; i++) {
-		psis[i] = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nElec);
+		psis[i] = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nElec);
 		vtls::copyArray(nPts * nElec, psis[0], psis[i]);
 	}
 
@@ -114,7 +114,7 @@ void SimulationManager::setPsi(std::complex<double>* npsi) {
 		nElec = 1;
 		freePsis();
 		for (int i = 0; i < 4; i++) {
-			psis[i] = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts);
+			psis[i] = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts);
 		}
 
 	}
@@ -169,7 +169,7 @@ void SimulationManager::runOS_U2TU() {
 
 //Run simulation using operator splitting Fourier method (applies potential as nonlinear, second potential phase is recalculated after propagation phase)
 void SimulationManager::runOS_UW2TUW() {
-	std::complex<double>* tpsi = (std::complex<double>*) fftw_malloc(sizeof(std::complex<double>) * nPts * nElec);
+	std::complex<double>* tpsi = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nElec);
 	iterateIndex();
 	pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()], kin);
 	kin_psm->stepOS_UW2T(psis[prevIndex()], vs[prevIndex()], spatialDamp, tpsi, nElec);
@@ -197,7 +197,7 @@ void SimulationManager::runOS_UW2TUW() {
 		}
 	}
 
-	fftw_free(tpsi);
+	sq_free(tpsi);
 }
 
 void SimulationManager::iterateIndex() {

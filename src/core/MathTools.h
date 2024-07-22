@@ -1,7 +1,6 @@
 #pragma once
 #include "CORECommonHeader.h"
 #include <omp.h>
-#include <fftw3.h>
 #include <mutex>
 
 
@@ -158,7 +157,6 @@ namespace vtls {
 		int len;
 		fftw_plan fp, bp;
 		std::complex<double> *temp1, *temp2;
-		std::mutex fftw_plan_mutex;
 	public:
 		Convolver<T>(){}
 		Convolver<T>(int len);
@@ -173,7 +171,6 @@ namespace vtls {
 		int len;
 		fftw_plan fp, bp;
 		std::complex<double> *temp1, *temp2;
-		std::mutex fftw_plan_mutex;
 	public:
 		MaskConvolver<T>(int len, T* constArr);
 		~MaskConvolver();
@@ -294,10 +291,10 @@ namespace vtls {
 	// Normalizes an array such that its total norm is 1
 	template <typename T>
 	void normalizeSqrNorm(int len, T* __restrict arr, double dx) {
-		double* tarr = new double[len];
+		double* tarr = (double*) sq_malloc(sizeof(double)*len);
 		normSqr(len, arr, tarr);
 		scaMulArray(len, 1.0 / std::sqrt(vtlsInt::simps(len, tarr, dx)), arr);
-		delete[] tarr;
+		sq_free(tarr);
 	}
 
 	// Gets square norm of an array
@@ -373,8 +370,8 @@ namespace vtls {
 	}
 
 	template <typename T>
-	T* linspace(int len, T min, T max) {
-		T* ret = new T[len];
+	std::vector<T> linspace(int len, T min, T max) {
+		std::vector<T> ret = std::vector<T>(len);
 		for (int i = 0; i < len; i++)
 			ret[i] = (max - min) * i / (T)(len - 1) + min;
 		return ret;

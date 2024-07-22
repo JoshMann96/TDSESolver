@@ -1,6 +1,5 @@
 #include "WfcRhoTools.h"
-#include "MathTools.h"
-#include "fftw3.h"
+#include "PhysCon.h"
 #include <stdexcept>
 
 namespace WfcToRho {
@@ -9,13 +8,13 @@ namespace WfcToRho {
 			std::cout << "calcEnergies: Number of electrons is not finite! Failed to initialize." << std::endl;
 			throw -1;
 		}
-		double* rho = new double[nPts];
+		double* rho = (double*) sq_malloc(sizeof(double)*nPts);
 		for (int i = 0; i < nElec; i++) {
 			vtls::normSqr(nPts, &psi[i * nPts], rho);
 			energies[i] = vtlsInt::rSumMul(nPts, rho, totPot, dx) + kin->evaluateKineticEnergy(&psi[i*nPts]);
 			//potential energy + kinetic energy
 		}
-		delete[] rho;
+		sq_free(rho);
 	}
 
 
@@ -51,9 +50,9 @@ namespace WfcToRho {
 
 		int nes;
 		ifil.read(reinterpret_cast<char*>(&nes), sizeof(int));
-		double *fE = new double[nes];
-		double *dos = new double[nes];
-		double *dosI = new double[nes];
+		double *fE = (double*) sq_malloc(sizeof(double)*nes);
+		double *dos = (double*) sq_malloc(sizeof(double)*nes);
+		double *dosI = (double*) sq_malloc(sizeof(double)*nes);
 		ifil.read(reinterpret_cast<char*>(fE), sizeof(double) * nes);
 		ifil.read(reinterpret_cast<char*>(dos), sizeof(double) * nes);
 		ifil.close();
@@ -62,9 +61,9 @@ namespace WfcToRho {
 
 		dosISpline = boost::math::interpolators::cardinal_cubic_b_spline<double>(dosI, nes, fE[0]*PhysCon::qe - fl, dE*PhysCon::qe);
 		
-		delete[] dos;
-		delete[] dosI;
-		delete[] fE;
+		sq_free(dos);
+		sq_free(dosI);
+		sq_free(fE);
 	}
 
 	void FromDOS::calcWeights(int nElec, double* energies, double* weights) {
@@ -79,7 +78,7 @@ namespace WfcToRho {
 		}
 
 		//sort energy
-		int* idx = new int[nElec];
+		int* idx = (int*) sq_malloc(sizeof(int)*nElec);
 		for (int i = 0; i < nElec; i++)
 			idx[i] = i;
 		vtls::insertSort_idxs(nElec, energies, idx);
@@ -97,19 +96,19 @@ namespace WfcToRho {
 		//the top state is similar to the bottom state
 		weights[idx[nElec - 1]] = leff * (dosISpline((3.0 * energies[nElec - 1] - energies[nElec - 2]) / 2.0) - dosISpline((energies[nElec - 1] + energies[nElec - 2]) / 2.0));
 
-		delete[] idx;
+		sq_free(idx);
 	}
 
 	DirectDensity::~DirectDensity(){
 		if(psi2)
-			delete[] psi2;
+			sq_free(psi2);
 	}
 
 	void DirectDensity::calcRho(int nPts, int nElec, double dx, double* weights, std::complex<double>* psi, double* rho) {
 		if (first) {
 			if(psi2)
-				delete[] psi2;
-			psi2 = new double[nPts * nElec];
+				sq_free(psi2);
+			psi2 = (double*) sq_malloc(sizeof(double)*nPts * nElec);
 			first = 0;
 		}
 
@@ -126,7 +125,7 @@ namespace WfcToRho {
 
 	CylindricalDensity::~CylindricalDensity(){
 		if (thinning)
-			delete[] thinning;
+			sq_free(thinning);
 	}
 
 	void CylindricalDensity::doFirst(int nPts, double dx) {
@@ -134,8 +133,8 @@ namespace WfcToRho {
 		if(baseDens == nullptr)
 			throw std::runtime_error("CylindricalDensity: Base density calculator must be set with setBaseDens before use.");
 		if(thinning)
-			delete[] thinning;
-		thinning = new double[nPts];
+			sq_free(thinning);
+		thinning = (double*) sq_malloc(sizeof(double)*nPts);
 
 		std::fill_n(thinning, nPts, 1.0);
 
@@ -165,9 +164,9 @@ namespace WfcToRho {
 	
 	GaussianSmoothedDensity::~GaussianSmoothedDensity(){
 		if(psi2)
-			fftw_free(psi2);
+			sq_free(psi2);
 		if(tempRho)
-			fftw_free(tempRho);
+			sq_free(tempRho);
 		if(conv)
 			delete conv;
 	}
@@ -176,12 +175,12 @@ namespace WfcToRho {
 		if (first) {
 			//Initialize variables
 			if(psi2)
-				fftw_free(psi2);
+				sq_free(psi2);
 			if(tempRho)
-				fftw_free(tempRho);
-			psi2 = (double*)fftw_malloc(sizeof(double)*nPts*nElec);
-			double* mask = (double*)fftw_malloc(sizeof(double)*nPts);
-			tempRho = (double*)fftw_malloc(sizeof(double)*nPts);
+				sq_free(tempRho);
+			psi2 = (double*)sq_malloc(sizeof(double)*nPts*nElec);
+			double* mask = (double*)sq_malloc(sizeof(double)*nPts);
+			tempRho = (double*)sq_malloc(sizeof(double)*nPts);
 			first = 0;
 
 			//Initialize Gaussian mask (in k space)
@@ -197,7 +196,7 @@ namespace WfcToRho {
 				delete conv;
 			conv = new vtls::MaskConvolver<double>(nPts, mask);
 
-			fftw_free(mask);
+			sq_free(mask);
 		}
 
 		std::fill_n(tempRho, nPts, 0);

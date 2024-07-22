@@ -92,7 +92,7 @@ namespace vtlsPrnt {
 	void printGraph(int n, double *__restrict arr) {
 		double minVal = *std::min_element(arr, arr + n);
 		double maxVal = *std::max_element(arr, arr + n);
-		int * nArr = new int[n];
+		int * nArr = (int*) sq_malloc(n * sizeof(int));
 		int k = n / 50 + 1;
 		for (int i = 0; i < n; i += k) nArr[i] = (int)(((arr[i] - minVal) / (maxVal - minVal)) * 100.0);
 		//printArray(n, nArr);
@@ -102,16 +102,16 @@ namespace vtlsPrnt {
 			std::cout << std::endl;
 		}
 
-		delete[] nArr;
+		sq_free(nArr);
 	}
 
 	void printGraph(int n, std::complex<double>* __restrict arr0) {
-		double* arr = new double[n];
+		double* arr = (double*) sq_malloc(n * sizeof(double));
 		for (int i = 0; i < n; i++)
 			arr[i] = std::real(arr0[i]);
 		double minVal = *std::min_element(arr, arr + n);
 		double maxVal = *std::max_element(arr, arr + n);
-		int* nArr = new int[n];
+		int* nArr = (int*) sq_malloc(n * sizeof(int));
 		int k = n / 50 + 1;
 		for (int i = 0; i < n; i += k) nArr[i] = (int)(((arr[i] - minVal) / (maxVal - minVal)) * 100.0);
 		//printArray(n, nArr);
@@ -121,7 +121,7 @@ namespace vtlsPrnt {
 			std::cout << std::endl;
 		}
 
-		delete[] arr;
-		delete[] nArr;
+		sq_free(arr);
+		sq_free(nArr);
 	}
 }

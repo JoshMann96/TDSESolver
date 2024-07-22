@@ -1,6 +1,7 @@
 #pragma once
 #include "CORECommonHeader.h"
 #include "KineticOperator.h"
+#include "MathTools.h"
 
 // Different ways of calculating weights (w*|psi(x)|^2 = rho(x) [e/m^3]) for density functional potentials
 namespace WfcToRho {

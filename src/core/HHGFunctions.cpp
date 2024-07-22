@@ -1,4 +1,5 @@
 #include "HHGFunctions.h"
+#include "PhysCon.h"
 
 namespace HHGFunctions {
 	double getZim(double ef, double w) {

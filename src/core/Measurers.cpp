@@ -1,4 +1,5 @@
 #include "Measurers.h"
+#include "PhysCon.h"
 #include <iostream>
 #include <stdexcept>
 #include <system_error>
@@ -11,13 +12,14 @@ namespace Measurers {
 		return std::fstream(fil, std::ios::out | std::ios::binary);
 	}
 
-	DoubleConst::DoubleConst(double c, const char* filName, const char* fol) {
+	DoubleConst::DoubleConst(double c, const char* filName, const char* fol){
 		DoubleConst::c = c;
-		int l1 = std::strlen(fol), l2 = std::strlen(filName);
-		char* nfil = new char[l1 + l2 + 4];
+		const char *ext = ".dat";
+		int l1 = std::strlen(fol), l2 = std::strlen(filName), l3 = std::strlen(ext);
+		char* nfil = new char[l1 + l2 + l3 + 1];
 		strncpy(nfil, fol, l1);
 		strncpy(&nfil[l1], filName, l2);
-		strcpy(&nfil[l1 + l2], ".dat");
+		strcpy(&nfil[l1 + l2], ext);
 		/*std::stringstream ss;
 		ss << fol << filName << ".dat";
 		std::string str = ss.str();
@@ -70,7 +72,7 @@ namespace Measurers {
 			}
 
 			fil.write(reinterpret_cast<char*>(&index), sizeof(int));
-			fil.write(reinterpret_cast<char*>(&(*nElec)), sizeof(int));
+			fil.write(reinterpret_cast<char*>(nElec), sizeof(int));
 		}
 		
 		return 1; 
@@ -360,11 +362,13 @@ namespace Measurers {
 
 		interval = maxT / (double)nt;
 
-		xs = new double[nx];
+		xs = (double*) sq_malloc(sizeof(double)*nx);
 		vtls::downSampleLinearInterpolateEdge(n, x, nx, xs);
-		ts = new double[nt];
-		psi2b = new double[n];
-		psi2s = new double[nx];
+		ts = (double*) sq_malloc(sizeof(double)*nt);
+		psi2b = (double*) sq_malloc(sizeof(double)*n);
+		psi2s = (double*) sq_malloc(sizeof(double)*nx);
+
+		vtls::linspace(nt, 0.0, maxT-dt, ts);
 
 		mulT = interval;
 
@@ -394,33 +398,33 @@ namespace Measurers {
 	Psi2t::~Psi2t() {
 		kill();
 
-		delete[] psi2b;
-		delete[] psi2s;
-		delete[] xs;
-		delete[] ts;
+		sq_free(psi2b);
+		sq_free(psi2s);
+		sq_free(xs);
+		sq_free(ts);
 	}
 
 	int Psi2t::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
-		int k = (int)(t / interval) - curIts;
-		if ((k == 0 || std::abs(t-mulT)<dt/8) && curIts<=nt) {
-			if (std::abs(t - mulT) >= dt / 8 && curIts == nt)
-				curIts++;
-			else {
+		if(t >= ts[curIts] && curIts < nt)
+		{
+			if (std::abs(t-ts[curIts])<dt/2) {
 				vtls::normSqr(n, psi, psi2b);
 				vtls::downSampleLinearInterpolateEdge(n, psi2b, nx, psi2s);
 
 				fil.write(reinterpret_cast<char*>(&psi2s[0]), sizeof(double)*nx);
-				if (std::abs(t - mulT) >= dt / 8) {
-					ts[curIts] = t;
-					curIts++;
-					mulT = t;
-				}
+			}
+			else if((t - ts[curIts]) > 1.5 * dt){
+				throw std::runtime_error("Psi2t has a finer sampling than the simulation.");
+			}
+			else if((t - ts[curIts]) > 0.5 * dt){
+				std::cout << "Psi2t next step, curIts = " << curIts << ", nt = " << nt << std::endl;
+				mulT = t;
+				ts[curIts] = t-dt;
+				curIts++;
 			}
 		}
-		else if (k > 1) {
-			std::cout << "Downsampled measurers were not able to keep up with time step (there needs to be more time steps in the simulation than sampled)." << std::endl;
-			throw -1;
-		}
+		if(curIts >= nt)
+			return 1;
 		return 0;
 	}
 
@@ -433,7 +437,7 @@ namespace Measurers {
 	ExpectE::ExpectE(int len, double dx, const char* fol) {
 		nPts = len;
 		ExpectE::dx = dx;
-		rho = new double[nPts];
+		rho = (double*) sq_malloc(sizeof(double)*nPts);
 
 		int l1 = std::strlen(fol), l2 = std::strlen(fname);
 		char* nfil = new char[l1 + l2 + 1];
@@ -457,7 +461,7 @@ namespace Measurers {
 	ExpectE::~ExpectE() {
 		kill();
 
-		delete[] rho;
+		sq_free(rho);
 	}
 
 	int ExpectE::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
@@ -486,7 +490,7 @@ namespace Measurers {
 		nPts = len;
 		x = xs;
 		ExpectX::dx = dx;
-		scratch = new double[len];
+		scratch = (double*) sq_malloc(sizeof(double)*len);
 
 		int l1 = std::strlen(fol), l2 = std::strlen(fname);
 		char* nfil = new char[l1 + l2 + 1];
@@ -510,7 +514,7 @@ namespace Measurers {
 	ExpectX::~ExpectX() {
 		kill();
 
-		delete[] scratch;
+		sq_free(scratch);
 	}
 
 	int ExpectX::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
@@ -528,8 +532,8 @@ namespace Measurers {
 	ExpectP::ExpectP(int len, double dx, const char* fol) {
 		nPts = len;
 		ExpectP::dx = dx;
-		scratch1 = new std::complex<double>[len];
-		scratch2 = new std::complex<double>[len];
+		scratch1 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*len);
+		scratch2 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*len);
 
 		int l1 = std::strlen(fol), l2 = std::strlen(fname);
 		char* nfil = new char[l1 + l2 + 1];
@@ -553,8 +557,8 @@ namespace Measurers {
 	ExpectP::~ExpectP() {
 		kill();
 
-		delete[] scratch1;
-		delete[] scratch2;
+		sq_free(scratch1);
+		sq_free(scratch2);
 	}
 
 	int ExpectP::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
@@ -575,8 +579,8 @@ namespace Measurers {
 	ExpectA::ExpectA(int len, double dx, const char* fol) {
 		nPts = len;
 		ExpectA::dx = dx;
-		scratch1 = new double[len];
-		scratch2 = new double[len];
+		scratch1 = (double*) sq_malloc(sizeof(double)*len);
+		scratch2 = (double*) sq_malloc(sizeof(double)*len);
 
 		int l1 = std::strlen(fol), l2 = std::strlen(fname);
 		char* nfil = new char[l1 + l2 + 1];
@@ -600,8 +604,8 @@ namespace Measurers {
 	ExpectA::~ExpectA() {
 		kill();
 
-		delete[] scratch1;
-		delete [] scratch2;
+		sq_free(scratch1);
+		sq_free(scratch2);
 	}
 
 	int ExpectA::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
@@ -622,7 +626,7 @@ namespace Measurers {
 	TotProb::TotProb(int n, double dx, const char* fol) {
 		TotProb::n = n;
 		TotProb::dx = dx;
-		psi2 = new double[n];
+		psi2 = (double*) sq_malloc(sizeof(double)*n);
 
 		int l1 = std::strlen(fol), l2 = std::strlen(fname);
 		char* nfil = new char[l1 + l2 + 1];
@@ -646,7 +650,7 @@ namespace Measurers {
 	TotProb::~TotProb() {
 		kill();
 
-		delete[] psi2;
+		sq_free(psi2);
 	}
 
 	int TotProb::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
@@ -893,10 +897,10 @@ namespace Measurers {
 		VDFluxSpec::nsamp = nsamp;
 		VDFluxSpec::tmax = tmax;
 
-		phss = new std::complex<double>[nsamp];
-		temp = new std::complex<double>[nsamp];
+		phss = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nsamp);
+		temp = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nsamp);
 
-		phaseCalcExpMul = new std::complex<double>[nsamp];
+		phaseCalcExpMul = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nsamp);
 		for(int i = 0; i < nsamp; i++)
 			phaseCalcExpMul[i] = PhysCon::im * dw * (double)i; //to be multiplied by t then exponentiated later
 		
@@ -929,12 +933,12 @@ namespace Measurers {
 		kill();
 
 		if(wfcs0)
-			delete[] wfcs0; wfcs0 = nullptr;
+			sq_free(wfcs0); wfcs0 = nullptr;
 		if(wfcs1)
-			delete[] wfcs1; wfcs1 = nullptr;
-		delete[] phss;
-		delete[] phaseCalcExpMul;
-		delete[] temp;
+			sq_free(wfcs1); wfcs1 = nullptr;
+		sq_free(phss);
+		sq_free(phaseCalcExpMul);
+		sq_free(temp);
 	}
 
 	int VDFluxSpec::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) {
@@ -942,11 +946,11 @@ namespace Measurers {
 			nElec = *nelecPtr;
 
 			if(wfcs0)
-				delete[] wfcs0;
+				sq_free(wfcs0);
 			if(wfcs1)
-				delete[] wfcs1;
-			wfcs0 = new std::complex<double>[nsamp * nElec];
-			wfcs1 = new std::complex<double>[nsamp * nElec];
+				sq_free(wfcs1);
+			wfcs0 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nsamp * nElec);
+			wfcs1 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nsamp * nElec);
 
 			for (int i = 0; i < nsamp * nElec; i++) {
 				wfcs0[i] = 0;
@@ -1016,10 +1020,10 @@ namespace Measurers {
 
 		interval = maxT / (double)nt;
 
-		xs = new double[nx];
+		xs = (double*) sq_malloc(sizeof(double)*nx);
 		vtls::downSampleLinearInterpolateEdge(n, x, nx, xs);
-		ts = new double[nt];
-		vs = new double[nx];
+		ts = (double*) sq_malloc(sizeof(double)*nt);
+		vs = (double*) sq_malloc(sizeof(double)*nx);
 
 		curIts = 0;
 
@@ -1047,9 +1051,9 @@ namespace Measurers {
 	Vfunct::~Vfunct() {
 		kill();
 
-		delete[] vs;
-		delete[] xs;
-		delete[] ts;
+		sq_free(vs);
+		sq_free(xs);
+		sq_free(ts);
 	}
 
 	int Vfunct::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
@@ -1083,7 +1087,7 @@ namespace Measurers {
 	ExpectE0::ExpectE0(int len, double dx, const char* fol) {
 		nPts = len;
 		ExpectE0::dx = dx;
-		rho = new double[nPts];
+		rho = (double*) sq_malloc(sizeof(double)*nPts);
 
 		int l1 = std::strlen(fol), l2 = std::strlen(fname);
 		char* nfil = new char[l1 + l2 + 1];
@@ -1107,7 +1111,7 @@ namespace Measurers {
 	ExpectE0::~ExpectE0() {
 		kill();
 
-		delete[] rho;
+		sq_free(rho);
 	}
 
 	int ExpectE0::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) {
@@ -1167,17 +1171,15 @@ namespace Measurers {
 			first = 0;
 			int nElec = *nelecPtr;
 			fil.write(reinterpret_cast<char*>(&nElec), sizeof(int));
-			double* energies = new double[nElec];
-			double* wghts = new double[nElec];
+			double* energies = (double*) sq_malloc(sizeof(double)*nElec);
+			double* wghts = (double*) sq_malloc(sizeof(double)*nElec);
 			WfcToRho::calcEnergies(nElec, nPts, dx, psi, v, kin, energies);
 			wght->calcWeights(nElec, energies, wghts);
 
 			fil.write(reinterpret_cast<char*>(&wghts[0]), sizeof(double)* nElec);
 
-			delete[] energies;
-			delete[] wghts;
-
-			return 0;
+			sq_free(energies);
+			sq_free(wghts);
 		}
 		return 1;
 	}
@@ -1232,6 +1234,9 @@ namespace Measurers {
 
 	int MeasurementManager::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
 		for ( auto it = meas.begin(); it != meas.end(); ){
+			
+			std::cout << "Measuring " << (*it)->getIndex() << std::endl;
+
 			if( (*it)->measure(psi, v, t, kin) == 1) {
 				(*it)->kill();
 				it = meas.erase(it);
@@ -1268,6 +1273,8 @@ namespace Measurers {
 	}
 
 	void MeasurementManager::terminate() {
+		for(Measurer* m : meas)
+			m->kill();
 		meas.clear();
 	}
 }

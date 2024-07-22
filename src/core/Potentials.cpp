@@ -8,13 +8,13 @@
 namespace Potentials {
 	FilePotential::FilePotential(int nPts, double * x, double offset, const char * fil, int refPoint) {
 		FilePotential::nPts = nPts;
-		v = new double[nPts];
+		v = (double*) sq_malloc(sizeof(double)*nPts);
 		std::fstream ifil = std::fstream(fil, std::ios::in | std::ios::binary);
 		int nRep;
 		ifil.read(reinterpret_cast<char*>(&nRep), sizeof(int));
 
-		double * fx = new double[nRep];
-		double * fv = new double[nRep];
+		double * fx = (double*) sq_malloc(sizeof(double)*nRep);
+		double * fv = (double*) sq_malloc(sizeof(double)*nRep);
 		ifil.read(reinterpret_cast<char*>(fx), sizeof(double)*nRep);
 		ifil.read(reinterpret_cast<char*>(fv), sizeof(double)*nRep);
 		for (int i = 0; i < nRep; i++)
@@ -22,12 +22,12 @@ namespace Potentials {
 		vtls::linearInterpolate(nRep, fx, fv, nPts, x, v);
 		vtls::scaAddArray(nPts, -v[refPoint], v);
 		ifil.close();
-		delete[] fx;
-		delete[] fv;
+		sq_free(fx);
+		sq_free(fv);
 	}
 
 	FilePotential::~FilePotential(){
-		delete[] v;
+		sq_free(v);
 	}
 
 	void FilePotential::getV(double t, double * targ, KineticOperators::KineticOperator* kin) {
@@ -48,7 +48,7 @@ namespace Potentials {
 		BiasFieldPotential::tbuf = tbuf;
 		double dx = (x[nPts - 1] - x[0]) / nPts;
 
-		v = new double[nPts];
+		v = (double*) sq_malloc(sizeof(double)*nPts);
 		double cx;
 		for (int i = 0; i < nPts; i++) {
 			cx = x[i];
@@ -89,7 +89,7 @@ namespace Potentials {
 	}
 
 	BiasFieldPotential::~BiasFieldPotential(){
-		delete[] v;
+		sq_free(v);
 	}
 
 	void BiasFieldPotential::getV(double t, double * targ, KineticOperators::KineticOperator* kin) {
@@ -123,7 +123,7 @@ namespace Potentials {
 
 
 	CoulombPotential::CoulombPotential(int nPts, double * x, double ne, double chargePos, double minX, double maxX, int refPoint) {
-		v = new double[nPts];
+		v = (double*) sq_malloc(sizeof(double)*nPts);
 		double k = PhysCon::qe*PhysCon::qe / (4.0*PhysCon::pi*PhysCon::e0);
 		double dx = (x[nPts - 1] - x[0]) / nPts;
 		for (int i = 0; i < nPts; i++) {
@@ -140,7 +140,7 @@ namespace Potentials {
 	}
 
 	CoulombPotential::~CoulombPotential(){
-		delete[] v;
+		sq_free(v);
 	}
 
 	void CoulombPotential::getV(double t, double * targ, KineticOperators::KineticOperator* kin) {
@@ -157,7 +157,7 @@ namespace Potentials {
 
 	FiniteBox::FiniteBox(int nPts, double * x, double left, double right, double vin, int refPoint) {
 		FiniteBox::nPts = nPts;
-		v = new double[nPts];
+		v = (double*) sq_malloc(sizeof(double)*nPts);
 		for (int i = 0; i < nPts; i++) {
 			if (x[i] > left && x[i] < right)
 				v[i] = vin;
@@ -168,7 +168,7 @@ namespace Potentials {
 	}
 
 	FiniteBox::~FiniteBox(){
-		delete[] v;
+		sq_free(v);
 	}
 
 	void FiniteBox::getV(double t, double * targ, KineticOperators::KineticOperator* kin) {
@@ -187,7 +187,7 @@ namespace Potentials {
 
 	JelliumPotential::JelliumPotential(int nPts, double * x, double center, double ef, double w, int refPoint) {
 		JelliumPotential::nPts = nPts;
-		v = new double[nPts];
+		v = (double*) sq_malloc(sizeof(double)*nPts);
 		double nEf = ef / PhysCon::auE_ry;
 		double nW = w / PhysCon::auE_ry;
 		double v0 = nEf + nW;
@@ -225,7 +225,7 @@ namespace Potentials {
 	}
 
 	JelliumPotential::~JelliumPotential(){
-		delete[] v;
+		sq_free(v);
 	}
 
 	void JelliumPotential::getV(double t, double * targ, KineticOperators::KineticOperator* kin) {
@@ -243,7 +243,7 @@ namespace Potentials {
 
 	JelliumPotentialBacked::JelliumPotentialBacked(int nPts, double * x, double center, double ef, double w, double backStart, double backWidth, int refPoint) {
 		JelliumPotentialBacked::nPts = nPts;
-		v = new double[nPts];
+		v = (double*) sq_malloc(sizeof(double)*nPts);
 		double nEf = ef / PhysCon::auE_ry;
 		double nW = w / PhysCon::auE_ry;
 		double v0 = nEf + nW;
@@ -298,7 +298,7 @@ namespace Potentials {
 	}
 
 	JelliumPotentialBacked::~JelliumPotentialBacked(){
-		delete[] v;
+		sq_free(v);
 	}
 
 	void JelliumPotentialBacked::getV(double t, double * targ, KineticOperators::KineticOperator* kin) {
@@ -320,14 +320,14 @@ namespace Potentials {
 		ElectricFieldProfileToPotential::nPts = nPts;
 		ElectricFieldProfileToPotential::phase = phase;
 		std::complex<double> * fieldMask = fieldProfile->getProfile();
-		potMask = new std::complex<double>[nPts];
+		potMask = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
 		vtlsInt::cumIntTrapz(nPts, fieldMask, -dx * PhysCon::qe, potMask);
 		vtls::scaAddArray(nPts, -potMask[refPoint], potMask);
 		w = PhysCon::c / lam * 2.0*PhysCon::pi;
 	}
 
 	ElectricFieldProfileToPotential::~ElectricFieldProfileToPotential(){
-		delete[] potMask;
+		sq_free(potMask);
 	}
 
 	void ElectricFieldProfileToPotential::getV(double t, double * targ, KineticOperators::KineticOperator* kin) {
@@ -345,14 +345,14 @@ namespace Potentials {
 
 	ShieldedAtomicPotential::ShieldedAtomicPotential(int nPts, double * x, double center, double latticeSpacing, double zProtons, double decayConst) {
 		ShieldedAtomicPotential::nPts = nPts;
-		v = new double[nPts];
+		v = (double*) sq_malloc(sizeof(double)*nPts);
 		using namespace PhysCon;
 		for (int i = 0; i < nPts; i++)
 			v[i] = -zProtons * qe*qe / (2 * e0*latticeSpacing*latticeSpacing / decayConst)*std::exp(-std::abs(x[i] - center) / decayConst);
 	}
 
 	ShieldedAtomicPotential::~ShieldedAtomicPotential(){
-		delete[] v;
+		sq_free(v);
 	}
 
 	void ShieldedAtomicPotential::getV(double t, double * targ, KineticOperators::KineticOperator* kin) {
@@ -374,10 +374,10 @@ namespace Potentials {
 		WaveFunctionSelfPotentialJellPotMask::strength = strength;
 		WaveFunctionSelfPotentialJellPotMask::odimDist = otherDimensionDistance;
 		WaveFunctionSelfPotentialJellPotMask::refPoint = refPoint;
-		psi2 = new double[nPts];
-		mask = new double[nPts];
-		stepFunc = new double[nPts];
-		add = new double[nPts];
+		psi2 = (double*) sq_malloc(sizeof(double)*nPts);
+		mask = (double*) sq_malloc(sizeof(double)*nPts);
+		stepFunc = (double*) sq_malloc(sizeof(double)*nPts);
+		add = (double*) sq_malloc(sizeof(double)*nPts);
 		for (int i = 0; i < nPts; i++)
 			add[i] = 0.0;
 		int mid = nPts / 2;
@@ -393,19 +393,19 @@ namespace Potentials {
 	}
 
 	WaveFunctionSelfPotentialJellPotMask::~WaveFunctionSelfPotentialJellPotMask(){
-		delete[] psi2;
-		delete[] mask;
-		delete[] stepFunc;
-		delete[] add;
+		sq_free(psi2);
+		sq_free(mask);
+		sq_free(stepFunc);
+		sq_free(add);
 		delete conv;
 	}
 
 	void WaveFunctionSelfPotentialJellPotMask::negateGroundEffects(std::complex<double> * psi, KineticOperators::KineticOperator* kin) {
-		double * temp = new double[nPts];
+		double * temp = (double*) sq_malloc(sizeof(double)*nPts);
 		getV(psi, 0.0, temp, kin);
 		for (int i = 0; i < nPts; i++)
 			add[i] = -temp[i] + add[i];
-		delete[] temp;
+		sq_free(temp);
 	}
 
 	void WaveFunctionSelfPotentialJellPotMask::getV(double t, double * targ, KineticOperators::KineticOperator* kin) {
@@ -445,9 +445,9 @@ namespace Potentials {
 		WaveFunctionSelfPotential::strength = strength;
 		WaveFunctionSelfPotential::odimDist = otherDimensionDistance;
 		WaveFunctionSelfPotential::refPoint = refPoint;
-		psi2 = new double[nPts];
-		mask = new double[nPts*2];
-		add = new double[nPts];
+		psi2 = (double*) sq_malloc(sizeof(double)*nPts);
+		mask = (double*) sq_malloc(sizeof(double)*nPts*2);
+		add = (double*) sq_malloc(sizeof(double)*nPts);
 		std::fill_n(add, nPts, 0.0);
 		int mid = nPts;
 		double oconst = PhysCon::qe*PhysCon::qe*strength*dx / (PhysCon::pi*4.0*PhysCon::e0);
@@ -473,7 +473,7 @@ namespace Potentials {
 	}
 
 	void WaveFunctionSelfPotential::negateGroundEffects(std::complex<double> * psi) {
-		double * temp = new double[nPts];
+		double * temp = (double*) sq_malloc(sizeof(double)*nPts);
 		getV(psi, 0.0, temp);
 		for (int i = 0; i < nPts; i++)
 			add[i] = -temp[i] + add[i];
@@ -524,18 +524,18 @@ namespace Potentials {
 		else
 			SurfaceSpaceCharge::posMax = posMax;
 
-		fldTot = new double[nPts];
-		origPot = new double[nPts];
-		rho = new double[nPts];
+		fldTot = (double*) sq_malloc(sizeof(double)*nPts);
+		origPot = (double*) sq_malloc(sizeof(double)*nPts);
+		rho = (double*) sq_malloc(sizeof(double)*nPts);
 	}
 
 	SurfaceSpaceCharge::~SurfaceSpaceCharge(){
-		delete[] fldTot;
-		delete[] origPot;
-		delete[] rho;
+		sq_free(fldTot);
+		sq_free(origPot);
+		sq_free(rho);
 
 		if(prefactor)
-			delete[] prefactor; prefactor = nullptr;
+			sq_free(prefactor); prefactor = nullptr;
 	}
 
 	void SurfaceSpaceCharge::negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
@@ -568,15 +568,15 @@ namespace Potentials {
 		first = 0;
 		nElec = *nelecPtr;
 		if(prefactor)
-			delete[] prefactor; prefactor = nullptr;
-		prefactor = new double[nElec];
-		double* energies = new double[nElec];
-		double* v0w = new double[nPts];
+			sq_free(prefactor); prefactor = nullptr;
+		prefactor = (double*) sq_malloc(sizeof(double)*nElec);
+		double* energies = (double*) sq_malloc(sizeof(double)*nElec);
+		double* v0w = (double*) sq_malloc(sizeof(double)*nPts);
 		totPot->getV(0, v0w, kin);
 		WfcToRho::calcEnergies(nElec, nPts, dx, psi, v0w, kin, energies);
 		wght->calcWeights(nElec, energies, prefactor);
-		delete[] energies;
-		delete[] v0w;
+		sq_free(energies);
+		sq_free(v0w);
 	}
 
 	void SurfaceSpaceCharge::calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator* kin) {
@@ -615,10 +615,10 @@ namespace Potentials {
 			FullCylindricalSpaceCharge::surfPos = nPts - 1;
 		else
 			FullCylindricalSpaceCharge::surfPos = surfPos;
-		potTemp = new double[nPts];
-		origPot = new double[nPts];
-		rho = new double[nPts];
-		lrxr = new double[nPts];
+		potTemp = (double*) sq_malloc(sizeof(double)*nPts);
+		origPot = (double*) sq_malloc(sizeof(double)*nPts);
+		rho = (double*) sq_malloc(sizeof(double)*nPts);
+		lrxr = (double*) sq_malloc(sizeof(double)*nPts);
 		for (int i = 0; i < nPts; i++)
 			if (x[i] - x[surfPos] <= -r)
 				lrxr[i] = 0;
@@ -627,12 +627,12 @@ namespace Potentials {
 	}
 
 	FullCylindricalSpaceCharge::~FullCylindricalSpaceCharge(){
-		delete[] potTemp;
-		delete[] origPot;
-		delete[] rho;
-		delete[] lrxr;
+		sq_free(potTemp);
+		sq_free(origPot);
+		sq_free(rho);
+		sq_free(lrxr);
 		if(prefactor)
-			delete[] prefactor; prefactor = nullptr;
+			sq_free(prefactor); prefactor = nullptr;
 	}
 
 	void FullCylindricalSpaceCharge::negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
@@ -665,16 +665,16 @@ namespace Potentials {
 		nElec = nelecPtr[0];
 
 		if(prefactor)
-			delete[] prefactor; prefactor = nullptr;
-		prefactor = new double[nElec];
-		double* energies = new double[nElec];
-		double* v0w = new double[nPts];
+			sq_free(prefactor); prefactor = nullptr;
+		prefactor = (double*) sq_malloc(sizeof(double)*nElec);
+		double* energies = (double*) sq_malloc(sizeof(double)*nElec);
+		double* v0w = (double*) sq_malloc(sizeof(double)*nPts);
 
 		totPot->getV(0, v0w, kin);
 		WfcToRho::calcEnergies(nElec, nPts, dx, psi, v0w, kin, energies);
 		wght->calcWeights(nElec, energies, prefactor);
-		delete[] energies;
-		delete[] v0w;
+		sq_free(energies);
+		sq_free(v0w);
 		//calcFermiBoxDimensionalityConversion(nElec, nPts, dx, ef, psi, totPot, prefactor);
 	}
 
@@ -724,11 +724,11 @@ namespace Potentials {
 			LinearBulkCylindricalFieldSpaceCharge::surfPos = nPts - 1;
 		else
 			LinearBulkCylindricalFieldSpaceCharge::surfPos = surfPos;
-		potTemp = new double[nPts];
-		genTemp = new double[nPts];
-		origPot = new double[nPts];
-		rho = new double[nPts];
-		lrxr = new double[nPts];
+		potTemp = (double*) sq_malloc(sizeof(double)*nPts);
+		genTemp = (double*) sq_malloc(sizeof(double)*nPts);
+		origPot = (double*) sq_malloc(sizeof(double)*nPts);
+		rho = (double*) sq_malloc(sizeof(double)*nPts);
+		lrxr = (double*) sq_malloc(sizeof(double)*nPts);
 
 		for (int i = 0; i < nPts; i++)
 			if (x[i] - x[surfPos] <= -rad)
@@ -738,13 +738,13 @@ namespace Potentials {
 	}
 
 	LinearBulkCylindricalFieldSpaceCharge::~LinearBulkCylindricalFieldSpaceCharge(){
-		delete[] potTemp;
-		delete[] genTemp;
-		delete[] origPot;
-		delete[] rho;
-		delete[] lrxr;
+		sq_free(potTemp);
+		sq_free(genTemp);
+		sq_free(origPot);
+		sq_free(rho);
+		sq_free(lrxr);
 		if(prefactor)
-			delete[] prefactor; prefactor=nullptr;
+			sq_free(prefactor); prefactor=nullptr;
 	}
 
 	void LinearBulkCylindricalFieldSpaceCharge::negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
@@ -778,10 +778,10 @@ namespace Potentials {
 		nElec = nelecPtr[0];
 
 		if(prefactor)
-			delete[] prefactor; prefactor = nullptr;
-		prefactor = new double[nElec];
-		double* energies = new double[nElec];
-		double* v0w = new double[nPts];
+			sq_free(prefactor); prefactor = nullptr;
+		prefactor = (double*) sq_malloc(sizeof(double)*nElec);
+		double* energies = (double*) sq_malloc(sizeof(double)*nElec);
+		double* v0w = (double*) sq_malloc(sizeof(double)*nPts);
 
 		totPot->getV(0, v0w, kin);
 		WfcToRho::calcEnergies(nElec, nPts, dx, psi, v0w, kin, energies);
@@ -800,8 +800,8 @@ namespace Potentials {
 		chargeCenter = (int)chargeCenterD;
 		chargeWidth = (int)chargeWidthD;
 
-		delete[] energies;
-		delete[] v0w;
+		sq_free(energies);
+		sq_free(v0w);
 		//calcFermiBoxDimensionalityConversion(nElec, nPts, dx, ef, psi, totPot, prefactor);
 	}
 
@@ -893,13 +893,13 @@ namespace Potentials {
 			CylindricalImageCharge::surfPos = nPts - 1;
 		else
 			CylindricalImageCharge::surfPos = surfPos;
-		potTemp = new double[nPts];
-		genTemp = new double[nPts];
-		origPot = new double[nPts];
-		rho = new double[nPts];
-		lrxr = new double[nPts];
-		nsMask = new double[nPts];
-		dethin = new double[nPts];
+		potTemp = (double*) sq_malloc(sizeof(double)*nPts);
+		genTemp = (double*) sq_malloc(sizeof(double)*nPts);
+		origPot = (double*) sq_malloc(sizeof(double)*nPts);
+		rho = (double*) sq_malloc(sizeof(double)*nPts);
+		lrxr = (double*) sq_malloc(sizeof(double)*nPts);
+		nsMask = (double*) sq_malloc(sizeof(double)*nPts);
+		dethin = (double*) sq_malloc(sizeof(double)*nPts);
 
 
 		for (int i = 0; i < nPts; i++)
@@ -918,15 +918,15 @@ namespace Potentials {
 	}
 
 	CylindricalImageCharge::~CylindricalImageCharge(){
-		delete[] potTemp;
-		delete[] genTemp;
-		delete[] origPot;
-		delete[] rho;
-		delete[] lrxr;
-		delete[] nsMask;
-		delete[] dethin;
+		sq_free(potTemp);
+		sq_free(genTemp);
+		sq_free(origPot);
+		sq_free(rho);
+		sq_free(lrxr);
+		sq_free(nsMask);
+		sq_free(dethin);
 		if(prefactor)
-			delete[] prefactor; prefactor = nullptr;
+			sq_free(prefactor); prefactor = nullptr;
 	}
 	
 	void CylindricalImageCharge::negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
@@ -960,17 +960,17 @@ namespace Potentials {
 		nElec = nelecPtr[0];
 
 		if(prefactor)
-			delete[] prefactor; prefactor = nullptr;
-		prefactor = new double[nElec];
-		double* energies = new double[nElec];
-		double* v0w = new double[nPts];
+			sq_free(prefactor); prefactor = nullptr;
+		prefactor = (double*) sq_malloc(sizeof(double)*nElec);
+		double* energies = (double*) sq_malloc(sizeof(double)*nElec);
+		double* v0w = (double*) sq_malloc(sizeof(double)*nPts);
 
 		totPot->getV(0, v0w, kin);
 		WfcToRho::calcEnergies(nElec, nPts, dx, psi, v0w, kin, energies);
 		wght->calcWeights(nElec, energies, prefactor);
 
-		delete[] energies;
-		delete[] v0w;
+		sq_free(energies);
+		sq_free(v0w);
 		//calcFermiBoxDimensionalityConversion(nElec, nPts, dx, ef, psi, totPot, prefactor);
 	}
 
@@ -1015,16 +1015,16 @@ namespace Potentials {
 
 	LDAFunctional::LDAFunctional(LDAFunctionalType typ, int nPts, double dx, int* nElec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int refPoint)
 	: typ(typ), nPts(nPts), dx(dx), refPoint(refPoint), nelecPtr(nElec), totPot(totPot), wght(wght), dens(dens) {
-		origPot = new double[nPts];
+		origPot = (double*) sq_malloc(sizeof(double)*nPts);
 		std::fill_n(origPot, nPts, 0.0);
-		rho = new double[nPts];
+		rho = (double*) sq_malloc(sizeof(double)*nPts);
 	}
 
 	LDAFunctional::~LDAFunctional(){
-		delete[] origPot;
-		delete[] rho;
+		sq_free(origPot);
+		sq_free(rho);
 		if(prefactor)
-			delete[] prefactor;
+			sq_free(prefactor);
 	};
 
 	void LDAFunctional::negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
@@ -1050,16 +1050,16 @@ namespace Potentials {
 		nElec = nelecPtr[0];
 
 		if(prefactor)
-			delete[] prefactor;
-		prefactor = new double[nElec];
-		double* energies = new double[nElec];
-		double* v0w = new double[nPts];
+			sq_free(prefactor);
+		prefactor = (double*) sq_malloc(sizeof(double)*nElec);
+		double* energies = (double*) sq_malloc(sizeof(double)*nElec);
+		double* v0w = (double*) sq_malloc(sizeof(double)*nPts);
 
 		totPot->getV(0, v0w, kin);
 		WfcToRho::calcEnergies(nElec, nPts, dx, psi, v0w, kin, energies);
 		wght->calcWeights(nElec, energies, prefactor);
-		delete[] energies;
-		delete[] v0w;
+		sq_free(energies);
+		sq_free(v0w);
 	}
 
 	void LDAFunctional::calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator* kin) {
@@ -1132,13 +1132,13 @@ namespace Potentials {
 			DielectricBulkCylindricalFieldSpaceCharge::surfPos = nPts - 1;
 		else
 			DielectricBulkCylindricalFieldSpaceCharge::surfPos = surfPos;
-		potTemp = new double[nPts];
-		genTemp = new double[nPts];
-		origPot = new double[nPts];
-		rho = new double[nPts];
-		lrxr = new double[nPts];
-		xfsf = new double[nPts];
-		xfsf2 = new double[nPts];
+		potTemp = (double*) sq_malloc(sizeof(double)*nPts);
+		genTemp = (double*) sq_malloc(sizeof(double)*nPts);
+		origPot = (double*) sq_malloc(sizeof(double)*nPts);
+		rho = (double*) sq_malloc(sizeof(double)*nPts);
+		lrxr = (double*) sq_malloc(sizeof(double)*nPts);
+		xfsf = (double*) sq_malloc(sizeof(double)*nPts);
+		xfsf2 = (double*) sq_malloc(sizeof(double)*nPts);
 
 		for (int i = 0; i < nPts; i++) {
 			xfsf[i] = xs[i] - xs[surfPos];
@@ -1155,15 +1155,15 @@ namespace Potentials {
 	}
 
 	DielectricBulkCylindricalFieldSpaceCharge::~DielectricBulkCylindricalFieldSpaceCharge(){
-		delete[] potTemp;
-		delete[] genTemp;
-		delete[] origPot;
-		delete[] rho;
-		delete[] lrxr;
-		delete[] xfsf;
-		delete[] xfsf2;
+		sq_free(potTemp);
+		sq_free(genTemp);
+		sq_free(origPot);
+		sq_free(rho);
+		sq_free(lrxr);
+		sq_free(xfsf);
+		sq_free(xfsf2);
 		if(prefactor)
-			delete[] prefactor; prefactor = nullptr;
+			sq_free(prefactor); prefactor = nullptr;
 	}
 
 	void DielectricBulkCylindricalFieldSpaceCharge::negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
@@ -1196,27 +1196,27 @@ namespace Potentials {
 		nElec = nelecPtr[0];
 
 		if(prefactor)
-			delete[] prefactor; prefactor = nullptr;
-		prefactor = new double[nElec];
-		double* energies = new double[nElec];
-		double* v0w = new double[nPts];
+			sq_free(prefactor); prefactor = nullptr;
+		prefactor = (double*) sq_malloc(sizeof(double)*nElec);
+		double* energies = (double*) sq_malloc(sizeof(double)*nElec);
+		double* v0w = (double*) sq_malloc(sizeof(double)*nPts);
 
 		totPot->getV(0, v0w, kin);
 		WfcToRho::calcEnergies(nElec, nPts, dx, psi, v0w, kin, energies);
 		wght->calcWeights(nElec, energies, prefactor);
-		delete[] energies;
-		delete[] v0w;
+		sq_free(energies);
+		sq_free(v0w);
 
 		dens->calcRho(nPts, nElec, dx, prefactor, psi, rho);
 		//pol = vtlsInt::trapzMul(nPts, xs, rho, dx);
 
 		if (wellWidth <= 0) {
 			double x0 = vtlsInt::trapzMul(nPts, xs, rho, dx) / vtlsInt::trapz(nPts, rho, dx);
-			double* xmx02 = new double[nPts];
+			double* xmx02 = (double*) sq_malloc(sizeof(double)*nPts);
 			for (int i = 0; i < nPts; i++)
 				xmx02[i] = std::pow(xs[i] - x0, 2);
 			wellWidth = 2 * std::sqrt(3) * sqrt(vtlsInt::trapzMul(nPts, xmx02, rho, dx) / vtlsInt::trapz(nPts, rho, dx));
-			delete[] xmx02;
+			sq_free(xmx02);
 		}
 	}
 
@@ -1292,7 +1292,7 @@ namespace Potentials {
 		if (nrPt == -1)
 			nrPt = 0;
 
-		mMat = new double[nPts * nPts];
+		mMat = (double*) sq_malloc(sizeof(double)*nPts * nPts);
 		std::fill_n(mMat, nPts * nPts, 0.0);
 
 		double pref = dx * dx / (2.0 * PhysCon::pi);
@@ -1314,20 +1314,20 @@ namespace Potentials {
 			mMat[(nPts-1)*nPts + j] = sum;
 		}
 
-		origPot = new double[nPts];
-		rho = new double[nPts];
-		genTemp = new double[nPts];
-		potTemp = new double[nPts];
+		origPot = (double*) sq_malloc(sizeof(double)*nPts);
+		rho = (double*) sq_malloc(sizeof(double)*nPts);
+		genTemp = (double*) sq_malloc(sizeof(double)*nPts);
+		potTemp = (double*) sq_malloc(sizeof(double)*nPts);
 	}
 
 	LinearBulkCylSectionFieldSpaceCharge::~LinearBulkCylSectionFieldSpaceCharge(){
-		delete[] origPot;
-		delete[] rho;
-		delete[] genTemp;
-		delete[] potTemp;
-		delete[] mMat;
+		sq_free(origPot);
+		sq_free(rho);
+		sq_free(genTemp);
+		sq_free(potTemp);
+		sq_free(mMat);
 		if(prefactor)
-			delete[] prefactor; prefactor = nullptr;
+			sq_free(prefactor); prefactor = nullptr;
 	}
 
 	void LinearBulkCylSectionFieldSpaceCharge::negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
@@ -1360,16 +1360,16 @@ namespace Potentials {
 		nElec = nelecPtr[0];
 
 		if(prefactor)
-			delete[] prefactor; prefactor = nullptr;
-		prefactor = new double[nElec];
-		double* energies = new double[nElec];
-		double* v0w = new double[nPts];
+			sq_free(prefactor); prefactor = nullptr;
+		prefactor = (double*) sq_malloc(sizeof(double)*nElec);
+		double* energies = (double*) sq_malloc(sizeof(double)*nElec);
+		double* v0w = (double*) sq_malloc(sizeof(double)*nPts);
 
 		totPot->getV(0, v0w, kin);
 		WfcToRho::calcEnergies(nElec, nPts, dx, psi, v0w, kin, energies);
 		wght->calcWeights(nElec, energies, prefactor);
-		delete[] energies;
-		delete[] v0w;
+		sq_free(energies);
+		sq_free(v0w);
 		//calcFermiBoxDimensionalityConversion(nElec, nPts, dx, ef, psi, totPot, prefactor);
 	}
 
@@ -1415,22 +1415,22 @@ namespace Potentials {
 
 
 	OhmicRetardingPotential::OhmicRetardingPotential(int nPts, double dx, double transLen, double resistivity, int* nElec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int surfPos, int refPoint) : nPts(nPts), dx(dx), wght(wght), dens(dens), totPot(totPot), refPoint(refPoint), nelecPtr(nElec) {
-		probCur = new double[nPts];
-		mask = new double[nPts];
-		temp = new std::complex<double>[nPts];
-		origPot = new double[nPts];
+		probCur = (double*) sq_malloc(sizeof(double)*nPts);
+		mask = (double*) sq_malloc(sizeof(double)*nPts);
+		temp = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
+		origPot = (double*) sq_malloc(sizeof(double)*nPts);
 
 		for (int i = 0; i < nPts; i++)
 			mask[i] = -resistivity / (1.0 + std::exp((i - surfPos) * dx / transLen));
 	}
 
 	OhmicRetardingPotential::~OhmicRetardingPotential(){
-		delete[] probCur;
-		delete[] mask;
-		delete[] temp;
-		delete[] origPot;
+		sq_free(probCur);
+		sq_free(mask);
+		sq_free(temp);
+		sq_free(origPot);
 		if(prefactor)
-			delete[] prefactor; prefactor = nullptr;
+			sq_free(prefactor); prefactor = nullptr;
 	}
 
 	void OhmicRetardingPotential::calcProbCur(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
@@ -1456,16 +1456,16 @@ namespace Potentials {
 		nElec = *nelecPtr;
 
 		if(prefactor)
-			delete[] prefactor; prefactor = nullptr;
-		prefactor = new double[nElec];
-		double* energies = new double[nElec];
-		double* v0w = new double[nPts];
+			sq_free(prefactor); prefactor = nullptr;
+		prefactor = (double*) sq_malloc(sizeof(double)*nElec);
+		double* energies = (double*) sq_malloc(sizeof(double)*nElec);
+		double* v0w = (double*) sq_malloc(sizeof(double)*nPts);
 
 		totPot->getV(0, v0w, kin);
 		WfcToRho::calcEnergies(nElec, nPts, dx, psi, v0w, kin, energies);
 		wght->calcWeights(nElec, energies, prefactor);
-		delete[] energies;
-		delete[] v0w;
+		sq_free(energies);
+		sq_free(v0w);
 	}
 
 	void OhmicRetardingPotential::negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator* kin) {
@@ -1502,12 +1502,12 @@ namespace Potentials {
 		CompositePotential::staticPots = staticPots;
 		CompositePotential::dynamicPots = dynamicPots;
 		CompositePotential::waveFuncDependentPots = waveFuncDependentPots;
-		v0 = new double[nPts];
+		v0 = (double*) sq_malloc(sizeof(double)*nPts);
 		if (numSPots != 0)
 			staticPots[0]->getV(0.0, v0, kin);
 		else
 			std::fill_n(v0, nPts, 0.0);
-		nv = new double[nPts];
+		nv = (double*) sq_malloc(sizeof(double)*nPts);
 		for (int i = 1; i < numSPots; i++) {
 			staticPots[i]->getV(0.0, nv, kin);
 			vtls::addArrays(nPts, nv, v0);
@@ -1515,12 +1515,12 @@ namespace Potentials {
 	}
 
 	CompositePotential::~CompositePotential(){
-		delete[] staticPots;
-		delete[] dynamicPots;
-		delete[] waveFuncDependentPots;
+		sq_free(staticPots);
+		sq_free(dynamicPots);
+		sq_free(waveFuncDependentPots);
 
-		delete[] v0;
-		delete[] nv;
+		sq_free(v0);
+		sq_free(nv);
 	}
 
 	void CompositePotential::getV(double t, double * targ, KineticOperators::KineticOperator* kin) {
@@ -1611,7 +1611,7 @@ namespace Potentials {
 
 namespace ElectricFieldProfiles {
 	ConstantFieldProfile::ConstantFieldProfile(int nPts, double * x, double eMax, double minX, double maxX) {
-		fs = new std::complex<double>[nPts];
+		fs = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
 		for (int i = 0; i < nPts; i++) {
 			if (x[i] > minX && x[i] < maxX)
 				fs[i] = eMax;
@@ -1626,7 +1626,7 @@ namespace ElectricFieldProfiles {
 
 
 	CylindricalToLinearProfile::CylindricalToLinearProfile(int nPts, double * x, double minX, double maxX, double r, double eMax, double enhFact) {
-		fs = new std::complex<double>[nPts];
+		fs = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
 		double xc = -enhFact * r + minX + std::sqrt((enhFact - 1.0)*r*(enhFact*r + maxX - minX));
 		double xn;
 		for (int i = 0; i < nPts; i++) {
@@ -1641,7 +1641,7 @@ namespace ElectricFieldProfiles {
 	}
 
 	CylindricalToLinearProfile::~CylindricalToLinearProfile() {
-		delete[] fs;
+		sq_free(fs);
 	}
 
 	std::complex<double> * CylindricalToLinearProfile::getProfile() {
@@ -1650,7 +1650,7 @@ namespace ElectricFieldProfiles {
 
 
 	CylindricalToCutoffProfile::CylindricalToCutoffProfile(int nPts, double * x, double minX, double maxX, double r, double eMax, double enhFact, double decayLength) {
-		fs = new std::complex<double>[nPts];
+		fs = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
 		double xn, k;
 		for (int i = 0; i < nPts; i++) {
 			xn = x[i];
@@ -1673,7 +1673,7 @@ namespace ElectricFieldProfiles {
 	}
 
 	CylindricalToCutoffProfile::~CylindricalToCutoffProfile() {
-		delete[] fs;
+		sq_free(fs);
 	}
 
 	std::complex<double> * CylindricalToCutoffProfile::getProfile() {
@@ -1682,7 +1682,7 @@ namespace ElectricFieldProfiles {
 
 
 	InMetalFieldProfile::InMetalFieldProfile(int nPts, double * x, double minX, double maxX, double eMax, double lam, std::complex<double> er, double cond) {
-		fs = new std::complex<double>[nPts];
+		fs = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
 		double xn;
 		//double w = PhysCon::c / lam * PhysCon::pi*2.0;
 		std::complex<double> k, kx, kz;
@@ -1713,15 +1713,15 @@ namespace ElectricFieldProfiles {
 
 
 	FileFieldProfile::FileFieldProfile(int nPts, double * x, double offset, double rightDecayPos, double leftDecayPos, double decayLength, double emax, const char * fil) {
-		fs = new std::complex<double>[nPts];
-		double * tre = new double[nPts];
-		double * tim = new double[nPts];
+		fs = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
+		double * tre = (double*) sq_malloc(sizeof(double)*nPts);
+		double * tim = (double*) sq_malloc(sizeof(double)*nPts);
 		std::fstream ifil = std::fstream(fil, std::ios::in | std::ios::binary);
 		int nRep;
 		ifil.read(reinterpret_cast<char*>(&nRep), sizeof(int));
-		double * fx = new double[nRep];
-		double * fre = new double[nRep];
-		double * fim = new double[nRep];
+		double * fx = (double*) sq_malloc(sizeof(double)*nRep);
+		double * fre = (double*) sq_malloc(sizeof(double)*nRep);
+		double * fim = (double*) sq_malloc(sizeof(double)*nRep);
 		ifil.read(reinterpret_cast<char*>(fx), sizeof(double)*nRep);
 		ifil.read(reinterpret_cast<char*>(fre), sizeof(double)*nRep);
 		ifil.read(reinterpret_cast<char*>(fim), sizeof(double)*nRep);
@@ -1759,15 +1759,15 @@ namespace ElectricFieldProfiles {
 				fs[i] = 0;
 		}
 		ifil.close();
-		delete[] tre;
-		delete[] tim;
-		delete[] fx;
-		delete[] fre;
-		delete[] fim;
+		sq_free(tre);
+		sq_free(tim);
+		sq_free(fx);
+		sq_free(fre);
+		sq_free(fim);
 	}
 
 	FileFieldProfile::~FileFieldProfile() {
-		delete[] fs;
+		sq_free(fs);
 	}
 
 	std::complex<double> * FileFieldProfile::getProfile() {
@@ -1776,7 +1776,7 @@ namespace ElectricFieldProfiles {
 
 
 	ExponentialToLinearProfile::ExponentialToLinearProfile(int nPts, double* x, double minX, double maxX, double r, double eMax) {
-		fs = new std::complex<double>[nPts];
+		fs = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
 		double xn;
 		for (int i = 0; i < nPts; i++) {
 			xn = x[i];
@@ -1790,7 +1790,7 @@ namespace ElectricFieldProfiles {
 	}
 
 	ExponentialToLinearProfile::~ExponentialToLinearProfile() {
-		delete[] fs;
+		sq_free(fs);
 	}
 
 	std::complex<double>* ExponentialToLinearProfile::getProfile() {

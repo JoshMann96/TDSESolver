@@ -1,4 +1,7 @@
 #include "AbsorptiveRegions.h"
+#include "CORECommonHeader.h"
+#include "MathTools.h"
+#include "PhysCon.h"
 // OBSOLETE
 namespace AbsorptiveRegions {
 	AbsorptiveRegionVel::AbsorptiveRegionVel(double dx, double dt, int nPts, int left, int right, double rate) {
@@ -35,7 +38,7 @@ namespace AbsorptiveRegions {
 		AbsorptiveRegionVelSmooth::outer = outer;
 		AbsorptiveRegionVelSmooth::rate = rate;
 		size = std::abs(outer - inner);
-		mask = new double[size];
+		mask = (double*) sq_malloc(size * sizeof(double));
 		if (outer > inner) {
 			for (int i = 0; i < size; i++) {
 				double k = (double)(i + 1) / size;
@@ -86,7 +89,7 @@ namespace AbsorptiveRegions {
 	}
 
 	std::complex<double>* getSmoothedTimePhaseDecay(int len, int inner, int outer, double rate) {
-		std::complex<double> * mask = new std::complex<double>[len];
+		std::complex<double> * mask = (std::complex<double>*) sq_malloc(len * sizeof(std::complex<double>));
 		std::fill_n(mask, len, 0.0);
 		int size = std::abs(outer - inner);
 		double k;
@@ -118,7 +121,7 @@ namespace AbsorptiveRegions {
 	}
 
 	double* getSmoothedSpatialDampDecay(int len, int inner, int outer, double rate) {
-		double* mask = new double[len];
+		double* mask = (double*) sq_malloc(len * sizeof(double));
 		std::fill_n(mask, len, 1.0);
 		int size = std::abs(outer - inner);
 		double k;

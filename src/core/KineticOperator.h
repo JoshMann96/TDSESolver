@@ -1,5 +1,6 @@
 #pragma once
 #include "CORECommonHeader.h"
+#include "MathTools.h"
 
 namespace KineticOperators {
 
@@ -30,7 +31,7 @@ namespace KineticOperators {
 		public KineticOperator_PSM
 	{
 	protected:
-		GenDisp_PSM(int nPts, double dx, double dt) : nPts(nPts), dx(dx), dt(dt), osKineticEnergy((std::complex<double>*)fftw_malloc(sizeof(std::complex<double>)*nPts)) {};
+		GenDisp_PSM(int nPts, double dx, double dt) : nPts(nPts), dx(dx), dt(dt), osKineticEnergy((std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts)) {};
 	public:
 		~GenDisp_PSM();
 		//Functions useful for updating potential immediately after kinetic phase for nonlinear systems
@@ -49,7 +50,7 @@ namespace KineticOperators {
 
 		void clearOpMat() {
 			if (opMat)
-				fftw_free(opMat); opMat = NULL;
+				sq_free(opMat); opMat = NULL;
 			needMat = 1;
 		}
 
@@ -110,8 +111,8 @@ namespace KineticOperators {
 	protected:
 		NonUnifGenDisp_PSM(int nPts, double dx, double dt, int nDisp, int expOrder, int forceNormalization) : 
 			nPts(nPts), dx(dx), dt(dt), nDisp(nDisp), expOrder(expOrder), forceNorm(forceNormalization), 
-			osKineticEnergy((std::complex<double>*)fftw_malloc(sizeof(std::complex<double>)*nPts*nDisp)),
-			osKineticMask((double*)fftw_malloc(sizeof(double)*nPts*nDisp)) {};
+			osKineticEnergy((std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts*nDisp)),
+			osKineticMask((double*)sq_malloc(sizeof(double)*nPts*nDisp)) {};
 	public:
 		~NonUnifGenDisp_PSM();
 		//Functions useful for updating potential immediately after kinetic phase for nonlinear systems
@@ -130,7 +131,7 @@ namespace KineticOperators {
 
 		void clearOpMat() {
 			if (opMat)
-				fftw_free(opMat); opMat = NULL;
+				sq_free(opMat); opMat = NULL;
 			needMat = 1;
 		}
 

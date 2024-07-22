@@ -2,6 +2,7 @@
 #include "CORECommonHeader.h"
 #include "KineticOperator.h"
 #include "WfcRhoTools.h"
+#include "MathTools.h"
 
 
 // Measurers used for use with a simulation manager (or not).
@@ -15,22 +16,25 @@ namespace Measurers {
 	private:
 		int isTerminated=0;
 		virtual void terminate() = 0;
-	public:
-		//Measurer();
+	public:;
 		virtual ~Measurer() = default;
 		// Required function that takes a measurement whenever called.
 		virtual int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) = 0;
 		// Required function which terminates the measurer (closes file).
 		void kill(){
+			std::cout << "Measurer with index " << getIndex() << " termination: " << isTerminated << std::endl;
 			if(!isTerminated){
 				isTerminated=1;
 				terminate();
+				std::cout << "Measurer with index " << getIndex() << " has been terminated." << std::endl;
+			}else{
+				std::cout << "Termination blocked " << getIndex() << std::endl;
 			}
 		}
 		virtual int getIndex() = 0;
 		virtual int isHeavy() = 0;
 	private:
-		int index = INT_MIN;
+		int index;
 		const char* fname = "";
 	};
 
