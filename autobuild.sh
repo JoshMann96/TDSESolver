@@ -10,9 +10,9 @@
 # FFTW3 & FFTW3_OMP (Double) [-DFFTW_ROOT=path]
 # OpenBLAS (highly recommend OMP version, only the library is needed) [-DBLAS_HINTS=path/to/lib]
 
-if [ -d .venv ]; 
-then echo ".venv folder already exists. Deleting..." & rm -r .venv
-fi
+#if [ -d .venv ]; 
+#then echo ".venv folder already exists. Deleting..." & rm -r .venv
+#fi
 
 python3 -m venv .venv
 source .venv/bin/activate
