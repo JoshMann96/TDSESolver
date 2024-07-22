@@ -3,8 +3,10 @@
 
 //callback sends progress int 0-100 (can be nullptr for no callback)
 SimulationManager::SimulationManager(int nPts, double dx, double dt, double maxT, std::function<void(int)> callback)
-	: maxT(maxT), dt(dt), dx(dx), nPts(nPts)
+	: maxT(maxT), dx(dx), nPts(nPts), numSteps(std::ceil(maxT / dt))
 {
+	SimulationManager::dt = maxT / (numSteps - 1);
+
 	pot = new Potentials::PotentialManager(nPts);
 	meas = new Measurers::MeasurementManager("");
 	psis = (std::complex<double>**) sq_malloc(sizeof(std::complex<double>*)*4);
@@ -13,10 +15,13 @@ SimulationManager::SimulationManager(int nPts, double dx, double dt, double maxT
 
 	vs = (double**) sq_malloc(sizeof(double*)*4);
 	ts = (double*) sq_malloc(sizeof(double)*4);
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < 4; i++) 
 		vs[i] = (double*) sq_malloc(sizeof(double) * nPts);
-		ts[i] = i * dt;
-	}
+	std::fill_n(ts, 4, 0.0);
+
+	step = (int*) sq_malloc(sizeof(int) * 4);
+	std::fill_n(step, 4, 0);
+
 	scratch1 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts);
 	scratch2 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts);
 	spatialDamp = (double*) sq_malloc(sizeof(double) * nPts);
@@ -64,7 +69,7 @@ void SimulationManager::addSpatialDamp(double* arr) {
 }
 
 void SimulationManager::finishInitialization() {
-	pot->finishAddingPotentials(kin);
+	pot->finishAddingPotentials(&kin);
 	//it->initializeCN();
 	//it->initializeCNPA();
 }
@@ -86,7 +91,7 @@ double SimulationManager::getTotalEnergy(std::complex<double> * psi, double * v)
 
 
 void SimulationManager::findEigenStates(double emin, double emax, double maxT, double rate) {
-	pot->getV(0.0, vs[index], kin);
+	pot->getV(0.0, vs[index], &kin);
 
 	std::complex<double>* states = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nPts);
 
@@ -124,7 +129,7 @@ void SimulationManager::setPsi(std::complex<double>* npsi) {
 
 int SimulationManager::getVPAR(int idx, int idxPsi) {
 	auto strt = std::chrono::high_resolution_clock::now();
-	pot->getV(psis[idxPsi], ts[idx], vs[idx], kin);
+	pot->getV(psis[idxPsi], ts[idx], vs[idx], &kin);
 	auto end = std::chrono::high_resolution_clock::now();
 	auto dur = std::chrono::duration_cast<std::chrono::microseconds>(end - strt);
 	return dur.count();
@@ -132,7 +137,7 @@ int SimulationManager::getVPAR(int idx, int idxPsi) {
 
 int SimulationManager::measPAR(int idx) {
 	auto strt = std::chrono::high_resolution_clock::now();
-	meas->measureMany(psis[idx], vs[idx], ts[idx], kin, nElec, nPts);
+	meas->measure(step[idx], psis[idx], vs[idx], ts[idx]);
 	auto end = std::chrono::high_resolution_clock::now();
 	auto dur = std::chrono::duration_cast<std::chrono::microseconds>(end - strt);
 	return dur.count();
@@ -140,18 +145,17 @@ int SimulationManager::measPAR(int idx) {
 
 //Run simulation using operator splitting Fourier method (applies potential as linear)
 void SimulationManager::runOS_U2TU() {
-	iterateIndex();
-	pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()], kin);
+	pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()], &kin);
 	kin_psm->stepOS_U2TU(psis[prevIndex()], vs[prevIndex()], spatialDamp, psis[index], nElec);
 	iterateIndex();
 
 	int percDone = 0;
 	std::future<int> f1;
 	auto rM = &SimulationManager::measPAR;
-	while (ts[prevPrevIndex()] <= maxT) {
+	while (step[prevPrevIndex()] < numSteps) {
 		f1 = std::async(rM, this, prevPrevIndex());
 
-		pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()], kin);
+		pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()], &kin);
 		kin_psm->stepOS_U2TU(psis[prevIndex()], vs[prevIndex()], spatialDamp, psis[index], nElec);
 
 		f1.get();
@@ -170,22 +174,21 @@ void SimulationManager::runOS_U2TU() {
 //Run simulation using operator splitting Fourier method (applies potential as nonlinear, second potential phase is recalculated after propagation phase)
 void SimulationManager::runOS_UW2TUW() {
 	std::complex<double>* tpsi = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nElec);
-	iterateIndex();
-	pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()], kin);
+	pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()], &kin);
 	kin_psm->stepOS_UW2T(psis[prevIndex()], vs[prevIndex()], spatialDamp, tpsi, nElec);
-	pot->getV(tpsi, ts[prevIndex()], vs[prevIndex()], kin);
+	pot->getV(tpsi, ts[prevIndex()], vs[prevIndex()], &kin);
 	kin_psm->stepOS_UW(tpsi, vs[prevIndex()], spatialDamp, psis[index], nElec);
 	iterateIndex();
 
 	int percDone = 0;
 	std::future<int> f1;
 	auto rM = &SimulationManager::measPAR;
-	while (ts[prevPrevIndex()] <= maxT) {
+	while (step[prevPrevIndex()] < numSteps) {
 		f1 = std::async(rM, this, prevPrevIndex());
 
-		pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()], kin);
+		pot->getV(psis[prevIndex()], ts[prevIndex()], vs[prevIndex()], &kin);
 		kin_psm->stepOS_UW2T(psis[prevIndex()], vs[prevIndex()], spatialDamp, tpsi, nElec);
-		pot->getV(tpsi, ts[prevIndex()], vs[prevIndex()], kin);
+		pot->getV(tpsi, ts[prevIndex()], vs[prevIndex()], &kin);
 		kin_psm->stepOS_UW(tpsi, vs[prevIndex()], spatialDamp, psis[index], nElec);
 		f1.get();
 
@@ -201,7 +204,9 @@ void SimulationManager::runOS_UW2TUW() {
 }
 
 void SimulationManager::iterateIndex() {
-	ts[nextIndex()] = ts[index] + dt;
+	step[nextIndex()] = step[index] + 1;
+	ts[nextIndex()] = step[nextIndex()] * dt;
+
 	index++;
 	if (index > 3)
 		index = 0;
@@ -242,6 +247,10 @@ double SimulationManager::getDT() {
 
 double SimulationManager::getMaxT() {
 	return maxT;
+}
+
+int SimulationManager::getNumSteps(){
+	return numSteps;
 }
 
 std::complex<double> * SimulationManager::getPsi() {

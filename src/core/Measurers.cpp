@@ -1,4 +1,5 @@
 #include "Measurers.h"
+#include "KineticOperator.h"
 #include "PhysCon.h"
 #include <iostream>
 #include <stdexcept>
@@ -41,7 +42,7 @@ namespace Measurers {
 		kill();
 	}
 
-	int DoubleConst::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) { return 1; }
+	int DoubleConst::measure(int step, std::complex<double>* psi, double* v, double t) { return 1; }
 
 	void DoubleConst::terminate() {}
 
@@ -60,7 +61,7 @@ namespace Measurers {
 			delete[] nfil; nfil = nullptr;
 	}
 
-	int NElec::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) { 
+	int NElec::measure(int step, std::complex<double>* psi, double* v, double t) { 
 		if(first){
 			first = 0;
 			
@@ -109,7 +110,7 @@ namespace Measurers {
 		kill();
 	}
 
-	int Header::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) { return 1; }
+	int Header::measure(int step, std::complex<double>* psi, double* v, double t) { return 1; }
 
 	void Header::terminate() {}
 
@@ -143,10 +144,10 @@ namespace Measurers {
 
 	void NPts::terminate() {}
 
-	int NPts::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) { return 1; }
+	int NPts::measure(int step, std::complex<double>* psi, double* v, double t) { return 1; }
 
 	//NSteps
-	NSteps::NSteps(const char* fol) {
+	NSteps::NSteps(int numSteps, const char* fol) {
 		int l1 = std::strlen(fol), l2 = std::strlen(fname);
 		char* nfil = new char[l1 + l2 + 1];
 		strncpy(nfil, fol, l1);
@@ -164,22 +165,15 @@ namespace Measurers {
 		}
 
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
+		fil.write(reinterpret_cast<char*>(&numSteps), sizeof(int));
+		fil.close();
 	}
 
 	NSteps::~NSteps() {kill();}
 
-	void NSteps::terminate() {
-		fil.write(reinterpret_cast<char*>(&steps), sizeof(int));
-		fil.close();
-	}
+	void NSteps::terminate() {}
 
-	int NSteps::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
-		if (t != tmea) {
-			steps++;
-			tmea = t;
-		}
-		return 0;
-	}
+	int NSteps::measure(int step, std::complex<double> * psi, double * v, double t) {return 0;}
 
 	//DX
 	DX::DX(double dx, const char* fol) {
@@ -209,7 +203,7 @@ namespace Measurers {
 		kill();
 	}
 
-	int DX::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) { return 1; }
+	int DX::measure(int step, std::complex<double>* psi, double* v, double t) { return 1; }
 
 	void DX::terminate() {}
 
@@ -241,7 +235,7 @@ namespace Measurers {
 		kill();
 	}
 
-	int DT::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) { return 1; }
+	int DT::measure(int step, std::complex<double>* psi, double* v, double t) { return 1; }
 
 	void DT::terminate() {}
 
@@ -273,7 +267,7 @@ namespace Measurers {
 		kill();
 	}
 
-	int XS::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) { return 1; }
+	int XS::measure(int step, std::complex<double>* psi, double* v, double t) { return 1; }
 
 	void XS::terminate() {}
 
@@ -303,11 +297,8 @@ namespace Measurers {
 		kill();
 	}
 
-	int TS::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
-		if (t != tmea) {
-			fil.write(reinterpret_cast<char*>(&t), sizeof(double));
-			tmea = t;
-		}
+	int TS::measure(int step, std::complex<double> * psi, double * v, double t) {
+		fil.write(reinterpret_cast<char*>(&t), sizeof(double));
 		return 0;
 	}
 
@@ -342,46 +333,32 @@ namespace Measurers {
 		kill();
 	}
 
-	int OrigPot::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
-		if (!measured) {
-			fil.write(reinterpret_cast<char*>(&v[0]), sizeof(double)*n);
-			measured = 1;
-		}
+	int OrigPot::measure(int step, std::complex<double> * psi, double * v, double t) {
+		fil.write(reinterpret_cast<char*>(&v[0]), sizeof(double)*n);
 		return 1;
 	}
 
 	void OrigPot::terminate() {fil.close();}
 
 	//Psi2t
-	Psi2t::Psi2t(int n, int nx, int nt, double maxT, double dt, double * x, const char* fol) {
-		Psi2t::n = n;
-		Psi2t::nx = nx;
-		Psi2t::nt = nt;
-		Psi2t::maxT = maxT;
-		Psi2t::dt = dt;
-
-		interval = maxT / (double)nt;
+	Psi2t::Psi2t(int nPts, int nx, int nt, int numSteps, double maxT, double * x, int* nElec, const char* fol) :
+		nPts(nPts), nx(nx), nt(nt), numSteps(numSteps), nElec(nElec), curIdx(0)
+	{
+		measSteps = (int*) sq_malloc(sizeof(int)*numSteps);
+		vtls::linspace(nt, 0, numSteps - 1, measSteps);
 
 		xs = (double*) sq_malloc(sizeof(double)*nx);
-		vtls::downSampleLinearInterpolateEdge(n, x, nx, xs);
+		vtls::downSampleLinearInterpolateEdge(nPts, x, nx, xs);
 		ts = (double*) sq_malloc(sizeof(double)*nt);
-		psi2b = (double*) sq_malloc(sizeof(double)*n);
+		psi2b = (double*) sq_malloc(sizeof(double)*nPts);
 		psi2s = (double*) sq_malloc(sizeof(double)*nx);
 
-		vtls::linspace(nt, 0.0, maxT-dt, ts);
-
-		mulT = interval;
-
-		curIts = 0;
+		vtls::linspace(nt, 0.0, maxT, ts);
 
 		int l1 = std::strlen(fol), l2 = std::strlen(fname);
 		char* nfil = new char[l1 + l2 + 1];
 		strncpy(nfil, fol, l1);
 		strcpy(&nfil[l1], fname);
-		//std::stringstream ss;
-		//ss << fol << fname;
-		//std::string str = ss.str();
-		//const char* nfil = str.c_str();
 
 		fil = openFile(nfil);
 		delete[] nfil;
@@ -402,29 +379,21 @@ namespace Measurers {
 		sq_free(psi2s);
 		sq_free(xs);
 		sq_free(ts);
+		sq_free(measSteps);
 	}
 
-	int Psi2t::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
-		if(t >= ts[curIts] && curIts < nt)
-		{
-			if (std::abs(t-ts[curIts])<dt/2) {
-				vtls::normSqr(n, psi, psi2b);
-				vtls::downSampleLinearInterpolateEdge(n, psi2b, nx, psi2s);
-
+	int Psi2t::measure(int step, std::complex<double> * psi, double * v, double t) {
+		while(step == measSteps[curIdx]){
+			for(int i = 0; i < *nElec; i++){
+				vtls::normSqr(nPts, &psi[i*nPts], psi2b);
+				vtls::downSampleLinearInterpolateEdge(nPts, psi2b, nx, psi2s);
 				fil.write(reinterpret_cast<char*>(&psi2s[0]), sizeof(double)*nx);
 			}
-			else if((t - ts[curIts]) > 1.5 * dt){
-				throw std::runtime_error("Psi2t has a finer sampling than the simulation.");
-			}
-			else if((t - ts[curIts]) > 0.5 * dt){
-				std::cout << "Psi2t next step, curIts = " << curIts << ", nt = " << nt << std::endl;
-				mulT = t;
-				ts[curIts] = t-dt;
-				curIts++;
-			}
+
+			curIdx++;
+			if(curIdx >= nt)
+				return 1;
 		}
-		if(curIts >= nt)
-			return 1;
 		return 0;
 	}
 
@@ -434,19 +403,13 @@ namespace Measurers {
 		fil.close();
 	}
 
-	ExpectE::ExpectE(int len, double dx, const char* fol) {
-		nPts = len;
-		ExpectE::dx = dx;
+	ExpectE::ExpectE(int nPts, double dx, int* nElec, const char* fol, KineticOperators::KineticOperator ** kin) : nPts(nPts), dx(dx), kin(kin), nElec(nElec) {
 		rho = (double*) sq_malloc(sizeof(double)*nPts);
 
 		int l1 = std::strlen(fol), l2 = std::strlen(fname);
 		char* nfil = new char[l1 + l2 + 1];
 		strncpy(nfil, fol, l1);
 		strcpy(&nfil[l1], fname);
-		//std::stringstream ss;
-		//ss << fol << fname;
-		//std::string str = ss.str();
-		//const char* nfil = str.c_str();
 
 		fil = openFile(nfil);
 		delete[] nfil;
@@ -464,19 +427,14 @@ namespace Measurers {
 		sq_free(rho);
 	}
 
-	int ExpectE::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
-		/*vtls::secondDerivative(nPts, psi, scratch1, dx);
-		vtls::scaMulArray(nPts, -PhysCon::hbar*PhysCon::hbar / (2.0*PhysCon::me), scratch1);
-		vtls::seqMulArrays(nPts, v, psi, scratch2);
-		vtls::addArrays(nPts, scratch2, scratch1);
-		for (int i = 0; i < nPts; i++)
-			scratch2[i] = std::conj(psi[i]);
-		double ex = std::real(vtlsInt::simpsMul(nPts, scratch1, scratch2, dx));*/
+	int ExpectE::measure(int step, std::complex<double> * psi, double * v, double t) {
+		double ex;
+		for(int i = 0; i < *nElec; i++){
+			vtls::normSqr(nPts, &psi[i*nPts], rho);
+			ex = vtlsInt::rSumMul(nPts, rho, v, dx) + (*kin)->evaluateKineticEnergy(&psi[i*nPts]);
 
-		vtls::normSqr(nPts, psi, rho);
-		double ex = vtlsInt::rSumMul(nPts, rho, v, dx) + kin->evaluateKineticEnergy(psi);
-
-		fil.write(reinterpret_cast<char*>(&ex), sizeof(double));
+			fil.write(reinterpret_cast<char*>(&ex), sizeof(double));
+		}
 
 		return 0;
 	}
@@ -486,20 +444,15 @@ namespace Measurers {
 	}
 
 
-	ExpectX::ExpectX(int len, double* xs, double dx, const char* fol) {
-		nPts = len;
-		x = xs;
-		ExpectX::dx = dx;
-		scratch = (double*) sq_malloc(sizeof(double)*len);
+	ExpectX::ExpectX(int nPts, double* xs, double dx, int* nElec, const char* fol) :
+		nPts(nPts), dx(dx), nElec(nElec), x(xs)
+	 {
+		scratch = (double*) sq_malloc(sizeof(double)*nPts);
 
 		int l1 = std::strlen(fol), l2 = std::strlen(fname);
 		char* nfil = new char[l1 + l2 + 1];
 		strncpy(nfil, fol, l1);
 		strcpy(&nfil[l1], fname);
-		//std::stringstream ss;
-		//ss << fol << fname;
-		//std::string str = ss.str();
-		//const char* nfil = str.c_str();
 
 		fil = openFile(nfil);
 		delete[] nfil;
@@ -517,10 +470,12 @@ namespace Measurers {
 		sq_free(scratch);
 	}
 
-	int ExpectX::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
-		vtls::normSqr(nPts, psi, scratch);
-		double ex = vtlsInt::simpsMul(nPts, x, scratch, dx);
-		fil.write(reinterpret_cast<char*>(&ex), sizeof(double));
+	int ExpectX::measure(int step, std::complex<double> * psi, double * v, double t) {
+		for(int i = 0; i < *nElec; i++){
+			vtls::normSqr(nPts, &psi[i*nPts], scratch);
+			double ex = vtlsInt::simpsMul(nPts, x, scratch, dx);
+			fil.write(reinterpret_cast<char*>(&ex), sizeof(double));
+		}
 		return 0;
 	}
 
@@ -529,9 +484,9 @@ namespace Measurers {
 	}
 
 
-	ExpectP::ExpectP(int len, double dx, const char* fol) {
-		nPts = len;
-		ExpectP::dx = dx;
+	ExpectP::ExpectP(int len, double dx, int* nElec, const char* fol) :
+		nPts(len), dx(dx), nElec(nElec)
+	 {
 		scratch1 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*len);
 		scratch2 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*len);
 
@@ -539,10 +494,6 @@ namespace Measurers {
 		char* nfil = new char[l1 + l2 + 1];
 		strncpy(nfil, fol, l1);
 		strcpy(&nfil[l1], fname);
-		//std::stringstream ss;
-		//ss << fol << fname;
-		//std::string str = ss.str();
-		//const char* nfil = str.c_str();
 
 		fil = openFile(nfil);
 		delete[] nfil;
@@ -561,13 +512,15 @@ namespace Measurers {
 		sq_free(scratch2);
 	}
 
-	int ExpectP::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
-		vtls::firstDerivative(nPts, psi, scratch1, dx);
-		for (int i = 0; i < nPts; i++)
-			scratch2[i] = std::conj(psi[i]);
-		double ex = std::imag(vtlsInt::simpsMul(nPts, scratch2, scratch1, dx))*PhysCon::hbar;
-		fil.write(reinterpret_cast<char*>(&ex), sizeof(double));
-
+	int ExpectP::measure(int step, std::complex<double> * psi, double * v, double t) {
+		double ex;
+		for(int i = 0; i < *nElec; i++){
+			vtls::firstDerivative(nPts, &psi[i*nPts], scratch1, dx);
+			for (int j = 0; j < nPts; j++)
+				scratch2[j] = std::conj(psi[i*nPts + j]);
+			ex = std::imag(vtlsInt::simpsMul(nPts, scratch2, scratch1, dx))*PhysCon::hbar;
+			fil.write(reinterpret_cast<char*>(&ex), sizeof(double));
+		}
 		return 0;
 	}
 
@@ -576,20 +529,16 @@ namespace Measurers {
 	}
 
 
-	ExpectA::ExpectA(int len, double dx, const char* fol) {
-		nPts = len;
-		ExpectA::dx = dx;
-		scratch1 = (double*) sq_malloc(sizeof(double)*len);
-		scratch2 = (double*) sq_malloc(sizeof(double)*len);
+	ExpectA::ExpectA(int nPts, double dx, int* nElec, const char* fol) :
+		nPts(nPts), dx(dx), nElec(nElec)
+		 {
+		scratch1 = (double*) sq_malloc(sizeof(double)*nPts);
+		scratch2 = (double*) sq_malloc(sizeof(double)*nPts);
 
 		int l1 = std::strlen(fol), l2 = std::strlen(fname);
 		char* nfil = new char[l1 + l2 + 1];
 		strncpy(nfil, fol, l1);
 		strcpy(&nfil[l1], fname);
-		//std::stringstream ss;
-		//ss << fol << fname;
-		//std::string str = ss.str();
-		//const char* nfil = str.c_str();
 
 		fil = openFile(nfil);
 		delete[] nfil;
@@ -608,11 +557,14 @@ namespace Measurers {
 		sq_free(scratch2);
 	}
 
-	int ExpectA::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
+	int ExpectA::measure(int step, std::complex<double> * psi, double * v, double t) {
+		double ex;
 		vtls::firstDerivative(nPts, v, scratch1, dx);
-		vtls::normSqr(nPts, psi, scratch2);
-		double ex = vtlsInt::simpsMul(nPts, scratch2, scratch1, dx)*(-1.0 / PhysCon::me);
-		fil.write(reinterpret_cast<char*>(&ex), sizeof(double));
+		for(int i = 0; i < *nElec; i++){
+			vtls::normSqr(nPts, &psi[i*nPts], scratch2);
+			ex = vtlsInt::simpsMul(nPts, scratch2, scratch1, dx)*(-1.0 / PhysCon::me);
+			fil.write(reinterpret_cast<char*>(&ex), sizeof(double));
+		}
 
 		return 0;
 	}
@@ -623,19 +575,15 @@ namespace Measurers {
 
 
 	//TotProb
-	TotProb::TotProb(int n, double dx, const char* fol) {
-		TotProb::n = n;
-		TotProb::dx = dx;
-		psi2 = (double*) sq_malloc(sizeof(double)*n);
+	TotProb::TotProb(int nPts, double dx, int* nElec, const char* fol) :
+		nPts(nPts), dx(dx), nElec(nElec)
+	{
+		psi2 = (double*) sq_malloc(sizeof(double)*nPts);
 
 		int l1 = std::strlen(fol), l2 = std::strlen(fname);
 		char* nfil = new char[l1 + l2 + 1];
 		strncpy(nfil, fol, l1);
 		strcpy(&nfil[l1], fname);
-		//std::stringstream ss;
-		//ss << fol << fname;
-		//std::string str = ss.str();
-		//const char* nfil = str.c_str();
 
 		fil = openFile(nfil);
 		delete[] nfil;
@@ -653,11 +601,13 @@ namespace Measurers {
 		sq_free(psi2);
 	}
 
-	int TotProb::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
-		vtls::normSqr(n, psi, psi2);
-		double sum = vtlsInt::simps(n, psi2, dx);
-		fil.write(reinterpret_cast<char*>(&sum), sizeof(double));
-
+	int TotProb::measure(int step, std::complex<double> * psi, double * v, double t) {
+		double sum;
+		for(int i = 0; i < *nElec; i++){	
+			vtls::normSqr(nPts, &psi[i*nPts], psi2);
+			sum = vtlsInt::simps(nPts, psi2, dx);
+			fil.write(reinterpret_cast<char*>(&sum), sizeof(double));
+		}
 		return 0;
 	}
 
@@ -666,12 +616,9 @@ namespace Measurers {
 	}
 
 
-	VDProbCurrent::VDProbCurrent(int n, double dx, int vdPos, int vdNum, const char* name, const char* fol) {
-		VDProbCurrent::n = n;
-		VDProbCurrent::dx = dx;
-		VDProbCurrent::pos = vdPos;
-		VDProbCurrent::vdNum = vdNum;
-
+	VDProbCurrent::VDProbCurrent(int nPts, double dx, int* nElec, int vdPos, int vdNum, const char* name, const char* fol) :
+		nPts(nPts), dx(dx), vdPos(vdPos), vdNum(vdNum), nElec(nElec)
+	 {
 		std::string tempstr = std::to_string(vdNum);
 		const char* nm = tempstr.c_str();
 		int l1 = std::strlen(fol), l2 = std::strlen(nm), l3 = std::strlen(fname);
@@ -679,10 +626,6 @@ namespace Measurers {
 		strncpy(nfil, fol, l1);
 		strncpy(&nfil[l1], nm, l2);
 		strcpy(&nfil[l1+l2], fname);
-		//std::stringstream ss;
-		//ss << fol << vdNum << fname;
-		//std::string str = ss.str();
-		//const char* nfil = str.c_str();
 
 		fil = openFile(nfil);
 		delete[] nfil;
@@ -694,17 +637,21 @@ namespace Measurers {
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 		fil.write(reinterpret_cast<char*>(&vdNum), sizeof(int));
 		fil.write(reinterpret_cast<char*>(&name), 4);
-		fil.write(reinterpret_cast<char*>(&pos), sizeof(int));
+		fil.write(reinterpret_cast<char*>(&vdPos), sizeof(int));
 	}
 
 	VDProbCurrent::~VDProbCurrent() {
 		kill();
 	}
 
-	int VDProbCurrent::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
-		std::complex<double> der = vtls::firstDerivative(n, psi, pos, dx);
-		double j = std::imag(PhysCon::hbar / (2.0 * PhysCon::me)*(std::conj(psi[pos])*der - psi[pos] * std::conj(der)));
-		fil.write(reinterpret_cast<char*>(&j), sizeof(double));
+	int VDProbCurrent::measure(int step, std::complex<double> * psi, double * v, double t) {
+		std::complex<double> der;
+		double j;
+		for(int i = 0; i < *nElec; i++){
+			der = vtls::firstDerivative(nPts, &psi[i*nPts], vdPos, dx);
+			j = std::imag(PhysCon::hbar / (2.0 * PhysCon::me)*(std::conj(psi[i*nPts + vdPos])*der - psi[i*nPts + vdPos] * std::conj(der)));
+			fil.write(reinterpret_cast<char*>(&j), sizeof(double));
+		}
 
 		return 0;
 	}
@@ -713,10 +660,12 @@ namespace Measurers {
 		fil.close();
 	}
 
-	PsiT::PsiT(int n, double meaT, int vdNum, const char* name, const char* fol) {
+	PsiT::PsiT(int nPts, double meaT, int *nElec, int vdNum, const char* name, const char* fol) :
+		nElec(nElec), vdNum(vdNum), meaT(meaT), nPts(nPts)
+	 {
 		PsiT::meaT = meaT;
 		PsiT::vdNum = vdNum;
-		PsiT::n = n;
+		PsiT::nPts = nPts;
 
 		std::string tempstr = std::to_string(vdNum);
 		const char* nm = tempstr.c_str();
@@ -743,14 +692,13 @@ namespace Measurers {
 		kill();
 	}
 
-	int PsiT::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
-		if ((!done && t >= meaT) || t == curTime) {
-			fil.write(reinterpret_cast<char*>(psi), sizeof(std::complex<double>)* n);
+	int PsiT::measure(int step, std::complex<double> * psi, double * v, double t) {
+		if ((!done && t >= meaT)) {
+			for(int i = 0; i < *nElec; i++)
+				fil.write(reinterpret_cast<char*>(&psi[i*nPts]), sizeof(std::complex<double>)* nPts);
 			done = 1;
-			curTime = t;
-		}
-		else if ((done && t >= meaT) && t != curTime)
 			return 1;
+		}
 		
 		return 0;
 
@@ -791,7 +739,7 @@ namespace Measurers {
 		kill();
 	}
 
-	int PotT::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
+	int PotT::measure(int step, std::complex<double> * psi, double * v, double t) {
 		if (!done && t >= meaT) {
 			fil.write(reinterpret_cast<char*>(v), sizeof(double)*n);
 			done = 1;
@@ -804,10 +752,9 @@ namespace Measurers {
 		fil.close();
 	}
 
-	VDPsi::VDPsi(int vdPos, int vdNum, const char* name, const char* fol) {
-		VDPsi::pos = vdPos;
-		VDPsi::vdNum = vdNum;
-
+	VDPsi::VDPsi(int* nElec, int vdPos, int vdNum, const char* name, const char* fol) : 
+		nElec(nElec), vdPos(vdPos), vdNum(vdNum)
+	{
 		std::string tempstr = std::to_string(vdNum);
 		const char* nm = tempstr.c_str();
 		int l1 = std::strlen(fol), l2 = std::strlen(nm), l3 = std::strlen(fname);
@@ -815,10 +762,6 @@ namespace Measurers {
 		strncpy(nfil, fol, l1);
 		strncpy(&nfil[l1], nm, l2);
 		strcpy(&nfil[l1 + l2], fname);
-		//std::stringstream ss;
-		//ss << fol << vdNum << fname;
-		//std::string str = ss.str();
-		//const char* nfil = str.c_str();
 
 		fil = openFile(nfil);
 		delete[] nfil;
@@ -830,15 +773,16 @@ namespace Measurers {
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 		fil.write(reinterpret_cast<char*>(&vdNum), sizeof(int));
 		fil.write(reinterpret_cast<char*>(&name), 4);
-		fil.write(reinterpret_cast<char*>(&pos), sizeof(int));
+		fil.write(reinterpret_cast<char*>(&vdPos), sizeof(int));
 	}
 
 	VDPsi::~VDPsi() {
 		kill();
 	}
 
-	int VDPsi::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
-		fil.write(reinterpret_cast<char*>(&psi[pos]), sizeof(std::complex<double>));
+	int VDPsi::measure(int step, std::complex<double> * psi, double * v, double t) {
+		for(int i = 0; i < *nElec; i++)
+			fil.write(reinterpret_cast<char*>(&psi[i*nPts + vdPos]), sizeof(std::complex<double>));
 		return 0;
 	}
 
@@ -846,10 +790,9 @@ namespace Measurers {
 		fil.close();
 	}
 
-	VDPot::VDPot(int vdPos, int vdNum, const char* name, const char* fol) {
-		VDPot::pos = vdPos;
-		VDPot::vdNum = vdNum;
-
+	VDPot::VDPot(int vdPos, int vdNum, const char* name, const char* fol) :
+		vdPos(vdPos), vdNum(vdNum)
+	 {
 		std::string tempstr = std::to_string(vdNum);
 		const char* nm = tempstr.c_str();
 		int l1 = std::strlen(fol), l2 = std::strlen(nm), l3 = std::strlen(fname);
@@ -857,10 +800,6 @@ namespace Measurers {
 		strncpy(nfil, fol, l1);
 		strncpy(&nfil[l1], nm, l2);
 		strcpy(&nfil[l1 + l2], fname);
-		//std::stringstream ss;
-		//ss << fol << vdNum << fname;
-		//std::string str = ss.str();
-		//const char* nfil = str.c_str();
 
 		fil = openFile(nfil);
 		delete[] nfil;
@@ -872,15 +811,15 @@ namespace Measurers {
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 		fil.write(reinterpret_cast<char*>(&vdNum), sizeof(int));
 		fil.write(reinterpret_cast<char*>(&name), 4);
-		fil.write(reinterpret_cast<char*>(&pos), sizeof(int));
+		fil.write(reinterpret_cast<char*>(&vdPos), sizeof(int));
 	}
 
 	VDPot::~VDPot() {
 		kill();
 	}
 
-	int VDPot::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
-		fil.write(reinterpret_cast<char*>(&v[pos]), sizeof(double));
+	int VDPot::measure(int step, std::complex<double> * psi, double * v, double t) {
+		fil.write(reinterpret_cast<char*>(&v[vdPos]), sizeof(double));
 		return 0;
 	}
 
@@ -889,19 +828,14 @@ namespace Measurers {
 	}
 
 
-	VDFluxSpec::VDFluxSpec(int vdPos, int vdNum, int* nElec, int nsamp, double emax, double tmax, const char* name, const char* fol) {
-		VDFluxSpec::pos = vdPos;
-		VDFluxSpec::vdNum = vdNum;
-		VDFluxSpec::dw = emax / PhysCon::hbar / nsamp;
-		VDFluxSpec::nelecPtr = nElec;
-		VDFluxSpec::nsamp = nsamp;
-		VDFluxSpec::tmax = tmax;
+	VDFluxSpec::VDFluxSpec(int nPts, int vdPos, int vdNum, int* nElec, int nSamp, double emax, double tmax, const char* name, const char* fol) :
+		vdPos(vdPos), vdNum(vdNum), nElec(nElec), nSamp(nSamp), tmax(tmax), nPts(nPts), dw(emax / PhysCon::hbar / nSamp)
+	 {
+		phss = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nSamp);
+		temp = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nSamp);
 
-		phss = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nsamp);
-		temp = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nsamp);
-
-		phaseCalcExpMul = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nsamp);
-		for(int i = 0; i < nsamp; i++)
+		phaseCalcExpMul = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nSamp);
+		for(int i = 0; i < nSamp; i++)
 			phaseCalcExpMul[i] = PhysCon::im * dw * (double)i; //to be multiplied by t then exponentiated later
 		
 		cumPotPhs = 1;
@@ -924,8 +858,8 @@ namespace Measurers {
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 		fil.write(reinterpret_cast<char*>(&vdNum), sizeof(int));
 		fil.write(reinterpret_cast<char*>(&name), 4);
-		fil.write(reinterpret_cast<char*>(&pos), sizeof(int));
-		fil.write(reinterpret_cast<char*>(&nsamp), sizeof(int));
+		fil.write(reinterpret_cast<char*>(&vdPos), sizeof(int));
+		fil.write(reinterpret_cast<char*>(&nSamp), sizeof(int));
 		fil.write(reinterpret_cast<char*>(&emax), sizeof(double));
 	}
 
@@ -941,100 +875,78 @@ namespace Measurers {
 		sq_free(temp);
 	}
 
-	int VDFluxSpec::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) {
+	int VDFluxSpec::measure(int step, std::complex<double>* psi, double* v, double t) {
 		if (first) {
-			nElec = *nelecPtr;
-
 			if(wfcs0)
 				sq_free(wfcs0);
 			if(wfcs1)
 				sq_free(wfcs1);
-			wfcs0 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nsamp * nElec);
-			wfcs1 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nsamp * nElec);
+			wfcs0 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nSamp * *nElec);
+			wfcs1 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nSamp * *nElec);
 
-			for (int i = 0; i < nsamp * nElec; i++) {
+			for (int i = 0; i < nSamp * *nElec; i++) {
 				wfcs0[i] = 0;
 				wfcs1[i] = 0;
 			}
-
-			celec = 0;
+			
 			first = 0;
-			ct = 0;
-		}
-		if (celec == 0) {
-			cumPotPhs *= std::exp(PhysCon::im * (v[pos] + v[pos + 1]) / (2.0 * PhysCon::hbar) * (t - ct));
-			double winMul;
-			if (t < tukeyAl / 2 * tmax)
-				winMul = 0.5 * (1 - std::cos(2.0 * PhysCon::pi * t / (tukeyAl * tmax)));
-			else if (t > (1.0 - tukeyAl / 2) * tmax)
-				winMul = 0.5 * (1 - std::cos(2.0 * PhysCon::pi * (tmax - t) / (tukeyAl * tmax)));
-			else
-				winMul = 1;
-
-			//exp(i t dw (idx))*cumPotPhs*winMul, expanded to hopefully vectorize better
-			cblas_zcopy(nsamp, phaseCalcExpMul, 1, phss, 1); 	// phss = 		i dw (idx)
-			cblas_zdscal(nsamp, t, phss, 1); 					// phss = 		i dw (idx) t
-			for(int i = 0; i < nsamp; i++)
-				phss[i] = std::exp(phss[i]);					// phss = exp(	i dw (idx) t)
-			std::complex<double> cpwm = cumPotPhs * winMul;
-			cblas_zscal(nsamp, &cpwm, phss, 1);					// phss = exp(	i dw (idx) t)*cumPotPhs*winMul
-			//used to be this
-			/*for (int i = 0; i < nsamp; i++)
-				phss[i] = std::exp(PhysCon::im * dw * t * (double)i)*cumPotPhs*winMul;*/
 			ct = t;
 		}
-		if (ct != t) {
-			std::cout << "VDFluxSpec: Inconsistent timing." << std::endl;
-			return 1;
+
+		cumPotPhs *= std::exp(PhysCon::im * (v[vdPos] + v[vdPos + 1]) / (2.0 * PhysCon::hbar) * (t - ct));
+		double winMul;
+		if (t < tukeyAl / 2 * tmax)
+			winMul = 0.5 * (1 - std::cos(2.0 * PhysCon::pi * t / (tukeyAl * tmax)));
+		else if (t > (1.0 - tukeyAl / 2) * tmax)
+			winMul = 0.5 * (1 - std::cos(2.0 * PhysCon::pi * (tmax - t) / (tukeyAl * tmax)));
+		else
+			winMul = 1.0;
+
+		//exp(i t dw (idx))*cumPotPhs*winMul, expanded to hopefully vectorize better
+		cblas_zcopy(nSamp, phaseCalcExpMul, 1, phss, 1); 	// phss = 		i dw (idx)
+		cblas_zdscal(nSamp, t, phss, 1); 					// phss = 		i dw (idx) t
+		for(int i = 0; i < nSamp; i++)
+			phss[i] = std::exp(phss[i]);					// phss = exp(	i dw (idx) t)
+		std::complex<double> cpwm = cumPotPhs * winMul;
+		cblas_zscal(nSamp, &cpwm, phss, 1);
+			
+		for(int i = 0; i < *nElec; i++){
+			//wfcs0[i0 + i] += psip0 * phss[i]
+			//wfcs1[i0 + i] += psip1 * phss[i]
+			cblas_zaxpy(nSamp, &psi[i*nPts + vdPos  ], phss, 1, &wfcs0[i*nSamp], 1);
+			cblas_zaxpy(nSamp, &psi[i*nPts + vdPos+1], phss, 1, &wfcs1[i*nSamp], 1);
 		}
-		//wfcs0[i0 + i] += psip0 * phss[i]
-		//wfcs1[i0 + i] += psip1 * phss[i]
-		cblas_zaxpy(nsamp, &psi[pos  ], phss, 1, &wfcs0[celec*nsamp], 1);
-		cblas_zaxpy(nsamp, &psi[pos+1], phss, 1, &wfcs1[celec*nsamp], 1);
-		//was this
-		/*for (int i = 0; i < nsamp; i++) {
-			wfcs0[celec * nsamp + i] += psi[pos] * phss[i];
-			wfcs1[celec * nsamp + i] += psi[pos+1] * phss[i];
-		}*/
-		celec++;
-		if (celec == nElec){
-			celec = 0;
-		}
+
+		ct = t;
 
 		return 0;
 	}
 
 	void VDFluxSpec::terminate() {
-		fil.write(reinterpret_cast<char*>(&wfcs0[0]), nElec * nsamp * sizeof(std::complex<double>));
-		fil.write(reinterpret_cast<char*>(&wfcs1[0]), nElec * nsamp * sizeof(std::complex<double>));
+		fil.write(reinterpret_cast<char*>(&wfcs0[0]), *nElec * nSamp * sizeof(std::complex<double>));
+		fil.write(reinterpret_cast<char*>(&wfcs1[0]), *nElec * nSamp * sizeof(std::complex<double>));
 		fil.close();
 	}
 
 
 
-	Vfunct::Vfunct(int n, int nx, int nt, double maxT, double * x, const char* fol) {
-		Vfunct::n = n;
-		Vfunct::nx = nx;
-		Vfunct::nt = nt;
-		Vfunct::maxT = maxT;
-
-		interval = maxT / (double)nt;
+	Vfunct::Vfunct(int nPts, int nx, int nt, int numSteps, double maxT, double * x, const char* fol) :
+		nPts(nPts), nx(nx), nt(nt), maxT(maxT), curIdx(0)
+	{
+		measSteps = (int*) sq_malloc(sizeof(int)*numSteps);
+		vtls::linspace(nt, 0, numSteps - 1, measSteps);
 
 		xs = (double*) sq_malloc(sizeof(double)*nx);
-		vtls::downSampleLinearInterpolateEdge(n, x, nx, xs);
+		vtls::downSampleLinearInterpolateEdge(nPts, x, nx, xs);
 		ts = (double*) sq_malloc(sizeof(double)*nt);
 		vs = (double*) sq_malloc(sizeof(double)*nx);
 
-		curIts = 0;
+		vtls::linspace(nt, 0.0, maxT, ts);
 
 		int l1 = std::strlen(fol), l2 = std::strlen(fname);
 		char* nfil = new char[l1 + l2 + 1];
 		strncpy(nfil, fol, l1);
 		strcpy(&nfil[l1], fname);
-		//std::stringstream ss;
-		//ss << fol << fname;
-		//std::string str = ss.str();
-		//const char* nfil = str.c_str();
 
 		fil = openFile(nfil);
 		delete[] nfil;
@@ -1054,27 +966,18 @@ namespace Measurers {
 		sq_free(vs);
 		sq_free(xs);
 		sq_free(ts);
+		sq_free(measSteps);
 	}
 
-	int Vfunct::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
-		int k = (int)(t / interval) - curIts;
-		if (k == 0 && curIts<nt) {
-			vtls::downSampleLinearInterpolateEdge(n, v, nx, vs);
-
+	int Vfunct::measure(int step, std::complex<double> * psi, double * v, double t) {
+		while(step == measSteps[curIdx]){
+			vtls::downSampleLinearInterpolateEdge(nPts, v, nx, vs);
 			fil.write(reinterpret_cast<char*>(&vs[0]), sizeof(double)*nx);
-			ts[curIts] = t;
-			curIts++;
+			
+			curIdx++;
+			if(curIdx >= nt)
+				return 1;
 		}
-		else if (k > 1)
-			while (k > 1) {
-				vtls::downSampleLinearInterpolateEdge(n, v, nx, vs);
-
-				fil.write(reinterpret_cast<char*>(&vs[0]), sizeof(double)*nx);
-				ts[curIts] = t;
-				curIts++;
-				k = (int)(t / interval) - curIts;
-			}
-
 		return 0;
 	}
 
@@ -1084,19 +987,15 @@ namespace Measurers {
 		fil.close();
 	}
 
-	ExpectE0::ExpectE0(int len, double dx, const char* fol) {
-		nPts = len;
-		ExpectE0::dx = dx;
+	ExpectE0::ExpectE0(int nPts, double dx, int* nElec, const char* fol, KineticOperators::KineticOperator ** kin) : 
+		nPts(nPts), dx(dx), kin(kin), nElec(nElec)
+	{
 		rho = (double*) sq_malloc(sizeof(double)*nPts);
 
 		int l1 = std::strlen(fol), l2 = std::strlen(fname);
 		char* nfil = new char[l1 + l2 + 1];
 		strncpy(nfil, fol, l1);
 		strcpy(&nfil[l1], fname);
-		//std::stringstream ss;
-		//ss << fol << fname;
-		//std::string str = ss.str();
-		//const char* nfil = str.c_str();
 
 		fil = openFile(nfil);
 		delete[] nfil;
@@ -1114,27 +1013,17 @@ namespace Measurers {
 		sq_free(rho);
 	}
 
-	int ExpectE0::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin) {
-		if(first || t == tmea){
+	int ExpectE0::measure(int step, std::complex<double>* psi, double* v, double t) {
+		if(first){
 			first = 0;
-			tmea = t;
-
-			/*vtls::secondDerivative(nPts, psi, scratch1, dx);
-			vtls::scaMulArray(nPts, -PhysCon::hbar * PhysCon::hbar / (2.0 * PhysCon::me), scratch1);
-			vtls::seqMulArrays(nPts, v, psi, scratch2);
-			vtls::addArrays(nPts, scratch2, scratch1);
-			for (int i = 0; i < nPts; i++)
-				scratch2[i] = std::conj(psi[i]);
-			double ex = std::real(vtlsInt::simpsMul(nPts, scratch1, scratch2, dx));*/
-
-			vtls::normSqr(nPts, psi, rho);
-			double ex = vtlsInt::rSumMul(nPts, rho, v, dx) + kin->evaluateKineticEnergy(psi);
-
-			fil.write(reinterpret_cast<char*>(&ex), sizeof(double));
+			double ex;
+			for(int i = 0; i < *nElec; i++){
+				vtls::normSqr(nPts, &psi[i*nPts], rho);
+				ex = vtlsInt::rSumMul(nPts, rho, v, dx) + (*kin)->evaluateKineticEnergy(&psi[i*nPts]);
+				fil.write(reinterpret_cast<char*>(&ex), sizeof(double));
+			}
 		}
-		else if(!first && t!=tmea)
-			return 1;
-		return 0;
+		return 1;
 	}
 
 	void ExpectE0::terminate() {
@@ -1142,15 +1031,13 @@ namespace Measurers {
 	}
 
 
-	WfcRhoWeights::WfcRhoWeights(int* nelecPtr, int nPts, double dx, WfcToRho::Weight* wght, const char* fol) : nelecPtr(nelecPtr), nPts(nPts), dx(dx), wght(wght) {
+	WfcRhoWeights::WfcRhoWeights(int* nElec, int nPts, double dx, WfcToRho::Weight* wght, KineticOperators::KineticOperator** kin, const char* fol) : 
+		nElec(nElec), nPts(nPts), dx(dx), wght(wght), kin(kin) 
+	{
 		int l1 = std::strlen(fol), l2 = std::strlen(fname);
 		char* nfil = new char[l1 + l2 + 1];
 		strncpy(nfil, fol, l1);
 		strcpy(&nfil[l1], fname);
-		//std::stringstream ss;
-		//ss << fol << fname;
-		//std::string str = ss.str();
-		//const char* nfil = str.c_str();
 
 		fil = openFile(nfil);
 		delete[] nfil;
@@ -1166,17 +1053,16 @@ namespace Measurers {
 		kill();
 	}
 
-	int WfcRhoWeights::measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator * kin) {
+	int WfcRhoWeights::measure(int step, std::complex<double>* psi, double* v, double t) {
 		if (first) {
 			first = 0;
-			int nElec = *nelecPtr;
-			fil.write(reinterpret_cast<char*>(&nElec), sizeof(int));
-			double* energies = (double*) sq_malloc(sizeof(double)*nElec);
-			double* wghts = (double*) sq_malloc(sizeof(double)*nElec);
-			WfcToRho::calcEnergies(nElec, nPts, dx, psi, v, kin, energies);
-			wght->calcWeights(nElec, energies, wghts);
+			fil.write(reinterpret_cast<char*>(nElec), sizeof(int));
+			double* energies = (double*) sq_malloc(sizeof(double)* *nElec);
+			double* wghts = (double*) sq_malloc(sizeof(double)* *nElec);
+			WfcToRho::calcEnergies(*nElec, nPts, dx, psi, v, *kin, energies);
+			wght->calcWeights(*nElec, energies, wghts);
 
-			fil.write(reinterpret_cast<char*>(&wghts[0]), sizeof(double)* nElec);
+			fil.write(reinterpret_cast<char*>(&wghts[0]), sizeof(double)* *nElec);
 
 			sq_free(energies);
 			sq_free(wghts);
@@ -1189,10 +1075,10 @@ namespace Measurers {
 	}
 
 
-	BasicMeasurers::BasicMeasurers(int nPts, double dx, double dt, double * xs, const char* fol) {
+	BasicMeasurers::BasicMeasurers(int nPts, int numSteps, double dx, double dt, double * xs, const char* fol) {
 		meas.push_back(new NPts(nPts, fol));
 		//meas.push_back(new Header(title_4char, fol));
-		meas.push_back(new NSteps(fol));
+		meas.push_back(new NSteps(numSteps, fol));
 		meas.push_back(new DX(dx, fol));
 		meas.push_back(new DT(dt, fol));
 		//meas.push_back(new XS(nPts, xs, fol));
@@ -1201,9 +1087,9 @@ namespace Measurers {
 
 	BasicMeasurers::~BasicMeasurers() { kill(); }
 
-	int BasicMeasurers::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
+	int BasicMeasurers::measure(int step, std::complex<double> * psi, double * v, double t) {
 		for ( auto it = meas.begin(); it != meas.end(); ){
-			if( (*it)->measure(psi, v, t, kin) == 1) {
+			if( (*it)->measure(step, psi, v, t) == 1) {
 				(*it)->kill();
 				it = meas.erase(it);
 			}
@@ -1232,12 +1118,9 @@ namespace Measurers {
 		meas.push_back(m);
 	}
 
-	int MeasurementManager::measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) {
+	int MeasurementManager::measure(int step, std::complex<double> * psi, double * v, double t) {
 		for ( auto it = meas.begin(); it != meas.end(); ){
-			
-			std::cout << "Measuring " << (*it)->getIndex() << std::endl;
-
-			if( (*it)->measure(psi, v, t, kin) == 1) {
+			if( (*it)->measure(step, psi, v, t) == 1) {
 				(*it)->kill();
 				it = meas.erase(it);
 			}
@@ -1245,30 +1128,6 @@ namespace Measurers {
 				++it;
 		}
 		//std::cout << std::flush;
-		return 0;
-	}
-
-	int MeasurementManager::measureMany(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin, int nElec, int nPts){
-		for ( auto it = meas.begin(); it != meas.end(); ){
-			for(int j = 0; j < nElec; j++){
-				if( (*it)->measure(&psi[nPts*j], v, t, kin) == 1) {
-					(*it)->kill();
-					it = meas.erase(it);
-					--it;
-					break;
-				}
-			}
-			++it;
-		}
-		/*for(int i = meas.size()-1; i>=0; i--){
-			for(int j = 0; j < nElec; j++){
-				if (meas[i]->measure(&psi[nPts*j], v, t, kin) == 1){
-					meas[i]->kill();
-					meas.erase(meas.begin() + i);
-					break;
-				}
-			}
-		}*/
 		return 0;
 	}
 

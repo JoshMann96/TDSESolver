@@ -19,16 +19,12 @@ namespace Measurers {
 	public:;
 		virtual ~Measurer() = default;
 		// Required function that takes a measurement whenever called.
-		virtual int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin) = 0;
+		virtual int measure(int step, std::complex<double> * psi, double * v, double t) = 0;
 		// Required function which terminates the measurer (closes file).
 		void kill(){
-			std::cout << "Measurer with index " << getIndex() << " termination: " << isTerminated << std::endl;
 			if(!isTerminated){
 				isTerminated=1;
 				terminate();
-				std::cout << "Measurer with index " << getIndex() << " has been terminated." << std::endl;
-			}else{
-				std::cout << "Termination blocked " << getIndex() << std::endl;
 			}
 		}
 		virtual int getIndex() = 0;
@@ -56,7 +52,7 @@ namespace Measurers {
 
 		~DoubleConst();
 
-		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
+		int measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Writes text (8 chars required) to file.
@@ -77,7 +73,7 @@ namespace Measurers {
 
 		~Header();
 
-		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
+		int measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records the number of points in simulation.
@@ -94,7 +90,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		NPts(int nPts, const char* fol);
 		~NPts();
-		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
+		int measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records the number of time steps in simulation.
@@ -110,9 +106,9 @@ namespace Measurers {
 	public:
 		int isHeavy() { return 0; };
 		int getIndex() { return index; };
-		NSteps(const char* fol);
+		NSteps(int numSteps, const char* fol);
 		~NSteps();
-		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
+		int measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records dx spacing.
@@ -128,7 +124,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		DX(double dx, const char* fol);
 		~DX();
-		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
+		int measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records dt spacing.
@@ -144,7 +140,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		DT(double dt, const char* fol);
 		~DT();
-		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
+		int measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records x-array.
@@ -160,7 +156,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		XS(int len, double* xs, const char* fol);
 		~XS();
-		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
+		int measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records t-array.
@@ -170,14 +166,13 @@ namespace Measurers {
 		std::fstream fil;
 		int index = 5;
 		const char* fname = "ts.dat";
-		double tmea = -1;
 		void terminate();
 	public:
 		int isHeavy() { return 0; };
 		int getIndex() { return index; };
 		TS(const char* fol);
 		~TS();
-		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
+		int measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records the original potential at beginning of simulation.
@@ -188,7 +183,6 @@ namespace Measurers {
 		std::fstream fil;
 		int index = 6;
 		int n;
-		int measured = 0;
 		const char* fname = "v0.dat";
 		void terminate();
 	public:
@@ -200,7 +194,7 @@ namespace Measurers {
 
 		~OrigPot();
 
-		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
+		int measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records the wave function's probability distribution some number of times during the simulation, and also downsamples it.
@@ -210,30 +204,30 @@ namespace Measurers {
 	private:
 		std::fstream fil;
 		int index = 9;
-		int n;
-		int nx;
-		double maxT;
-		int nt;
-		int curIts;
+		int nPts;
+		int *nElec;
+		int nx, nt;
+		int numSteps;
+		int curIdx;
 		double * psi2b;
 		double * psi2s;
 		double * xs;
 		double * ts;
-		double interval;
-		double mulT;
-		double dt;
 		const char* fname = "psi2t.dat";
+
+		int *measSteps;
+
 		void terminate();
 	public:
 		int isHeavy() { return 0; };
 
 		int getIndex() { return index; };
 
-		Psi2t(int n, int nx, int nt, double maxT, double dt, double * x, const char* fol);
+		Psi2t(int nPts, int nx, int nt, int numSteps, double maxT, double * x, int* nElec, const char* fol);
 
 		~Psi2t();
 
-		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
+		int measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records expectation value of energy.
@@ -243,16 +237,17 @@ namespace Measurers {
 		std::fstream fil;
 		int index = 10;
 		const char* fname = "expectE.dat";
-		int nPts;
+		int nPts, *nElec;
 		double* rho;
 		double dx;
 		void terminate();
+		KineticOperators::KineticOperator** kin;
 	public:
 		int isHeavy() { return 1; };
 		int getIndex() { return index; };
-		ExpectE(int len, double dx, const char* fol);
+		ExpectE(int len, double dx, int* nElec, const char* fol, KineticOperators::KineticOperator** kin);
 		~ExpectE();
-		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
+		int measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records expectation value of position.
@@ -263,16 +258,16 @@ namespace Measurers {
 		int index = 11;
 		const char* fname = "expectX.dat";
 		double* x;
-		int nPts;
+		int nPts, *nElec;
 		double* scratch;
 		double dx;
 		void terminate();
 	public:
 		int isHeavy() { return 1; };
 		int getIndex() { return index; };
-		ExpectX(int len, double* xs, double dx, const char* fol);
+		ExpectX(int len, double* xs, double dx, int* nElec, const char* fol);
 		~ExpectX();
-		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
+		int measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records expectation value of momentum (fairly computationally expensive).
@@ -282,16 +277,16 @@ namespace Measurers {
 		std::fstream fil;
 		int index = 12;
 		const char* fname = "expectP.dat";
-		int nPts;
+		int nPts, *nElec;
 		std::complex<double> *scratch1, *scratch2;
 		double dx;
 		void terminate();
 	public:
 		int isHeavy() { return 1; };
 		int getIndex() { return index; };
-		ExpectP(int len, double dx, const char* fol);
+		ExpectP(int len, double dx, int* nElec, const char* fol);
 		~ExpectP();
-		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
+		int measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records expectation value of acceleration.
@@ -301,16 +296,16 @@ namespace Measurers {
 		std::fstream fil;
 		int index = 13;
 		const char* fname = "expectA.dat";
-		int nPts;
+		int nPts, *nElec;
 		double *scratch1, *scratch2;
 		double dx;
 		void terminate();
 	public:
 		int isHeavy() { return 1; };
 		int getIndex() { return index; };
-		ExpectA(int len, double dx, const char* fol);
+		ExpectA(int nPts, double dx, int* nElec, const char* fol);
 		~ExpectA();
-		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
+		int measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records the total probability remaining in simulation.
@@ -321,7 +316,7 @@ namespace Measurers {
 		double dx;
 		std::fstream fil;
 		double * psi2;
-		int n;
+		int nPts, *nElec;
 		int index = 16;
 		const char* fname = "totProb.dat";
 		void terminate();
@@ -330,11 +325,11 @@ namespace Measurers {
 
 		int getIndex() { return index; };
 
-		TotProb(int n, double dx, const char* fol);
+		TotProb(int n, double dx, int* nElec, const char* fol);
 
 		~TotProb();
 
-		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
+		int measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records the probability current at the virtual detector position (index).
@@ -343,8 +338,8 @@ namespace Measurers {
 	private:
 		double dx;
 		std::fstream fil;
-		int n;
-		int pos;
+		int nPts, *nElec;
+		int vdPos;
 		int index = 14;
 		int vdNum;
 		const char* fname = "jrd.dat";
@@ -352,9 +347,9 @@ namespace Measurers {
 	public:
 		int isHeavy() { return 0; };
 		int getIndex() { return index; };
-		VDProbCurrent(int n, double dx, int vdPos, int vdNum, const char* name, const char* fol);
+		VDProbCurrent(int n, double dx, int *nElec, int vdPos, int vdNum, const char* name, const char* fol);
 		~VDProbCurrent();
-		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
+		int measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records the wave function at the virtual detector position (index).
@@ -362,8 +357,8 @@ namespace Measurers {
 		public Measurer {
 	private:
 		std::fstream fil;
-		int n;
-		int pos;
+		int nPts, *nElec;
+		int vdPos;
 		int index = 15;
 		int vdNum;
 		const char* fname = "psird.dat";
@@ -371,9 +366,9 @@ namespace Measurers {
 	public:
 		int isHeavy() { return 0; };
 		int getIndex() { return index; };
-		VDPsi(int vdPos, int vdNum, const char* name, const char* fol);
+		VDPsi(int* nElec, int vdPos, int vdNum, const char* name, const char* fol);
 		~VDPsi();
-		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
+		int measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	class VDPot :
@@ -381,9 +376,10 @@ namespace Measurers {
 	private:
 		std::fstream fil;
 		int n;
-		int pos;
+		int vdPos;
 		int index = 21;
 		int vdNum;
+		int curStep = -1;
 		const char* fname = "vrd.dat";
 		void terminate();
 	public:
@@ -391,7 +387,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		VDPot(int vdPos, int vdNum, const char* name, const char* fol);
 		~VDPot();
-		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
+		int measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	//Records the Fourier Transform in time at the VD position and one grid point to the right
@@ -400,10 +396,9 @@ namespace Measurers {
 		public Measurer {
 	private:
 		std::fstream fil;
-		int pos, nElec, *nelecPtr, nsamp, first=1;
+		int vdPos, *nElec, nSamp, first=1;
 		int index = 24;
-		int vdNum;
-		int celec;
+		int vdNum, nPts;
 		double ct;
 		double dw, tmax, tukeyAl=0.05;
 		const char* fname = "fluxspecvd.dat";
@@ -412,9 +407,9 @@ namespace Measurers {
 	public:
 		int isHeavy() { return 0; };
 		int getIndex() { return index; };
-		VDFluxSpec(int vdPos, int vdNum, int* nElec, int nsamp, double emax, double tmax, const char* name, const char* fol);
+		VDFluxSpec(int nPts, int vdPos, int vdNum, int* nElec, int nsamp, double emax, double tmax, const char* name, const char* fol);
 		~VDFluxSpec();
-		int measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin);
+		int measure(int step, std::complex<double>* psi, double* v, double t);
 	};
 
 	// Records the entire wave function at sample time
@@ -422,10 +417,10 @@ namespace Measurers {
 		public Measurer {
 	private:
 		std::fstream fil;
-		int n;
+		int nPts;
 		double meaT;
 		int index = 19;
-		int vdNum;
+		int vdNum, *nElec;
 		const char* fname = "psit.dat";
 		int done = 0;
 		double curTime=-1;
@@ -433,9 +428,9 @@ namespace Measurers {
 	public:
 		int isHeavy() { return 0; };
 		int getIndex() { return index; };
-		PsiT(int n, double meaT, int vdNum, const char* name, const char* fol);
+		PsiT(int n, double meaT, int* nElec, int vdNum, const char* name, const char* fol);
 		~PsiT();
-		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
+		int measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records the entire potential at sample time
@@ -455,7 +450,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		PotT(int n, double meaT, int vdNum, const char* name, const char* fol);
 		~PotT();
-		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
+		int measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records the potential function some number of times during the simulation, and also downsamples it.
@@ -465,15 +460,15 @@ namespace Measurers {
 	private:
 		std::fstream fil;
 		int index = 17;
-		int n;
+		int nPts;
 		int nx;
 		double maxT;
 		int nt;
-		int curIts;
+		int curIdx;
+		int* measSteps;
 		double * vs;
 		double * xs;
 		double * ts;
-		double interval;
 		const char* fname = "Vfunct.dat";
 		void terminate();
 	public:
@@ -481,11 +476,11 @@ namespace Measurers {
 
 		int getIndex() { return index; };
 
-		Vfunct(int n, int nx, int nt, double maxT, double * x, const char* fol);
+		Vfunct(int nPts, int nx, int nt, int numSteps, double maxT, double * x, const char* fol);
 
 		~Vfunct();
 
-		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
+		int measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	class NElec :
@@ -503,7 +498,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		NElec(int* nElec, const char* fol);
 		~NElec();
-		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
+		int measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	class ExpectE0 :
@@ -512,18 +507,19 @@ namespace Measurers {
 		std::fstream fil;
 		int index = 23;
 		const char* fname = "expectE0.dat";
-		int nPts;
+		int nPts, *nElec;
 		double dx;
 		double tmea;
 		double* rho;
 		int first = 1;
 		void terminate();
+		KineticOperators::KineticOperator** kin;
 	public:
 		int isHeavy() { return 0; };
 		int getIndex() { return index; };
-		ExpectE0(int len, double dx, const char* fol);
+		ExpectE0(int nPts, double dx, int* nElec, const char* fol, KineticOperators::KineticOperator** kin);
 		~ExpectE0();
-		int measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin);
+		int measure(int step, std::complex<double>* psi, double* v, double t);
 	};
 
 	class WfcRhoWeights :
@@ -532,17 +528,18 @@ namespace Measurers {
 		std::fstream fil;
 		int index = 25;
 		const char* fname = "wghts.dat";
-		int *nelecPtr, nPts;
+		int *nElec, nPts;
 		double dx;
 		int first = 1;
 		WfcToRho::Weight* wght;
+		KineticOperators::KineticOperator ** kin;
 		void terminate();
 	public:
 		int isHeavy() { return 0; };
 		int getIndex() { return index; };
-		WfcRhoWeights(int* nelecPtr, int nPts, double dx, WfcToRho::Weight* wght, const char* fol);
+		WfcRhoWeights(int* nelecPtr, int nPts, double dx, WfcToRho::Weight* wght, KineticOperators::KineticOperator** kin, const char* fol);
 		~WfcRhoWeights();
-		int measure(std::complex<double>* psi, double* v, double t, KineticOperators::KineticOperator* kin);
+		int measure(int step, std::complex<double>* psi, double* v, double t);
 	};
 
 	// Includes several basic measurements. See cpp file for specifics.
@@ -554,9 +551,9 @@ namespace Measurers {
 	public:
 		int isHeavy() { return 0; };
 		int getIndex() { return INT_MIN + 1; };
-		BasicMeasurers(int nPts, double dx, double dt, double * xs, const char* fol);
+		BasicMeasurers(int nPts, int numSteps, double dx, double dt, double * xs, const char* fol);
 		~BasicMeasurers();
-		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
+		int measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Manages multiple measurements. Ideal if using more than one.
@@ -579,8 +576,6 @@ namespace Measurers {
 
 		void addMeasurer(Measurer * m);
 
-		int measure(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin);
-
-		int measureMany(std::complex<double> * psi, double * v, double t, KineticOperators::KineticOperator* kin, int nElec, int nPts);
+		int measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 }

@@ -120,8 +120,8 @@ namespace Potentials {
 	class Potential {
 	public:
 		virtual ~Potential() = default;
-		virtual void getV(double t, double * targ, KineticOperators::KineticOperator* kin) = 0;
-		virtual void getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator* kin) = 0;
+		virtual void getV(double t, double * targ, KineticOperators::KineticOperator** kin) = 0;
+		virtual void getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator** kin) = 0;
 		virtual int isDynamic() = 0;
 	};
 
@@ -140,8 +140,8 @@ namespace Potentials {
 	public:
 		FilePotential(int nPts, double * x, double offset, const char * fil, int refPoint);
 		~FilePotential();
-		void getV(double t, double * targ, KineticOperators::KineticOperator* kin);
-		void getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator* kin);
+		void getV(double t, double * targ, KineticOperators::KineticOperator** kin);
+		void getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator** kin);
 		int isDynamic();
 	};
 
@@ -155,8 +155,8 @@ namespace Potentials {
 	public:
 		BiasFieldPotential(int nPts, double * x, double tstart, double tbuf, double xmin, double xmax, double xmin_buf, double xmax_buf, double fieldStrength, int refPoint);
 		~BiasFieldPotential();
-		void getV(double t, double * targ, KineticOperators::KineticOperator* kin);
-		void getV(std::complex<double> *  psi, double t, double * targ, KineticOperators::KineticOperator* kin);
+		void getV(double t, double * targ, KineticOperators::KineticOperator** kin);
+		void getV(std::complex<double> *  psi, double t, double * targ, KineticOperators::KineticOperator** kin);
 		int isDynamic();
 	};
 
@@ -169,8 +169,8 @@ namespace Potentials {
 	public:
 		CoulombPotential(int nPts, double * x, double ne, double chargePos, double minX, double maxX, int refPoint);
 		~CoulombPotential();
-		void getV(double t, double * targ, KineticOperators::KineticOperator* kin);
-		void getV(std::complex<double> *  psi, double t, double * targ, KineticOperators::KineticOperator* kin);
+		void getV(double t, double * targ, KineticOperators::KineticOperator** kin);
+		void getV(std::complex<double> *  psi, double t, double * targ, KineticOperators::KineticOperator** kin);
 		int isDynamic();
 	};
 
@@ -183,8 +183,8 @@ namespace Potentials {
 	public:
 		FiniteBox(int nPts, double * x, double left, double right, double vin, int refPoint);
 		~FiniteBox();
-		void getV(double t, double * targ, KineticOperators::KineticOperator* kin);
-		void getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator* kin);
+		void getV(double t, double * targ, KineticOperators::KineticOperator** kin);
+		void getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator** kin);
 		int isDynamic();
 	};
 
@@ -198,8 +198,8 @@ namespace Potentials {
 	public:
 		JelliumPotential(int nPts, double * x, double center, double ef, double w, int refPoint);
 		~JelliumPotential();
-		void getV(double t, double * targ, KineticOperators::KineticOperator* kin);
-		void getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator* kin);
+		void getV(double t, double * targ, KineticOperators::KineticOperator** kin);
+		void getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator** kin);
 		int isDynamic();
 	};
 
@@ -212,8 +212,8 @@ namespace Potentials {
 	public:
 		JelliumPotentialBacked(int nPts, double * x, double center, double ef, double w, double backStart, double backWidth, int refPoint);
 		~JelliumPotentialBacked();
-		void getV(double t, double * targ, KineticOperators::KineticOperator* kin);
-		void getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator* kin);
+		void getV(double t, double * targ, KineticOperators::KineticOperator** kin);
+		void getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator** kin);
 		int isDynamic();
 	};
 
@@ -226,8 +226,8 @@ namespace Potentials {
 	public:
 		ShieldedAtomicPotential(int nPts, double * x, double center, double latticeSpacing, double zProtons, double decayConst);
 		~ShieldedAtomicPotential();
-		void getV(double t, double * targ, KineticOperators::KineticOperator* kin);
-		void getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator* kin);
+		void getV(double t, double * targ, KineticOperators::KineticOperator** kin);
+		void getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator** kin);
 		int isDynamic();
 	};
 
@@ -245,8 +245,8 @@ namespace Potentials {
 	public:
 		ElectricFieldProfileToPotential(int nPts, ElectricFieldProfiles::ElectricFieldProfile * fieldProfile, double dx, double phase, double tmax, double lam, Envelopes::Envelope * env, int refPoint);
 		~ElectricFieldProfileToPotential();
-		void getV(double t, double * targ, KineticOperators::KineticOperator* kin);
-		void getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator* kin);
+		void getV(double t, double * targ, KineticOperators::KineticOperator** kin);
+		void getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator** kin);
 		int isDynamic();
 	};
 
@@ -268,9 +268,9 @@ namespace Potentials {
 		void initializeConvolution();*/
 	public:
 		//WaveFunctionSelfPotential(int nPts, double dx, double strength, double otherDimensionDistance, int refPoint);
-		virtual void negateGroundEffects(std::complex<double> * psi, KineticOperators::KineticOperator* kin) = 0;
-		virtual void getV(double t, double * targ, KineticOperators::KineticOperator* kin) = 0;
-		virtual void getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator* kin) = 0;
+		virtual void negateGroundEffects(std::complex<double> * psi, KineticOperators::KineticOperator** kin) = 0;
+		virtual void getV(double t, double * targ, KineticOperators::KineticOperator** kin) = 0;
+		virtual void getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator** kin) = 0;
 		virtual int isDynamic() = 0;
 	};
 
@@ -292,9 +292,9 @@ namespace Potentials {
 	public:
 		WaveFunctionSelfPotentialJellPotMask(int nPts, double* x, double dx, double strength, double otherDimensionDistance, double center, double ef, double w, int refPoint);
 		~WaveFunctionSelfPotentialJellPotMask();
-		void negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator* kin);
-		void getV(double t, double* targ, KineticOperators::KineticOperator* kin);
-		void getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator* kin);
+		void negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
+		void getV(double t, double* targ, KineticOperators::KineticOperator** kin);
+		void getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator** kin);
 		int isDynamic();
 	};
 
@@ -312,8 +312,8 @@ namespace Potentials {
 		double* prefactor = nullptr, *rho;
 		double* origPot;
 		int posMin, posMax;
-		void calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator* kin);
-		void doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin);
+		void calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator** kin);
+		void doFirst(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
 		Potential* totPot;
 		WfcToRho::Weight* wght;
 		WfcToRho::Density* dens;
@@ -321,9 +321,9 @@ namespace Potentials {
 	public:
 		SurfaceSpaceCharge(int nPts, double dx, double ef, int* nElec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int posMin, int posMax, int refPoint);
 		~SurfaceSpaceCharge();
-		void negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator* kin);
-		void getV(double t, double* targ, KineticOperators::KineticOperator* kin);
-		void getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator* kin);
+		void negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
+		void getV(double t, double* targ, KineticOperators::KineticOperator** kin);
+		void getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator** kin);
 		int isDynamic();
 	};
 
@@ -334,17 +334,17 @@ namespace Potentials {
 	private:
 		int nPts, refPoint, *nelecPtr, nElec, first=1, posMin, posMax, surfPos;
 		double dx, ef, r, *prefactor=nullptr, *origPot, *potTemp, *lrxr, *rho;
-		void calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator* kin);
-		void doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin);
+		void calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator** kin);
+		void doFirst(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
 		Potential* totPot;
 		WfcToRho::Weight* wght;
 		WfcToRho::Density* dens;
 	public:
 		FullCylindricalSpaceCharge(int nPts, double * x, double dx, double ef, double r, int* nElec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int posMin, int posMax, int surfPos, int refPoint);
 		~FullCylindricalSpaceCharge();
-		void negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator* kin);
-		void getV(double t, double* targ, KineticOperators::KineticOperator* kin);
-		void getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator* kin);
+		void negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
+		void getV(double t, double* targ, KineticOperators::KineticOperator** kin);
+		void getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator** kin);
 		int isDynamic();
 	};
 
@@ -358,17 +358,17 @@ namespace Potentials {
 		//variables for charge loss prevention
 		double lostCharge = 0.0, chargeCenterD, chargeWidthD;
 		int chargeCenter, chargeWidth;
-		void calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator* kin);
-		void doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin);
+		void calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator** kin);
+		void doFirst(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
 		Potential* totPot;
 		WfcToRho::Weight* wght;
 		WfcToRho::Density* dens;
 	public:
 		LinearBulkCylindricalFieldSpaceCharge(int nPts, double* x, double dx, double dt, double ef, double rad, int* nElec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int posMin, int posMax, int surfPos, int trackInnerLoss, int refPoint);
 		~LinearBulkCylindricalFieldSpaceCharge();
-		void negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator* kin);
-		void getV(double t, double* targ, KineticOperators::KineticOperator* kin);
-		void getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator* kin);
+		void negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
+		void getV(double t, double* targ, KineticOperators::KineticOperator** kin);
+		void getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator** kin);
 		int isDynamic();
 	};
 
@@ -379,17 +379,17 @@ namespace Potentials {
 		int nPts, refPoint, * nelecPtr, nElec, first = 1, posMin, posMax, surfPos;
 		double dx, dt, ef, w, rad, * prefactor=nullptr, * origPot, * potTemp, * genTemp, * lrxr, * rho, *nsMask, *dethin;
 		double emittedCharge = 0.0;
-		void calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator* kin);
-		void doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin);
+		void calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator** kin);
+		void doFirst(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
 		Potential* totPot;
 		WfcToRho::Weight* wght;
 		WfcToRho::Density* dens;
 	public:
 		CylindricalImageCharge(int nPts, double* x, double dx, double dt, double ef, double w, double rad, int* nElec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int posMin, int posMax, int surfPos, int refPoint);
 		~CylindricalImageCharge();
-		void negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator* kin);
-		void getV(double t, double* targ, KineticOperators::KineticOperator* kin);
-		void getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator* kin);
+		void negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
+		void getV(double t, double* targ, KineticOperators::KineticOperator** kin);
+		void getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator** kin);
 		int isDynamic();
 	};
 
@@ -406,8 +406,8 @@ namespace Potentials {
 		int nPts, refPoint, * nelecPtr, nElec, first = 1;
 		double * origPot, * rho, dx;
 		double * prefactor = nullptr;
-		void calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator* kin);
-		void doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin);
+		void calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator** kin);
+		void doFirst(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
 		Potential* totPot;
 		WfcToRho::Weight* wght;
 		WfcToRho::Density* dens;
@@ -416,9 +416,9 @@ namespace Potentials {
 	public:
 		LDAFunctional(LDAFunctionalType typ, int nPts, double dx, int* nElec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int refPoint);
 		~LDAFunctional();
-		void negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator* kin);
-		void getV(double t, double* targ, KineticOperators::KineticOperator* kin);
-		void getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator* kin);
+		void negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
+		void getV(double t, double* targ, KineticOperators::KineticOperator** kin);
+		void getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator** kin);
 		int isDynamic();
 	};
 
@@ -430,17 +430,17 @@ namespace Potentials {
 		int nPts, refPoint, * nelecPtr, nElec, first = 1, posMin, posMax, surfPos;
 		double dx, dt, ef, rad, * prefactor=nullptr, * origPot, * potTemp, * genTemp, * lrxr, *xs, * rho, wellWidth, dampRate, *xfsf, *xfsf2;
 		//double pol, lpol;
-		void calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator* kin);
-		void doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin);
+		void calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator** kin);
+		void doFirst(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
 		Potential* totPot;
 		WfcToRho::Weight* wght;
 		WfcToRho::Density* dens;
 	public:
 		DielectricBulkCylindricalFieldSpaceCharge(int nPts, double* x, double dx, double dt, double ef, double rad, double wellWidth, double dampRate, int* nElec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int posMin, int posMax, int surfPos, int refPoint);
 		~DielectricBulkCylindricalFieldSpaceCharge();
-		void negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator* kin);
-		void getV(double t, double* targ, KineticOperators::KineticOperator* kin);
-		void getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator* kin);
+		void negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
+		void getV(double t, double* targ, KineticOperators::KineticOperator** kin);
+		void getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator** kin);
 		int isDynamic();
 	};
 
@@ -451,17 +451,17 @@ namespace Potentials {
 	private:
 		int nPts, refPoint, * nelecPtr, nElec, first = 1, surfPos;
 		double dx, ef, rad, * prefactor=nullptr, * origPot, * potTemp, * genTemp, * rho, *mMat;
-		void calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator* kin);
-		void doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin);
+		void calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator** kin);
+		void doFirst(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
 		Potential* totPot;
 		WfcToRho::Weight* wght;
 		WfcToRho::Density* dens;
 	public:
 		LinearBulkCylSectionFieldSpaceCharge(int nPts, double* x, double dx, double ef, double rad, double theta0, int* nElec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int surfPos, int refPoint);
 		~LinearBulkCylSectionFieldSpaceCharge();
-		void negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator* kin);
-		void getV(double t, double* targ, KineticOperators::KineticOperator* kin);
-		void getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator* kin);
+		void negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
+		void getV(double t, double* targ, KineticOperators::KineticOperator** kin);
+		void getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator** kin);
 		int isDynamic();
 	};
 
@@ -472,18 +472,18 @@ namespace Potentials {
 		int nPts, refPoint, * nelecPtr, nElec, first=1;
 		double dx, * prefactor=nullptr, * probCur, *mask, resistivity, *origPot;
 		std::complex<double>* temp;
-		void calcProbCur(std::complex<double>* psi, KineticOperators::KineticOperator* kin);
-		void doFirst(std::complex<double>* psi, KineticOperators::KineticOperator* kin);
-		void calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator* kin);
+		void calcProbCur(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
+		void doFirst(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
+		void calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator** kin);
 		Potential* totPot;
 		WfcToRho::Weight* wght;
 		WfcToRho::Density* dens;
 	public:
 		OhmicRetardingPotential(int nPts, double dx, double transLen, double resistivity, int* nElec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int surfPos, int refPoint);
 		~OhmicRetardingPotential();
-		void negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator* kin);
-		void getV(double t, double* targ, KineticOperators::KineticOperator* kin);
-		void getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator* kin);
+		void negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
+		void getV(double t, double* targ, KineticOperators::KineticOperator** kin);
+		void getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator** kin);
 		int isDynamic();
 	};
 
@@ -501,10 +501,10 @@ namespace Potentials {
 		double * v0;
 		double * nv;
 	public:
-		CompositePotential(int nPts, int numSPots, int numDPots, int numWPots, KineticOperators::KineticOperator* kin, Potential ** staticPots, Potential ** dynamicPots, Potential ** waveFuncDependentPots);
+		CompositePotential(int nPts, int numSPots, int numDPots, int numWPots, KineticOperators::KineticOperator** kin, Potential ** staticPots, Potential ** dynamicPots, Potential ** waveFuncDependentPots);
 		~CompositePotential();
-		void getV(double t, double * targ, KineticOperators::KineticOperator* kin);
-		void getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator* kin);
+		void getV(double t, double * targ, KineticOperators::KineticOperator** kin);
+		void getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator** kin);
 		int isDynamic();
 	};
 
@@ -521,9 +521,9 @@ namespace Potentials {
 		PotentialManager(int nPts);
 		~PotentialManager(){if(pot) delete pot;}
 		void addPotential(Potential * pot);
-		void finishAddingPotentials(KineticOperators::KineticOperator* kin);
-		void getV(double t, double * targ, KineticOperators::KineticOperator* kin);
-		void getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator* kin);
+		void finishAddingPotentials(KineticOperators::KineticOperator** kin);
+		void getV(double t, double * targ, KineticOperators::KineticOperator** kin);
+		void getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator** kin);
 		int isDynamic();
 	};
 }

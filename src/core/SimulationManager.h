@@ -15,7 +15,8 @@ private:
 	KineticOperators::KineticOperator_FDM* kin_fdm;
 	double *ts, maxT, dt, dx;
 	double **vs, *spatialDamp;
-	int nPts, index, nElec;
+	int nPts, index, nElec, numSteps;
+	int* step;
 	std::function <void(int)> progCallback;
 	std::complex<double> *scratch1, *scratch2;
 	double getTotalEnergy(std::complex<double> * psi, double * v);
@@ -70,11 +71,12 @@ public:
 	double getDX();
 	double getDT();
 	double getMaxT();
+	int getNumSteps();
 	// Returns a pointer to the current psis.
 	std::complex<double> * getPsi();
 	int getNElec();
 	int* getNElecPtr();
-	KineticOperators::KineticOperator* getKin() { return kin; }
+	KineticOperators::KineticOperator** getKin() { return &kin; }
 
 	Potentials::Potential* getPotPointer() { return pot; }
 };

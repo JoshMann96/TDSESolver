@@ -280,34 +280,34 @@ int ThreadParser::addMeasurer(std::string input) {
 	std::vector<double> p = getBlockParameters(meaIdx, meaFields);
 	switch (meaIdx) {
 	case 0:
-		sim->addMeasurer(new Measurers::BasicMeasurers(n, sim->getDX(), sim->getDT(), x, fol));
+		sim->addMeasurer(new Measurers::BasicMeasurers(n, sim->getNumSteps(), sim->getDX(), sim->getDT(), x, fol));
 		break;
 	case 1:
-		sim->addMeasurer(new Measurers::Vfunct(n, p[0], p[1], sim->getMaxT(), x, fol));
+		sim->addMeasurer(new Measurers::Vfunct(n, p[0], p[1], sim->getNumSteps(), sim->getMaxT(), x, fol));
 		break;
 	case 2:
-		sim->addMeasurer(new Measurers::VDPsi(vtls::findValue(n, x, p[2]), p[1], inputText.c_str(), fol));
+		sim->addMeasurer(new Measurers::VDPsi(sim->getNElecPtr(), vtls::findValue(n, x, p[2]), p[1], inputText.c_str(), fol));
 		break;
 	case 3:
-		sim->addMeasurer(new Measurers::VDProbCurrent(n, sim->getDX(), vtls::findValue(n, x, p[2]), p[1], inputText.c_str(), fol));
+		sim->addMeasurer(new Measurers::VDProbCurrent(n, sim->getDX(), sim->getNElecPtr(), vtls::findValue(n, x, p[2]), p[1], inputText.c_str(), fol));
 		break;
 	case 4:
-		sim->addMeasurer(new Measurers::TotProb(n, sim->getDX(), fol));
+		sim->addMeasurer(new Measurers::TotProb(n, sim->getDX(), sim->getNElecPtr(), fol));
 		break;
 	case 5:
-		sim->addMeasurer(new Measurers::ExpectA(n, sim->getDX(), fol));
+		sim->addMeasurer(new Measurers::ExpectA(n, sim->getDX(), sim->getNElecPtr(), fol));
 		break;
 	case 6:
-		sim->addMeasurer(new Measurers::ExpectP(n, sim->getDX(), fol));
+		sim->addMeasurer(new Measurers::ExpectP(n, sim->getDX(), sim->getNElecPtr(), fol));
 		break;
 	case 7:
-		sim->addMeasurer(new Measurers::ExpectX(n, x, sim->getDX(), fol));
+		sim->addMeasurer(new Measurers::ExpectX(n, x, sim->getDX(), sim->getNElecPtr(), fol));
 		break;
 	case 8:
-		sim->addMeasurer(new Measurers::ExpectE0(n, sim->getDX(), fol));
+		sim->addMeasurer(new Measurers::ExpectE0(n, sim->getDX(), sim->getNElecPtr(), fol, sim->getKin()));
 		break;
 	case 9:
-		sim->addMeasurer(new Measurers::Psi2t(n, p[0], p[1], sim->getMaxT(), sim->getDT(), x, fol));
+		sim->addMeasurer(new Measurers::Psi2t(n, p[0], p[1], sim->getNumSteps(), sim->getMaxT(), x, sim->getNElecPtr(), fol));
 		break;
 	case 10:
 		sim->addMeasurer(new Measurers::OrigPot(n, fol));
@@ -325,7 +325,7 @@ int ThreadParser::addMeasurer(std::string input) {
 		sim->addMeasurer(new Measurers::DX(sim->getDX(), fol));
 		break;
 	case 15:
-		sim->addMeasurer(new Measurers::NSteps(fol));
+		sim->addMeasurer(new Measurers::NSteps(sim->getNumSteps(), fol));
 		break;
 	case 16:
 		sim->addMeasurer(new Measurers::NPts(n, fol));
@@ -340,7 +340,7 @@ int ThreadParser::addMeasurer(std::string input) {
 		std::cout << "WignerQPD Measurer Deprecated" << std::endl;
 		return 0;
 	case 20:
-		sim->addMeasurer(new Measurers::PsiT(n, p[2], p[1], inputText.c_str(), fol));
+		sim->addMeasurer(new Measurers::PsiT(n, p[2], sim->getNElecPtr(), p[1], inputText.c_str(), fol));
 		break;
 	case 21:
 		sim->addMeasurer(new Measurers::PotT(n, p[2], p[1], inputText.c_str(), fol));
@@ -349,15 +349,15 @@ int ThreadParser::addMeasurer(std::string input) {
 		sim->addMeasurer(new Measurers::VDPot(vtls::findValue(n, x, p[2]), p[1], inputText.c_str(), fol));
 		break;
 	case 23:
-		sim->addMeasurer(new Measurers::ExpectE(n, sim->getDX(), fol));
+		sim->addMeasurer(new Measurers::ExpectE(n, sim->getDX(), sim->getNElecPtr(), fol, sim->getKin()));
 		break;
 	case 24:
 	{
 		int vdpos = vtls::findValue(n, x, p[3]);
 		if (vdpos >= n - 1)
 			vdpos = n - 2;
-		sim->addMeasurer(new Measurers::VDPsi(vdpos, p[1], inputText.c_str(), fol));
-		sim->addMeasurer(new Measurers::VDPsi(vdpos + 1, p[2], inputText.c_str(), fol));
+		sim->addMeasurer(new Measurers::VDPsi(sim->getNElecPtr(), vdpos, p[1], inputText.c_str(), fol));
+		sim->addMeasurer(new Measurers::VDPsi(sim->getNElecPtr(), vdpos + 1, p[2], inputText.c_str(), fol));
 		break;
 	}
 	case 25:
@@ -370,10 +370,10 @@ int ThreadParser::addMeasurer(std::string input) {
 		break;
 	}
 	case 26:
-		sim->addMeasurer(new Measurers::VDFluxSpec(vtls::findValue(n, x, p[2]), p[1], nElec, p[4], p[3], sim->getMaxT(), inputText.c_str(), fol));
+		sim->addMeasurer(new Measurers::VDFluxSpec(sim->getNumPoints(), vtls::findValue(n, x, p[2]), p[1], nElec, p[4], p[3], sim->getMaxT(), inputText.c_str(), fol));
 		break;
 	case 27:
-		sim->addMeasurer(new Measurers::WfcRhoWeights(nElec, n, sim->getDX(), wght, fol));
+		sim->addMeasurer(new Measurers::WfcRhoWeights(nElec, n, sim->getDX(), wght, sim->getKin(), fol));
 		break;
 	}
 	return 1;
