@@ -274,104 +274,6 @@ namespace Potentials {
 		virtual int isDynamic() = 0;
 	};
 
-	//Does as described above, however only outside metal. Does not do real charge distribution...
-	class WaveFunctionSelfPotentialJellPotMask :
-		public WaveFunctionSelfPotential
-	{
-	private:
-		int nPts;
-		double strength;
-		double dx;
-		double odimDist;
-		int refPoint;
-		double* psi2;
-		double* mask;
-		double* stepFunc;
-		double* add;
-		vtls::Convolver<double>* conv;
-	public:
-		WaveFunctionSelfPotentialJellPotMask(int nPts, double* x, double dx, double strength, double otherDimensionDistance, double center, double ef, double w, int refPoint);
-		~WaveFunctionSelfPotentialJellPotMask();
-		void negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
-		void getV(double t, double* targ, KineticOperators::KineticOperator** kin);
-		void getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator** kin);
-		int isDynamic();
-	};
-
-	// need to account for new density calculation including dispersion
-	class SurfaceSpaceCharge :
-		public WaveFunctionSelfPotential
-	{
-	private:
-		int nPts;
-		double dx, ef;
-		int refPoint;
-		int* nelecPtr;
-		int nElec;
-		int first = 1;
-		double* prefactor = nullptr, *rho;
-		double* origPot;
-		int posMin, posMax;
-		void calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator** kin);
-		void doFirst(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
-		Potential* totPot;
-		WfcToRho::Weight* wght;
-		WfcToRho::Density* dens;
-		double* fldTot;
-	public:
-		SurfaceSpaceCharge(int nPts, double dx, double ef, int* nElec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int posMin, int posMax, int refPoint);
-		~SurfaceSpaceCharge();
-		void negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
-		void getV(double t, double* targ, KineticOperators::KineticOperator** kin);
-		void getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator** kin);
-		int isDynamic();
-	};
-
-	// need to account for new density calculation including dispersion
-	class FullCylindricalSpaceCharge :
-		public WaveFunctionSelfPotential
-	{
-	private:
-		int nPts, refPoint, *nelecPtr, nElec, first=1, posMin, posMax, surfPos;
-		double dx, ef, r, *prefactor=nullptr, *origPot, *potTemp, *lrxr, *rho;
-		void calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator** kin);
-		void doFirst(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
-		Potential* totPot;
-		WfcToRho::Weight* wght;
-		WfcToRho::Density* dens;
-	public:
-		FullCylindricalSpaceCharge(int nPts, double * x, double dx, double ef, double r, int* nElec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int posMin, int posMax, int surfPos, int refPoint);
-		~FullCylindricalSpaceCharge();
-		void negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
-		void getV(double t, double* targ, KineticOperators::KineticOperator** kin);
-		void getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator** kin);
-		int isDynamic();
-	};
-
-	// need to account for new density calculation including dispersion
-	class LinearBulkCylindricalFieldSpaceCharge :
-		public WaveFunctionSelfPotential
-	{
-	private:
-		int nPts, refPoint, * nelecPtr, nElec, first = 1, posMin, posMax, surfPos, trackInnerLoss;
-		double dx, dt, ef, rad, * prefactor=nullptr, * origPot, * potTemp, * genTemp, * lrxr, * rho;
-		//variables for charge loss prevention
-		double lostCharge = 0.0, chargeCenterD, chargeWidthD;
-		int chargeCenter, chargeWidth;
-		void calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator** kin);
-		void doFirst(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
-		Potential* totPot;
-		WfcToRho::Weight* wght;
-		WfcToRho::Density* dens;
-	public:
-		LinearBulkCylindricalFieldSpaceCharge(int nPts, double* x, double dx, double dt, double ef, double rad, int* nElec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int posMin, int posMax, int surfPos, int trackInnerLoss, int refPoint);
-		~LinearBulkCylindricalFieldSpaceCharge();
-		void negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
-		void getV(double t, double* targ, KineticOperators::KineticOperator** kin);
-		void getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator** kin);
-		int isDynamic();
-	};
-
 	class CylindricalImageCharge :
 		public WaveFunctionSelfPotential
 	{
@@ -392,8 +294,6 @@ namespace Potentials {
 		void getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator** kin);
 		int isDynamic();
 	};
-
-
 
 	enum class LDAFunctionalType {
 		X_SLATER,
@@ -416,71 +316,6 @@ namespace Potentials {
 	public:
 		LDAFunctional(LDAFunctionalType typ, int nPts, double dx, int* nElec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int refPoint);
 		~LDAFunctional();
-		void negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
-		void getV(double t, double* targ, KineticOperators::KineticOperator** kin);
-		void getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator** kin);
-		int isDynamic();
-	};
-
-	// need to account for new density calculation including dispersion
-	class DielectricBulkCylindricalFieldSpaceCharge :
-		public WaveFunctionSelfPotential
-	{
-	private:
-		int nPts, refPoint, * nelecPtr, nElec, first = 1, posMin, posMax, surfPos;
-		double dx, dt, ef, rad, * prefactor=nullptr, * origPot, * potTemp, * genTemp, * lrxr, *xs, * rho, wellWidth, dampRate, *xfsf, *xfsf2;
-		//double pol, lpol;
-		void calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator** kin);
-		void doFirst(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
-		Potential* totPot;
-		WfcToRho::Weight* wght;
-		WfcToRho::Density* dens;
-	public:
-		DielectricBulkCylindricalFieldSpaceCharge(int nPts, double* x, double dx, double dt, double ef, double rad, double wellWidth, double dampRate, int* nElec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int posMin, int posMax, int surfPos, int refPoint);
-		~DielectricBulkCylindricalFieldSpaceCharge();
-		void negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
-		void getV(double t, double* targ, KineticOperators::KineticOperator** kin);
-		void getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator** kin);
-		int isDynamic();
-	};
-
-	// need to account for new density calculation including dispersion
-	class LinearBulkCylSectionFieldSpaceCharge :
-		public WaveFunctionSelfPotential
-	{
-	private:
-		int nPts, refPoint, * nelecPtr, nElec, first = 1, surfPos;
-		double dx, ef, rad, * prefactor=nullptr, * origPot, * potTemp, * genTemp, * rho, *mMat;
-		void calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator** kin);
-		void doFirst(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
-		Potential* totPot;
-		WfcToRho::Weight* wght;
-		WfcToRho::Density* dens;
-	public:
-		LinearBulkCylSectionFieldSpaceCharge(int nPts, double* x, double dx, double ef, double rad, double theta0, int* nElec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int surfPos, int refPoint);
-		~LinearBulkCylSectionFieldSpaceCharge();
-		void negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
-		void getV(double t, double* targ, KineticOperators::KineticOperator** kin);
-		void getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator** kin);
-		int isDynamic();
-	};
-
-	class OhmicRetardingPotential :
-		public WaveFunctionSelfPotential
-	{
-	private:
-		int nPts, refPoint, * nelecPtr, nElec, first=1;
-		double dx, * prefactor=nullptr, * probCur, *mask, resistivity, *origPot;
-		std::complex<double>* temp;
-		void calcProbCur(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
-		void doFirst(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
-		void calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator** kin);
-		Potential* totPot;
-		WfcToRho::Weight* wght;
-		WfcToRho::Density* dens;
-	public:
-		OhmicRetardingPotential(int nPts, double dx, double transLen, double resistivity, int* nElec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int surfPos, int refPoint);
-		~OhmicRetardingPotential();
 		void negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator** kin);
 		void getV(double t, double* targ, KineticOperators::KineticOperator** kin);
 		void getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator** kin);
