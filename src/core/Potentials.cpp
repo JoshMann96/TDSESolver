@@ -869,18 +869,10 @@ namespace Potentials {
 	}
 
 
-	CylindricalImageCharge::CylindricalImageCharge(int nPts, double* x, double dx, double dt, double ef, double w, double rad, int* nElec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int posMin, int posMax, int surfPos, int refPoint) {
-		CylindricalImageCharge::nPts = nPts;
-		CylindricalImageCharge::dx = dx;
-		CylindricalImageCharge::dt = dt;
-		CylindricalImageCharge::ef = ef;
-		CylindricalImageCharge::w = w;
-		CylindricalImageCharge::refPoint = refPoint;
-		CylindricalImageCharge::nelecPtr = nElec;
-		CylindricalImageCharge::totPot = totPot;
-		CylindricalImageCharge::rad = rad;
-		CylindricalImageCharge::wght = wght;
-		CylindricalImageCharge::dens = dens;
+	CylindricalImageCharge::CylindricalImageCharge(int nPts, double* x, double dx, double dt, double ef, double w, double rad, int* nElec,
+	 Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int posMin, int posMax, int surfPos, int refPoint) :
+	 	nPts(nPts), dx(dx), dt(dt), ef(ef), w(w), rad(rad), nElec(nElec), totPot(totPot), wght(wght), dens(dens), refPoint(refPoint)
+	  {
 		if (posMin < 0)
 			CylindricalImageCharge::posMin = 0;
 		else
@@ -957,17 +949,16 @@ namespace Potentials {
 	void CylindricalImageCharge::doFirst(std::complex<double>* psi, KineticOperators::KineticOperator** kin) {
 		first = 0;
 		emittedCharge = 0.0;
-		nElec = nelecPtr[0];
 
 		if(prefactor)
 			sq_free(prefactor); prefactor = nullptr;
-		prefactor = (double*) sq_malloc(sizeof(double)*nElec);
-		double* energies = (double*) sq_malloc(sizeof(double)*nElec);
+		prefactor = (double*) sq_malloc(sizeof(double)* *nElec);
+		double* energies = (double*) sq_malloc(sizeof(double)* *nElec);
 		double* v0w = (double*) sq_malloc(sizeof(double)*nPts);
 
 		totPot->getV(0, v0w, kin);
-		WfcToRho::calcEnergies(nElec, nPts, dx, psi, v0w, *kin, energies);
-		wght->calcWeights(nElec, energies, prefactor);
+		WfcToRho::calcEnergies(*nElec, nPts, dx, psi, v0w, *kin, energies);
+		wght->calcWeights(*nElec, energies, prefactor);
 
 		sq_free(energies);
 		sq_free(v0w);
@@ -978,12 +969,12 @@ namespace Potentials {
 		//auto t1 = std::chrono::system_clock::now();
 		if (first) doFirst(psi, kin);
 		//Caclulate 3-D density, only for within bounds
-		dens->calcRho(nPts, nElec, dx, prefactor, psi, rho);
+		dens->calcRho(nPts, *nElec, dx, prefactor, psi, rho);
 		for (int i = 0; i < posMin; i++)
 			rho[i] = 0;
 		for (int i = posMax; i < nPts; i++)
 			rho[i] = 0;
-		for (int i = 0; i < nElec; i++)
+		for (int i = 0; i < *nElec; i++)
 			emittedCharge += dt / 2.0 * PhysCon::hbar / PhysCon::me * std::imag(std::conj(psi[i * nPts + posMax]) * (psi[i * nPts + posMax + 1] - psi[i * nPts + posMax - 1]) / (2.0 * dx)) * prefactor[i];
 		//FACTOR OF 2 ONLY WORKS FOR CALCULATIONS WHICH EVALUATE POTENTIAL TWICE
 		//SHOULD BE SEPARATED INTO A VIRTUAL DETECTOR WHICH IS ONLY EVALUATED ONCE PER TIME-STEP
