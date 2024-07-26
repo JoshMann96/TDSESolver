@@ -28,7 +28,6 @@ namespace Measurers {
 			}
 		}
 		virtual int getIndex() = 0;
-		virtual int isHeavy() = 0;
 	private:
 		int index;
 		const char* fname = "";
@@ -44,14 +43,9 @@ namespace Measurers {
 		int index = -2;
 		void terminate();
 	public:
-		int isHeavy() { return 0; };
-
 		int getIndex(){ return index; };
-
 		DoubleConst(double c, const char* filName, const char* fol);
-
 		~DoubleConst();
-
 		int measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
@@ -65,14 +59,9 @@ namespace Measurers {
 		const char* fname = "head.dat";
 		void terminate();
 	public:
-		int isHeavy() { return 0; };
-
 		int getIndex() { return index; };
-
 		Header(const char* title, const char* fol);
-
 		~Header();
-
 		int measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
@@ -85,8 +74,6 @@ namespace Measurers {
 		const char* fname = "nPts.dat";
 		void terminate();
 	public:
-		int isHeavy() { return 0; };
-
 		int getIndex() { return index; };
 		NPts(int nPts, const char* fol);
 		~NPts();
@@ -104,7 +91,6 @@ namespace Measurers {
 		double tmea = -1;
 		void terminate();
 	public:
-		int isHeavy() { return 0; };
 		int getIndex() { return index; };
 		NSteps(int numSteps, const char* fol);
 		~NSteps();
@@ -120,7 +106,6 @@ namespace Measurers {
 		const char* fname = "dx.dat";
 		void terminate();
 	public:
-		int isHeavy() { return 0; };
 		int getIndex() { return index; };
 		DX(double dx, const char* fol);
 		~DX();
@@ -136,7 +121,6 @@ namespace Measurers {
 		const char* fname = "dt.dat";
 		void terminate();
 	public:
-		int isHeavy() { return 0; };
 		int getIndex() { return index; };
 		DT(double dt, const char* fol);
 		~DT();
@@ -152,7 +136,6 @@ namespace Measurers {
 		const char* fname = "xs.dat";
 		void terminate();
 	public:
-		int isHeavy() { return 0; };
 		int getIndex() { return index; };
 		XS(int len, double* xs, const char* fol);
 		~XS();
@@ -168,7 +151,6 @@ namespace Measurers {
 		const char* fname = "ts.dat";
 		void terminate();
 	public:
-		int isHeavy() { return 0; };
 		int getIndex() { return index; };
 		TS(const char* fol);
 		~TS();
@@ -186,14 +168,9 @@ namespace Measurers {
 		const char* fname = "v0.dat";
 		void terminate();
 	public:
-		int isHeavy() { return 0; };
-
 		int getIndex() { return index; };
-
 		OrigPot(int n, const char* fol);
-
 		~OrigPot();
-
 		int measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
@@ -219,14 +196,9 @@ namespace Measurers {
 
 		void terminate();
 	public:
-		int isHeavy() { return 0; };
-
 		int getIndex() { return index; };
-
 		Psi2t(int nPts, int nx, int nt, int numSteps, double maxT, double * x, int* nElec, const char* fol);
-
 		~Psi2t();
-
 		int measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
@@ -243,7 +215,6 @@ namespace Measurers {
 		void terminate();
 		KineticOperators::KineticOperator** kin;
 	public:
-		int isHeavy() { return 1; };
 		int getIndex() { return index; };
 		ExpectE(int len, double dx, int* nElec, const char* fol, KineticOperators::KineticOperator** kin);
 		~ExpectE();
@@ -263,7 +234,6 @@ namespace Measurers {
 		double dx;
 		void terminate();
 	public:
-		int isHeavy() { return 1; };
 		int getIndex() { return index; };
 		ExpectX(int len, double* xs, double dx, int* nElec, const char* fol);
 		~ExpectX();
@@ -282,7 +252,6 @@ namespace Measurers {
 		double dx;
 		void terminate();
 	public:
-		int isHeavy() { return 1; };
 		int getIndex() { return index; };
 		ExpectP(int len, double dx, int* nElec, const char* fol);
 		~ExpectP();
@@ -301,7 +270,6 @@ namespace Measurers {
 		double dx;
 		void terminate();
 	public:
-		int isHeavy() { return 1; };
 		int getIndex() { return index; };
 		ExpectA(int nPts, double dx, int* nElec, const char* fol);
 		~ExpectA();
@@ -321,14 +289,9 @@ namespace Measurers {
 		const char* fname = "totProb.dat";
 		void terminate();
 	public:
-		int isHeavy() { return 1; };
-
 		int getIndex() { return index; };
-
 		TotProb(int n, double dx, int* nElec, const char* fol);
-
 		~TotProb();
-
 		int measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
@@ -345,7 +308,6 @@ namespace Measurers {
 		const char* fname = "jrd.dat";
 		void terminate();
 	public:
-		int isHeavy() { return 0; };
 		int getIndex() { return index; };
 		VDProbCurrent(int n, double dx, int *nElec, int vdPos, int vdNum, const char* name, const char* fol);
 		~VDProbCurrent();
@@ -364,7 +326,6 @@ namespace Measurers {
 		const char* fname = "psird.dat";
 		void terminate();
 	public:
-		int isHeavy() { return 0; };
 		int getIndex() { return index; };
 		VDPsi(int* nElec, int vdPos, int vdNum, const char* name, const char* fol);
 		~VDPsi();
@@ -383,7 +344,6 @@ namespace Measurers {
 		const char* fname = "vrd.dat";
 		void terminate();
 	public:
-		int isHeavy() { return 0; };
 		int getIndex() { return index; };
 		VDPot(int vdPos, int vdNum, const char* name, const char* fol);
 		~VDPot();
@@ -405,7 +365,6 @@ namespace Measurers {
 		std::complex<double>* wfcs0 = nullptr, * wfcs1 = nullptr, *phss, cumPotPhs, *phaseCalcExpMul, *temp;
 		void terminate();
 	public:
-		int isHeavy() { return 0; };
 		int getIndex() { return index; };
 		VDFluxSpec(int nPts, int vdPos, int vdNum, int* nElec, int nsamp, double emax, double tmax, const char* name, const char* fol);
 		~VDFluxSpec();
@@ -426,7 +385,6 @@ namespace Measurers {
 		double curTime=-1;
 		void terminate();
 	public:
-		int isHeavy() { return 0; };
 		int getIndex() { return index; };
 		PsiT(int n, double meaT, int* nElec, int vdNum, const char* name, const char* fol);
 		~PsiT();
@@ -446,7 +404,6 @@ namespace Measurers {
 		int done = 0;
 		void terminate();
 	public:
-		int isHeavy() { return 0; };
 		int getIndex() { return index; };
 		PotT(int n, double meaT, int vdNum, const char* name, const char* fol);
 		~PotT();
@@ -472,14 +429,9 @@ namespace Measurers {
 		const char* fname = "Vfunct.dat";
 		void terminate();
 	public:
-		int isHeavy() { return 0; };
-
 		int getIndex() { return index; };
-
 		Vfunct(int nPts, int nx, int nt, int numSteps, double maxT, double * x, const char* fol);
-
 		~Vfunct();
-
 		int measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
@@ -494,7 +446,6 @@ namespace Measurers {
 		char* nfil = nullptr;
 		void terminate();
 	public:
-		int isHeavy() { return 0; };
 		int getIndex() { return index; };
 		NElec(int* nElec, const char* fol);
 		~NElec();
@@ -515,7 +466,6 @@ namespace Measurers {
 		void terminate();
 		KineticOperators::KineticOperator** kin;
 	public:
-		int isHeavy() { return 0; };
 		int getIndex() { return index; };
 		ExpectE0(int nPts, double dx, int* nElec, const char* fol, KineticOperators::KineticOperator** kin);
 		~ExpectE0();
@@ -528,16 +478,13 @@ namespace Measurers {
 		std::fstream fil;
 		int index = 25;
 		const char* fname = "wghts.dat";
-		int *nElec, nPts;
-		double dx;
+		int *nElec;
 		int first = 1;
-		WfcToRho::Weight* wght;
-		KineticOperators::KineticOperator ** kin;
+		double ** weights;
 		void terminate();
 	public:
-		int isHeavy() { return 0; };
 		int getIndex() { return index; };
-		WfcRhoWeights(int* nelecPtr, int nPts, double dx, WfcToRho::Weight* wght, KineticOperators::KineticOperator** kin, const char* fol);
+		WfcRhoWeights(int* nElec, double ** weights, const char* fol);
 		~WfcRhoWeights();
 		int measure(int step, std::complex<double>* psi, double* v, double t);
 	};
@@ -549,7 +496,6 @@ namespace Measurers {
 		std::vector<Measurer*> meas;
 		void terminate();
 	public:
-		int isHeavy() { return 0; };
 		int getIndex() { return INT_MIN + 1; };
 		BasicMeasurers(int nPts, int numSteps, double dx, double dt, double * xs, const char* fol);
 		~BasicMeasurers();
@@ -566,16 +512,10 @@ namespace Measurers {
 		const char* fname;
 		void terminate();
 	public:
-		int isHeavy() { return 0; };
-
 		int getIndex() { return index; };
-
 		MeasurementManager(const char* fname);
-
 		~MeasurementManager();
-
 		void addMeasurer(Measurer * m);
-
 		int measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 }

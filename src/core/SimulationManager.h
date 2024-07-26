@@ -10,20 +10,23 @@ class SimulationManager
 private:
 	Potentials::PotentialManager * pot;
 	Measurers::MeasurementManager * meas;
+	WfcToRho::Weight* wght = nullptr;
+	WfcToRho::Density* dens = nullptr;
+
 	KineticOperators::KineticOperator* kin;
 	KineticOperators::KineticOperator_PSM * kin_psm;
 	KineticOperators::KineticOperator_FDM* kin_fdm;
+
 	double *ts, maxT, dt, dx;
-	double **vs, *spatialDamp;
-	int nPts, index, nElec, numSteps;
+	double **vs, **rhos, *spatialDamp;
+	int nPts, index, nElec, numSteps, calcDensity = 0;
 	int* step;
 	std::function <void(int)> progCallback;
 	std::complex<double> *scratch1, *scratch2;
-	double getTotalEnergy(std::complex<double> * psi, double * v);
 
-	int getVPAR(int idx, int idxPsi);
+	int updatePotential(std::complex<double>* psi, int idx, double* rho);
 	int stepItPAR(int idx0, int idx1);
-	int measPAR(int idx);
+	int measure(int idx);
 
 	std::complex<double> **psis;
 
@@ -36,6 +39,10 @@ private:
 		}
 	}
 
+	double* weights = nullptr;
+
+	void calcWeights();
+
 public:
 	SimulationManager(int nPts, double dx, double dt, double maxT, std::function<void(int)> callback);
 	~SimulationManager();
@@ -45,6 +52,14 @@ public:
 	void addPotential(Potentials::Potential * nPot);
 	// Adds spatial absorptive region.
 	void addSpatialDamp(double* arr);
+
+	void setWeights(WfcToRho::Weight* nwght) { wght = nwght; }
+	void setDensity(WfcToRho::Density* ndens) { dens = ndens; }
+
+	void calcEnergies(int step, double* energies);
+
+	double* getWeights(){ return weights; }
+	double* getRho(int curStep);
 
 	void setKineticOperator_PSM(KineticOperators::KineticOperator_PSM* nkin) { kin = nkin; kin_psm = nkin; }
 	void setKineticOperator_FDM(KineticOperators::KineticOperator_FDM* nkin) { kin = nkin; kin_fdm = nkin; }
@@ -74,8 +89,10 @@ public:
 	int getNumSteps();
 	// Returns a pointer to the current psis.
 	std::complex<double> * getPsi();
+	double * getRho();
 	int getNElec();
 	int* getNElecPtr();
+	double** getWeightsPtr() { return &weights; }
 	KineticOperators::KineticOperator** getKin() { return &kin; }
 
 	Potentials::Potential* getPotPointer() { return pot; }

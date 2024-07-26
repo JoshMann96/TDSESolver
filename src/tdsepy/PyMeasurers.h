@@ -153,5 +153,5 @@ class PyWeights
     : public WfcRhoWeights{
         public:
         PyWeights(PySimulation* sim, std::string fol)
-            : WfcRhoWeights(sim->getNElecPtr(), sim->getNumPoints(), sim->getDX(), sim->getWght(), sim->getKin(), fol.c_str()){}
+            : WfcRhoWeights(sim->getNElecPtr(), sim->getWeightsPtr(), fol.c_str()){}
     };

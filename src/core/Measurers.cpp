@@ -1031,8 +1031,8 @@ namespace Measurers {
 	}
 
 
-	WfcRhoWeights::WfcRhoWeights(int* nElec, int nPts, double dx, WfcToRho::Weight* wght, KineticOperators::KineticOperator** kin, const char* fol) : 
-		nElec(nElec), nPts(nPts), dx(dx), wght(wght), kin(kin) 
+	WfcRhoWeights::WfcRhoWeights(int* nElec, double** weights, const char* fol) : 
+		nElec(nElec), weights(weights)
 	{
 		int l1 = std::strlen(fol), l2 = std::strlen(fname);
 		char* nfil = new char[l1 + l2 + 1];
@@ -1055,17 +1055,14 @@ namespace Measurers {
 
 	int WfcRhoWeights::measure(int step, std::complex<double>* psi, double* v, double t) {
 		if (first) {
-			first = 0;
-			fil.write(reinterpret_cast<char*>(nElec), sizeof(int));
-			double* energies = (double*) sq_malloc(sizeof(double)* *nElec);
-			double* wghts = (double*) sq_malloc(sizeof(double)* *nElec);
-			WfcToRho::calcEnergies(*nElec, nPts, dx, psi, v, *kin, energies);
-			wght->calcWeights(*nElec, energies, wghts);
-
-			fil.write(reinterpret_cast<char*>(&wghts[0]), sizeof(double)* *nElec);
-
-			sq_free(energies);
-			sq_free(wghts);
+			if (*weights){
+				first = 0;
+				fil.write(reinterpret_cast<char*>(nElec), sizeof(int));
+				fil.write(reinterpret_cast<char*>(*weights), sizeof(double)* *nElec);
+			}
+			else{
+				throw std::runtime_error("Weights not set for WfcRhoWeights.");
+			}
 		}
 		return 1;
 	}

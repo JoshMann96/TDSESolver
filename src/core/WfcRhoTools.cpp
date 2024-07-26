@@ -3,21 +3,6 @@
 #include <stdexcept>
 
 namespace WfcToRho {
-	void calcEnergies(int nElec, int nPts, double dx, std::complex<double>* psi, double* totPot, KineticOperators::KineticOperator* kin, double* energies) {
-		if (nElec < 1) {
-			std::cout << "calcEnergies: Number of electrons is not finite! Failed to initialize." << std::endl;
-			throw -1;
-		}
-		double* rho = (double*) sq_malloc(sizeof(double)*nPts);
-		for (int i = 0; i < nElec; i++) {
-			vtls::normSqr(nPts, &psi[i * nPts], rho);
-			energies[i] = vtlsInt::rSumMul(nPts, rho, totPot, dx) + kin->evaluateKineticEnergy(&psi[i*nPts]);
-			//potential energy + kinetic energy
-		}
-		sq_free(rho);
-	}
-
-
 	void FermiGasDistro::calcWeights(int nElec, double* energies, double* weights) {
 		double minE = energies[0], maxE = energies[0];
 		//Find min/max energy

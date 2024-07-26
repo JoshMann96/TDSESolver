@@ -30,16 +30,12 @@ namespace Potentials {
 		sq_free(v);
 	}
 
-	void FilePotential::getV(double t, double * targ, KineticOperators::KineticOperator** kin) {
+	void FilePotential::getV(double t, double * targ) {
 		vtls::copyArray(nPts, v, targ);
 	}
 
-	void FilePotential::getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator** kin) {
+	void FilePotential::getV(double* rho, std::complex<double> * psi, double t, double * targ) {
 		vtls::copyArray(nPts, v, targ);
-	}
-
-	int FilePotential::isDynamic() {
-		return 0;
 	}
 
 	BiasFieldPotential::BiasFieldPotential(int nPts, double * x, double tstart, double tbuf, double xmin, double xmax, double xmin_buf, double xmax_buf, double fieldStrength, int refPoint) {
@@ -92,7 +88,7 @@ namespace Potentials {
 		sq_free(v);
 	}
 
-	void BiasFieldPotential::getV(double t, double * targ, KineticOperators::KineticOperator** kin) {
+	void BiasFieldPotential::getV(double t, double * targ) {
 		if (t > tstart + tbuf)
 			vtls::copyArray(nPts, v, targ);
 		else if (t > tstart) {
@@ -113,14 +109,9 @@ namespace Potentials {
 			std::fill_n(targ, nPts, 0.0);
 	}
 
-	void BiasFieldPotential::getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator** kin) {
-		getV(t, targ, kin);
+	void BiasFieldPotential::getV(double* rho, std::complex<double> * psi, double t, double * targ) {
+		getV(t, targ);
 	}
-
-	int BiasFieldPotential::isDynamic() {
-		return 1;
-	}
-
 
 	CoulombPotential::CoulombPotential(int nPts, double * x, double ne, double chargePos, double minX, double maxX, int refPoint) {
 		v = (double*) sq_malloc(sizeof(double)*nPts);
@@ -143,16 +134,12 @@ namespace Potentials {
 		sq_free(v);
 	}
 
-	void CoulombPotential::getV(double t, double * targ, KineticOperators::KineticOperator** kin) {
+	void CoulombPotential::getV(double t, double * targ) {
 		vtls::copyArray(nPts, v, targ);
 	}
 
-	void CoulombPotential::getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator** kin) {
+	void CoulombPotential::getV(double* rho, std::complex<double> * psi, double t, double * targ) {
 		vtls::copyArray(nPts, v, targ);
-	}
-
-	int CoulombPotential::isDynamic() {
-		return 0;
 	}
 
 	FiniteBox::FiniteBox(int nPts, double * x, double left, double right, double vin, int refPoint) {
@@ -171,18 +158,13 @@ namespace Potentials {
 		sq_free(v);
 	}
 
-	void FiniteBox::getV(double t, double * targ, KineticOperators::KineticOperator** kin) {
+	void FiniteBox::getV(double t, double * targ) {
 		vtls::copyArray(nPts, v, targ);
 	}
 
-	void FiniteBox::getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator** kin) {
-		getV(t, targ, kin);
+	void FiniteBox::getV(double* rho, std::complex<double> * psi, double t, double * targ) {
+		getV(t, targ);
 	}
-
-	int FiniteBox::isDynamic() {
-		return 0;
-	}
-
 
 
 	JelliumPotential::JelliumPotential(int nPts, double * x, double center, double ef, double w, int refPoint) {
@@ -228,18 +210,13 @@ namespace Potentials {
 		sq_free(v);
 	}
 
-	void JelliumPotential::getV(double t, double * targ, KineticOperators::KineticOperator** kin) {
+	void JelliumPotential::getV(double t, double * targ) {
 		vtls::copyArray(nPts, v, targ);
 	}
 
-	void JelliumPotential::getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator** kin) {
-		getV(t, targ, kin);
+	void JelliumPotential::getV(double* rho, std::complex<double> * psi, double t, double * targ) {
+		getV(t, targ);
 	}
-
-	int JelliumPotential::isDynamic() {
-		return 0;
-	}
-
 
 	JelliumPotentialBacked::JelliumPotentialBacked(int nPts, double * x, double center, double ef, double w, double backStart, double backWidth, int refPoint) {
 		JelliumPotentialBacked::nPts = nPts;
@@ -301,18 +278,13 @@ namespace Potentials {
 		sq_free(v);
 	}
 
-	void JelliumPotentialBacked::getV(double t, double * targ, KineticOperators::KineticOperator** kin) {
+	void JelliumPotentialBacked::getV(double t, double * targ) {
 		vtls::copyArray(nPts, v, targ);
 	}
 
-	void JelliumPotentialBacked::getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator** kin) {
-		getV(t, targ, kin);
+	void JelliumPotentialBacked::getV(double* rho, std::complex<double> * psi, double t, double * targ) {
+		getV(t, targ);
 	}
-
-	int JelliumPotentialBacked::isDynamic() {
-		return 0;
-	}
-
 
 	ElectricFieldProfileToPotential::ElectricFieldProfileToPotential(int nPts, ElectricFieldProfiles::ElectricFieldProfile * fieldProfile, double dx, double phase, double tmax, double lam, Envelopes::Envelope * env, int refPoint) {
 		ElectricFieldProfileToPotential::tmax = tmax;
@@ -330,18 +302,13 @@ namespace Potentials {
 		sq_free(potMask);
 	}
 
-	void ElectricFieldProfileToPotential::getV(double t, double * targ, KineticOperators::KineticOperator** kin) {
+	void ElectricFieldProfileToPotential::getV(double t, double * targ) {
 		vtls::scaMulArrayRe(nPts, std::exp(PhysCon::im*(w*(t-tmax)+phase))*env->getValue(t), potMask, targ);
 	}
 
-	void ElectricFieldProfileToPotential::getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator** kin) {
-		getV(t, targ, kin);
+	void ElectricFieldProfileToPotential::getV(double* rho, std::complex<double> * psi, double t, double * targ) {
+		getV(t, targ);
 	}
-
-	int ElectricFieldProfileToPotential::isDynamic() {
-		return 1;
-	}
-
 
 	ShieldedAtomicPotential::ShieldedAtomicPotential(int nPts, double * x, double center, double latticeSpacing, double zProtons, double decayConst) {
 		ShieldedAtomicPotential::nPts = nPts;
@@ -355,21 +322,17 @@ namespace Potentials {
 		sq_free(v);
 	}
 
-	void ShieldedAtomicPotential::getV(double t, double * targ, KineticOperators::KineticOperator** kin) {
+	void ShieldedAtomicPotential::getV(double t, double * targ) {
 		vtls::copyArray(nPts, v, targ);
 	}
 
-	void ShieldedAtomicPotential::getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator** kin) {
-		getV(t, targ, kin);
-	}
-
-	int ShieldedAtomicPotential::isDynamic() {
-		return 0;
+	void ShieldedAtomicPotential::getV(double* rho, std::complex<double> * psi, double t, double * targ) {
+		getV(t, targ);
 	}
 
 	CylindricalImageCharge::CylindricalImageCharge(int nPts, double* x, double dx, double dt, double ef, double w, double rad, int* nElec,
-	 Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int posMin, int posMax, int surfPos, int refPoint) :
-	 	nPts(nPts), dx(dx), dt(dt), ef(ef), w(w), rad(rad), nElec(nElec), totPot(totPot), wght(wght), dens(dens), refPoint(refPoint)
+	 double** weights, int posMin, int posMax, int surfPos, int refPoint) :
+	 	nPts(nPts), dx(dx), dt(dt), ef(ef), w(w), rad(rad), nElec(nElec), weights(weights), refPoint(refPoint)
 	  {
 		if (posMin < 0)
 			CylindricalImageCharge::posMin = 0;
@@ -415,76 +378,35 @@ namespace Potentials {
 		sq_free(lrxr);
 		sq_free(nsMask);
 		sq_free(dethin);
-		if(prefactor)
-			sq_free(prefactor); prefactor = nullptr;
 	}
 	
-	void CylindricalImageCharge::negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator** kin) {
-		if (first) doFirst(psi, kin);
-		calcPot(psi, origPot, kin);
+	void CylindricalImageCharge::negateGroundEffects(double* rho, std::complex<double>* psi) {
+		calcPot(rho, psi, 0.0, origPot);
 	}
 
-	void CylindricalImageCharge::getV(double t, double* targ, KineticOperators::KineticOperator** kin) {
+	void CylindricalImageCharge::getV(double t, double* targ) {
 		for (int i = 0; i < nPts; i++)
 			targ[i] = 0.0;
 	}
 
-	void CylindricalImageCharge::getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator** kin) {
-		if (first) {
-			doFirst(psi, kin);
-			std::cout << "CylindricalImageCharge potential should be negated after initial state is found." << std::endl;
-		}
-		calcPot(psi, targ, kin);
+	void CylindricalImageCharge::getV(double* rho, std::complex<double>* psi, double t, double* targ) {
+		calcPot(rho, psi, t, targ);
 		double ref = targ[refPoint] - origPot[refPoint];
 		for (int i = 0; i < nPts; i++)
 			targ[i] -= origPot[i] + ref;
 	}
 
-	int CylindricalImageCharge::isDynamic() {
-		return 2;
-	}
-
-	void CylindricalImageCharge::doFirst(std::complex<double>* psi, KineticOperators::KineticOperator** kin) {
-		first = 0;
-		emittedCharge = 0.0;
-
-		if(prefactor)
-			sq_free(prefactor); prefactor = nullptr;
-		prefactor = (double*) sq_malloc(sizeof(double)* *nElec);
-		double* energies = (double*) sq_malloc(sizeof(double)* *nElec);
-		double* v0w = (double*) sq_malloc(sizeof(double)*nPts);
-
-		totPot->getV(0, v0w, kin);
-		WfcToRho::calcEnergies(*nElec, nPts, dx, psi, v0w, *kin, energies);
-		wght->calcWeights(*nElec, energies, prefactor);
-
-		sq_free(energies);
-		sq_free(v0w);
-		//calcFermiBoxDimensionalityConversion(nElec, nPts, dx, ef, psi, totPot, prefactor);
-	}
-
-	void CylindricalImageCharge::calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator** kin) {
-		//auto t1 = std::chrono::system_clock::now();
-		if (first) doFirst(psi, kin);
-		//Caclulate 3-D density, only for within bounds
-		dens->calcRho(nPts, *nElec, dx, prefactor, psi, rho);
-		for (int i = 0; i < posMin; i++)
-			rho[i] = 0;
-		for (int i = posMax; i < nPts; i++)
-			rho[i] = 0;
+	void CylindricalImageCharge::calcPot(double* rho, std::complex<double>* psi, double cur_t, double* targ) {
+		
 		for (int i = 0; i < *nElec; i++)
-			emittedCharge += dt / 2.0 * PhysCon::hbar / PhysCon::me * std::imag(std::conj(psi[i * nPts + posMax]) * (psi[i * nPts + posMax + 1] - psi[i * nPts + posMax - 1]) / (2.0 * dx)) * prefactor[i];
-		//FACTOR OF 2 ONLY WORKS FOR CALCULATIONS WHICH EVALUATE POTENTIAL TWICE
-		//SHOULD BE SEPARATED INTO A VIRTUAL DETECTOR WHICH IS ONLY EVALUATED ONCE PER TIME-STEP
-		//auto t2 = std::chrono::system_clock::now();
+			emittedCharge += (cur_t - last_t) * PhysCon::hbar / PhysCon::me * std::imag(std::conj(psi[i * nPts + posMax]) * (psi[i * nPts + posMax + 1] - psi[i * nPts + posMax - 1]) / (2.0 * dx)) * (*weights)[i];
+		last_t = cur_t;
+
 		std::fill_n(targ, nPts, 0);
 
-		// below was designed assuming that rho did not already include geometric thinning
-		// now that it does, we need to adjust the density provided
 		vtls::seqMulArrays(nPts, dethin, rho);
 
-		//ORIGINAL ATTEMPT
-		//CALCULATE FIELDS FROM FIELD ELECTRONS
+		//CALCULATE FIELDS FROM VACUUM ELECTRONS
 		//Calculate first integral
 		vtlsInt::cumIntTrapz(nPts - surfPos, &rho[surfPos], dx * rad, &targ[surfPos]);
 		//Add in image charge
@@ -502,8 +424,8 @@ namespace Potentials {
 		vtls::scaMulArray(nPts, -PhysCon::qe * PhysCon::qe / PhysCon::e0, targ);
 	}
 
-	LDAFunctional::LDAFunctional(LDAFunctionalType typ, int nPts, double dx, int* nElec, Potential* totPot, WfcToRho::Weight* wght, WfcToRho::Density* dens, int refPoint)
-	: typ(typ), nPts(nPts), dx(dx), refPoint(refPoint), nelecPtr(nElec), totPot(totPot), wght(wght), dens(dens) {
+	LDAFunctional::LDAFunctional(LDAFunctionalType typ, int nPts, double dx, int refPoint)
+	: typ(typ), nPts(nPts), dx(dx), refPoint(refPoint) {
 		origPot = (double*) sq_malloc(sizeof(double)*nPts);
 		std::fill_n(origPot, nPts, 0.0);
 		rho = (double*) sq_malloc(sizeof(double)*nPts);
@@ -516,49 +438,22 @@ namespace Potentials {
 			sq_free(prefactor);
 	};
 
-	void LDAFunctional::negateGroundEffects(std::complex<double>* psi, KineticOperators::KineticOperator** kin) {
-		calcPot(psi, origPot, kin);
+	void LDAFunctional::negateGroundEffects(double* rho, std::complex<double>* psi) {
+		calcPot(rho, origPot);
 	}
 
-	void LDAFunctional::getV(double t, double* targ, KineticOperators::KineticOperator** kin) {
+	void LDAFunctional::getV(double t, double* targ) {
 		std::fill_n(targ, nPts, 0.0);
 	}
 
-	void LDAFunctional::getV(std::complex<double>* psi, double t, double* targ, KineticOperators::KineticOperator** kin) {
-		calcPot(psi, targ, kin);
+	void LDAFunctional::getV(double* rho, std::complex<double>* psi, double t, double* targ) {
+		calcPot(rho, targ);
 		double ref = targ[refPoint] - origPot[refPoint];
 		for (int i = 0; i < nPts; i++)
 			targ[i] -= origPot[i] + ref;
 	}
 
-	int LDAFunctional::isDynamic() {
-		return 2;
-	}
-
-	void LDAFunctional::doFirst(std::complex<double>* psi, KineticOperators::KineticOperator** kin) {
-		nElec = nelecPtr[0];
-
-		if(prefactor)
-			sq_free(prefactor);
-		prefactor = (double*) sq_malloc(sizeof(double)*nElec);
-		double* energies = (double*) sq_malloc(sizeof(double)*nElec);
-		double* v0w = (double*) sq_malloc(sizeof(double)*nPts);
-
-		totPot->getV(0, v0w, kin);
-		WfcToRho::calcEnergies(nElec, nPts, dx, psi, v0w, *kin, energies);
-		wght->calcWeights(nElec, energies, prefactor);
-		sq_free(energies);
-		sq_free(v0w);
-	}
-
-	void LDAFunctional::calcPot(std::complex<double>* psi, double* targ, KineticOperators::KineticOperator** kin) {
-		if(first){
-			doFirst(psi, kin);
-			first = 0;
-		}
-		
-		dens->calcRho(nPts, *nelecPtr, dx, prefactor, psi, rho);
-
+	void LDAFunctional::calcPot(double* rho, double* targ) {
 		switch (typ) {
 		case LDAFunctionalType::X_SLATER: // slater exchange
 		{
@@ -593,22 +488,17 @@ namespace Potentials {
 
 	}
 
-	CompositePotential::CompositePotential(int nPts, int numSPots, int numDPots, int numWPots, KineticOperators::KineticOperator** kin, Potential ** staticPots, Potential ** dynamicPots, Potential ** waveFuncDependentPots) {
-		CompositePotential::nPts = nPts;
-		CompositePotential::numSPots = numSPots;
-		CompositePotential::numDPots = numDPots;
-		CompositePotential::numWPots = numWPots;
-		CompositePotential::staticPots = staticPots;
-		CompositePotential::dynamicPots = dynamicPots;
-		CompositePotential::waveFuncDependentPots = waveFuncDependentPots;
+	CompositePotential::CompositePotential(int nPts, int numSPots, int numDPots, int numWPots, Potential ** staticPots, Potential ** dynamicPots, Potential ** waveFuncDependentPots) :
+		nPts(nPts), numSPots(numSPots), numDPots(numDPots), numWPots(numWPots), staticPots(staticPots), dynamicPots(dynamicPots), waveFuncDependentPots(waveFuncDependentPots)
+	{
 		v0 = (double*) sq_malloc(sizeof(double)*nPts);
 		if (numSPots != 0)
-			staticPots[0]->getV(0.0, v0, kin);
+			staticPots[0]->getV(0.0, v0);
 		else
 			std::fill_n(v0, nPts, 0.0);
 		nv = (double*) sq_malloc(sizeof(double)*nPts);
 		for (int i = 1; i < numSPots; i++) {
-			staticPots[i]->getV(0.0, nv, kin);
+			staticPots[i]->getV(0.0, nv);
 			vtls::addArrays(nPts, nv, v0);
 		}
 	}
@@ -622,325 +512,331 @@ namespace Potentials {
 		sq_free(nv);
 	}
 
-	void CompositePotential::getV(double t, double * targ, KineticOperators::KineticOperator** kin) {
+	void CompositePotential::getV(double t, double * targ) {
 		vtls::copyArray(nPts, v0, targ);
 		for (int i = 0; i < numDPots; i++) {
-			dynamicPots[i]->getV(t, nv, kin);
+			dynamicPots[i]->getV(t, nv);
 			vtls::addArrays(nPts, nv, targ);
 		}
 	}
 
-	void CompositePotential::getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator** kin) {
+	void CompositePotential::getV(double* rho, std::complex<double> * psi, double t, double * targ) {
 		vtls::copyArray(nPts, v0, targ);
 		for (int i = 0; i < numDPots; i++) {
-			dynamicPots[i]->getV(t, nv, kin);
+			dynamicPots[i]->getV(t, nv);
 			vtls::addArrays(nPts, nv, targ);
 		}
 		for (int i = 0; i < numWPots; i++) {
-			waveFuncDependentPots[i]->getV(psi, t, nv, kin);
+			waveFuncDependentPots[i]->getV(rho, psi, t, nv);
 			vtls::addArrays(nPts, nv, targ);
 		}
 	}
 
-	int CompositePotential::isDynamic() {
+	PotentialComplexity CompositePotential::getComplexity() {
 		if (numWPots > 0)
-			return 2;
+			return PotentialComplexity::WAVEFUNCTION_DEPENDENT;
 		else if (numDPots > 0)
-			return 1;
+			return PotentialComplexity::DYNAMIC;
 		else
-			return 0;
+			return PotentialComplexity::STATIC;
 	}
-
 
 	PotentialManager::PotentialManager(int nPts) {
 		PotentialManager::nPts = nPts;
 	}
 
 	void PotentialManager::addPotential(Potential * pot) {
-		int typ = pot->isDynamic();
-		if (typ == 2) {
-			waveFuncDependentPots.push_back(pot);
-		}
-		else if (typ == 1) {
-			dynamicPots.push_back(pot);
-		}
-		else if (typ == 0) {
-			staticPots.push_back(pot);
-		}
-		else {
-			std::cout << "Potential is neither dynamic nor static." << std::endl;
-			throw -1;
+		switch(pot->getComplexity()){
+			case PotentialComplexity::STATIC:
+				staticPots.push_back(pot);
+				break;
+			case PotentialComplexity::DYNAMIC:
+				dynamicPots.push_back(pot);
+				if(myComplex == PotentialComplexity::STATIC)
+					myComplex = PotentialComplexity::DYNAMIC;
+				break;
+			case PotentialComplexity::WAVEFUNCTION_DEPENDENT:
+				waveFuncDependentPots.push_back(pot);
+				myComplex = PotentialComplexity::WAVEFUNCTION_DEPENDENT;
+				break;
+			default:
+				throw std::runtime_error("Potential does not fall into an enum PotentialComplexity (something is very wrong?)");
 		}
 	}
 
-	void PotentialManager::finishAddingPotentials(KineticOperators::KineticOperator** kin) {
+	void PotentialManager::finishAddingPotentials() {
 		int ns = staticPots.size();
 		int nd = dynamicPots.size();
 		int nw = waveFuncDependentPots.size();
+
+		if (spots)
+			delete[] spots;
+		if (dpots)
+			delete[] dpots;
+		if (wpots)
+			delete[] wpots;
+
 		Potential ** spots = new Potential*[ns];
 		Potential ** dpots = new Potential*[nd];
 		Potential ** wpots = new Potential*[nw];
+
 		for (int i = 0; i < ns; i++)
 			spots[i] = staticPots[i];
 		for (int i = 0; i < nd; i++)
 			dpots[i] = dynamicPots[i];
 		for (int i = 0; i < nw; i++)
 			wpots[i] = waveFuncDependentPots[i];
-		pot = new CompositePotential(nPts, ns, nd, nw, kin, spots, dpots, wpots); //takes ownership of potential arrays
+		pot = new CompositePotential(nPts, ns, nd, nw, spots, dpots, wpots);
 	}
 
-	void PotentialManager::getV(double t, double * targ, KineticOperators::KineticOperator** kin) {
+	void PotentialManager::getV(double t, double * targ) {
 		if (pot)
-			pot->getV(t, targ, kin);
+			pot->getV(t, targ);
 		else
 			throw std::runtime_error("Must run finishAddingPotentials() function on PotentialManager before using getV().");
 	}
 
-	void PotentialManager::getV(std::complex<double> * psi, double t, double * targ, KineticOperators::KineticOperator** kin) {
+	void PotentialManager::getV(double* rho, std::complex<double> * psi, double t, double * targ) {
 		if (pot)
-			pot->getV(psi, t, targ, kin);
+			pot->getV(rho, psi, t, targ);
 		else
 			throw std::runtime_error("Must run finishAddingPotentials() function on PotentialManager before using getV().");
 	}
 
-	int PotentialManager::isDynamic() {
-		return 2;
-	}
-}
-
-namespace ElectricFieldProfiles {
-	ConstantFieldProfile::ConstantFieldProfile(int nPts, double * x, double eMax, double minX, double maxX) {
-		fs = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
-		for (int i = 0; i < nPts; i++) {
-			if (x[i] > minX && x[i] < maxX)
-				fs[i] = eMax;
-			else
-				fs[i] = 0.0;
-		}
-	}
-
-	std::complex<double> * ConstantFieldProfile::getProfile() {
-		return fs;
-	}
-
-
-	CylindricalToLinearProfile::CylindricalToLinearProfile(int nPts, double * x, double minX, double maxX, double r, double eMax, double enhFact) {
-		fs = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
-		double xc = -enhFact * r + minX + std::sqrt((enhFact - 1.0)*r*(enhFact*r + maxX - minX));
-		double xn;
-		for (int i = 0; i < nPts; i++) {
-			xn = x[i];
-			if (xn < minX || xn > maxX)
-				fs[i] = 0.0;
-			else if (xn > minX && xn < xc)
-				fs[i] = eMax / enhFact * ((enhFact - 1.0)*r / (xn - minX + r) + 1.0);
-			else
-				fs[i] = eMax / enhFact * ((enhFact - 1.0)*r / (xc - minX + r) + 1.0) * (maxX - xn) / (maxX - xc);
-		}
-	}
-
-	CylindricalToLinearProfile::~CylindricalToLinearProfile() {
-		sq_free(fs);
-	}
-
-	std::complex<double> * CylindricalToLinearProfile::getProfile() {
-		return fs;
-	}
-
-
-	CylindricalToCutoffProfile::CylindricalToCutoffProfile(int nPts, double * x, double minX, double maxX, double r, double eMax, double enhFact, double decayLength) {
-		fs = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
-		double xn, k;
-		for (int i = 0; i < nPts; i++) {
-			xn = x[i];
-			if (xn < minX || xn > maxX)
-				fs[i] = 0.0;
-			else if (xn > minX && xn < maxX-decayLength)
-				fs[i] = eMax / enhFact * ((enhFact - 1.0)*r / (xn - minX + r) + 1.0);
-			else {
-				k = -(x[i] - maxX) / decayLength;
-				fs[i] = eMax / enhFact * ((enhFact - 1.0)*r / (xn - minX + r) + 1.0) * 
-					(924.0*std::pow(k, 13) -
-					6006.0*std::pow(k, 12) +
-					16380.0*std::pow(k, 11) -
-					24024.0*std::pow(k, 10) +
-					20020.0*std::pow(k, 9) -
-					9009.0*std::pow(k, 8) +
-					1716.0*std::pow(k, 7));
+	namespace ElectricFieldProfiles {
+		ConstantFieldProfile::ConstantFieldProfile(int nPts, double * x, double eMax, double minX, double maxX) {
+			fs = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
+			for (int i = 0; i < nPts; i++) {
+				if (x[i] > minX && x[i] < maxX)
+					fs[i] = eMax;
+				else
+					fs[i] = 0.0;
 			}
 		}
-	}
 
-	CylindricalToCutoffProfile::~CylindricalToCutoffProfile() {
-		sq_free(fs);
-	}
-
-	std::complex<double> * CylindricalToCutoffProfile::getProfile() {
-		return fs;
-	}
+		std::complex<double> * ConstantFieldProfile::getProfile() {
+			return fs;
+		}
 
 
-	InMetalFieldProfile::InMetalFieldProfile(int nPts, double * x, double minX, double maxX, double eMax, double lam, std::complex<double> er, double cond) {
-		fs = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
-		double xn;
-		//double w = PhysCon::c / lam * PhysCon::pi*2.0;
-		std::complex<double> k, kx, kz;
-		//plasmonic response https://en.wikipedia.org/wiki/Surface_plasmon_polariton#Propagation_length_and_skin_depth
-		kx = 2.0*PhysCon::pi / lam * std::sqrt(er / (er + 1.0));
-		kz = std::sqrt(er*std::pow((2 * PhysCon::pi / lam), 2.0) - kx * kx);
-		//skin depth, slow frequencies
-		//k = w * std::sqrt(er*PhysCon::e0*PhysCon::mu0 / 2.0)*std::sqrt(std::sqrt(1.0 + std::pow(cond / (er*PhysCon::e0*w), 2)) + 1.0);
-		//k += PhysCon::im*w * std::sqrt(er*PhysCon::e0*PhysCon::mu0 / 2.0)*std::sqrt(std::sqrt(1.0 + std::pow(cond / (er*PhysCon::e0*w), 2)) - 1.0);
-		for (int i = 0; i < nPts; i++) {
-			xn = x[i];
-			if (xn < minX || xn > maxX)
-				fs[i] = 0.0;
-			else {
-				//plasmonic response
-				fs[i] = -eMax * kx / kz * std::exp(PhysCon::im*(kz*std::abs(xn-maxX)));
-				
-				//skin depth, slow frequencies
-				//fs[i] = 1.0 / er * eMax * std::exp(PhysCon::im*(k*(maxX - xn)));
-				
+		CylindricalToLinearProfile::CylindricalToLinearProfile(int nPts, double * x, double minX, double maxX, double r, double eMax, double enhFact) {
+			fs = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
+			double xc = -enhFact * r + minX + std::sqrt((enhFact - 1.0)*r*(enhFact*r + maxX - minX));
+			double xn;
+			for (int i = 0; i < nPts; i++) {
+				xn = x[i];
+				if (xn < minX || xn > maxX)
+					fs[i] = 0.0;
+				else if (xn > minX && xn < xc)
+					fs[i] = eMax / enhFact * ((enhFact - 1.0)*r / (xn - minX + r) + 1.0);
+				else
+					fs[i] = eMax / enhFact * ((enhFact - 1.0)*r / (xc - minX + r) + 1.0) * (maxX - xn) / (maxX - xc);
 			}
 		}
-	}
 
-	std::complex<double> * InMetalFieldProfile::getProfile() {
-		return fs;
-	}
+		CylindricalToLinearProfile::~CylindricalToLinearProfile() {
+			sq_free(fs);
+		}
+
+		std::complex<double> * CylindricalToLinearProfile::getProfile() {
+			return fs;
+		}
 
 
-	FileFieldProfile::FileFieldProfile(int nPts, double * x, double offset, double rightDecayPos, double leftDecayPos, double decayLength, double emax, const char * fil) {
-		fs = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
-		double * tre = (double*) sq_malloc(sizeof(double)*nPts);
-		double * tim = (double*) sq_malloc(sizeof(double)*nPts);
-		std::fstream ifil = std::fstream(fil, std::ios::in | std::ios::binary);
-		int nRep;
-		ifil.read(reinterpret_cast<char*>(&nRep), sizeof(int));
-		double * fx = (double*) sq_malloc(sizeof(double)*nRep);
-		double * fre = (double*) sq_malloc(sizeof(double)*nRep);
-		double * fim = (double*) sq_malloc(sizeof(double)*nRep);
-		ifil.read(reinterpret_cast<char*>(fx), sizeof(double)*nRep);
-		ifil.read(reinterpret_cast<char*>(fre), sizeof(double)*nRep);
-		ifil.read(reinterpret_cast<char*>(fim), sizeof(double)*nRep);
-		for (int i = 0; i < nRep; i++)
-			fx[i] += offset;
-		vtls::linearInterpolate(nRep, fx, fre, nPts, x, tre);
-		vtls::linearInterpolate(nRep, fx, fim, nPts, x, tim);
-		for (int i = 0; i < nPts; i++)
-			fs[i] = (tre[i] + PhysCon::im*tim[i])*emax;
-		double k;
-		for (int i = 0; i < nPts; i++) {
-			if (x[i] > leftDecayPos && x[i] < leftDecayPos + decayLength) {
-				k = (x[i] - leftDecayPos) / decayLength;
-				fs[i] *=
-				924.0*std::pow(k, 13) -
-					6006.0*std::pow(k, 12) +
-					16380.0*std::pow(k, 11) -
-					24024.0*std::pow(k, 10) +
-					20020.0*std::pow(k, 9) -
-					9009.0*std::pow(k, 8) +
-					1716.0*std::pow(k, 7);
+		CylindricalToCutoffProfile::CylindricalToCutoffProfile(int nPts, double * x, double minX, double maxX, double r, double eMax, double enhFact, double decayLength) {
+			fs = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
+			double xn, k;
+			for (int i = 0; i < nPts; i++) {
+				xn = x[i];
+				if (xn < minX || xn > maxX)
+					fs[i] = 0.0;
+				else if (xn > minX && xn < maxX-decayLength)
+					fs[i] = eMax / enhFact * ((enhFact - 1.0)*r / (xn - minX + r) + 1.0);
+				else {
+					k = -(x[i] - maxX) / decayLength;
+					fs[i] = eMax / enhFact * ((enhFact - 1.0)*r / (xn - minX + r) + 1.0) * 
+						(924.0*std::pow(k, 13) -
+						6006.0*std::pow(k, 12) +
+						16380.0*std::pow(k, 11) -
+						24024.0*std::pow(k, 10) +
+						20020.0*std::pow(k, 9) -
+						9009.0*std::pow(k, 8) +
+						1716.0*std::pow(k, 7));
+				}
 			}
-			else if (x[i] < rightDecayPos && x[i] > rightDecayPos - decayLength) {
-				k = -(x[i] - rightDecayPos) / decayLength;
-				fs[i] *=
+		}
+
+		CylindricalToCutoffProfile::~CylindricalToCutoffProfile() {
+			sq_free(fs);
+		}
+
+		std::complex<double> * CylindricalToCutoffProfile::getProfile() {
+			return fs;
+		}
+
+
+		InMetalFieldProfile::InMetalFieldProfile(int nPts, double * x, double minX, double maxX, double eMax, double lam, std::complex<double> er, double cond) {
+			fs = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
+			double xn;
+			//double w = PhysCon::c / lam * PhysCon::pi*2.0;
+			std::complex<double> k, kx, kz;
+			//plasmonic response https://en.wikipedia.org/wiki/Surface_plasmon_polariton#Propagation_length_and_skin_depth
+			kx = 2.0*PhysCon::pi / lam * std::sqrt(er / (er + 1.0));
+			kz = std::sqrt(er*std::pow((2 * PhysCon::pi / lam), 2.0) - kx * kx);
+			//skin depth, slow frequencies
+			//k = w * std::sqrt(er*PhysCon::e0*PhysCon::mu0 / 2.0)*std::sqrt(std::sqrt(1.0 + std::pow(cond / (er*PhysCon::e0*w), 2)) + 1.0);
+			//k += PhysCon::im*w * std::sqrt(er*PhysCon::e0*PhysCon::mu0 / 2.0)*std::sqrt(std::sqrt(1.0 + std::pow(cond / (er*PhysCon::e0*w), 2)) - 1.0);
+			for (int i = 0; i < nPts; i++) {
+				xn = x[i];
+				if (xn < minX || xn > maxX)
+					fs[i] = 0.0;
+				else {
+					//plasmonic response
+					fs[i] = -eMax * kx / kz * std::exp(PhysCon::im*(kz*std::abs(xn-maxX)));
+					
+					//skin depth, slow frequencies
+					//fs[i] = 1.0 / er * eMax * std::exp(PhysCon::im*(k*(maxX - xn)));
+					
+				}
+			}
+		}
+
+		std::complex<double> * InMetalFieldProfile::getProfile() {
+			return fs;
+		}
+
+
+		FileFieldProfile::FileFieldProfile(int nPts, double * x, double offset, double rightDecayPos, double leftDecayPos, double decayLength, double emax, const char * fil) {
+			fs = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
+			double * tre = (double*) sq_malloc(sizeof(double)*nPts);
+			double * tim = (double*) sq_malloc(sizeof(double)*nPts);
+			std::fstream ifil = std::fstream(fil, std::ios::in | std::ios::binary);
+			int nRep;
+			ifil.read(reinterpret_cast<char*>(&nRep), sizeof(int));
+			double * fx = (double*) sq_malloc(sizeof(double)*nRep);
+			double * fre = (double*) sq_malloc(sizeof(double)*nRep);
+			double * fim = (double*) sq_malloc(sizeof(double)*nRep);
+			ifil.read(reinterpret_cast<char*>(fx), sizeof(double)*nRep);
+			ifil.read(reinterpret_cast<char*>(fre), sizeof(double)*nRep);
+			ifil.read(reinterpret_cast<char*>(fim), sizeof(double)*nRep);
+			for (int i = 0; i < nRep; i++)
+				fx[i] += offset;
+			vtls::linearInterpolate(nRep, fx, fre, nPts, x, tre);
+			vtls::linearInterpolate(nRep, fx, fim, nPts, x, tim);
+			for (int i = 0; i < nPts; i++)
+				fs[i] = (tre[i] + PhysCon::im*tim[i])*emax;
+			double k;
+			for (int i = 0; i < nPts; i++) {
+				if (x[i] > leftDecayPos && x[i] < leftDecayPos + decayLength) {
+					k = (x[i] - leftDecayPos) / decayLength;
+					fs[i] *=
+					924.0*std::pow(k, 13) -
+						6006.0*std::pow(k, 12) +
+						16380.0*std::pow(k, 11) -
+						24024.0*std::pow(k, 10) +
+						20020.0*std::pow(k, 9) -
+						9009.0*std::pow(k, 8) +
+						1716.0*std::pow(k, 7);
+				}
+				else if (x[i] < rightDecayPos && x[i] > rightDecayPos - decayLength) {
+					k = -(x[i] - rightDecayPos) / decayLength;
+					fs[i] *=
+						924.0*std::pow(k, 13) -
+						6006.0*std::pow(k, 12) +
+						16380.0*std::pow(k, 11) -
+						24024.0*std::pow(k, 10) +
+						20020.0*std::pow(k, 9) -
+						9009.0*std::pow(k, 8) +
+						1716.0*std::pow(k, 7);
+				}
+				else if (x[i] < leftDecayPos || x[i] > rightDecayPos)
+					fs[i] = 0;
+			}
+			ifil.close();
+			sq_free(tre);
+			sq_free(tim);
+			sq_free(fx);
+			sq_free(fre);
+			sq_free(fim);
+		}
+
+		FileFieldProfile::~FileFieldProfile() {
+			sq_free(fs);
+		}
+
+		std::complex<double> * FileFieldProfile::getProfile() {
+			return fs;
+		}
+
+
+		ExponentialToLinearProfile::ExponentialToLinearProfile(int nPts, double* x, double minX, double maxX, double r, double eMax) {
+			fs = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
+			double xn;
+			for (int i = 0; i < nPts; i++) {
+				xn = x[i];
+				if (xn < minX || xn > maxX)
+					fs[i] = 0.0;
+				else if (xn < maxX - r)
+					fs[i] = eMax * std::exp(-(xn - minX) / r);
+				else
+					fs[i] = eMax / r * std::exp(-(maxX - r) / r) * (maxX - xn);
+			}
+		}
+
+		ExponentialToLinearProfile::~ExponentialToLinearProfile() {
+			sq_free(fs);
+		}
+
+		std::complex<double>* ExponentialToLinearProfile::getProfile() {
+			return fs;
+		}
+
+	}
+
+	namespace Envelopes {
+		GaussianEnvelope::GaussianEnvelope(double tau, double tmax) {
+			GaussianEnvelope::tau = tau;
+			GaussianEnvelope::tmax = tmax;
+		}
+
+		double GaussianEnvelope::getValue(double t) {
+			return std::exp(-std::pow((t - tmax) / tau, 2) * 2.0 * std::log(2.0));
+		}
+
+		SmoothedInitialGaussianEnvelope::SmoothedInitialGaussianEnvelope(double tau, double tmax, double bufferTime) {
+			SmoothedInitialGaussianEnvelope::tau = tau;
+			SmoothedInitialGaussianEnvelope::tmax = tmax;
+			SmoothedInitialGaussianEnvelope::buf = bufferTime;
+		}
+
+		double SmoothedInitialGaussianEnvelope::getValue(double t) {
+			if (t < buf) {
+				double k = t / buf;
+				return std::exp(-std::pow((t - tmax) / tau, 2) * 2.0 * std::log(2.0)) * (
 					924.0*std::pow(k, 13) -
 					6006.0*std::pow(k, 12) +
 					16380.0*std::pow(k, 11) -
 					24024.0*std::pow(k, 10) +
 					20020.0*std::pow(k, 9) -
 					9009.0*std::pow(k, 8) +
-					1716.0*std::pow(k, 7);
+					1716.0*std::pow(k, 7));
+			} //NOTE: This is the 7th order smooth function -- IT WORKS! At higher orders we run into issues of floating point error.
+			else {
+				//return std::exp(-std::pow((t - tmax) / tau, 2) / 2.0);
+				return std::pow(2.0, -2.0 * std::log(2.0)*std::pow((t - tmax) / tau, 2));
 			}
-			else if (x[i] < leftDecayPos || x[i] > rightDecayPos)
-				fs[i] = 0;
 		}
-		ifil.close();
-		sq_free(tre);
-		sq_free(tim);
-		sq_free(fx);
-		sq_free(fre);
-		sq_free(fim);
-	}
 
-	FileFieldProfile::~FileFieldProfile() {
-		sq_free(fs);
-	}
+		CosSquaredEnvelope::CosSquaredEnvelope(double tau, double tmax) {
+			CosSquaredEnvelope::tau = tau;
+			CosSquaredEnvelope::tmax = tmax;
+		}
 
-	std::complex<double> * FileFieldProfile::getProfile() {
-		return fs;
-	}
-
-
-	ExponentialToLinearProfile::ExponentialToLinearProfile(int nPts, double* x, double minX, double maxX, double r, double eMax) {
-		fs = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
-		double xn;
-		for (int i = 0; i < nPts; i++) {
-			xn = x[i];
-			if (xn < minX || xn > maxX)
-				fs[i] = 0.0;
-			else if (xn < maxX - r)
-				fs[i] = eMax * std::exp(-(xn - minX) / r);
+		double CosSquaredEnvelope::getValue(double t) {
+			if (std::abs((t - tmax) * a_t / tau) < PhysCon::pi / 2.0)
+				return std::pow(std::cos(a_t * (t - tmax) / tau), 2);
 			else
-				fs[i] = eMax / r * std::exp(-(maxX - r) / r) * (maxX - xn);
+				return 0.0;
 		}
-	}
-
-	ExponentialToLinearProfile::~ExponentialToLinearProfile() {
-		sq_free(fs);
-	}
-
-	std::complex<double>* ExponentialToLinearProfile::getProfile() {
-		return fs;
-	}
-
-}
-
-namespace Envelopes {
-	GaussianEnvelope::GaussianEnvelope(double tau, double tmax) {
-		GaussianEnvelope::tau = tau;
-		GaussianEnvelope::tmax = tmax;
-	}
-
-	double GaussianEnvelope::getValue(double t) {
-		return std::exp(-std::pow((t - tmax) / tau, 2) * 2.0 * std::log(2.0));
-	}
-
-	SmoothedInitialGaussianEnvelope::SmoothedInitialGaussianEnvelope(double tau, double tmax, double bufferTime) {
-		SmoothedInitialGaussianEnvelope::tau = tau;
-		SmoothedInitialGaussianEnvelope::tmax = tmax;
-		SmoothedInitialGaussianEnvelope::buf = bufferTime;
-	}
-
-	double SmoothedInitialGaussianEnvelope::getValue(double t) {
-		if (t < buf) {
-			double k = t / buf;
-			return std::exp(-std::pow((t - tmax) / tau, 2) * 2.0 * std::log(2.0)) * (
-				924.0*std::pow(k, 13) -
-				6006.0*std::pow(k, 12) +
-				16380.0*std::pow(k, 11) -
-				24024.0*std::pow(k, 10) +
-				20020.0*std::pow(k, 9) -
-				9009.0*std::pow(k, 8) +
-				1716.0*std::pow(k, 7));
-		} //NOTE: This is the 7th order smooth function -- IT WORKS! At higher orders we run into issues of floating point error.
-		else {
-			//return std::exp(-std::pow((t - tmax) / tau, 2) / 2.0);
-			return std::pow(2.0, -2.0 * std::log(2.0)*std::pow((t - tmax) / tau, 2));
-		}
-	}
-
-	CosSquaredEnvelope::CosSquaredEnvelope(double tau, double tmax) {
-		CosSquaredEnvelope::tau = tau;
-		CosSquaredEnvelope::tmax = tmax;
-	}
-
-	double CosSquaredEnvelope::getValue(double t) {
-		if (std::abs((t - tmax) * a_t / tau) < PhysCon::pi / 2.0)
-			return std::pow(std::cos(a_t * (t - tmax) / tau), 2);
-		else
-			return 0.0;
 	}
 }

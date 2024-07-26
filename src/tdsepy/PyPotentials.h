@@ -40,10 +40,10 @@ class PyCylindricalImagePotential
     : public CylindricalImageCharge{
         public:
         PyCylindricalImagePotential(PySimulation* sim, double ef, double w, double rad, double posMin, double posMax, double surfPos, double refPoint)
-            : CylindricalImageCharge(sim->getNumPoints(), sim->getXPtr(), sim->getDX(), sim->getDT(), ef, w, rad, sim->getNElecPtr(), sim->getPotPointer(), sim->getWght(), sim->getDens(), sim->findXIdx(posMin), sim->findXIdx(posMax), sim->findXIdx(surfPos), sim->findXIdx(refPoint)){}
+            : CylindricalImageCharge(sim->getNumPoints(), sim->getXPtr(), sim->getDX(), sim->getDT(), ef, w, rad, sim->getNElecPtr(), sim->getWeightsPtr(), sim->findXIdx(posMin), sim->findXIdx(posMax), sim->findXIdx(surfPos), sim->findXIdx(refPoint)){}
         
         void negatePotential(PySimulation* sim){
-            CylindricalImageCharge::negateGroundEffects(sim->getPsi(), sim->getKin());
+            CylindricalImageCharge::negateGroundEffects(sim->getRho(), sim->getPsi());
         }
     };
 
@@ -51,10 +51,10 @@ class PyLDAFunctional
     : public LDAFunctional{
         public:
         PyLDAFunctional(PySimulation* sim, LDAFunctionalType typ, double refPoint)
-            : LDAFunctional(typ, sim->getNumPoints(), sim->getDX(), sim->getNElecPtr(), sim->getPotPointer(), sim->getWght(), sim->getDens(), sim->findXIdx(refPoint)){}
+            : LDAFunctional(typ, sim->getNumPoints(), sim->getDX(), sim->findXIdx(refPoint)){}
         
         void negatePotential(PySimulation* sim){
-            LDAFunctional::negateGroundEffects(sim->getPsi(), sim->getKin());
+            LDAFunctional::negateGroundEffects(sim->getRho(), sim->getPsi());
         }
     };
 

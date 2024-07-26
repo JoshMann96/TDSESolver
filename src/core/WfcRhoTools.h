@@ -5,8 +5,6 @@
 
 // Different ways of calculating weights (w*|psi(x)|^2 = rho(x) [e/m^3]) for density functional potentials
 namespace WfcToRho {
-	void calcEnergies(int nElec, int nPts, double dx, std::complex<double>* psi, double* totPot, KineticOperators::KineticOperator* kin, double* energies);
-
 	// Template function for Weight (will result in error if weight is needed and this is used).
 	class Weight {
 	public:
