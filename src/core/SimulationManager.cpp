@@ -113,8 +113,6 @@ void SimulationManager::calcWeights(){
 
 	calcEnergies(step[index], energies);
 
-	std::cout << wght << std::endl;
-
 	wght->calcWeights(nElec, energies, weights);
 
 	sq_free(energies);
