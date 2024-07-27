@@ -141,6 +141,8 @@ void SimulationManager::findEigenStates(double emin, double emax, double maxT, d
 	}
 
 	calcWeights();
+	if(calcDensity)
+		dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
 }
 
 void SimulationManager::setPsi(std::complex<double>* npsi) {
