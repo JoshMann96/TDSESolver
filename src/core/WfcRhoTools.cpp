@@ -20,7 +20,7 @@ namespace WfcToRho {
 		double fact = 0;
 		for (int i = 0; i < nElec; i++)
 			fact += weights[i];
-		fact = 2 / (3 * PhysCon::pi) * PhysCon::me * ef / (PhysCon::hbar * PhysCon::hbar) * nElec / fact;
+		fact = 2.0 / (3.0 * PhysCon::pi) * PhysCon::me * ef / (PhysCon::hbar * PhysCon::hbar) * nElec / fact;
 		//Combine factored prefactor with energy difference
 		for (int i = 0; i < nElec; i++)
 			weights[i] *= fact;

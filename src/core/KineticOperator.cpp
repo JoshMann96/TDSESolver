@@ -221,35 +221,28 @@ namespace KineticOperators {
 	void GenDisp_PSM::calcOpMat() {
 		if(needMat){
 			needMat = 0;
-			if (nPts > 46340) {
-				std::cout << "Long datatype is required for grids of size nPts>46340. Rewrite this code (GenDisp_PSM::calcOpMat)" << std::endl;
-				throw -1;
-			}
+			if (nPts > 46340) 
+				throw std::runtime_error("Long datatype is required for grids of size nPts>46340. Rewrite this code (GenDisp_PSM::calcOpMat)");
 
 			initializeOneFFT();
 
 			if(opMat)
 				sq_free(opMat); opMat = nullptr;
+			opMat = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*(nPts*(nPts+1))/2);
 
-			opMat = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*(nPts*(nPts+1))/2);//new std::complex<double>[(nPts * (nPts+1))/2];
-
-			std::complex<double>* kinDiags = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts);//new std::complex<double>[nPts];
+			std::complex<double>* kinDiags = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts);
 
 			vtls::copyArray(nPts, osKineticEnergy, kinDiags);
-			//DftiComputeBackward(dftiHandleMat, kinDiags);
 
 			executeOneFFTBackward(kinDiags);
 
-			//good for row major
-			/*for (int i = 0; i < nPts; i++)
-				vtls::copyArray(nPts - i, kinDiags, &opMat[(i * (2 * nPts + 1 - i)) / 2]);*/
 			for (int d = 0; d < nPts; d++) {
 				std::complex<double> cv = kinDiags[d];
 				for (int i = 0; i < nPts - d; i++)
 					opMat[(i * i + (2 * d + 3) * i + d * (d + 1)) / 2] = cv;
 			}
 
-			sq_free(kinDiags); kinDiags = nullptr; //delete[] kinDiags;
+			sq_free(kinDiags); kinDiags = nullptr;
 
 		}
 	}
@@ -280,7 +273,7 @@ namespace KineticOperators {
 
 		clearOpMat();
 
-		nElec = nEigs[0];
+		nElec = *nEigs;
 
 		if (work)
 			sq_free(work); work = nullptr;

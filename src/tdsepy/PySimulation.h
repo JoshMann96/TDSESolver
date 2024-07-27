@@ -37,12 +37,6 @@ class PySimulation
         }
 
         double* getXPtr(){return x;}
-
-        WfcToRho::Weight* getWght(){return wght;} //LOOK HERE: keep_alive
-        void setWght(WfcToRho::Weight* wght){this->wght = wght;}
-        WfcToRho::Density* getDens(){return dens;}
-        void setDens(WfcToRho::Density* dens){this->dens = dens;}
-
         void addLeftAbsBdy(double rate, double width){addSpatialDamp(AbsorptiveRegions::getSmoothedSpatialDampDecay(nPts, findXIdx(x[0]+width), 0, rate*getDT()));}
         void addRightAbsBdy(double rate, double width){addSpatialDamp(AbsorptiveRegions::getSmoothedSpatialDampDecay(nPts, findXIdx(x[nPts-1]-width), nPts-1, rate*getDT()));}
 

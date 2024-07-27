@@ -53,12 +53,14 @@ public:
 	// Adds spatial absorptive region.
 	void addSpatialDamp(double* arr);
 
-	void setWeights(WfcToRho::Weight* nwght) { wght = nwght; }
+	void setWeight(WfcToRho::Weight* nwght) { wght = nwght; }
 	void setDensity(WfcToRho::Density* ndens) { dens = ndens; }
+	WfcToRho::Weight* getWeight() { return wght; }
+	WfcToRho::Density* getDensity() { return dens; }
 
 	void calcEnergies(int step, double* energies);
 
-	double* getWeights(){ return weights; }
+	double* getWeightValues(){ return weights; }
 	double* getRho(int curStep);
 
 	void setKineticOperator_PSM(KineticOperators::KineticOperator_PSM* nkin) { kin = nkin; kin_psm = nkin; }

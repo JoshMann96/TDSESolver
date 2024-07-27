@@ -50,7 +50,7 @@ namespace KineticOperators {
 
 		void clearOpMat() {
 			if (opMat)
-				sq_free(opMat); opMat = NULL;
+				sq_free(opMat); opMat = nullptr;
 			needMat = 1;
 		}
 

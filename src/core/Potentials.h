@@ -297,7 +297,6 @@ namespace Potentials {
 	private:
 		int nPts, refPoint, * nElec;
 		double * origPot, * rho, dx;
-		double * prefactor = nullptr;
 		void calcPot(double* rho, double* targ);
 
 		LDAFunctionalType typ;

@@ -434,8 +434,6 @@ namespace Potentials {
 	LDAFunctional::~LDAFunctional(){
 		sq_free(origPot);
 		sq_free(rho);
-		if(prefactor)
-			sq_free(prefactor);
 	};
 
 	void LDAFunctional::negateGroundEffects(double* rho, std::complex<double>* psi) {

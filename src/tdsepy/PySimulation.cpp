@@ -134,7 +134,7 @@ void init_Simulation(py::module &m) {
             meas : Measurer
                 Measurer to be added.)V0G0N",
             "meas"_a)
-        .def("setDens", &PySimulation::setDens, py::keep_alive<1,2>(), R"V0G0N(
+        .def("setDens", &PySimulation::setDensity, py::keep_alive<1,2>(), R"V0G0N(
             Sets density calculator for simulation.
 
             Parameters
@@ -142,7 +142,7 @@ void init_Simulation(py::module &m) {
             dens : Density
                 Density calculator to be used.)V0G0N",
             "dens"_a)
-        .def("setWght", &PySimulation::setWght, py::keep_alive<1,2>(), R"V0G0N(
+        .def("setWght", &PySimulation::setWeight, py::keep_alive<1,2>(), R"V0G0N(
             Sets state weight calculator for simulation.
 
             Parameters

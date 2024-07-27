@@ -72,7 +72,7 @@ void SimulationManager::addMeasurer(Measurers::Measurer* m) {
 
 void SimulationManager::addPotential(Potentials::Potential* p) {
 	pot->addPotential(p);
-	if(p->getComplexity() == 2) // does the potential require density calculation?
+	if(p->getComplexity() == Potentials::PotentialComplexity::WAVEFUNCTION_DEPENDENT)
 		calcDensity = 1;
 }
 
@@ -85,9 +85,6 @@ void SimulationManager::finishInitialization() {
 }
 
 void SimulationManager::calcEnergies(int curStep, double* energies) {
-		if (nElec < 1)
-			throw std::runtime_error("SimulationManager::calcEnergies: Number of electrons is not finite! Failed to initialize.");
-
 		for(int i = 0; i < 4; i++){
 			if(curStep == step[i]){ //look for the present step's index
 				double* rho = (double*) sq_malloc(sizeof(double)*nPts);
@@ -97,6 +94,8 @@ void SimulationManager::calcEnergies(int curStep, double* energies) {
 					//potential energy + kinetic energy
 				}
 				sq_free(rho);
+
+				return;
 			}
 		}
 
@@ -104,12 +103,18 @@ void SimulationManager::calcEnergies(int curStep, double* energies) {
 }
 
 void SimulationManager::calcWeights(){
+	if (nElec < 1)
+		throw std::runtime_error("SimulationManager::calcEnergies: Number of electrons is not finite! Failed to initialize.");
+
 	if(weights)
 		sq_free(weights); weights = nullptr;
 	weights = (double*) sq_malloc(sizeof(double)*nElec);
 	double* energies = (double*) sq_malloc(sizeof(double)*nElec);
 
-	calcEnergies(0, energies);
+	calcEnergies(step[index], energies);
+
+	std::cout << wght << std::endl;
+
 	wght->calcWeights(nElec, energies, weights);
 
 	sq_free(energies);
@@ -137,7 +142,6 @@ void SimulationManager::findEigenStates(double emin, double emax, double maxT, d
 		vtls::copyArray(nPts * nElec, psis[0], psis[i]);
 	}
 
-	weights = (double*) sq_malloc(sizeof(double) * nElec);
 	calcWeights();
 }
 
@@ -148,7 +152,6 @@ void SimulationManager::setPsi(std::complex<double>* npsi) {
 		for (int i = 0; i < 4; i++) {
 			psis[i] = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts);
 		}
-
 	}
 	vtls::copyArray(nPts, npsi, psis[index]);
 	vtls::normalizeSqrNorm(nPts, psis[index], dx);
