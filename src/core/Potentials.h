@@ -273,7 +273,7 @@ namespace Potentials {
 	{
 	private:
 		int nPts, refPoint, * nElec, posMin, posMax, surfPos;
-		double dx, dt, ef, w, rad, * origPot, * potTemp, * genTemp, * lrxr, * rho, *nsMask, *dethin;
+		double dx, dt, ef, w, rad, * origPot, * potTemp, * genTemp, * lrxr, * myRho, *nsMask, *dethin;
 		double emittedCharge = 0.0;
 		void calcPot(double* rho, std::complex<double>* psi, double cur_t, double* targ);
 		double** weights;

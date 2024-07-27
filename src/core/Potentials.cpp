@@ -349,7 +349,7 @@ namespace Potentials {
 		potTemp = (double*) sq_malloc(sizeof(double)*nPts);
 		genTemp = (double*) sq_malloc(sizeof(double)*nPts);
 		origPot = (double*) sq_malloc(sizeof(double)*nPts);
-		rho = (double*) sq_malloc(sizeof(double)*nPts);
+		myRho = (double*) sq_malloc(sizeof(double)*nPts);
 		lrxr = (double*) sq_malloc(sizeof(double)*nPts);
 		nsMask = (double*) sq_malloc(sizeof(double)*nPts);
 		dethin = (double*) sq_malloc(sizeof(double)*nPts);
@@ -367,14 +367,14 @@ namespace Potentials {
 			nsMask[i] = 1.0 - std::exp(-2 * std::sqrt(2.0 * PhysCon::me * w) / PhysCon::hbar * (i - surfPos) * dx);
 
 		for (int i = 0; i < nPts; i++)
-			dethin[i] = i >= surfPos ? 1 + (i-surfPos)*dx/rad : 1.0;
+			dethin[i] = i >= surfPos ? 1.0 + (i-surfPos)*dx/rad : 1.0;
 	}
 
 	CylindricalImageCharge::~CylindricalImageCharge(){
 		sq_free(potTemp);
 		sq_free(genTemp);
 		sq_free(origPot);
-		sq_free(rho);
+		sq_free(myRho);
 		sq_free(lrxr);
 		sq_free(nsMask);
 		sq_free(dethin);
@@ -404,17 +404,17 @@ namespace Potentials {
 
 		std::fill_n(targ, nPts, 0);
 
-		vtls::seqMulArrays(nPts, dethin, rho);
+		vtls::seqMulArrays(nPts, dethin, rho, myRho);
 
 		//CALCULATE FIELDS FROM VACUUM ELECTRONS
 		//Calculate first integral
-		vtlsInt::cumIntTrapz(nPts - surfPos, &rho[surfPos], dx * rad, &targ[surfPos]);
+		vtlsInt::cumIntTrapz(nPts - surfPos, &myRho[surfPos], dx * rad, &targ[surfPos]);
 		//Add in image charge
 		vtls::scaAddArray(nPts - surfPos, -targ[nPts - 1] - emittedCharge * rad, &targ[surfPos]);
 		vtls::seqMulArrays(nPts - surfPos, &lrxr[surfPos], &targ[surfPos]);
 		//Calculate second integral
 		std::fill_n(potTemp, nPts, 0);
-		vtls::seqMulArrays(nPts - surfPos, &lrxr[surfPos], &rho[surfPos], &genTemp[surfPos]);
+		vtls::seqMulArrays(nPts - surfPos, &lrxr[surfPos], &myRho[surfPos], &genTemp[surfPos]);
 		vtlsInt::cumIntTrapz(nPts - surfPos, &genTemp[surfPos], -dx * rad, &potTemp[surfPos]);
 		vtls::addArrays(nPts - surfPos, &potTemp[surfPos], &targ[surfPos]);
 
