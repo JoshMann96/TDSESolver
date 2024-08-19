@@ -457,12 +457,13 @@ namespace Potentials {
 		sq_free(fieldScaler);
 		sq_free(dethin);
 		sq_free(myRho);
-		
+
 		delete curInt;
 	}
 
 	void PlanarToCylindricalHartree::negateGroundEffects(double* rho, std::complex<double>* psi) {
 		calcPot(rho, psi, 0.0, origPot);
+		originalCharge = vtlsInt::trapz(nPts, rho, dx);
 	}
 
 	void PlanarToCylindricalHartree::getV(double t, double* targ) {
