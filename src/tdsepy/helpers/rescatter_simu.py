@@ -284,7 +284,6 @@ def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:f
     
     sim.addPot(jellPot)
     sim.addPot(fieldPot)
-    sim.addPot(imagPot)
     
     if exchange_correlation:
         xPot = Potentials.LDAFunctional(sim, Potentials.X_SLATER, xmax)
