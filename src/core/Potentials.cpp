@@ -331,11 +331,11 @@ namespace Potentials {
 	}
 
 	CurrentIntegrator::CurrentIntegrator(int nPts, double dx, int evalPoint,  int* nElec, double** weights) :
-		nPts(nPts), dx(dx), evalPoint(evalPoint), nElec(nElec), weights(weights), emittedCharge(0.0), last_t(0.0) {};
+		nPts(nPts), dx(dx), evalPoint(evalPoint), nElec(nElec), weights(weights), integratedFlux(0.0), last_t(0.0) {};
 	
 	void CurrentIntegrator::integrate(std::complex<double>* psi, double t) {
 		for (int i = 0; i < *nElec; i++)
-			emittedCharge += (t - last_t) * PhysCon::hbar / PhysCon::me * std::imag(std::conj(psi[i * nPts + evalPoint]) * (psi[i * nPts + evalPoint + 1] - psi[i * nPts + evalPoint - 1]) / (2.0 * dx)) * (*weights)[i];
+			integratedFlux += (t - last_t) * PhysCon::hbar / PhysCon::me * std::imag(std::conj(psi[i * nPts + evalPoint]) * (psi[i * nPts + evalPoint + 1] - psi[i * nPts + evalPoint - 1]) / (2.0 * dx)) * (*weights)[i];
 		last_t = t;
 	}
 
@@ -410,7 +410,7 @@ namespace Potentials {
 		//Calculate first integral
 		vtlsInt::cumIntTrapz(nPts - surfPos, &myRho[surfPos], dx * rad, &targ[surfPos]);
 		//Add in image charge
-		vtls::scaAddArray(nPts - surfPos, -targ[nPts - 1] - curInt->getEmittedCharge() * rad, &targ[surfPos]);
+		vtls::scaAddArray(nPts - surfPos, -targ[nPts - 1] - curInt->getIntegratedFlux() * rad, &targ[surfPos]);
 		vtls::seqMulArrays(nPts - surfPos, &lrxr[surfPos], &targ[surfPos]);
 		//Calculate second integral
 		std::fill_n(potTemp, nPts, 0);
@@ -476,7 +476,7 @@ namespace Potentials {
 			throw std::runtime_error("PlanarToCylindricalHartree::getV called before original charge was set (call negateGroundEffects first or there was zero net charge, somehow)");
 
 		calcPot(rho, psi, t, targ);
-		double lossFraction = -curInt->getEmittedCharge() / originalCharge + 1.0; // charge that moved to left is lost, scale origPot by appropriate amount
+		double lossFraction = -curInt->getIntegratedFlux() / originalCharge + 1.0; // charge that moved to left is lost, scale origPot by appropriate amount
 		double ref = targ[refPoint] - lossFraction * origPot[refPoint];
 		for (int i = 0; i < nPts; i++)
 			targ[i] -= lossFraction * origPot[i] + ref;
@@ -489,7 +489,7 @@ namespace Potentials {
 
 		vtls::seqMulArrays(posMax-posMin, &dethin[posMin], &rho[posMin], &myRho[posMin]);
 		vtlsInt::cumIntTrapzToRight(posMax-posMin, &myRho[posMin], dx, potTemp); // cumulative integral of rho
-		vtls::seqMulArrays(posMax-posMin, &potTemp[posMin], &fieldScaler[posMin], &potTemp[posMin]); // scale by field scaler
+		vtls::seqMulArrays(posMax-posMin, &potTemp[posMin], &fieldScaler[posMin], &potTemp[posMin]); // scale by field scaler for 1/r term
 		vtlsInt::cumIntTrapzToLeft(posMax-posMin, &potTemp[posMin], dx * -PhysCon::qe * PhysCon::qe / PhysCon::e0, &targ[posMin]); // final integral for potential, times constants
 		std::fill_n(&targ[posMax], nPts-posMax, targ[posMax-1]); // fill in right side with last value (zero field implied)
 	}

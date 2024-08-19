@@ -271,13 +271,13 @@ namespace Potentials {
 	class CurrentIntegrator
 	{
 	private:
-		double emittedCharge, last_t;
+		double integratedFlux, last_t;
 		double ** weights, dx;
 		int evalPoint, * nElec, nPts;
 	public:
 		CurrentIntegrator(int nPts, double dx, int evalPoint,  int* nElec, double** weights);
 		void integrate(std::complex<double>* psi, double t);
-		double getEmittedCharge(){return emittedCharge;};
+		double getIntegratedFlux(){return integratedFlux;};
 	};
 
 	class CylindricalImageCharge :
