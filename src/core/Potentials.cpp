@@ -463,12 +463,12 @@ namespace Potentials {
 
 	void PlanarToCylindricalHartree::negateGroundEffects(double* rho, std::complex<double>* psi) {
 		calcPot(rho, psi, 0.0, origPot);
-		originalCharge = vtlsInt::trapz(nPts, rho, dx);
+		vtls::seqMulArrays(nPts, dethin, rho, myRho);
+		originalCharge = vtlsInt::trapz(nPts, myRho, dx);
 	}
 
 	void PlanarToCylindricalHartree::getV(double t, double* targ) {
-		for (int i = 0; i < nPts; i++)
-			targ[i] = 0.0;
+		std::fill_n(targ, nPts, 0.0);
 	}
 
 	void PlanarToCylindricalHartree::getV(double* rho, std::complex<double>* psi, double t, double* targ) {
