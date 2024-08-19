@@ -292,7 +292,7 @@ def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:f
         sim.addPot(cPot)
     
     if bulk_hartree:
-        selfPot = Potentials.HartreeToCylindricalHartreePotential(sim, rad, xmin, xmax, 0.0, xmax)
+        selfPot = Potentials.PlanarToCylindricalHartreePotential(sim, rad, xmin, xmax, 0.0, xmax)
     else:
         selfPot = Potentials.CylindricalImagePotential(sim, ef, wf, rad, xmin, xmax, 0.0, xmax)
         
