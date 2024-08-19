@@ -190,7 +190,7 @@ def runSimSweepFields(emaxs:list, lam:float=800e-9, rad:float=20e-9, ef:float=5.
     
 def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:float=5.51*1.602e-19, wf:float=5.1*1.602e-19, tau:float=8e-15, cep:float=np.pi/2, data_fol:str="data/", callback=None, 
                   target_total_truncation_error:float = 0.01, min_emitted_energy:float=1.602e-19, target_elec_num:float = 50, abs_width:float=20e-9, abs_rate:float=5e17, min_timesteps:int=2000,
-                  exchange_correlation=True, measure_density:bool=True, verbose:bool=False):
+                  exchange_correlation=True, bulk_hartree=True, measure_density:bool=True, verbose:bool=False):
     """Runs a rescattering simulation while recording various quantites. 
         Current quantities being output:
         nPts, nSteps, dx, dt, <a>, nElec, VDFluxSpec, Weights
@@ -240,6 +240,8 @@ def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:f
             Rate of absorption. Defaults to 5e17.
         exchange_correlation : bool
             Whether to use exchange-correlation potentials. Defaults to True.
+        bulk_hartree : bool
+            Whether to use bulk Hartree potentials. Defaults to True.
         min_timesteps : int
             Minimum number of timesteps. 
             Overrides target_total_truncation_error if the number of timesteps would be too few. 
@@ -279,8 +281,6 @@ def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:f
         Potentials.FileFieldProfile(sim, 0.0, xmax, xmin, abs_width, emax, "au35_cr5_si_800nm.field"),
         Potentials.CosSquaredEnvelope(tau, peak_t),
         cep, peak_t, lam, xmax)
-    imagPot = Potentials.CylindricalImagePotential(
-        sim, ef, wf, rad, xmin, xmax, 0.0, xmax)
     
     sim.addPot(jellPot)
     sim.addPot(fieldPot)
@@ -291,6 +291,13 @@ def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:f
         cPot = Potentials.LDAFunctional(sim, Potentials.C_PW, xmax)
         sim.addPot(xPot)
         sim.addPot(cPot)
+    
+    if bulk_hartree:
+        selfPot = Potentials.HartreeToCylindricalHartreePotential(sim, rad, xmin, xmax, 0.0, xmax)
+    else:
+        selfPot = Potentials.CylindricalImagePotential(sim, ef, wf, rad, xmin, xmax, 0.0, xmax)
+        
+    sim.addPot(selfPot)
 
     ### INITIALIZE MEASURERS ###
 
@@ -330,7 +337,7 @@ def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:f
     sim.eigenSolve(-wf-ef, -wf)
 
     message("\tNegating self-consistent potentials...")
-    imagPot.negatePotential(sim)
+    selfPot.negatePotential(sim)
     if exchange_correlation:
         xPot.negatePotential(sim)
         cPot.negatePotential(sim)
