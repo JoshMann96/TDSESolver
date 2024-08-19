@@ -268,19 +268,47 @@ namespace Potentials {
 		virtual PotentialComplexity getComplexity() = 0;
 	};
 
+	class CurrentIntegrator
+	{
+	private:
+		double emittedCharge, last_t;
+		double ** weights, dx;
+		int evalPoint, * nElec, nPts;
+	public:
+		CurrentIntegrator(int nPts, double dx, int evalPoint,  int* nElec, double** weights);
+		void integrate(std::complex<double>* psi, double t);
+		double getEmittedCharge(){return emittedCharge;};
+	};
+
 	class CylindricalImageCharge :
 		public NonlinearDynamicalPotential
 	{
 	private:
-		int nPts, refPoint, * nElec, posMin, posMax, surfPos;
-		double dx, dt, ef, w, rad, * origPot, * potTemp, * genTemp, * lrxr, * myRho, *nsMask, *dethin;
-		double emittedCharge = 0.0;
+		int nPts, refPoint, posMin, posMax, surfPos;
+		double dx, ef, w, rad, * origPot, * potTemp, * genTemp, * lrxr, * myRho, *nsMask, *dethin;
 		void calcPot(double* rho, std::complex<double>* psi, double cur_t, double* targ);
-		double** weights;
-		double last_t = 0.0;
+		CurrentIntegrator * curInt;
 	public:
-		CylindricalImageCharge(int nPts, double* x, double dx, double dt, double ef, double w, double rad, int* nElec, double** weights, int posMin, int posMax, int surfPos, int refPoint);
+		CylindricalImageCharge(int nPts, double* x, double dx, double ef, double w, double rad, int* nElec, double** weights, int posMin, int posMax, int surfPos, int refPoint);
 		~CylindricalImageCharge();
+		void negateGroundEffects(double* rho, std::complex<double>* psi);
+		void getV(double t, double* targ);
+		void getV(double* rho, std::complex<double>* psi, double t, double* targ);
+		PotentialComplexity getComplexity(){return PotentialComplexity::WAVEFUNCTION_DEPENDENT;};
+	};
+
+	class PlanarToCylindricalHartree :
+		public NonlinearDynamicalPotential
+	{
+	private:
+		int nPts, refPoint, * nElec, posMin, posMax, surfPos;
+		double dx, rad, * origPot, * potTemp, * fieldScaler, *myRho, *dethin;
+		double originalCharge;
+		void calcPot(double* rho, std::complex<double>* psi, double t, double* targ);
+		CurrentIntegrator * curInt;
+	public:
+		PlanarToCylindricalHartree(int nPts, double* x, double dx, double rad, int* nElec, double** weights, int posMin, int posMax, int surfPos, int refPoint);
+		~PlanarToCylindricalHartree();
 		void negateGroundEffects(double* rho, std::complex<double>* psi);
 		void getV(double t, double* targ);
 		void getV(double* rho, std::complex<double>* psi, double t, double* targ);
@@ -291,6 +319,7 @@ namespace Potentials {
 		X_SLATER,
 		C_PW
 	};
+	
 	class LDAFunctional :
 		public NonlinearDynamicalPotential
 	{

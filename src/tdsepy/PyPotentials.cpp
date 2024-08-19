@@ -162,6 +162,7 @@ void init_Potentials(py::module &m) {
             PulsePotential)V0G0N",
             "sim"_a, "fieldProfile"_a, "env"_a, "phase"_a, "tmax"_a, "lam"_a, "refPoint"_a);
     
+
     py::class_<PyCylindricalImagePotential, Potential>(m, "CylindricalImagePotential")
         .def(py::init<PySimulation*, double, double, double, double, double, double, double>(), R"V0G0N(
             Collective image charge potential assuming a cylindrical conductor geometry.
@@ -190,6 +191,42 @@ void init_Potentials(py::module &m) {
             CylindricalImagePotentail)V0G0N",
             "sim"_a, "ef"_a, "w"_a, "rad"_a, "posMin"_a, "posMax"_a, "surfPos"_a, "refPoint"_a)
         .def("negatePotential", &PyCylindricalImagePotential::negatePotential, R"V0G0N(
+            Negates potential as evaluated in the Simulation's current state.
+            Intended to be used such that the potential only depends on the change in density, leading the initially calculated eigenstates to be the actual eigenstates before perturbation.
+
+            Parameters
+            ----------
+            sim : Simulation
+                Associated simulation.)V0G0N",
+            "sim"_a);
+
+    py::class_<PyPlanarToCylindricalHartreePotential,Potential>(m, "PlanarToCylindricalHartreePotential")
+        .def(py::init<PySimulation*, double, double, double, double, double>(), R"V0G0N(
+            Nonlocal Hartree potential assuming charge is distributed on a planar geometry for x <= surfPos 
+            and on a cylindrical geometry for x > surfPos, with a transition radius of curvature rad (the planar
+            charge is assumed to be within the cylinder of radius rad for x > surfPos).
+            Charge lost to the left (planar) boundary is re-distributed over the initial density.
+
+            Parameters
+            ----------
+            sim : Simulation
+                Associated simulation.
+            rad : float
+                Cylinder radius of curvature.
+            posMin : float
+                Minimum pos where density is included.
+            posMax : float
+                Maximum pos where density is included.
+            surfPos : float
+                Position of surface.
+            refPoint : float
+                Potential reference point.
+
+            Returns
+            -------
+            PlanarToCylindricalHartreePotential)V0G0N",
+            "sim"_a, "rad"_a, "posMin"_a, "posMax"_a, "surfPos"_a, "refPoint"_a)
+        .def("negatePotential", &PyPlanarToCylindricalHartreePotential::negatePotential, R"V0G0N(
             Negates potential as evaluated in the Simulation's current state.
             Intended to be used such that the potential only depends on the change in density, leading the initially calculated eigenstates to be the actual eigenstates before perturbation.
 

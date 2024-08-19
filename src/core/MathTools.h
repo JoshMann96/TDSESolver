@@ -129,6 +129,32 @@ namespace vtlsInt {
 		targ[len - 1] = sum;
 	}
 
+	//effectively interpret as result index i being between integrand index i and i+1, i.e. moved to the right by 1/2
+	// the integration region is still defined on the left according to the integrand arr, encompasing the whole len
+	template <typename T, typename U>
+	void cumIntTrapzToRight(int len, T* __restrict arr, U dx, decltype(std::declval<T&>()* std::declval<U&>())* __restrict targ) {
+		decltype(std::declval<T&>() * std::declval<U&>()) sum = (arr[0]+arr[1]) * dx / 4.0;
+		for (int i = 0; i < len - 2; i++) {
+			targ[i] = sum;
+			sum += (arr[i] + 2.0*arr[i+1] + arr[i+2]) * (dx / 4.0);
+		}
+		targ[len - 2] = sum;
+		targ[len - 1] = targ[len-2] + (arr[len-2] + arr[len-1]) * (dx / 4.0);
+	}
+
+	//effectively interpret as result index i being between integrand index i-1 and i, i.e. moved to the left by 1/2
+	// the first element is projected as constant to the previous element
+	template <typename T, typename U>
+	void cumIntTrapzToLeft(int len, T* __restrict arr, U dx, decltype(std::declval<T&>()* std::declval<U&>())* __restrict targ) {
+		targ[0] = 0.0;
+		decltype(std::declval<T&>() * std::declval<U&>()) sum = (arr[0]+arr[1]) * dx / 4.0;
+		for (int i = 1; i < len - 1; i++) {
+			targ[i] = sum;
+			sum += (arr[i-1] + 2.0*arr[i] + arr[i+1]) * (dx / 4.0);
+		}
+		targ[len - 1] = sum;
+	}
+
 	// Trapezoidal integration.
 	//double trapz(int len, double* __restrict arr, double dx);
 	//std::complex<double> trapz(int len, std::complex<double>* __restrict arr, double dx);

@@ -40,10 +40,21 @@ class PyCylindricalImagePotential
     : public CylindricalImageCharge{
         public:
         PyCylindricalImagePotential(PySimulation* sim, double ef, double w, double rad, double posMin, double posMax, double surfPos, double refPoint)
-            : CylindricalImageCharge(sim->getNumPoints(), sim->getXPtr(), sim->getDX(), sim->getDT(), ef, w, rad, sim->getNElecPtr(), sim->getWeightsPtr(), sim->findXIdx(posMin), sim->findXIdx(posMax), sim->findXIdx(surfPos), sim->findXIdx(refPoint)){}
+            : CylindricalImageCharge(sim->getNumPoints(), sim->getXPtr(), sim->getDX(), ef, w, rad, sim->getNElecPtr(), sim->getWeightsPtr(), sim->findXIdx(posMin), sim->findXIdx(posMax), sim->findXIdx(surfPos), sim->findXIdx(refPoint)){}
         
         void negatePotential(PySimulation* sim){
             CylindricalImageCharge::negateGroundEffects(sim->getRho(), sim->getPsi());
+        }
+    };
+
+class PyPlanarToCylindricalHartreePotential
+    : public PlanarToCylindricalHartree{
+        public:
+        PyPlanarToCylindricalHartreePotential(PySimulation* sim, double rad, double posMin, double posMax, double surfPos, double refPoint)
+            : PlanarToCylindricalHartree(sim->getNumPoints(), sim->getXPtr(), sim->getDX(), rad, sim->getNElecPtr(), sim->getWeightsPtr(), sim->findXIdx(posMin), sim->findXIdx(posMax), sim->findXIdx(surfPos), sim->findXIdx(refPoint)){}
+        
+        void negatePotential(PySimulation* sim){
+            PlanarToCylindricalHartree::negateGroundEffects(sim->getRho(), sim->getPsi());
         }
     };
 

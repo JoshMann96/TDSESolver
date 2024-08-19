@@ -330,22 +330,22 @@ namespace Potentials {
 		getV(t, targ);
 	}
 
-	CylindricalImageCharge::CylindricalImageCharge(int nPts, double* x, double dx, double dt, double ef, double w, double rad, int* nElec,
+	CurrentIntegrator::CurrentIntegrator(int nPts, double dx, int evalPoint,  int* nElec, double** weights) :
+		nPts(nPts), dx(dx), evalPoint(evalPoint), nElec(nElec), weights(weights), emittedCharge(0.0), last_t(0.0) {};
+	
+	void CurrentIntegrator::integrate(std::complex<double>* psi, double t) {
+		for (int i = 0; i < *nElec; i++)
+			emittedCharge += (t - last_t) * PhysCon::hbar / PhysCon::me * std::imag(std::conj(psi[i * nPts + evalPoint]) * (psi[i * nPts + evalPoint + 1] - psi[i * nPts + evalPoint - 1]) / (2.0 * dx)) * (*weights)[i];
+		last_t = t;
+	}
+
+	CylindricalImageCharge::CylindricalImageCharge(int nPts, double* x, double dx, double ef, double w, double rad, int* nElec,
 	 double** weights, int posMin, int posMax, int surfPos, int refPoint) :
-	 	nPts(nPts), dx(dx), dt(dt), ef(ef), w(w), rad(rad), nElec(nElec), weights(weights), refPoint(refPoint)
+	 	nPts(nPts), dx(dx), ef(ef), w(w), rad(rad), refPoint(refPoint),
+		posMin(posMin < 0 ? 0 : posMin),
+		posMax(posMax > nPts - 1 ? nPts - 1 : posMax),
+		surfPos(surfPos > nPts - 1 ? nPts - 1 : surfPos)
 	  {
-		if (posMin < 0)
-			CylindricalImageCharge::posMin = 0;
-		else
-			CylindricalImageCharge::posMin = posMin;
-		if (posMax > nPts - 1)
-			CylindricalImageCharge::posMax = nPts - 1;
-		else
-			CylindricalImageCharge::posMax = posMax;
-		if (surfPos > nPts - 1)
-			CylindricalImageCharge::surfPos = nPts - 1;
-		else
-			CylindricalImageCharge::surfPos = surfPos;
 		potTemp = (double*) sq_malloc(sizeof(double)*nPts);
 		genTemp = (double*) sq_malloc(sizeof(double)*nPts);
 		origPot = (double*) sq_malloc(sizeof(double)*nPts);
@@ -353,7 +353,6 @@ namespace Potentials {
 		lrxr = (double*) sq_malloc(sizeof(double)*nPts);
 		nsMask = (double*) sq_malloc(sizeof(double)*nPts);
 		dethin = (double*) sq_malloc(sizeof(double)*nPts);
-
 
 		for (int i = 0; i < nPts; i++)
 			if (x[i] - x[surfPos] <= -rad)
@@ -368,6 +367,8 @@ namespace Potentials {
 
 		for (int i = 0; i < nPts; i++)
 			dethin[i] = i >= surfPos ? 1.0 + (i-surfPos)*dx/rad : 1.0;
+
+		curInt = new CurrentIntegrator(nPts, dx, posMax, nElec, weights);
 	}
 
 	CylindricalImageCharge::~CylindricalImageCharge(){
@@ -378,6 +379,8 @@ namespace Potentials {
 		sq_free(lrxr);
 		sq_free(nsMask);
 		sq_free(dethin);
+
+		delete curInt;
 	}
 	
 	void CylindricalImageCharge::negateGroundEffects(double* rho, std::complex<double>* psi) {
@@ -397,10 +400,7 @@ namespace Potentials {
 	}
 
 	void CylindricalImageCharge::calcPot(double* rho, std::complex<double>* psi, double cur_t, double* targ) {
-		
-		for (int i = 0; i < *nElec; i++)
-			emittedCharge += (cur_t - last_t) * PhysCon::hbar / PhysCon::me * std::imag(std::conj(psi[i * nPts + posMax]) * (psi[i * nPts + posMax + 1] - psi[i * nPts + posMax - 1]) / (2.0 * dx)) * (*weights)[i];
-		last_t = cur_t;
+		curInt->integrate(psi, cur_t);
 
 		std::fill_n(targ, nPts, 0);
 
@@ -410,7 +410,7 @@ namespace Potentials {
 		//Calculate first integral
 		vtlsInt::cumIntTrapz(nPts - surfPos, &myRho[surfPos], dx * rad, &targ[surfPos]);
 		//Add in image charge
-		vtls::scaAddArray(nPts - surfPos, -targ[nPts - 1] - emittedCharge * rad, &targ[surfPos]);
+		vtls::scaAddArray(nPts - surfPos, -targ[nPts - 1] - curInt->getEmittedCharge() * rad, &targ[surfPos]);
 		vtls::seqMulArrays(nPts - surfPos, &lrxr[surfPos], &targ[surfPos]);
 		//Calculate second integral
 		std::fill_n(potTemp, nPts, 0);
@@ -422,6 +422,74 @@ namespace Potentials {
 		vtls::seqMulArrays(nPts, nsMask, targ);
 		//Apply final constants
 		vtls::scaMulArray(nPts, -PhysCon::qe * PhysCon::qe / PhysCon::e0, targ);
+	}
+
+	PlanarToCylindricalHartree::PlanarToCylindricalHartree(int nPts, double* x, double dx, double rad, int* nElec, double** weights, int posMin, int posMax, int surfPos, int refPoint) : 
+		nPts(nPts), dx(dx), rad(rad), refPoint(refPoint),
+		posMin(posMin < 0 ? 0 : posMin),
+		posMax(posMax > nPts - 1 ? nPts - 1 : posMax),
+		surfPos(surfPos > nPts - 1 ? nPts - 1 : surfPos),
+		originalCharge(0.0)
+	{
+		curInt = new CurrentIntegrator(nPts, dx, posMin, nElec, weights);
+
+		potTemp = (double*) sq_malloc(sizeof(double)*nPts);
+		origPot = (double*) sq_malloc(sizeof(double)*nPts);
+		fieldScaler = (double*) sq_malloc(sizeof(double)*nPts);
+		dethin = (double*) sq_malloc(sizeof(double)*nPts);
+		myRho = (double*) sq_malloc(sizeof(double)*nPts);
+
+		std::fill_n(potTemp, nPts, 0.0);
+		std::fill_n(origPot, nPts, 0.0);
+
+		// Calculate field scaler (R/z in vacuum, 1 in material) (z evaluated half a grid step to the right)
+		for(int i = 0; i < nPts; i++)
+			fieldScaler[i] = i >= surfPos ? rad / (rad + ((i-surfPos)+0.5)*dx) : 1.0;
+		
+		// Calculate dethin (1 in material, z/R in vacuum)
+		for (int i = 0; i < nPts; i++)
+			dethin[i] = i >= surfPos ? 1.0 + (i-surfPos)*dx/rad : 1.0;
+	}
+
+	PlanarToCylindricalHartree::~PlanarToCylindricalHartree(){
+		sq_free(potTemp);
+		sq_free(origPot);
+		sq_free(fieldScaler);
+		sq_free(dethin);
+		sq_free(myRho);
+		
+		delete curInt;
+	}
+
+	void PlanarToCylindricalHartree::negateGroundEffects(double* rho, std::complex<double>* psi) {
+		calcPot(rho, psi, 0.0, origPot);
+	}
+
+	void PlanarToCylindricalHartree::getV(double t, double* targ) {
+		for (int i = 0; i < nPts; i++)
+			targ[i] = 0.0;
+	}
+
+	void PlanarToCylindricalHartree::getV(double* rho, std::complex<double>* psi, double t, double* targ) {
+		if(originalCharge == 0.0)
+			throw std::runtime_error("PlanarToCylindricalHartree::getV called before original charge was set (call negateGroundEffects first or there was zero net charge, somehow)");
+
+		calcPot(rho, psi, t, targ);
+		double lossFraction = -curInt->getEmittedCharge() / originalCharge + 1.0; // charge that moved to left is lost, scale origPot by appropriate amount
+		double ref = targ[refPoint] - lossFraction * origPot[refPoint];
+		for (int i = 0; i < nPts; i++)
+			targ[i] -= lossFraction * origPot[i] + ref;
+	}
+
+	void PlanarToCylindricalHartree::calcPot(double* rho, std::complex<double>* psi, double t, double* targ) {
+		curInt->integrate(psi, t);
+
+		std::fill_n(targ, nPts, 0);
+
+		vtls::seqMulArrays(posMax-posMin, &dethin[posMin], &rho[posMin], &myRho[posMin]);
+		vtlsInt::cumIntTrapzToRight(posMax-posMin, &myRho[posMin], dx, potTemp); // cumulative integral of rho
+		vtls::seqMulArrays(posMax-posMin, &potTemp[posMin], &fieldScaler[posMin], &potTemp[posMin]); // scale by field scaler
+		vtlsInt::cumIntTrapzToLeft(posMax-posMin, &potTemp[posMin], dx * -PhysCon::qe * PhysCon::qe / PhysCon::e0, &targ[posMin]); // final integral for potential, times constants
 	}
 
 	LDAFunctional::LDAFunctional(LDAFunctionalType typ, int nPts, double dx, int refPoint)
