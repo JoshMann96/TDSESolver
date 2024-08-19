@@ -491,6 +491,7 @@ namespace Potentials {
 		vtlsInt::cumIntTrapzToRight(posMax-posMin, &myRho[posMin], dx, potTemp); // cumulative integral of rho
 		vtls::seqMulArrays(posMax-posMin, &potTemp[posMin], &fieldScaler[posMin], &potTemp[posMin]); // scale by field scaler
 		vtlsInt::cumIntTrapzToLeft(posMax-posMin, &potTemp[posMin], dx * -PhysCon::qe * PhysCon::qe / PhysCon::e0, &targ[posMin]); // final integral for potential, times constants
+		std::fill_n(&targ[posMax], nPts-posMax, targ[posMax-1]); // fill in right side with last value (zero field implied)
 	}
 
 	LDAFunctional::LDAFunctional(LDAFunctionalType typ, int nPts, double dx, int refPoint)
