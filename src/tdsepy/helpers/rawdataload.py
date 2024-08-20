@@ -79,8 +79,8 @@ def getPsi2t(fol:str):
         ts = readData(fil, "double", nt)
     return dat, xs, ts, typ
 
-def getVfunct(fol:str):
-    with open(combinePath(fol, "Vfunct.dat"), 'rb') as fil:
+def getVfunct(fol:str, index:int = -1):
+    with open(combinePath(fol, "Vfunct.dat" if index < 0 else f"{index:d}Vfunct.dat"), 'rb') as fil:
         typ = readData(fil, "int")
         nx = readData(fil, "int")
         nt = readData(fil, "int")

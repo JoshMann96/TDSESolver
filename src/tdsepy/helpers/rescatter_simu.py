@@ -295,8 +295,9 @@ def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:f
         selfPot = Potentials.PlanarToCylindricalHartreePotential(sim, rad, xmin, xmax, 0.0, xmax)
     else:
         selfPot = Potentials.CylindricalImagePotential(sim, ef, wf, rad, xmin, xmax, 0.0, xmax)
-        
-    sim.addPot(selfPot)
+    
+    sim.addPot(Potentials.MeasuredPotential(
+        sim, selfPot, Measurers.Vfunct(sim, 800, 800, 0, data_fol)))
 
     ### INITIALIZE MEASURERS ###
 
@@ -306,7 +307,7 @@ def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:f
     sim.addMeas(Measurers.ExpectE0(sim, data_fol))
     if measure_density:
         sim.addMeas(Measurers.Psi2t(sim, 800, 800, data_fol))
-        sim.addMeas(Measurers.Vfunct(sim, 800, 800, data_fol))
+        sim.addMeas(Measurers.Vfunct(sim, 800, 800, -1, data_fol))
     sim.addMeas(Measurers.VDFluxSpec(sim, xmax, 0, 10000, max_energy*1.5 + (ef+wf), "vacc", data_fol))
     sim.addMeas(Measurers.Weights(sim, data_fol))
     
