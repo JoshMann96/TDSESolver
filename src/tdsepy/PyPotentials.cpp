@@ -1,5 +1,6 @@
 #include "PyPotentials.h"
 #include "Potentials.h"
+#include "Measurers.h"
 #include "PySimulation.h"
 
 /*std::vector<double> PyFilePotential::getValue(){
@@ -269,4 +270,23 @@ void init_Potentials(py::module &m) {
         .value("X_SLATER", LDAFunctionalType::X_SLATER)
         .value("C_PW", LDAFunctionalType::C_PW)
         .export_values();
+    
+    py::class_<PyMeasuredPotential, Potential>(m, "MeasuredPotential")
+        .def(py::init<PySimulation*, Potential*, Measurers::Measurer*>(), py::keep_alive<1,3>(), py::keep_alive<1,4>(), R"V0G0N(
+            A potential which is also measured when it is called.
+            At each evaluation the potential is calculated and then the measuruer passed is called using that potential only.
+
+            Parameters
+            ----------
+            sim : Simulation
+                Associated simulation.
+            pot : Potential
+                Potential to use and measure.
+            meas: Measurer
+                Measurer to use.
+
+            Returns
+            -------
+            MeasuredPotential)V0G0N",
+            "sim"_a, "pot"_a, "meas"_a);
 }

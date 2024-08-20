@@ -52,8 +52,8 @@ class PyPsi2t
 class PyVfunct
     : public Vfunct{
         public:
-        PyVfunct(PySimulation* sim, int nx, int nt, std::string fol)
-            : Vfunct(sim->getNumPoints(), nx, nt, sim->getNumSteps(), sim->getMaxT(), sim->getXPtr(), fol.c_str()){}
+        PyVfunct(PySimulation* sim, int nx, int nt, int index, std::string fol)
+            : Vfunct(index, sim->getNumPoints(), nx, nt, sim->getNumSteps(), sim->getMaxT(), sim->getXPtr(), fol.c_str()){}
     };
 
 class PyExpectE

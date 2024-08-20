@@ -430,7 +430,7 @@ namespace Measurers {
 		void terminate();
 	public:
 		int getIndex() { return index; };
-		Vfunct(int nPts, int nx, int nt, int numSteps, double maxT, double * x, const char* fol);
+		Vfunct(int potNum, int nPts, int nx, int nt, int numSteps, double maxT, double * x, const char* fol);
 		~Vfunct();
 		int measure(int step, std::complex<double> * psi, double * v, double t);
 	};

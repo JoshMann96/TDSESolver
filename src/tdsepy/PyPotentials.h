@@ -3,6 +3,7 @@
 #include "PyCommon.h"
 #include "PySimulation.h"
 #include "Potentials.h"
+#include "Measurers.h"
 #include "WfcRhoTools.h"
 
 using namespace Potentials;
@@ -67,6 +68,13 @@ class PyLDAFunctional
         void negatePotential(PySimulation* sim){
             LDAFunctional::negateGroundEffects(sim->getRho(), sim->getPsi());
         }
+    };
+
+class PyMeasuredPotential
+    : public MeasuredPotential{
+        public:
+        PyMeasuredPotential(PySimulation* sim, Potential* pot, Measurers::Measurer* meas)
+            : MeasuredPotential(pot, meas, sim->getNumSteps(), sim->getMaxT()){}
     };
 
 void init_Potentials(py::module &m);

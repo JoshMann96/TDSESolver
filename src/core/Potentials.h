@@ -1,5 +1,6 @@
 #pragma once
 #include "CORECommonHeader.h" 
+#include "Measurers.h"
 
 namespace Potentials {
 	// Electric field profiles for use of creating potentials.
@@ -372,9 +373,28 @@ namespace Potentials {
 		PotentialManager(int nPts);
 		~PotentialManager(){if(pot) delete pot; if(spots) delete[] spots; if(dpots) delete[] dpots; if(wpots) delete[] wpots;};
 		void addPotential(Potential * pot);
+		void addPotential(Potential * pot, Measurers::Measurer* meas);
 		void finishAddingPotentials();
 		void getV(double t, double * targ);
 		void getV(double* rho, std::complex<double> * psi, double t, double * targ);
 		PotentialComplexity getComplexity(){return myComplex;};
+	};
+
+	class MeasuredPotential :
+		public Potential {
+	private:
+		Potential * pot;
+		Measurers::Measurer * meas;
+		int numSteps;
+		double maxT;
+	public:
+		MeasuredPotential(Potential * pot, Measurers::Measurer * meas, int numSteps, double maxT) : pot(pot), meas(meas), numSteps(numSteps), maxT(maxT){};
+		~MeasuredPotential(){};
+		void getV(double t, double * targ){pot->getV(t, targ);}
+		void getV(double* rho, std::complex<double> * psi, double t, double * targ){
+			pot->getV(rho, psi, t, targ);
+			meas->measure((int)(t/maxT*numSteps), psi, targ, t);
+		}
+		PotentialComplexity getComplexity(){return pot->getComplexity();};
 	};
 }

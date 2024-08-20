@@ -930,7 +930,7 @@ namespace Measurers {
 
 
 
-	Vfunct::Vfunct(int nPts, int nx, int nt, int numSteps, double maxT, double * x, const char* fol) :
+	Vfunct::Vfunct(int potNum, int nPts, int nx, int nt, int numSteps, double maxT, double * x, const char* fol) :
 		nPts(nPts), nx(nx), nt(nt), maxT(maxT), curIdx(0)
 	{
 		measSteps = (int*) sq_malloc(sizeof(int)*numSteps);
@@ -943,10 +943,18 @@ namespace Measurers {
 
 		vtls::linspace(nt, 0.0, maxT, ts);
 
-		int l1 = std::strlen(fol), l2 = std::strlen(fname);
-		char* nfil = new char[l1 + l2 + 1];
+		const char* nm;
+		if (potNum >= 0){
+			std::string tempstr = std::to_string(potNum);
+			nm = tempstr.c_str();
+		}
+		else
+			nm = "";
+		int l1 = std::strlen(fol), l2 = std::strlen(nm), l3 = std::strlen(fname);
+		char* nfil = new char[l1 + l2 + l3 + 1];
 		strncpy(nfil, fol, l1);
-		strcpy(&nfil[l1], fname);
+		strncpy(&nfil[l1], nm, l2);
+		strcpy(&nfil[l1 + l2], fname);
 
 		fil = openFile(nfil);
 		delete[] nfil;

@@ -143,7 +143,7 @@ void init_Measurers(py::module &m) {
             "sim"_a, "nx"_a, "nt"_a, "fol"_a);
 
     py::class_<PyVfunct, Measurer>(m, "Vfunct")
-        .def(py::init<PySimulation*, int, int, std::string>(), R"V0G0N(
+        .def(py::init<PySimulation*, int, int, int, std::string>(), R"V0G0N(
             Records potential, downsampling to nx spatial points and nt temporal points.
 
             Parameters
@@ -154,24 +154,20 @@ void init_Measurers(py::module &m) {
                 Number of spatial points to sample.
             nt : int
                 Number of temporal points to sample.
+            idx: int
+                Index of record, to prepend the output file. < 0 for no index, >= 0 for listed index.
             fol : str
                 Directory to contain file.
 
             Returns
             -------
             Vfunct)V0G0N",
-            "sim"_a, "nx"_a, "nt"_a, "fol"_a);
+            "sim"_a, "nx"_a, "nt"_a, "idx"_a, "fol"_a);
 
     py::class_<PyExpectE, Measurer>(m, "ExpectE")
         .def(py::init<PySimulation*, std::string>(), R"V0G0N(
             Records expectation value of Hamiltonian at each time step.
-
-            WARNING
-            Uses free-electron 3-point stencil for kinetic energy evaluation.
-            This should be changed to use the KineticOperator
-            See implementation of ExpectE0
             
-
             Parameters
             ----------
             sim : Simulation
