@@ -50,7 +50,7 @@ def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=-11, vmax:float=
     else:
         return im
 
-def plotPotential(fol:str, ax = None):
+def plotPotential(fol:str, ax = None, potIndex = -1):
     """Plots the potential as a function of time.
     AXIS | VAR | UNIT
        x |  x  | nm
@@ -60,8 +60,9 @@ def plotPotential(fol:str, ax = None):
     Args:
         fol (str): Folder containing data.
         ax (axis, optional): Axis to plot on. Defaults to None (create own fig, ax and return).
+        potIndex (int, optional): Index of potential file. Defaults to -1 (no index).
     """
-    dat, xs, ts, _ = getVfunct(fol)
+    dat, xs, ts, _ = getVfunct(fol, potIndex)
     
     fig = None
     if ax is None:
