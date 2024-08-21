@@ -476,7 +476,7 @@ namespace Potentials {
 			throw std::runtime_error("PlanarToCylindricalHartree::getV called before original charge was set (call negateGroundEffects first or there was zero net charge, somehow)");
 
 		calcPot(rho, psi, t, targ);
-		double lossFraction = -curInt->getIntegratedFlux() / originalCharge + 1.0; // charge that moved to left is lost, scale origPot by appropriate amount
+		double lossFraction = curInt->getIntegratedFlux() / originalCharge + 1.0; // charge that moved to left is lost, scale origPot by appropriate amount
 		double ref = targ[refPoint] - lossFraction * origPot[refPoint];
 		for (int i = 0; i < nPts; i++)
 			targ[i] -= lossFraction * origPot[i] + ref;
