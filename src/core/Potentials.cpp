@@ -441,6 +441,7 @@ namespace Potentials {
 
 		std::fill_n(potTemp, nPts, 0.0);
 		std::fill_n(origPot, nPts, 0.0);
+		std::fill_n(myRho, nPts, 0.0);
 
 		// Calculate field scaler (R/z in vacuum, 1 in material) (z evaluated half a grid step to the right)
 		for(int i = 0; i < nPts; i++)
@@ -488,10 +489,10 @@ namespace Potentials {
 		std::fill_n(targ, nPts, 0);
 
 		vtls::seqMulArrays(posMax-posMin, &dethin[posMin], &rho[posMin], &myRho[posMin]);
-		vtlsInt::cumIntTrapzToRight(posMax-posMin, &myRho[posMin], dx, &potTemp[posMin]); // cumulative integral of rho
-		vtls::seqMulArrays(posMax-posMin, &potTemp[posMin], &fieldScaler[posMin], &potTemp[posMin]); // scale by field scaler for 1/r term
-		vtlsInt::cumIntTrapzToLeft(posMax-posMin, &potTemp[posMin], dx * -PhysCon::qe * PhysCon::qe / PhysCon::e0, &targ[posMin]); // final integral for potential, times constants
-		std::fill_n(&targ[posMax], nPts-posMax, targ[posMax-1]); // fill in right side with last value (zero field implied)
+		vtlsInt::cumIntTrapzToRight(nPts-posMin, &myRho[posMin], dx, &potTemp[posMin]); // cumulative integral of rho
+		vtls::seqMulArrays(nPts-posMin, &potTemp[posMin], &fieldScaler[posMin], &potTemp[posMin]); // scale by field scaler for 1/r term
+		vtlsInt::cumIntTrapzToLeft(nPts-posMin, &potTemp[posMin], dx * -PhysCon::qe * PhysCon::qe / PhysCon::e0, &targ[posMin]); // final integral for potential, times constants
+		//std::fill_n(&targ[posMax], nPts-posMax, targ[posMax-1]); // fill in right side with last value (zero field implied)
 	}
 
 	LDAFunctional::LDAFunctional(LDAFunctionalType typ, int nPts, double dx, int refPoint)
