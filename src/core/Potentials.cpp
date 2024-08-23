@@ -484,8 +484,6 @@ namespace Potentials {
 	}
 
 	void PlanarToCylindricalHartree::calcPot(double* rho, std::complex<double>* psi, double t, double* targ) {
-		curInt->integrate(psi, t);
-
 		std::fill_n(targ, nPts, 0);
 
 		vtls::seqMulArrays(posMax-posMin, &dethin[posMin], &rho[posMin], &myRho[posMin]);
@@ -493,6 +491,8 @@ namespace Potentials {
 		vtls::seqMulArrays(nPts-posMin, &potTemp[posMin], &fieldScaler[posMin], &potTemp[posMin]); // scale by field scaler for 1/r term
 		vtlsInt::cumIntTrapzToLeft(nPts-posMin, &potTemp[posMin], dx * -PhysCon::qe * PhysCon::qe / PhysCon::e0, &targ[posMin]); // final integral for potential, times constants
 		//std::fill_n(&targ[posMax], nPts-posMax, targ[posMax-1]); // fill in right side with last value (zero field implied)
+
+		curInt->integrate(psi, t); // moved to after calculation, see if oscillations disappear
 	}
 
 	LDAFunctional::LDAFunctional(LDAFunctionalType typ, int nPts, double dx, int refPoint)
