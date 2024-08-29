@@ -42,8 +42,15 @@ def readData(fil:BufferedReader, dtype:Literal["int", "double", "char"], shape=1
     if np.prod(shape) == 1:
         dat = dat[0]
     elif dtype != "char":
-        dat = np.reshape(dat, shape)
-    
+        if len(dat) == np.prod(shape):
+            dat = np.reshape(dat, shape)
+        elif len(dat) == 0:
+            raise ValueError("No data read.")
+        else:
+            numel = (len(dat) // np.prod(shape[1:])) * np.prod(shape[1:])
+            dat = np.reshape(dat[:numel], (-1,) + (shape[1:]))
+        
+            
     return dat
 
 def combinePath(fol:str, fil:str):
@@ -75,8 +82,12 @@ def getPsi2t(fol:str):
         nx = readData(fil, "int")
         nt = readData(fil, "int")
         dat = readData(fil, "double", (nt,nElec,nx)).swapaxes(0,1)
-        xs = readData(fil, "double", nx)
-        ts = readData(fil, "double", nt)
+        try:
+            xs = readData(fil, "double", nx)
+            ts = readData(fil, "double", nt)
+        except ValueError:
+            xs = np.linspace(0,dat.shape[-1] / nx, dat.shape[-1])
+            ts = np.linspace(0,dat.shape[-2] / nt, dat.shape[-2])
     return dat, xs, ts, typ
 
 def getVfunct(fol:str, index:int = -1):
@@ -85,8 +96,12 @@ def getVfunct(fol:str, index:int = -1):
         nx = readData(fil, "int")
         nt = readData(fil, "int")
         dat = readData(fil, "double", (nt, nx))
-        xs = readData(fil, "double", nx)
-        ts = readData(fil, "double", nt)
+        try:
+            xs = readData(fil, "double", nx)
+            ts = readData(fil, "double", nt)
+        except ValueError:
+            xs = np.linspace(0,dat.shape[-1] / nx, dat.shape[-1])
+            ts = np.linspace(0,dat.shape[-2] / nt, dat.shape[-2])
     return dat, xs, ts, typ
 
 def getWghts(fol:str):
