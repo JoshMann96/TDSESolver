@@ -190,7 +190,7 @@ def runSimSweepFields(emaxs:list, lam:float=800e-9, rad:float=20e-9, ef:float=5.
     
 def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:float=5.51*1.602e-19, wf:float=5.1*1.602e-19, tau:float=8e-15, cep:float=np.pi/2, data_fol:str="data/", callback=None, 
                   target_total_truncation_error:float = 0.01, min_emitted_energy:float=1.602e-19, target_elec_num:float = 50, abs_width:float=20e-9, abs_rate:float=5e17, min_timesteps:int=2000,
-                  exchange_correlation=True, bulk_hartree=True, measure_density:bool=True, verbose:bool=False):
+                  exchange_correlation=True, bulk_hartree=True, measure_density:bool=True, verbose:bool=False, field_file="au35_cr5_si_800nm.field"):
     """Runs a rescattering simulation while recording various quantites. 
         Current quantities being output:
         nPts, nSteps, dx, dt, <a>, nElec, VDFluxSpec, Weights
@@ -248,6 +248,8 @@ def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:f
             Defaults to 2000.
         measure_density : bool
             Whether to use the Psi2t and Vfunct measurers. Defaults to True.
+        field_file : str
+            File containing the field profile. Defaults to "au35_cr5_si_800nm.field".
     """    
     
     
@@ -278,7 +280,7 @@ def runSingleSimulation(emax:float=20e9, lam:float=800e-9, rad:float=20e-9, ef:f
     jellPot = Potentials.JelliumPotential(sim, 0, ef, wf, -well_width, jell_back, xmax)
     fieldPot = Potentials.PulsePotential(
         sim, 
-        Potentials.FileFieldProfile(sim, 0.0, xmax, xmin, abs_width, emax, "au35_cr5_si_800nm.field"),
+        Potentials.FileFieldProfile(sim, 0.0, xmax, xmin, abs_width, emax, field_file),
         Potentials.CosSquaredEnvelope(tau, peak_t),
         cep, peak_t, lam, xmax)
     
