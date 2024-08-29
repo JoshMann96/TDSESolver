@@ -1,7 +1,9 @@
 from .rawdataload import *
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
+from scipy.signal import windows
 from scipy import constants as cons
+from scipy.fft import fft
 
 def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=-11, vmax:float=-4, cmap="magma", ax = None):
     """Plots the 1-D collective electron density as a function of time for a selection of states.
@@ -232,3 +234,37 @@ def getIntrinsicMTEs(fol:str):
     mtes = 0.5*(ef - e0s)
     return mtes
 
+def getDipoleRadiationSpectrum(fol:str, tmin:float = None, tmax:float = None, tukeyAlpha:float = 0.1):
+    """Gets the dipole radiation spectrum.
+
+    Args:
+        fol (str): Folder containing data.
+        tmin (float, optional) [s]: Minimum time. Defaults to None.
+        tmax (float, optional) [s]: Maximum time. Defaults to None.
+
+    Returns:
+        es [eV]: Energy.
+        spc [#/eV /nm^4]: Dipole radiation spectrum (photon count).
+    """
+    ts, expectA = getExpectA(fol)[0:2]
+    wghts,_ = getWghts(fol)
+    dt,_ = getConstant("dt", fol)
+
+    timeMask = np.logical_and(ts >= tmin if tmin is not None else np.ones(ts.shape),
+                              ts <= tmax if tmax is not None else np.ones(ts.shape))
+    expectA = expectA.T[:, timeMask]
+    ts = ts[timeMask]
+
+    nt = len(ts)
+
+    dip = cons.e * (wghts @ expectA)
+    dip = dip - np.mean(dip)
+
+    es = np.arange(0, nt//2-1) * (2*cons.pi/(ts[-1]-ts[0])) * cons.hbar/cons.eV
+
+    spc = fft(dip * windows.tukey(nt, alpha=tukeyAlpha, sym=False))*dt
+    spc = cons.mu_0/(6*cons.pi*cons.h*cons.c) * np.abs(spc)**2
+    spc = spc[1:nt//2] / (es/cons.e) / cons.e * 1e-36 #convert to #/eV/nm^4
+    spc[0] = 0
+
+    return es, spc

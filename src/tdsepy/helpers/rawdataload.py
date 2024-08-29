@@ -116,3 +116,24 @@ def getExpectE0(fol:str):
         typ = readData(fil, "int")
         e0 = readData(fil, "double", nElec)
     return e0, typ
+
+def getTs(fol:str):
+    nt,_ = getConstant("nSteps", fol)
+    try:
+        with open(combinePath(fol, "ts.dat"), 'rb') as fil:
+            typ = readData(fil, "int")
+            ts = readData(fil, "double", nt)
+    except FileNotFoundError:
+        dt,_ = getConstant("dt", fol)
+        ts = np.arange(nt)*dt
+        typ = 0
+    return ts, typ
+
+def getExpectA(fol:str):
+    nElec,_ = getConstant("nElec", fol)
+    ts,_ = getTs(fol)
+    with open(combinePath(fol, "expectA.dat"), 'rb') as fil:
+        typ = readData(fil, "int")
+        a = readData(fil, "double", nElec*len(ts))
+    a = a.reshape((len(ts), nElec))
+    return ts, a, typ
