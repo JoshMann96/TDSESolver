@@ -30,7 +30,7 @@ namespace Potentials {
 		sq_free(v);
 	}
 
-	void FilePotential::getV(double t, double * targ) {
+	void FilePotential::getVBare(double t, double * targ) {
 		vtls::copyArray(nPts, v, targ);
 	}
 
@@ -88,7 +88,7 @@ namespace Potentials {
 		sq_free(v);
 	}
 
-	void BiasFieldPotential::getV(double t, double * targ) {
+	void BiasFieldPotential::getVBare(double t, double * targ) {
 		if (t > tstart + tbuf)
 			vtls::copyArray(nPts, v, targ);
 		else if (t > tstart) {
@@ -110,7 +110,7 @@ namespace Potentials {
 	}
 
 	void BiasFieldPotential::getV(double* rho, std::complex<double> * psi, double t, double * targ) {
-		getV(t, targ);
+		getVBare(t, targ);
 	}
 
 	CoulombPotential::CoulombPotential(int nPts, double * x, double ne, double chargePos, double minX, double maxX, int refPoint) {
@@ -134,7 +134,7 @@ namespace Potentials {
 		sq_free(v);
 	}
 
-	void CoulombPotential::getV(double t, double * targ) {
+	void CoulombPotential::getVBare(double t, double * targ) {
 		vtls::copyArray(nPts, v, targ);
 	}
 
@@ -158,12 +158,12 @@ namespace Potentials {
 		sq_free(v);
 	}
 
-	void FiniteBox::getV(double t, double * targ) {
+	void FiniteBox::getVBare(double t, double * targ) {
 		vtls::copyArray(nPts, v, targ);
 	}
 
 	void FiniteBox::getV(double* rho, std::complex<double> * psi, double t, double * targ) {
-		getV(t, targ);
+		getVBare(t, targ);
 	}
 
 
@@ -210,12 +210,12 @@ namespace Potentials {
 		sq_free(v);
 	}
 
-	void JelliumPotential::getV(double t, double * targ) {
+	void JelliumPotential::getVBare(double t, double * targ) {
 		vtls::copyArray(nPts, v, targ);
 	}
 
 	void JelliumPotential::getV(double* rho, std::complex<double> * psi, double t, double * targ) {
-		getV(t, targ);
+		getVBare(t, targ);
 	}
 
 	JelliumPotentialBacked::JelliumPotentialBacked(int nPts, double * x, double center, double ef, double w, double backStart, double backWidth, int refPoint) {
@@ -278,12 +278,12 @@ namespace Potentials {
 		sq_free(v);
 	}
 
-	void JelliumPotentialBacked::getV(double t, double * targ) {
+	void JelliumPotentialBacked::getVBare(double t, double * targ) {
 		vtls::copyArray(nPts, v, targ);
 	}
 
 	void JelliumPotentialBacked::getV(double* rho, std::complex<double> * psi, double t, double * targ) {
-		getV(t, targ);
+		getVBare(t, targ);
 	}
 
 	ElectricFieldProfileToPotential::ElectricFieldProfileToPotential(int nPts, ElectricFieldProfiles::ElectricFieldProfile * fieldProfile, double dx, double phase, double tmax, double lam, Envelopes::Envelope * env, int refPoint) {
@@ -302,12 +302,12 @@ namespace Potentials {
 		sq_free(potMask);
 	}
 
-	void ElectricFieldProfileToPotential::getV(double t, double * targ) {
+	void ElectricFieldProfileToPotential::getVBare(double t, double * targ) {
 		vtls::scaMulArrayRe(nPts, std::exp(PhysCon::im*(w*(t-tmax)+phase))*env->getValue(t), potMask, targ);
 	}
 
 	void ElectricFieldProfileToPotential::getV(double* rho, std::complex<double> * psi, double t, double * targ) {
-		getV(t, targ);
+		getVBare(t, targ);
 	}
 
 	ShieldedAtomicPotential::ShieldedAtomicPotential(int nPts, double * x, double center, double latticeSpacing, double zProtons, double decayConst) {
@@ -322,12 +322,12 @@ namespace Potentials {
 		sq_free(v);
 	}
 
-	void ShieldedAtomicPotential::getV(double t, double * targ) {
+	void ShieldedAtomicPotential::getVBare(double t, double * targ) {
 		vtls::copyArray(nPts, v, targ);
 	}
 
 	void ShieldedAtomicPotential::getV(double* rho, std::complex<double> * psi, double t, double * targ) {
-		getV(t, targ);
+		getVBare(t, targ);
 	}
 
 	CurrentIntegrator::CurrentIntegrator(int nPts, double dx, int evalPoint,  int* nElec, double** weights) :
@@ -387,7 +387,7 @@ namespace Potentials {
 		calcPot(rho, psi, 0.0, origPot);
 	}
 
-	void CylindricalImageCharge::getV(double t, double* targ) {
+	void CylindricalImageCharge::getVBare(double t, double* targ) {
 		for (int i = 0; i < nPts; i++)
 			targ[i] = 0.0;
 	}
@@ -468,7 +468,7 @@ namespace Potentials {
 		originalCharge = vtlsInt::trapz(nPts, myRho, dx);
 	}
 
-	void PlanarToCylindricalHartree::getV(double t, double* targ) {
+	void PlanarToCylindricalHartree::getVBare(double t, double* targ) {
 		std::fill_n(targ, nPts, 0.0);
 	}
 
@@ -511,7 +511,7 @@ namespace Potentials {
 		calcPot(rho, origPot);
 	}
 
-	void LDAFunctional::getV(double t, double* targ) {
+	void LDAFunctional::getVBare(double t, double* targ) {
 		std::fill_n(targ, nPts, 0.0);
 	}
 
@@ -562,12 +562,12 @@ namespace Potentials {
 	{
 		v0 = (double*) sq_malloc(sizeof(double)*nPts);
 		if (numSPots != 0)
-			staticPots[0]->getV(0.0, v0);
+			staticPots[0]->getVBare(0.0, v0);
 		else
 			std::fill_n(v0, nPts, 0.0);
 		nv = (double*) sq_malloc(sizeof(double)*nPts);
 		for (int i = 1; i < numSPots; i++) {
-			staticPots[i]->getV(0.0, nv);
+			staticPots[i]->getVBare(0.0, nv);
 			vtls::addArrays(nPts, nv, v0);
 		}
 	}
@@ -581,10 +581,10 @@ namespace Potentials {
 		sq_free(nv);
 	}
 
-	void CompositePotential::getV(double t, double * targ) {
+	void CompositePotential::getVBare(double t, double * targ) {
 		vtls::copyArray(nPts, v0, targ);
 		for (int i = 0; i < numDPots; i++) {
-			dynamicPots[i]->getV(t, nv);
+			dynamicPots[i]->getVBare(t, nv);
 			vtls::addArrays(nPts, nv, targ);
 		}
 	}
@@ -592,7 +592,7 @@ namespace Potentials {
 	void CompositePotential::getV(double* rho, std::complex<double> * psi, double t, double * targ) {
 		vtls::copyArray(nPts, v0, targ);
 		for (int i = 0; i < numDPots; i++) {
-			dynamicPots[i]->getV(t, nv);
+			dynamicPots[i]->getV(rho, psi, t, nv);
 			vtls::addArrays(nPts, nv, targ);
 		}
 		for (int i = 0; i < numWPots; i++) {
@@ -658,9 +658,9 @@ namespace Potentials {
 		pot = new CompositePotential(nPts, ns, nd, nw, spots, dpots, wpots);
 	}
 
-	void PotentialManager::getV(double t, double * targ) {
+	void PotentialManager::getVBare(double t, double * targ) {
 		if (pot)
-			pot->getV(t, targ);
+			pot->getVBare(t, targ);
 		else
 			throw std::runtime_error("Must run finishAddingPotentials() function on PotentialManager before using getV().");
 	}

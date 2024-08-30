@@ -126,7 +126,7 @@ namespace Potentials {
 	class Potential {
 	public:
 		virtual ~Potential() = default;
-		virtual void getV(double t, double * targ) = 0;
+		virtual void getVBare(double t, double * targ) = 0;
 		virtual void getV(double * rho, std::complex<double> * psi, double t, double * targ) = 0;
 		virtual PotentialComplexity getComplexity() = 0;
 	};
@@ -146,7 +146,7 @@ namespace Potentials {
 	public:
 		FilePotential(int nPts, double * x, double offset, const char * fil, int refPoint);
 		~FilePotential();
-		void getV(double t, double * targ);
+		void getVBare(double t, double * targ);
 		void getV(double* rho, std::complex<double> * psi, double t, double * targ);
 		PotentialComplexity getComplexity(){return PotentialComplexity::STATIC;};
 	};
@@ -161,7 +161,7 @@ namespace Potentials {
 	public:
 		BiasFieldPotential(int nPts, double * x, double tstart, double tbuf, double xmin, double xmax, double xmin_buf, double xmax_buf, double fieldStrength, int refPoint);
 		~BiasFieldPotential();
-		void getV(double t, double * targ);
+		void getVBare(double t, double * targ);
 		void getV(double* rho, std::complex<double> *  psi, double t, double * targ);
 		PotentialComplexity getComplexity(){return PotentialComplexity::STATIC;};
 	};
@@ -175,7 +175,7 @@ namespace Potentials {
 	public:
 		CoulombPotential(int nPts, double * x, double ne, double chargePos, double minX, double maxX, int refPoint);
 		~CoulombPotential();
-		void getV(double t, double * targ);
+		void getVBare(double t, double * targ);
 		void getV(double* rho, std::complex<double> *  psi, double t, double * targ);
 		PotentialComplexity getComplexity(){return PotentialComplexity::STATIC;};
 	};
@@ -189,7 +189,7 @@ namespace Potentials {
 	public:
 		FiniteBox(int nPts, double * x, double left, double right, double vin, int refPoint);
 		~FiniteBox();
-		void getV(double t, double * targ);
+		void getVBare(double t, double * targ);
 		void getV(double* rho, std::complex<double> * psi, double t, double * targ);
 		PotentialComplexity getComplexity(){return PotentialComplexity::STATIC;};
 	};
@@ -204,7 +204,7 @@ namespace Potentials {
 	public:
 		JelliumPotential(int nPts, double * x, double center, double ef, double w, int refPoint);
 		~JelliumPotential();
-		void getV(double t, double * targ);
+		void getVBare(double t, double * targ);
 		void getV(double* rho, std::complex<double> * psi, double t, double * targ);
 		PotentialComplexity getComplexity(){return PotentialComplexity::STATIC;};
 	};
@@ -218,7 +218,7 @@ namespace Potentials {
 	public:
 		JelliumPotentialBacked(int nPts, double * x, double center, double ef, double w, double backStart, double backWidth, int refPoint);
 		~JelliumPotentialBacked();
-		void getV(double t, double * targ);
+		void getVBare(double t, double * targ);
 		void getV(double* rho, std::complex<double> * psi, double t, double * targ);
 		PotentialComplexity getComplexity(){return PotentialComplexity::STATIC;};
 	};
@@ -232,7 +232,7 @@ namespace Potentials {
 	public:
 		ShieldedAtomicPotential(int nPts, double * x, double center, double latticeSpacing, double zProtons, double decayConst);
 		~ShieldedAtomicPotential();
-		void getV(double t, double * targ);
+		void getVBare(double t, double * targ);
 		void getV(double* rho, std::complex<double> * psi, double t, double * targ);
 		PotentialComplexity getComplexity(){return PotentialComplexity::STATIC;};
 	};
@@ -251,7 +251,7 @@ namespace Potentials {
 	public:
 		ElectricFieldProfileToPotential(int nPts, ElectricFieldProfiles::ElectricFieldProfile * fieldProfile, double dx, double phase, double tmax, double lam, Envelopes::Envelope * env, int refPoint);
 		~ElectricFieldProfileToPotential();
-		void getV(double t, double * targ);
+		void getVBare(double t, double * targ);
 		void getV(double* rho, std::complex<double> * psi, double t, double * targ);
 		PotentialComplexity getComplexity(){return PotentialComplexity::DYNAMIC;};
 	};
@@ -264,7 +264,7 @@ namespace Potentials {
 	private:
 	public:
 		virtual void negateGroundEffects(double* rho, std::complex<double> * psi) = 0;
-		virtual void getV(double t, double * targ) = 0;
+		virtual void getVBare(double t, double * targ) = 0;
 		virtual void getV(double* rho, std::complex<double> * psi, double t, double * targ) = 0;
 		virtual PotentialComplexity getComplexity() = 0;
 	};
@@ -293,7 +293,7 @@ namespace Potentials {
 		CylindricalImageCharge(int nPts, double* x, double dx, double ef, double w, double rad, int* nElec, double** weights, int posMin, int posMax, int surfPos, int refPoint);
 		~CylindricalImageCharge();
 		void negateGroundEffects(double* rho, std::complex<double>* psi);
-		void getV(double t, double* targ);
+		void getVBare(double t, double* targ);
 		void getV(double* rho, std::complex<double>* psi, double t, double* targ);
 		PotentialComplexity getComplexity(){return PotentialComplexity::WAVEFUNCTION_DEPENDENT;};
 	};
@@ -311,7 +311,7 @@ namespace Potentials {
 		PlanarToCylindricalHartree(int nPts, double* x, double dx, double rad, int* nElec, double** weights, int posMin, int posMax, int surfPos, int refPoint);
 		~PlanarToCylindricalHartree();
 		void negateGroundEffects(double* rho, std::complex<double>* psi);
-		void getV(double t, double* targ);
+		void getVBare(double t, double* targ);
 		void getV(double* rho, std::complex<double>* psi, double t, double* targ);
 		PotentialComplexity getComplexity(){return PotentialComplexity::WAVEFUNCTION_DEPENDENT;};
 	};
@@ -334,7 +334,7 @@ namespace Potentials {
 		LDAFunctional(LDAFunctionalType typ, int nPts, double dx, int refPoint);
 		~LDAFunctional();
 		void negateGroundEffects(double* rho, std::complex<double>* psi);
-		void getV(double t, double* targ);
+		void getVBare(double t, double* targ);
 		void getV(double* rho, std::complex<double>* psi, double t, double* targ);
 		PotentialComplexity getComplexity(){return PotentialComplexity::WAVEFUNCTION_DEPENDENT;};
 	};
@@ -355,7 +355,7 @@ namespace Potentials {
 	public:
 		CompositePotential(int nPts, int numSPots, int numDPots, int numWPots, Potential ** staticPots, Potential ** dynamicPots, Potential ** waveFuncDependentPots);
 		~CompositePotential();
-		void getV(double t, double * targ);
+		void getVBare(double t, double * targ);
 		void getV(double* rho, std::complex<double> * psi, double t, double * targ);
 		PotentialComplexity getComplexity();
 	};
@@ -375,7 +375,7 @@ namespace Potentials {
 		void addPotential(Potential * pot);
 		void addPotential(Potential * pot, Measurers::Measurer* meas);
 		void finishAddingPotentials();
-		void getV(double t, double * targ);
+		void getVBare(double t, double * targ);
 		void getV(double* rho, std::complex<double> * psi, double t, double * targ);
 		PotentialComplexity getComplexity(){return myComplex;};
 	};
@@ -390,11 +390,11 @@ namespace Potentials {
 	public:
 		MeasuredPotential(Potential * pot, Measurers::Measurer * meas, int numSteps, double maxT) : pot(pot), meas(meas), numSteps(numSteps), maxT(maxT){};
 		~MeasuredPotential(){};
-		void getV(double t, double * targ){pot->getV(t, targ);}
+		void getVBare(double t, double * targ){pot->getVBare(t, targ);};
 		void getV(double* rho, std::complex<double> * psi, double t, double * targ){
 			pot->getV(rho, psi, t, targ);
 			meas->measure((int)(t/maxT*numSteps), psi, targ, t);
-		}
+		};
 		PotentialComplexity getComplexity(){return pot->getComplexity();};
 	};
 }
