@@ -74,7 +74,7 @@ class PyMeasuredPotential
     : public MeasuredPotential{
         public:
         PyMeasuredPotential(PySimulation* sim, Potential* pot, Measurers::Measurer* meas)
-            : MeasuredPotential(pot, meas, sim->getNumSteps(), sim->getMaxT()){}
+            : MeasuredPotential(pot, meas, sim->getNumSteps(), sim->getMaxT()){};
     };
 
 void init_Potentials(py::module &m);

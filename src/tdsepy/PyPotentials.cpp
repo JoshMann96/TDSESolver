@@ -265,11 +265,6 @@ void init_Potentials(py::module &m) {
             sim : Simulation
                 Associated simulation.)V0G0N",
             "sim"_a);
-            
-    py::enum_<LDAFunctionalType>(m, "LDAFunctionalType")
-        .value("X_SLATER", LDAFunctionalType::X_SLATER)
-        .value("C_PW", LDAFunctionalType::C_PW)
-        .export_values();
     
     py::class_<PyMeasuredPotential, Potential>(m, "MeasuredPotential")
         .def(py::init<PySimulation*, Potential*, Measurers::Measurer*>(), py::keep_alive<1,3>(), py::keep_alive<1,4>(), R"V0G0N(
@@ -289,4 +284,9 @@ void init_Potentials(py::module &m) {
             -------
             MeasuredPotential)V0G0N",
             "sim"_a, "pot"_a, "meas"_a);
+            
+    py::enum_<LDAFunctionalType>(m, "LDAFunctionalType")
+        .value("X_SLATER", LDAFunctionalType::X_SLATER)
+        .value("C_PW", LDAFunctionalType::C_PW)
+        .export_values();
 }
