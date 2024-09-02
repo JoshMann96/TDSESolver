@@ -272,11 +272,11 @@ namespace Potentials {
 	class CurrentIntegrator
 	{
 	private:
-		double integratedFlux, last_t;
+		double integratedFlux, tPrev;
 		double ** weights, dx;
-		int evalPoint, * nElec, nPts;
+		int evalPoint, * nElec, nPts, side;
 	public:
-		CurrentIntegrator(int nPts, double dx, int evalPoint,  int* nElec, double** weights);
+		CurrentIntegrator(int nPts, double dx, int evalPoint, int side,  int* nElec, double** weights);
 		void integrate(std::complex<double>* psi, double t);
 		double getIntegratedFlux(){return integratedFlux;};
 	};

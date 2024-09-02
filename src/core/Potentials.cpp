@@ -330,13 +330,36 @@ namespace Potentials {
 		getVBare(t, targ);
 	}
 
-	CurrentIntegrator::CurrentIntegrator(int nPts, double dx, int evalPoint,  int* nElec, double** weights) :
-		nPts(nPts), dx(dx), evalPoint(evalPoint), nElec(nElec), weights(weights), integratedFlux(0.0), last_t(0.0) {};
+	CurrentIntegrator::CurrentIntegrator(int nPts, double dx, int evalPoint, int side, int* nElec, double** weights) :
+		nPts(nPts), dx(dx), evalPoint(evalPoint), nElec(nElec), weights(weights), integratedFlux(0.0), tPrev(0.0), side(side) {};
 	
 	void CurrentIntegrator::integrate(std::complex<double>* psi, double t) {
-		for (int i = 0; i < *nElec; i++)
-			integratedFlux += (t - last_t) * PhysCon::hbar / PhysCon::me * std::imag(std::conj(psi[i * nPts + evalPoint]) * (psi[i * nPts + evalPoint + 1] - psi[i * nPts + evalPoint - 1]) / (2.0 * dx)) * (*weights)[i];
-		last_t = t;
+		int pt0;
+		switch(side) {
+		case 0: // central derivative
+			for (int i = 0; i < *nElec; i++){
+				pt0 = i * nPts + evalPoint;
+				integratedFlux += (t - tPrev) * PhysCon::hbar / PhysCon::me * std::imag(std::conj(psi[pt0]) * \
+					(psi[pt0 + 1] - psi[pt0 - 1]) / (2.0 * dx)) * (*weights)[i];
+			}
+			break;
+		case 1: // right-side derivative
+			for (int i = 0; i < *nElec; i++){
+				pt0 = i * nPts + evalPoint;
+				integratedFlux += (t - tPrev) * PhysCon::hbar / PhysCon::me * std::imag(std::conj(psi[pt0]) * \
+					(-psi[pt0 + 2] + 4.0*psi[pt0+1] - 3.0*psi[pt0]) / (2.0*dx)) * (*weights)[i];
+			}
+			break;
+		case -1: // left-side derivative
+			for (int i = 0; i < *nElec; i++){
+				pt0 = i * nPts + evalPoint;
+				integratedFlux += (t - tPrev) * PhysCon::hbar / PhysCon::me * std::imag(std::conj(psi[pt0]) * \
+					(3.0*psi[pt0] - 4.0*psi[pt0-1] + psi[pt0-2]) / (2.0*dx)) * (*weights)[i];
+			}
+			break;
+		}
+
+		tPrev = t;
 	}
 
 	CylindricalImageCharge::CylindricalImageCharge(int nPts, double* x, double dx, double ef, double w, double rad, int* nElec,
@@ -368,7 +391,7 @@ namespace Potentials {
 		for (int i = 0; i < nPts; i++)
 			dethin[i] = i >= surfPos ? 1.0 + (i-surfPos)*dx/rad : 1.0;
 
-		curInt = new CurrentIntegrator(nPts, dx, posMax, nElec, weights);
+		curInt = new CurrentIntegrator(nPts, dx, posMax, -1, nElec, weights);
 	}
 
 	CylindricalImageCharge::~CylindricalImageCharge(){
@@ -431,7 +454,7 @@ namespace Potentials {
 		surfPos(surfPos > nPts - 1 ? nPts - 1 : surfPos),
 		originalCharge(0.0)
 	{
-		curInt = new CurrentIntegrator(nPts, dx, posMin, nElec, weights);
+		curInt = new CurrentIntegrator(nPts, dx, posMin, 1, nElec, weights);
 
 		potTemp = (double*) sq_malloc(sizeof(double)*nPts);
 		origPot = (double*) sq_malloc(sizeof(double)*nPts);
@@ -466,6 +489,7 @@ namespace Potentials {
 		calcPot(rho, psi, 0.0, origPot);
 		vtls::seqMulArrays(nPts, dethin, rho, myRho);
 		originalCharge = vtlsInt::trapz(nPts, myRho, dx);
+		std::fill_n(myRho, nPts, 0.0);
 	}
 
 	void PlanarToCylindricalHartree::getVBare(double t, double* targ) {
@@ -484,11 +508,11 @@ namespace Potentials {
 	}
 
 	void PlanarToCylindricalHartree::calcPot(double* rho, std::complex<double>* psi, double t, double* targ) {
-		std::fill_n(targ, nPts, 0);
+		std::fill_n(targ, posMin, 0);
 
 		vtls::seqMulArrays(posMax-posMin, &dethin[posMin], &rho[posMin], &myRho[posMin]);
 		vtlsInt::cumIntTrapzToRight(nPts-posMin, &myRho[posMin], dx, &potTemp[posMin]); // cumulative integral of rho
-		vtls::seqMulArrays(nPts-posMin, &potTemp[posMin], &fieldScaler[posMin], &potTemp[posMin]); // scale by field scaler for 1/r term
+		vtls::seqMulArrays(nPts-posMin, &fieldScaler[posMin], &potTemp[posMin]); // scale by field scaler for 1/r term
 		vtlsInt::cumIntTrapzToLeft(nPts-posMin, &potTemp[posMin], dx * -PhysCon::qe * PhysCon::qe / PhysCon::e0, &targ[posMin]); // final integral for potential, times constants
 		//std::fill_n(&targ[posMax], nPts-posMax, targ[posMax-1]); // fill in right side with last value (zero field implied)
 
