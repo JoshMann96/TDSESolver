@@ -307,6 +307,7 @@ namespace Potentials {
 		double originalCharge;
 		void calcPot(double* rho, std::complex<double>* psi, double t, double* targ);
 		CurrentIntegrator * curInt;
+		double totalCharge;
 	public:
 		PlanarToCylindricalHartree(int nPts, double* x, double dx, double rad, int* nElec, double** weights, int posMin, int posMax, int surfPos, int refPoint);
 		~PlanarToCylindricalHartree();

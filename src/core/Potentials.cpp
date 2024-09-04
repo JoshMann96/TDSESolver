@@ -454,7 +454,7 @@ namespace Potentials {
 		surfPos(surfPos > nPts - 1 ? nPts - 1 : surfPos),
 		originalCharge(0.0)
 	{
-		curInt = new CurrentIntegrator(nPts, dx, posMin, 1, nElec, weights);
+		curInt = new CurrentIntegrator(nPts, dx, posMax-1, -1, nElec, weights);
 
 		potTemp = (double*) sq_malloc(sizeof(double)*nPts);
 		origPot = (double*) sq_malloc(sizeof(double)*nPts);
@@ -501,7 +501,7 @@ namespace Potentials {
 			throw std::runtime_error("PlanarToCylindricalHartree::getV called before original charge was set (call negateGroundEffects first or there was zero net charge, somehow)");
 
 		calcPot(rho, psi, t, targ);
-		double lossFraction = curInt->getIntegratedFlux() / originalCharge + 1.0; // charge that moved to left is lost, scale origPot by appropriate amount
+		double lossFraction = -(originalCharge - totalCharge - curInt->getIntegratedFlux()) / originalCharge + 1.0; // charge that moved to left is lost, scale origPot by appropriate amount
 		double ref = targ[refPoint] - lossFraction * origPot[refPoint];
 		for (int i = 0; i < nPts; i++)
 			targ[i] -= lossFraction * origPot[i] + ref;
@@ -512,6 +512,7 @@ namespace Potentials {
 
 		vtls::seqMulArrays(posMax-posMin, &dethin[posMin], &rho[posMin], &myRho[posMin]);
 		vtlsInt::cumIntTrapzToRight(nPts-posMin, &myRho[posMin], dx, &potTemp[posMin]); // cumulative integral of rho
+		totalCharge = potTemp[nPts-1];
 		vtls::seqMulArrays(nPts-posMin, &fieldScaler[posMin], &potTemp[posMin]); // scale by field scaler for 1/r term
 		vtlsInt::cumIntTrapzToLeft(nPts-posMin, &potTemp[posMin], dx * -PhysCon::qe * PhysCon::qe / PhysCon::e0, &targ[posMin]); // final integral for potential, times constants
 		//std::fill_n(&targ[posMax], nPts-posMax, targ[posMax-1]); // fill in right side with last value (zero field implied)
