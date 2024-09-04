@@ -494,7 +494,7 @@ namespace Potentials {
 
 		calcPot(rho, psi, 0.0, origPot);
 		vtls::seqMulArrays(nPts, dethin, rho, myRho);
-		originalCharge = vtlsInt::trapz(nPts, myRho, dx);
+		originalCharge = totalCharge;
 		std::fill_n(myRho, nPts, 0.0);
 	}
 
