@@ -39,6 +39,22 @@ void init_Simulation(py::module &m) {
             Returns
             -------
             DirectDensity)V0G0N");
+
+    py::class_<WfcToRho::GaussianSmoothedDensity, WfcToRho::Density>(m, "GaussianSmoothedDensity")
+        .def(py::init<double>(), R"V0G0N(
+            Uses a Gaussian smoothing function to calculate the final density.
+            Density = sum over states (weight x psi*psi) * Gaussian
+                (* = convolution)
+
+            Parameters
+            ----------
+            sigma : float
+                Standard deviation of Gaussian. Typically the inverse of the Thomas-Fermi wavenumber.
+
+            Returns
+            -------
+            GaussianSmoothedDensity)V0G0N",
+            "sigma"_a);
     
     py::class_<WfcToRho::CylindricalDensity, WfcToRho::Density>(m, "CylindricalDensity")
         .def(py::init<double, double, double>(), R"V0G0N(

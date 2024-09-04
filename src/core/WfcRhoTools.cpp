@@ -175,7 +175,9 @@ namespace WfcToRho {
 			}
 			if(nPts%2)
 				mask[nPts/2] = 1.0 / (sig/dx * std::sqrt(2.0 * PhysCon::pi)) * std::exp(-0.5 / (sig * sig) * (nPts * nPts / 4.0 * dx * dx));
-				
+			
+			vtls::scaMulArray(nPts, 1.0 / vtlsInt::rSum(nPts, mask, dx), mask); //normalize
+
 			//Initialize FFT for convolution
 			if(conv)
 				delete conv;
