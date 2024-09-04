@@ -303,3 +303,65 @@ int SimulationManager::getNElec() {
 int* SimulationManager::getNElecPtr(){
 	return &nElec;
 }
+
+int SimulationManager::findElectricalSurfaceCentroidRule(int minPos, int maxPos){
+	/*
+	* Calculate the electrical centroid of the electron density using first-order perturbation theory.
+	*/
+	std::complex<double>* mat = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nElec*(nElec-1)/2);
+	std::complex<double>* xpsi = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
+	auto matIndex = [this](int i, int j){return i*nElec+j-((i+1)*(i+2))/2;}; //helper function for packing/unpacking matrix
+
+	std::complex<double>* psi = psis[index];
+
+	double* energies = (double*) sq_malloc(sizeof(double)*nElec);
+	calcEnergies(step[index], energies);
+
+	double* idxs = (double*) sq_malloc(sizeof(double)*nPts);
+
+	// calculate matrix elements
+	for(int i = 0; i < nElec-1; i++){
+		for(int k = 0; k < nPts; k++)
+			xpsi[k] = ((double)k) * psi[i*nPts+k];
+		for(int j = i+1; j < nElec; j++)
+			mat[matIndex(i,j)] = vtlsInt::rSumMul(nPts, xpsi, &psi[j*nPts], dx) / (energies[j]-energies[i]);
+	}
+
+	// calculate density change
+	double* drho = (double*) sq_malloc(sizeof(double)*nPts);
+	std::complex<double>* ppsi_nc = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
+	std::complex<double>* ppsi_cc = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
+	std::complex<double>* temp = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
+	std::fill_n(drho, nPts, 0.0);
+	for(int i = 0; i < nElec-1; i++){
+		std::fill_n(ppsi_nc, nPts, 0.0);
+		std::fill_n(ppsi_cc, nPts, 0.0);
+		for(int j = i+1; j < nElec; j++){
+			vtls::scaMulArray(nPts, mat[matIndex(i,j)]*weights[i], &psi[j*nPts], temp);
+			vtls::addArrays(nPts, temp, ppsi_cc);
+
+			vtls::scaMulArray(nPts, mat[matIndex(i,j)]*weights[j], &psi[j*nPts], temp);
+			vtls::addArrays(nPts, temp, ppsi_nc);
+		}
+		for(int k = 0; k < nPts; k++)
+			drho[k] += std::real( std::conj(psi[i*nPts+k])*ppsi_cc[k] - psi[i*nPts+k]*std::conj(ppsi_nc[k]) );
+	}
+
+	double xsum = 0.0, sum = 0.0;
+	for(int i = minPos; i < maxPos; i++){
+		xsum += i*drho[i];
+		sum += drho[i];
+	}
+
+	std::cout << "Surface position found to be at index ~" << xsum/sum << " of " << nPts << std::endl;
+
+	sq_free(mat);
+	sq_free(xpsi);
+	sq_free(drho);
+	sq_free(ppsi_nc);
+	sq_free(ppsi_cc);
+	sq_free(temp);
+	sq_free(energies);
+
+	return (int)(xsum/sum);
+}

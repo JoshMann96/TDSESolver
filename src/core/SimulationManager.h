@@ -98,4 +98,6 @@ public:
 	KineticOperators::KineticOperator** getKin() { return &kin; }
 
 	Potentials::Potential* getPotPointer() { return pot; }
+
+	int findElectricalSurfaceCentroidRule(int minPos, int maxPos);
 };
