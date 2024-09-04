@@ -1,6 +1,7 @@
 #pragma once
 #include "CORECommonHeader.h" 
 #include "Measurers.h"
+#include <cstdarg>
 
 namespace Potentials {
 	// Electric field profiles for use of creating potentials.
@@ -262,10 +263,32 @@ namespace Potentials {
 		public Potential
 	{
 	private:
+		int assembled = 0;
+
+		virtual void assemble_(double* rho, std::complex<double> * psi, va_list args) = 0; // base class needs to implement assembly
+		virtual void getV_(double* rho, std::complex<double> * psi, double t, double * targ) = 0; // base class implements unprotected potential calculation.
 	public:
-		virtual void negateGroundEffects(double* rho, std::complex<double> * psi) = 0;
+		void assemble(double* rho, std::complex<double> * psi, ...){
+			// collect arguments
+			va_list args;
+			va_start(args, psi);
+
+			// call the assembly function
+			assemble_(rho, psi, args);
+			
+			va_end(args);
+
+			assembled = 1; 
+		};
+		int isAssembled(){return assembled;};
+
 		virtual void getVBare(double t, double * targ) = 0;
-		virtual void getV(double* rho, std::complex<double> * psi, double t, double * targ) = 0;
+		void getV(double* rho, std::complex<double> * psi, double t, double * targ){
+			if(!isAssembled())
+				throw std::runtime_error("NonlinearDynamicalPotential not assembled before evaluation.");
+			getV_(rho, psi, t, targ);
+		};
+
 		virtual PotentialComplexity getComplexity() = 0;
 	};
 
@@ -286,15 +309,16 @@ namespace Potentials {
 	{
 	private:
 		int nPts, refPoint, posMin, posMax, surfPos;
-		double dx, ef, w, rad, * origPot, * potTemp, * genTemp, * lrxr, * myRho, *nsMask, *dethin;
+		double dx, ef, w, rad, * origPot, * potTemp, * genTemp, * lrxr, * myRho, *nsMask, *dethin, *x;
 		void calcPot(double* rho, std::complex<double>* psi, double cur_t, double* targ);
 		CurrentIntegrator * curInt;
+
+		void assemble_(double* rho, std::complex<double>* psi, va_list args);
+		void getV_(double* rho, std::complex<double>* psi, double t, double* targ);
 	public:
-		CylindricalImageCharge(int nPts, double* x, double dx, double ef, double w, double rad, int* nElec, double** weights, int posMin, int posMax, int surfPos, int refPoint);
+		CylindricalImageCharge(int nPts, double* x, double dx, double ef, double w, double rad, int* nElec, double** weights, int posMin, int posMax, int refPoint);
 		~CylindricalImageCharge();
-		void negateGroundEffects(double* rho, std::complex<double>* psi);
 		void getVBare(double t, double* targ);
-		void getV(double* rho, std::complex<double>* psi, double t, double* targ);
 		PotentialComplexity getComplexity(){return PotentialComplexity::WAVEFUNCTION_DEPENDENT;};
 	};
 
@@ -308,12 +332,13 @@ namespace Potentials {
 		void calcPot(double* rho, std::complex<double>* psi, double t, double* targ);
 		CurrentIntegrator * curInt;
 		double totalCharge;
+
+		void assemble_(double* rho, std::complex<double>* psi, va_list args);
+		void getV_(double* rho, std::complex<double>* psi, double t, double* targ);
 	public:
-		PlanarToCylindricalHartree(int nPts, double* x, double dx, double rad, int* nElec, double** weights, int posMin, int posMax, int surfPos, int refPoint);
+		PlanarToCylindricalHartree(int nPts, double* x, double dx, double rad, int* nElec, double** weights, int posMin, int posMax, int refPoint);
 		~PlanarToCylindricalHartree();
-		void negateGroundEffects(double* rho, std::complex<double>* psi);
 		void getVBare(double t, double* targ);
-		void getV(double* rho, std::complex<double>* psi, double t, double* targ);
 		PotentialComplexity getComplexity(){return PotentialComplexity::WAVEFUNCTION_DEPENDENT;};
 	};
 
@@ -331,12 +356,13 @@ namespace Potentials {
 		void calcPot(double* rho, double* targ);
 
 		LDAFunctionalType typ;
+		
+		void assemble_(double* rho, std::complex<double>* psi, va_list args);
+		void getV_(double* rho, std::complex<double>* psi, double t, double* targ);
 	public:
 		LDAFunctional(LDAFunctionalType typ, int nPts, double dx, int refPoint);
 		~LDAFunctional();
-		void negateGroundEffects(double* rho, std::complex<double>* psi);
 		void getVBare(double t, double* targ);
-		void getV(double* rho, std::complex<double>* psi, double t, double* targ);
 		PotentialComplexity getComplexity(){return PotentialComplexity::WAVEFUNCTION_DEPENDENT;};
 	};
 
