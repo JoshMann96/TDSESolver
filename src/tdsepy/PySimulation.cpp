@@ -118,6 +118,18 @@ void init_Simulation(py::module &m) {
             "xmin"_a, "xmax"_a, "dx"_a, "dt"_a, "maxT"_a, "callback"_a)
         .def("getX", &PySimulation::getX)
         .def("getDX", &PySimulation::getDX)
+        .def("findXIdx", &PySimulation::findXIdx, R"V0G0N(
+            Finds index of position in grid.
+
+            Parameters
+            ----------
+            xp : float
+                Position.
+
+            Returns
+            -------
+            int)V0G0N",
+            "xp"_a)
         .def("addPot", &PySimulation::addPotential, py::keep_alive<1,2>(), R"V0G0N(
             Adds potential to the simulation.
 
@@ -209,5 +221,19 @@ void init_Simulation(py::module &m) {
         .def("runOS_U2TU", &PySimulation::runOS_U2TU, R"V0G0N(
             Runs simulation using operator splitting method. Potential is not updated between kinetic operator propagation steps.)V0G0N")
         .def("runOS_UW2TUW", &PySimulation::runOS_UW2TUW, R"V0G0N(
-            Runs simulation using operator splitting method. Potential is updated between kinetic operator propagation steps.)V0G0N");
+            Runs simulation using operator splitting method. Potential is updated between kinetic operator propagation steps.)V0G0N")
+        .def("getElectricalCentroidSurface", &PySimulation::findElectricalSurfaceCentroidRule, R"V0G0N(
+            Finds the index of the electrical surface using the centroid rule.
+
+            Parameters
+            ----------
+            minPos : float
+                Minimum position for region including centroid of response.
+            maxPos : float
+                Maximum position for region including centroid of response.
+
+            Returns
+            -------
+            int)V0G0N",
+            "minPos"_a, "maxPos"_a);
 }

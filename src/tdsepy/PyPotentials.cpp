@@ -165,7 +165,7 @@ void init_Potentials(py::module &m) {
     
 
     py::class_<PyCylindricalImagePotential, Potential>(m, "CylindricalImagePotential")
-        .def(py::init<PySimulation*, double, double, double, double, double, double, double>(), R"V0G0N(
+        .def(py::init<PySimulation*, double, double, double, double, double, double>(), R"V0G0N(
             Collective image charge potential assuming a cylindrical conductor geometry.
 
             Parameters
@@ -182,31 +182,32 @@ void init_Potentials(py::module &m) {
                 Minimum pos where density is included.
             posMax : float
                 Maximum pos where density is included.
-            surfPos : float
-                Position of surface.
             refPoint : float
                 Potential reference point.
 
             Returns
             -------
             CylindricalImagePotentail)V0G0N",
-            "sim"_a, "ef"_a, "w"_a, "rad"_a, "posMin"_a, "posMax"_a, "surfPos"_a, "refPoint"_a)
-        .def("negatePotential", &PyCylindricalImagePotential::negatePotential, R"V0G0N(
-            Negates potential as evaluated in the Simulation's current state.
+            "sim"_a, "ef"_a, "w"_a, "rad"_a, "posMin"_a, "posMax"_a, "refPoint"_a)
+        .def("assemble", &PyCylindricalImagePotential::assemble, R"V0G0N(
+            Assembles potential for nonlinear calculation. Negates potential as evaluated in the Simulation's current state.
             Intended to be used such that the potential only depends on the change in density, leading the initially calculated eigenstates to be the actual eigenstates before perturbation.
 
             Parameters
             ----------
             sim : Simulation
-                Associated simulation.)V0G0N",
-            "sim"_a);
+                Associated simulation.
+            surfPos : int
+                Position (index) of surface.)V0G0N",
+            "sim"_a, "surfPos"_a);
 
     py::class_<PyPlanarToCylindricalHartreePotential,Potential>(m, "PlanarToCylindricalHartreePotential")
-        .def(py::init<PySimulation*, double, double, double, double, double>(), R"V0G0N(
+        .def(py::init<PySimulation*, double, double, double, double>(), R"V0G0N(
             Nonlocal Hartree potential assuming charge is distributed on a planar geometry for x <= surfPos 
             and on a cylindrical geometry for x > surfPos, with a transition radius of curvature rad (the planar
             charge is assumed to be within the cylinder of radius rad for x > surfPos).
             Charge lost to the left (planar) boundary is re-distributed over the initial density.
+            surfPos is set after construction via assemble.
 
             Parameters
             ----------
@@ -218,24 +219,24 @@ void init_Potentials(py::module &m) {
                 Minimum pos where density is included.
             posMax : float
                 Maximum pos where density is included.
-            surfPos : float
-                Position of surface.
             refPoint : float
                 Potential reference point.
 
             Returns
             -------
             PlanarToCylindricalHartreePotential)V0G0N",
-            "sim"_a, "rad"_a, "posMin"_a, "posMax"_a, "surfPos"_a, "refPoint"_a)
-        .def("negatePotential", &PyPlanarToCylindricalHartreePotential::negatePotential, R"V0G0N(
-            Negates potential as evaluated in the Simulation's current state.
+            "sim"_a, "rad"_a, "posMin"_a, "posMax"_a, "refPoint"_a)
+        .def("assemble", &PyPlanarToCylindricalHartreePotential::assemble, R"V0G0N(
+            Assembles potential for nonlinear calculation. Negates potential as evaluated in the Simulation's current state.
             Intended to be used such that the potential only depends on the change in density, leading the initially calculated eigenstates to be the actual eigenstates before perturbation.
 
             Parameters
             ----------
             sim : Simulation
-                Associated simulation.)V0G0N",
-            "sim"_a);
+                Associated simulation.
+            surfPos : int
+                Position (index) of surface.)V0G0N",
+            "sim"_a, "surfPos"_a);
 
     py::class_<PyLDAFunctional, Potential>(m, "LDAFunctional")
         .def(py::init<PySimulation*, LDAFunctionalType, double>(), R"V0G0N(
@@ -256,7 +257,7 @@ void init_Potentials(py::module &m) {
             -------
             LDAFunctional)V0G0N",
             "sim"_a, "typ"_a, "refPoint"_a)
-        .def("negatePotential", &PyLDAFunctional::negatePotential, R"V0G0N(
+        .def("assemble", &PyLDAFunctional::assemble, R"V0G0N(
             Negates potential as evaluated in the Simulation's current state.
             Intended to be used such that the potential only depends on the change in density, leading the initially calculated eigenstates to be the actual eigenstates before perturbation.
 

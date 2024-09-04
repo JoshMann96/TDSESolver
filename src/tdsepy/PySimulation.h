@@ -46,6 +46,10 @@ class PySimulation
 
         std::vector<double> getX(){return std::vector<double>(x, x + nPts);}
         int findXIdx(double xp){return vtls::findValue(nPts, x, xp);}
+
+        int findElectricalSurfaceCentroidRule(double minPos, double maxPos){
+            return SimulationManager::findElectricalSurfaceCentroidRule(findXIdx(minPos), findXIdx(maxPos));
+        }
     };
 
 void init_Simulation(py::module &m);
