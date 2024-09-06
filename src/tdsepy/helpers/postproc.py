@@ -5,7 +5,7 @@ from scipy.signal import windows
 from scipy import constants as cons
 from scipy.fft import fft
 
-def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=-11, vmax:float=-4, cmap="magma", ax = None):
+def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=-11, vmax:float=-4, cmap="magma", ax = None, difference=False):
     """Plots the 1-D collective electron density as a function of time for a selection of states.
     AXIS | VAR | UNIT
        x |  x  | nm
@@ -22,6 +22,7 @@ def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=-11, vmax:float=
         vmax (float, optional): Log-scale maximum value. Defaults to 27.
         cmap (str, optional): Colormap. Defaults to "magma".
         ax (axis, optional): Axis to plot on. Defaults to None (create own fig, ax and return).
+        difference (bool, optional): Plot difference between from initial state. Defaults to False.
         
     Returns:
         if plot is None:
@@ -44,8 +45,11 @@ def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=-11, vmax:float=
     fig = None
     if ax is None:
         fig, ax = plt.subplots()
-        
-    im = ax.pcolormesh(xs*1e9, ts*1e15, np.log10(np.tensordot(wghts, dat, (0,0))*(cons.physical_constants["atomic unit of length"][0]**3)), cmap=cmap, vmin=vmin, vmax=vmax)
+    
+    if difference:
+        im = ax.pcolormesh(xs*1e9, ts*1e15, (np.tensordot(wghts, dat, (0,0)) - np.tensordot(wghts, dat[:,0,:], (0,0)))*(cons.physical_constants["atomic unit of length"][0]**3), cmap=cmap)
+    else:
+        im = ax.pcolormesh(xs*1e9, ts*1e15, np.log10(np.tensordot(wghts, dat, (0,0))*(cons.physical_constants["atomic unit of length"][0]**3)), cmap=cmap, vmin=vmin, vmax=vmax)
     
     if fig is not None:
         return im, fig, ax

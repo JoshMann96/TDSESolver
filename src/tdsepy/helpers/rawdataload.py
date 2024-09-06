@@ -6,6 +6,7 @@ import os
 
 _INT_SIZE = np.dtype(np.int32).itemsize
 _DOUBLE_SIZE = np.dtype(np.float64).itemsize
+_C_DTYPES = Literal["int", "double", "char"]
 _CONSTANT_NAMES = Literal["dx", "dt", "emax", "lam", "tau", "rad", "ef", "wf", "nElec", "nPts", "nSteps", "abs_rate", "abs_width"]
 _CONSTANT_DTYPES = {
     "dx" : "double",
@@ -23,7 +24,7 @@ _CONSTANT_DTYPES = {
     "abs_width" : "double"
 }
 
-def readData(fil:BufferedReader, dtype:Literal["int", "double", "char"], shape=1):
+def readData(fil:BufferedReader, dtype:_C_DTYPES, shape=1):
     if shape is not tuple:
         shape = (shape)
         
@@ -69,10 +70,10 @@ def combinePath(fol:str, fil:str):
         fol += '/'
     return fol + fil
 
-def getConstant(name:_CONSTANT_NAMES, fol:str):
+def getConstant(name:_CONSTANT_NAMES, fol:str, dtype:_C_DTYPES = None):
     with open(combinePath(fol, name + ".dat"), 'rb') as fil:
         typ = readData(fil, 'int')
-        dat = readData(fil, _CONSTANT_DTYPES[name])
+        dat = readData(fil, _CONSTANT_DTYPES[name] if dtype is None else dtype)
     return dat, typ
 
 def getPsi2t(fol:str):
@@ -149,6 +150,13 @@ def getExpectA(fol:str):
     ts,_ = getTs(fol)
     with open(combinePath(fol, "expectA.dat"), 'rb') as fil:
         typ = readData(fil, "int")
-        a = readData(fil, "double", nElec*len(ts))
-    a = a.reshape((len(ts), nElec))
+        a = readData(fil, "double", (len(ts), nElec))
     return ts, a, typ
+
+def getExpectE(fol:str):
+    nElec,_ = getConstant("nElec", fol)
+    ts,_ = getTs(fol)
+    with open(combinePath(fol, "expectE.dat"), 'rb') as fil:
+        typ = readData(fil, "int")
+        e = readData(fil, "double", (len(ts), nElec))
+    return ts, e, typ

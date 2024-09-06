@@ -431,7 +431,7 @@ namespace Measurers {
 		double ex;
 		for(int i = 0; i < *nElec; i++){
 			vtls::normSqr(nPts, &psi[i*nPts], rho);
-			ex = vtlsInt::rSumMul(nPts, rho, v, dx) + (*kin)->evaluateKineticEnergy(&psi[i*nPts]);
+			ex = vtlsInt::rSumMul(nPts, rho, v, dx) / vtlsInt::rSum(nPts, rho, dx) + (*kin)->evaluateKineticEnergy(&psi[i*nPts]);
 
 			fil.write(reinterpret_cast<char*>(&ex), sizeof(double));
 		}
