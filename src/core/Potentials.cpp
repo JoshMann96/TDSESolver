@@ -347,6 +347,7 @@ namespace Potentials {
 			for (int i = 0; i < *nElec; i++){
 				pt0 = i * nPts + evalPoint;
 				integratedFlux += (t - tPrev) * PhysCon::hbar / PhysCon::me * std::imag(std::conj(psi[pt0]) * \
+					//(psi[pt0+1]-psi[pt0]) / dx) * (*weights)[i];
 					(-psi[pt0 + 2] + 4.0*psi[pt0+1] - 3.0*psi[pt0]) / (2.0*dx)) * (*weights)[i];
 			}
 			break;
@@ -354,6 +355,7 @@ namespace Potentials {
 			for (int i = 0; i < *nElec; i++){
 				pt0 = i * nPts + evalPoint;
 				integratedFlux += (t - tPrev) * PhysCon::hbar / PhysCon::me * std::imag(std::conj(psi[pt0]) * \
+					//(psi[pt0]-psi[pt0-1]) / dx) * (*weights)[i];
 					(3.0*psi[pt0] - 4.0*psi[pt0-1] + psi[pt0-2]) / (2.0*dx)) * (*weights)[i];
 			}
 			break;
@@ -393,7 +395,7 @@ namespace Potentials {
 	
 	void CylindricalImageCharge::assemble_(double* rho, std::complex<double>* psi, va_list args) {
 		// Extract additional arguments from va_list
-        int sp = va_arg(args, double);
+        int sp = va_arg(args, int);
 		surfPos = sp > nPts - 1 ? nPts - 1 : sp;
 
 		for (int i = 0; i < nPts; i++)
@@ -481,7 +483,7 @@ namespace Potentials {
 
 	void PlanarToCylindricalHartree::assemble_(double* rho, std::complex<double>* psi, va_list args){
 		// Extract additional arguments from va_list
-        int sp = va_arg(args, double);
+        int sp = va_arg(args, int);
 		surfPos = sp > nPts - 1 ? nPts - 1 : sp;
 
 		// Calculate field scaler (R/z in vacuum, 1 in material) (z evaluated half a grid step to the right)

@@ -265,8 +265,8 @@ namespace Potentials {
 	private:
 		int assembled = 0;
 
-		virtual void assemble_(double* rho, std::complex<double> * psi, va_list args) = 0; // base class needs to implement assembly
-		virtual void getV_(double* rho, std::complex<double> * psi, double t, double * targ) = 0; // base class implements unprotected potential calculation.
+		virtual void assemble_(double* rho, std::complex<double> * psi, va_list args) = 0; // class needs to implement assembly
+		virtual void getV_(double* rho, std::complex<double> * psi, double t, double * targ) = 0; // class implements unprotected potential calculation.
 	public:
 		void assemble(double* rho, std::complex<double> * psi, ...){
 			// collect arguments
