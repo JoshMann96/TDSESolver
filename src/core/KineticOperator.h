@@ -184,10 +184,23 @@ namespace KineticOperators {
 		NonUnifGenDisp_PSM_MathExprBoundary(int nPts, double dx, double dt, int expOrder, int forceNormalization, int nDisp, std::vector<std::string> exprs, double* transRates, int* transPoss);
 	};
 
-
 	class KineticOperator_FDM :
 		public KineticOperator
 	{
+	public:
+		virtual void stepHalfVirtual(std::complex<double>* psi0, double* v, std::complex<double>* targ, int nElec) = 0; // half timestep without iterating time, for finding the midpoint potential
+		virtual void step(std::complex<double>* psi0, double* v, std::complex<double>* targ, int nElec) = 0;
+	};
 
+	class CrankNicolson:
+		public KineticOperator_FDM
+	{
+	public:
+		CrankNicolson(int nPts, double dx, double dt, double m_eff);
+		~CrankNicolson();
+		void stepHalfVirtual(std::complex<double>* psi0, double* v, std::complex<double>* targ, int nElec);
+		void step(std::complex<double>* psi0, double* v, std::complex<double>* targ, int nElec);
+		void findEigenStates(double* v, double emin, double emax, std::complex<double>* states, int* nEigs);
+		double evaluateKineticEnergy(std::complex<double>* psi);
 	};
 }
