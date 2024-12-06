@@ -425,11 +425,11 @@ namespace Potentials {
 		double ref = targ[refPoint] - origPot[refPoint];
 		for (int i = 0; i < nPts; i++)
 			targ[i] -= origPot[i] + ref;
+
+		curInt->integrate(psi, t);
 	}
 
 	void CylindricalImageCharge::calcPot(double* rho, std::complex<double>* psi, double cur_t, double* targ) {
-		curInt->integrate(psi, cur_t);
-
 		std::fill_n(targ, nPts, 0);
 
 		vtls::seqMulArrays(nPts, dethin, rho, myRho);
@@ -497,7 +497,6 @@ namespace Potentials {
 		calcPot(rho, psi, 0.0, origPot);
 		vtls::seqMulArrays(nPts, dethin, rho, myRho);
 		originalCharge = totalCharge;
-		std::fill_n(myRho, nPts, 0.0);
 	}
 
 	void PlanarToCylindricalHartree::getVBare(double t, double* targ) {
@@ -505,14 +504,13 @@ namespace Potentials {
 	}
 
 	void PlanarToCylindricalHartree::getV_(double* rho, std::complex<double>* psi, double t, double* targ) {
-		if(!isAssembled())
-			throw std::runtime_error("PlanarToCylindricalHartree::getV called before assembly. Call assemble first.");
-
 		calcPot(rho, psi, t, targ);
 		double lossFraction = -(originalCharge - totalCharge - curInt->getIntegratedFlux()) / originalCharge + 1.0; // charge that moved to left is lost, scale origPot by appropriate amount
 		double ref = targ[refPoint] - lossFraction * origPot[refPoint];
 		for (int i = 0; i < nPts; i++)
 			targ[i] -= lossFraction * origPot[i] + ref;
+			
+		curInt->integrate(psi, t);
 	}
 
 	void PlanarToCylindricalHartree::calcPot(double* rho, std::complex<double>* psi, double t, double* targ) {
@@ -524,8 +522,6 @@ namespace Potentials {
 		vtls::seqMulArrays(nPts-posMin, &fieldScaler[posMin], &potTemp[posMin]); // scale by field scaler for 1/r term
 		vtlsInt::cumIntTrapzToLeft(nPts-posMin, &potTemp[posMin], dx * -PhysCon::qe * PhysCon::qe / PhysCon::e0, &targ[posMin]); // final integral for potential, times constants
 		//std::fill_n(&targ[posMax], nPts-posMax, targ[posMax-1]); // fill in right side with last value (zero field implied)
-
-		curInt->integrate(psi, t); // moved to after calculation, see if oscillations disappear
 	}
 
 	LDAFunctional::LDAFunctional(LDAFunctionalType typ, int nPts, double dx, int refPoint)
