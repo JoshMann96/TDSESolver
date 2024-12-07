@@ -14,15 +14,33 @@
 #then echo ".venv folder already exists. Deleting..." & rm -r .venv
 #fi
 
-python3 -m venv .venv
-source .venv/bin/activate
+echo "$@"
 
-python_version=$(python3 --version)
-version_numbers=(${python_version//./ })
-export PYTHON_SUBVERSION_NUMBER=${version_numbers[2]}
+PYTHON_BINDINGS=TRUE
 
-pip3 install --upgrade pip
-pip3 install -r requirements.txt
+while test $# -gt 0
+do
+    case "$1" in
+        --disablePython) 
+            PYTHON_BINDINGS=FALSE
+            echo "Disabling Python bindings"
+            ;;
+    esac
+    shift
+done
+
+if [ "$PYTHON_BINDINGS" = TRUE ]
+    then
+    python3 -m venv .venv
+    source .venv/bin/activate
+
+    python_version=$(python3 --version)
+    version_numbers=(${python_version//./ })
+    export PYTHON_SUBVERSION_NUMBER=${version_numbers[2]}
+
+    pip3 install --upgrade pip
+    pip3 install -r requirements.txt
+    fi
 
 if [ -d build ];
 then echo "build folder already exists."
@@ -30,18 +48,21 @@ else
 mkdir build
 fi
 
-cmake -S . -B build "$@"
+cmake -S . -B build "$@" -DPYTHON_BINDINGS=$PYTHON_BINDINGS
 cd build
 make -j 8
 
-cd lib/tdsepy
-pip3 install -e .
+if [ "$PYTHON_BINDINGS" = TRUE ]
+    then
+    cd lib/tdsepy
+    pip3 install -e .
 
-echo ""
-echo "BUILD COMPLETE"
-echo "To install to a custom venv"
-echo "    1. source the desired venv"
-echo "    2. cd to build/lib/tdsepy"
-echo "    3. run 'pip install -e .'"
+    echo ""
+    echo "BUILD COMPLETE"
+    echo "To install to a custom venv"
+    echo "    1. source the desired venv"
+    echo "    2. cd to build/lib/tdsepy"
+    echo "    3. run 'pip install -e .'"
 
-deactivate
+    deactivate
+    fi

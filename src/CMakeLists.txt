@@ -1,2 +1,4 @@
 add_subdirectory(core)
-add_subdirectory(tdsepy)
+if(PYTHON_BINDINGS)
+    add_subdirectory(tdsepy)
+endif()
