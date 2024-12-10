@@ -44,7 +44,7 @@ namespace FD_BCs{
             throw std::invalid_argument("Number of electrons in HDTransparentBC does not match the number of electrons in the system.");
 
         for (int i = 0; i < nElec; i++)
-            res[i] = CyclicArray<std::complex<double>>::inner(kernel, psis[i]) - psiad[i];
+            res[i] = kernel->inner(psis[i]) - psiad[i];
     }
 }
 

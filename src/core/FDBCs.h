@@ -6,6 +6,8 @@ namespace FD_BCs
     template <typename T>
     class CyclicArray
     {
+		template <typename U>
+		friend class CyclicArray; // allow access to other CyclicArray instances' private members when template types differ
     private:
         int size, idx;
         T* arr;
@@ -21,18 +23,18 @@ namespace FD_BCs
 
 		void mul(T val) { for (int i = 0; i < size; i++) arr[i] *= val; };
 
-		template <typename U, typename V>
-		static decltype(std::declval<U&>()* std::declval<V&>()) inner(CyclicArray<U>* arr1, CyclicArray<V>* arr2) {
-			if (arr1->size != arr2->size)
+		template <typename U>
+		decltype(std::declval<T&>()* std::declval<U&>()) inner(CyclicArray<U>* arr) {
+			if (this->size != arr->size)
 				throw std::invalid_argument("Arrays must be of the same size.");
 
-			decltype(std::declval<U&>()* std::declval<V&>()) sum = 0;
-			if (arr1->idx == arr2->idx) // aligned arrays lead to faster code
-				for (int i = 0; i < arr1->size; i++)
-					sum += arr1->arr[i] * arr2->arr[i];
+			decltype(std::declval<T&>()* std::declval<U&>()) sum = 0;
+			if (this->idx == arr->idx) // aligned arrays lead to faster code
+				for (int i = 0; i < this->size; i++)
+					sum += this->arr[i] * arr->arr[i];
 			else
-				for (int i = 0; i < arr1->size; i++)
-					sum += arr1->get(i) * arr2->get(i);
+				for (int i = 0; i < this->size; i++)
+					sum += this->get(i) * arr->get(i);
 			return sum;
 		}
     };
