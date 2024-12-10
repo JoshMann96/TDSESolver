@@ -3,7 +3,7 @@
 #include "MathTools.h"
 #include "FDBCs.h"
 
-namespace FD_BCs{
+namespace FDBCs{
     HDTransparentBC::HDTransparentBC(int order, int nElec, double dx, double dt) : order(order), nElec(nElec), dx(dx / PhysCon::a0), dt(dt / PhysCon::hbar * PhysCon::auE_ha) {
         if (order < 1)
             throw std::invalid_argument("Order of HDTransparentBC must be greater than 0.");
@@ -49,8 +49,9 @@ namespace FD_BCs{
 }
 
 int main(int argc, char** argv){
+    using namespace FDBCs;
     int ne = 10;
-    FD_BCs::UniqueBC* bc = new FD_BCs::HDTransparentBC(1000, ne, 0.1*PhysCon::a0, 0.1*PhysCon::hbar/PhysCon::auE_ha);
+    UniqueBC* bc = new HDTransparentBC(1000, ne, 0.1*PhysCon::a0, 0.1*PhysCon::hbar/PhysCon::auE_ha);
     std::complex<double>* res = new std::complex<double>[ne];
     std::complex<double>* psibd = new std::complex<double>[ne];
     std::complex<double>* psiad = new std::complex<double>[ne];
@@ -71,4 +72,13 @@ int main(int argc, char** argv){
     std::cout << "calc time = " << time << " [us]" << std::endl;
     
     delete bc;
+
+    CyclicArray<double>* arr1 = new CyclicArray<double>(10, 2.0);
+    CyclicArray<int>* arr2 = new CyclicArray<int>(10, 1);
+    std::cout << arr1->inner(arr2) << std::endl;
+
+    delete arr1;
+    delete arr2;
+
+    return 0;
 }

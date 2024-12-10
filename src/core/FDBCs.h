@@ -1,7 +1,7 @@
 #pragma once
 #include <complex>
 
-namespace FD_BCs
+namespace FDBCs
 {
     template <typename T>
     class CyclicArray
@@ -39,7 +39,7 @@ namespace FD_BCs
 		}
     };
 
-	enum class BC_Side {
+	const enum class BCSide {
 		LEFT, RIGHT
 	};
 
@@ -85,7 +85,7 @@ namespace FD_BCs
 		double dx;
 		double direction;
 	public:
-		NeumannBC(std::complex<double> bdDer, double dx, BC_Side side) : bdDer(bdDer), dx(dx), direction(side == BC_Side::LEFT ? 1 : -1) {};
+		NeumannBC(std::complex<double> bdDer, double dx, BCSide side) : bdDer(bdDer), dx(dx), direction(side == BCSide::LEFT ? 1 : -1) {};
 		std::complex<double> getLHSEle() { return -1.0 / dx * direction; };
 		std::complex<double> getLHSAdjEle() { return 1.0 / dx * direction; };
 		std::complex<double> getRHS(double vb) { return bdDer; };
@@ -99,6 +99,7 @@ namespace FD_BCs
 	public:
 		virtual void finishStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb) = 0;
 		virtual void prepareStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb) = 0;
+		virtual void fillHistory(std::complex<double> psibd, double kin) = 0; // fill the history assuming an eigenstate with local kinetic energy kin
 	};
 
 	// Homogeneous Discrete Transparent Boundary Condition
@@ -137,4 +138,8 @@ namespace FD_BCs
 		public HDTransparentBC
 	{
 	};
+
+	bool isUnique(BoundaryCondition* bc) {return dynamic_cast<UniqueBC*>(bc) != nullptr;}
+	bool isCommon(BoundaryCondition* bc) {return dynamic_cast<CommonBC*>(bc) != nullptr;}
+
 }
