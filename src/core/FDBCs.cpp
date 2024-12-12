@@ -1,5 +1,4 @@
 #include "CORECommonHeader.h"
-#include "PhysCon.h"
 #include "MathTools.h"
 #include "FDBCs.h"
 
@@ -46,39 +45,4 @@ namespace FDBCs{
         for (int i = 0; i < nElec; i++)
             res[i] = kernel->inner(psis[i]) - psiad[i];
     }
-}
-
-int main(int argc, char** argv){
-    using namespace FDBCs;
-    int ne = 10;
-    UniqueBC* bc = new HDTransparentBC(1000, ne, 0.1*PhysCon::a0, 0.1*PhysCon::hbar/PhysCon::auE_ha);
-    std::complex<double>* res = new std::complex<double>[ne];
-    std::complex<double>* psibd = new std::complex<double>[ne];
-    std::complex<double>* psiad = new std::complex<double>[ne];
-    int time = 0;
-    for (int i = 0; i < 100; i++){
-        for (int j = 0; j < ne; j++){
-            psibd[j] = std::exp(PhysCon::im*(i/100.0));
-            psiad[j] = std::exp(PhysCon::im*(i/100.0+0.01));
-        }
-        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-        bc->prepareStep(psibd, psiad, i/100.0);
-        bc->getRHS(psibd, psiad, i/100.0, res, ne);
-        bc->finishStep(psibd, psiad, i/100.0);
-        std::chrono::steady_clock::time_point ended = std::chrono::steady_clock::now();
-        vtlsPrnt::printArray(ne, res);
-        time += std::chrono::duration_cast<std::chrono::microseconds>(ended - begin).count();
-    }
-    std::cout << "calc time = " << time << " [us]" << std::endl;
-    
-    delete bc;
-
-    CyclicArray<double>* arr1 = new CyclicArray<double>(10, 2.0);
-    CyclicArray<int>* arr2 = new CyclicArray<int>(10, 1);
-    std::cout << arr1->inner(arr2) << std::endl;
-
-    delete arr1;
-    delete arr2;
-
-    return 0;
 }

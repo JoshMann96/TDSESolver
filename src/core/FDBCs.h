@@ -1,5 +1,6 @@
 #pragma once
 #include <complex>
+#include "PhysCon.h"
 
 namespace FDBCs
 {
@@ -39,7 +40,7 @@ namespace FDBCs
 		}
     };
 
-	const enum class BCSide {
+	enum class BCSide {
 		LEFT, RIGHT
 	};
 
@@ -131,6 +132,7 @@ namespace FDBCs
 			kernel->step();
 		};
 		void printKernel() { kernel->print(); };
+		void fillHistory(std::complex<double> psibd, double kin) { throw std::runtime_error("HDTransparentBC::fillHistory not implemented."); };
 	};
 
 	// Inhomogeneous Discrete Transparent Boundary Condition (incoming current)
@@ -139,7 +141,7 @@ namespace FDBCs
 	{
 	};
 
-	bool isUnique(BoundaryCondition* bc) {return dynamic_cast<UniqueBC*>(bc) != nullptr;}
-	bool isCommon(BoundaryCondition* bc) {return dynamic_cast<CommonBC*>(bc) != nullptr;}
+	inline bool isUnique(BoundaryCondition* bc) {return dynamic_cast<UniqueBC*>(bc) != nullptr;}
+	inline bool isCommon(BoundaryCondition* bc) {return dynamic_cast<CommonBC*>(bc) != nullptr;}
 
 }
