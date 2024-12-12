@@ -62,6 +62,60 @@ double LAPACK_dlamch_base(
     #define LAPACK_dlamch(...) LAPACK_dlamch_base(__VA_ARGS__)
 #endif
 
+#define LAPACK_zgtsv LAPACK_GLOBAL(zgtsv,ZGTSV)
+void LAPACK_zgtsv(
+    lapack_int const* n, lapack_int const* nrhs,
+    lapack_complex_double* DL,
+    lapack_complex_double* D,
+    lapack_complex_double* DU,
+    lapack_complex_double* B, lapack_int const* ldb,
+    lapack_int* info );
+
+#define LAPACK_zgtsvx LAPACK_GLOBAL(zgtsvx,ZGTSVX)
+void LAPACK_zgtsvx(
+    char const* fact, char const* trans,
+    lapack_int const* n, lapack_int const* nrhs,
+    lapack_complex_double const* DL,
+    lapack_complex_double const* D,
+    lapack_complex_double const* DU,
+    lapack_complex_double* DLF,
+    lapack_complex_double* DF,
+    lapack_complex_double* DUF,
+    lapack_complex_double* DU2, lapack_int* ipiv,
+    lapack_complex_double const* B, lapack_int const* ldb,
+    lapack_complex_double* X, lapack_int const* ldx,
+    double* rcond,
+    double* ferr,
+    double* berr,
+    lapack_complex_double* work,
+    double* rwork,
+    lapack_int* info );
+
+#define LAPACK_zptsv LAPACK_GLOBAL(zptsv,ZPTSV)
+void LAPACK_zptsv(
+    lapack_int const* n, lapack_int const* nrhs,
+    double* D,
+    lapack_complex_double* E,
+    lapack_complex_double* B, lapack_int const* ldb,
+    lapack_int* info );
+
+#define LAPACK_zptsvx LAPACK_GLOBAL(zptsvx,ZPTSVX)
+void LAPACK_zptsvx(
+    char const* fact,
+    lapack_int const* n, lapack_int const* nrhs,
+    double const* D,
+    lapack_complex_double const* E,
+    double* DF,
+    lapack_complex_double* EF,
+    lapack_complex_double const* B, lapack_int const* ldb,
+    lapack_complex_double* X, lapack_int const* ldx,
+    double* rcond,
+    double* ferr,
+    double* berr,
+    lapack_complex_double* work,
+    double* rwork,
+    lapack_int* info );
+
 //selected from cblas.h
 extern void cblas_zscal(const int N, const void *alpha, void *X, const int incX);
 extern void cblas_dscal(const int N, const double alpha, double *X, const int incX);

@@ -535,6 +535,19 @@ namespace vtlsPrnt {
 		fid.write(reinterpret_cast<char*>(data), sizeof(T) * n);
 		fid.close();
 	}
-}
+};
+
+#include "gnuplot-iostream.h"
+
+namespace plotting{
+	class GNUPlotter {
+	public:
+		GNUPlotter(int nPts, int nLines);
+		GNUPlotter(int nPts, int nLines, double* x, double* y);
+		~GNUPlotter(){close();};
+		void update(int nPts, int nLines, double* x, double* y);
+		void close();
+	};
+};
 
 #include "MathTools.tpp"

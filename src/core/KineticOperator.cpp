@@ -4,7 +4,7 @@
 #include <omp.h>
 #include <fftw3.h>
 #include "CORECommonHeader.h"
-#include "blas_externs.h"
+#include "blas.h"
 
 #define MULTIELEC_FFTW_POLICY FFTW_PATIENT
 
@@ -829,5 +829,18 @@ namespace KineticOperators {
 		if (mask)
 			sq_free(mask); mask = nullptr;
 	}
+
+
+	/*CrankNicolson::CrankNicolson(int nPts, double dx, double dt, double m_eff, FDBCs::BoundaryCondition* leftBC, FDBCs::BoundaryCondition* rightBC) :
+		nPts(nPts), dx(dx), dt(dt), m_eff(m_eff), leftBC(leftBC), rightBC(rightBC)
+	{
+		hasUniqueBCs = FDBCs::isUnique(leftBC) || FDBCs::isUnique(rightBC);
+
+		// initialize LHS matrix
+		offDiag = -0.25 * PhysCon::im * PhysCon::hbar * dt / (m_eff * PhysCon::me * dx * dx);
+		diag    = 1.0 - 0.5 * PhysCon::im * PhysCon::hbar * dt / (m_eff * PhysCon::me * dx * dx); 
+
+
+	}*/
 
 }

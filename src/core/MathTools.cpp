@@ -1,5 +1,5 @@
 #include "MathTools.h"
-#include "blas_externs.h"
+#include "blas.h"
 
 namespace vtls {
 
@@ -124,4 +124,12 @@ namespace vtlsPrnt {
 		sq_free(arr);
 		sq_free(nArr);
 	}
+}
+
+
+
+
+namespace plotting {
+	
+
 }

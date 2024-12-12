@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include "MathTools.h"
 #include "PhysCon.h"
-#include "blas_externs.h"
+#include "blas.h"
 
 namespace Potentials {
 	FilePotential::FilePotential(int nPts, double * x, double offset, const char * fil, int refPoint) {

@@ -4,7 +4,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <system_error>
-#include "blas_externs.h"
+#include "blas.h"
 
 
 namespace Measurers {
