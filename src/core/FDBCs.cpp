@@ -10,14 +10,14 @@ namespace FDBCs{
         psis = new CyclicArray<std::complex<double>>*[nElec];
         for (int i = 0; i < nElec; i++)
             psis[i] = new CyclicArray<std::complex<double>>(order, 0.0);
-        kernel = new CyclicArray<std::complex<double>>(order, 0.0);
+        kernel = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * order);
     }
 
     HDTransparentBC::~HDTransparentBC() {
         for (int i = 0; i < nElec; i++)
             delete psis[i];
         delete[] psis;
-        delete kernel;
+        sq_free(kernel);
     }
 
     void HDTransparentBC::calcKernel(double vb){
@@ -29,13 +29,13 @@ namespace FDBCs{
         std::complex<double> al = 0.5*PhysCon::im * std::exp(0.5*PhysCon::im*phi) * std::pow((rr*rr+sig*sig)*(rr*rr+(sig+4.0)*(sig+4.0)), 0.25);
         
         kernel0 = (1.0-PhysCon::im*rr/2.0 + sig/2.0) - al;
-        kernel->set(0, (1.0+PhysCon::im*rr/2.0 + sig/2.0) + al*std::exp(-PhysCon::im*phi) * mu);
-        kernel->set(1, al * std::exp(-PhysCon::im*2.0*phi) * 0.5 * (mu*mu - 1.0));
+        kernel[0] = (1.0+PhysCon::im*rr/2.0 + sig/2.0) + al*std::exp(-PhysCon::im*phi) * mu;
+        kernel[1] =  al * std::exp(-PhysCon::im*2.0*phi) * 0.5 * (mu*mu - 1.0);
         for (int i = 2; i < order; i++)
-            kernel->set(i, (2.0*i-1.0)/(i+1.0) * mu / lam * kernel->get(i-1) - (i-2.0)/(i+1.0) / (lam*lam) * kernel->get(i-2));
+            kernel[i] = (2.0*i-1.0)/(i+1.0) * mu / lam * kernel[i-1] - (i-2.0)/(i+1.0) / (lam*lam) * kernel[i-2];
         
         for (int i = 0; i < order; i++)
-            kernel->set(i, kernel->get(i) * std::exp(-PhysCon::im/PhysCon::hbar*(vb*i*dt)));
+            kernel[i] *= std::exp(-PhysCon::im/PhysCon::hbar*(vb*i*dt));
     }
 
     void HDTransparentBC::getRHS(std::complex<double>* psibd, std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec){
@@ -43,6 +43,6 @@ namespace FDBCs{
             throw std::invalid_argument("Number of electrons in HDTransparentBC does not match the number of electrons in the system.");
 
         for (int i = 0; i < nElec; i++)
-            res[i] = kernel->inner(psis[i]) - psiad[i];
+            res[i] = psis[i]->inner(kernel) - psiad[i];
     }
 }

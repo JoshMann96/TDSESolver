@@ -14,11 +14,13 @@ namespace FDBCs
         T* arr;
     public:
         CyclicArray(int size) : size(size), idx(0), arr((T*)sq_malloc(sizeof(T) * size)) {};
-		CyclicArray(int size, T val) : size(size), idx(0), arr((T*)sq_malloc(sizeof(T) * size)) { std::fill_n(arr, size, val); };
+		CyclicArray(int size, T val) : size(size), idx(-1), arr((T*)sq_malloc(sizeof(T) * size)) { std::fill_n(arr, size, val); };
         ~CyclicArray() { sq_free(arr); };
-        void push(T val) { arr[idx] = val; step(); };
+        void push(T val) { step(); arr[idx] = val; };
+		void pushBack(T val) { arr[idx] = val; stepBack(); };
         void set(int i, T val) { arr[(idx + i) % size] = val; };
         void step() { idx = (idx + 1) % size; };
+		void stepBack() { idx = (idx - 1 + size) % size; };
         T get(int i) { return arr[(idx + i) % size]; };
         void print() { for (int i = 0; i < size; i++) std::cout << arr[i] << " "; std::cout << std::endl; };
 
@@ -29,15 +31,38 @@ namespace FDBCs
 			if (this->size != arr->size)
 				throw std::invalid_argument("Arrays must be of the same size.");
 
+			if (this->idx == arr->idx) // aligned arrays lead to faster code
+				return this->aligned_inner(arr);
+			else{
+				decltype(std::declval<T&>()* std::declval<U&>()) sum = 0;
+				for (int i = 0; i < this->size; i++)
+					sum += this->get(i) * arr->get(i);
+				return sum;
+			}
+		}
+
+		template <typename U>
+		decltype(std::declval<T&>()* std::declval<U&>()) aligned_inner(CyclicArray<U>* arr) {
+			if (this->size != arr->size)
+				throw std::invalid_argument("Arrays must be of the same size.");
+
 			decltype(std::declval<T&>()* std::declval<U&>()) sum = 0;
 			if (this->idx == arr->idx) // aligned arrays lead to faster code
 				for (int i = 0; i < this->size; i++)
 					sum += this->arr[i] * arr->arr[i];
 			else
-				for (int i = 0; i < this->size; i++)
-					sum += this->get(i) * arr->get(i);
+				throw std::invalid_argument("Arrays must be aligned.");
 			return sum;
 		}
+
+		template <typename U>
+		decltype(std::declval<T&>()* std::declval<U&>()) inner(U* arr) {
+			decltype(std::declval<T&>()* std::declval<U&>()) sum = 0;
+			for (int i = 0; i < this->size; i++)
+				sum += this->get(i) * arr[i];
+			return sum;
+		}
+
     };
 
 	enum class BCSide {
@@ -50,6 +75,9 @@ namespace FDBCs
 		virtual std::complex<double> getLHSEle() = 0; // LHS matrix element at the boundary position
 		virtual std::complex<double> getLHSAdjEle() = 0; // LHS matrix element adjacent to the boundary position
 		virtual void getRHS(std::complex<double>* psibd, std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec) = 0; // RHS value for the condition
+		virtual void finishStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb) = 0;
+		virtual void prepareStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb) = 0;
+		virtual void fillHistory(std::complex<double>* psibd, double* kin) = 0;
 	};
 
 	/*
@@ -63,6 +91,9 @@ namespace FDBCs
 			for (int i = 0; i < nElec; i++)
 				res[i] = getRHS(vb);
 		}
+		void fillHistory(std::complex<double>* psibd, double* kin) { return; };
+		void prepareStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb) {};
+		void finishStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb) {};
 		virtual std::complex<double> getRHS(double vb) = 0; // RHS value for the condition
 	};
 
@@ -90,28 +121,17 @@ namespace FDBCs
 		std::complex<double> getLHSEle() { return -1.0 / dx * direction; };
 		std::complex<double> getLHSAdjEle() { return 1.0 / dx * direction; };
 		std::complex<double> getRHS(double vb) { return bdDer; };
-        void iterate(std::complex<double> psibd, std::complex<double> psiad, double vb) {};
-	};
-
-	// Unique Boundary Condition which depends on the individual orbital
-	class UniqueBC :
-		public BoundaryCondition
-	{
-	public:
-		virtual void finishStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb) = 0;
-		virtual void prepareStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb) = 0;
-		virtual void fillHistory(std::complex<double> psibd, double kin) = 0; // fill the history assuming an eigenstate with local kinetic energy kin
 	};
 
 	// Homogeneous Discrete Transparent Boundary Condition
 	class HDTransparentBC :
-		public UniqueBC
+		public BoundaryCondition
 	{
 	private:
         int order, nElec;
         double dx, dt;
-        CyclicArray<std::complex<double>> **psis, *kernel;
-        std::complex<double> kernel0;
+        CyclicArray<std::complex<double>> **psis;
+        std::complex<double> kernel0, *kernel;
 
         void calcKernel(double vb);
 	public:
@@ -123,16 +143,21 @@ namespace FDBCs
 		void getRHS(std::complex<double>* psibd, std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec);
         void finishStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb){
 			for (int i = 0; i < nElec; i++){
+				psis[i]->pushBack(psibd[i]);
 				psis[i]->mul(std::exp(PhysCon::im/PhysCon::hbar*vb*dt));
-				psis[i]->push(psibd[i]);
 			}
 		};
 		void prepareStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb){
+			for (int i = 0; i < nElec; i++)
+				psis[i]->set(0, psibd[i]);
 			calcKernel(vb);
-			kernel->step();
 		};
-		void printKernel() { kernel->print(); };
-		void fillHistory(std::complex<double> psibd, double kin) { throw std::runtime_error("HDTransparentBC::fillHistory not implemented."); };
+		void printKernel() { for (int i = 0; i < order; i++) std::cout << kernel[i] << " "; std::cout << std::endl; };
+		void fillHistory(std::complex<double>* psibd, double* kin) { 
+			for (int i = 0; i < nElec; i++)
+				for (int j = 0; j < order; j++)
+					psis[i]->set(j, psibd[i]*std::exp(-PhysCon::im/PhysCon::hbar*kin[i]*(j*dt)));
+		};
 	};
 
 	// Inhomogeneous Discrete Transparent Boundary Condition (incoming current)
@@ -140,8 +165,5 @@ namespace FDBCs
 		public HDTransparentBC
 	{
 	};
-
-	inline bool isUnique(BoundaryCondition* bc) {return dynamic_cast<UniqueBC*>(bc) != nullptr;}
-	inline bool isCommon(BoundaryCondition* bc) {return dynamic_cast<CommonBC*>(bc) != nullptr;}
 
 }

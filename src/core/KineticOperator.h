@@ -1,6 +1,7 @@
 #pragma once
 #include "CORECommonHeader.h"
 #include "MathTools.h"
+#include "FDBCs.h"
 
 namespace KineticOperators {
 
@@ -195,11 +196,28 @@ namespace KineticOperators {
 	class CrankNicolson:
 		public KineticOperator_FDM
 	{
+		int nPts;
+		double dx, dt, m_eff;
+		FDBCs::BoundaryCondition *leftBC, *rightBC;
+		std::complex<double> offDiag, diag; // elements of LHS tridiagonal matrix
+		std::complex<double>* lhs;
 	public:
-		CrankNicolson(int nPts, double dx, double dt, double m_eff);
-		~CrankNicolson();
-		void stepHalfVirtual(std::complex<double>* psi0, double* v, std::complex<double>* targ, int nElec);
+		CrankNicolson(int nPts, double dx, double dt, double m_eff, FDBCs::BoundaryCondition* leftBC, FDBCs::BoundaryCondition* rightBC);
+		~CrankNicolson(){};
+
+		void setBC(FDBCs::BoundaryCondition* bc, FDBCs::BCSide side) { 
+			switch (side) {
+				case FDBCs::BCSide::LEFT:
+					leftBC = bc;
+					break;
+				case FDBCs::BCSide::RIGHT:
+					rightBC = bc;
+					break;
+			}
+		};
+
 		void step(std::complex<double>* psi0, double* v, std::complex<double>* targ, int nElec);
+		void stepHalfVirtual(std::complex<double>* psi0, double* v, std::complex<double>* targ, int nElec);
 		void findEigenStates(double* v, double emin, double emax, std::complex<double>* states, int* nEigs);
 		double evaluateKineticEnergy(std::complex<double>* psi);
 	};
