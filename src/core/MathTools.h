@@ -455,6 +455,24 @@ namespace vtls {
 
 	void insertSort_idxs(int len, double* __restrict arr, int* __restrict idxs);
 
+	template <typename T>
+	T max(int len, T* __restrict arr) {
+		T mx = arr[0];
+		for (int i = 1; i < len; i++)
+			if (arr[i] > mx)
+				mx = arr[i];
+		return mx;
+	}
+
+	template <typename T>
+	T min(int len, T* __restrict arr) {
+		T mn = arr[0];
+		for (int i = 1; i < len; i++)
+			if (arr[i] < mn)
+				mn = arr[i];
+		return mn;
+	}
+
 	//void addArrays(int len, std::complex<double> *__restrict arr1, std::complex<double> *__restrict arr2, std::complex<double> *__restrict targ);
 	//void addArrays(int len, std::complex<double> *__restrict arr1, std::complex<double> *__restrict arr2targ);
 	//void addArrays(int len, double *__restrict arr1, double *__restrict arr2targ);
@@ -541,12 +559,16 @@ namespace vtlsPrnt {
 
 namespace plotting{
 	class GNUPlotter {
+	private:
+		Gnuplot gp;
 	public:
-		GNUPlotter(int nPts, int nLines);
-		GNUPlotter(int nPts, int nLines, double* x, double* y);
-		~GNUPlotter(){close();};
+		GNUPlotter(){};
+		GNUPlotter(int nPts, int nLines, double* x, double* y){update(nPts, nLines, x, y);};
+		GNUPlotter(int nPts, int nLines, double* y){update(nPts, nLines, y);};
+		void update(int nPts, int nLines, double* x, double* y, double xmin, double xmax, double ymin, double ymax);
 		void update(int nPts, int nLines, double* x, double* y);
-		void close();
+		void update(int nPts, int nLines, double* y, double ymin, double ymax);
+		void update(int nPts, int nLines, double* y);
 	};
 };
 

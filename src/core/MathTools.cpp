@@ -126,10 +126,46 @@ namespace vtlsPrnt {
 	}
 }
 
-
-
-
 namespace plotting {
-	
+
+	void GNUPlotter::update(int nPts, int nLines, double* x, double* y) {
+		update(nPts, nLines, x, y, x[0], x[nPts - 1], vtls::min(nPts*nLines, y), vtls::max(nPts*nLines, y));
+	}
+
+	void GNUPlotter::update(int nPts, int nLines, double* y){
+		double* x = (double*)sq_malloc(nPts * sizeof(double));
+		for(int i = 0; i < nPts; i++)
+			x[i] = i;
+
+		update(nPts, nLines, x, y);
+
+		sq_free(x);
+	}
+
+	void GNUPlotter::update(int nPts, int nLines, double* y, double ymin, double ymax){
+		double* x = (double*)sq_malloc(nPts * sizeof(double));
+		for(int i = 0; i < nPts; i++)
+			x[i] = i;
+
+		update(nPts, nLines, x, y, x[0], x[nPts - 1], ymin, ymax);
+
+		sq_free(x);
+	}
+
+	void GNUPlotter::update(int nPts, int nLines, double* x, double* y, double xmin, double xmax, double ymin, double ymax){
+		std::vector<double> xv(x, x+nPts), yv;
+
+		gp << "set xrange [" << xmin << ":" << xmax << "]\n";
+		gp << "set yrange [" << ymin << ":" << ymax << "]\n";
+
+		gp << "plot ";
+		for (int i = 0; i < nLines; i++)
+			gp << "'-' with lines title '" << i << (i < nLines - 1 ? "'," : "'\n");
+		gp.flush();
+		for (int i = 0; i < nLines; i++){
+			yv = std::vector<double>(y + i*nPts, y + (i + 1)*nPts);
+			gp.send1d(boost::make_tuple(xv, yv));
+		}
+	}
 
 }
