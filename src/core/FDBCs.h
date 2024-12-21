@@ -12,16 +12,17 @@ namespace FDBCs
     private:
         int size, idx;
         T* arr;
+		int localIdx(int i) { return (idx + i) % size; };
     public:
-        CyclicArray(int size) : size(size), idx(0), arr((T*)sq_malloc(sizeof(T) * size)) {};
-		CyclicArray(int size, T val) : size(size), idx(-1), arr((T*)sq_malloc(sizeof(T) * size)) { std::fill_n(arr, size, val); };
+        CyclicArray(int size) : size(size), idx(size-1), arr(static_cast<T *>(sq_malloc(sizeof(T) * size))) {};
+		CyclicArray(int size, T val) : CyclicArray(size) { std::fill_n(arr, size, val); };
         ~CyclicArray() { sq_free(arr); };
         void push(T val) { step(); arr[idx] = val; };
 		void pushBack(T val) { arr[idx] = val; stepBack(); };
-        void set(int i, T val) { arr[(idx + i) % size] = val; };
+        void set(int i, T val) { arr[localIdx(i)] = val; };
         void step() { idx = (idx + 1) % size; };
 		void stepBack() { idx = (idx - 1 + size) % size; };
-        T get(int i) { return arr[(idx + i) % size]; };
+        T get(int i) { return arr[localIdx(i)]; };
         void print() { for (int i = 0; i < size; i++) std::cout << arr[i] << " "; std::cout << std::endl; };
 
 		void mul(T val) { for (int i = 0; i < size; i++) arr[i] *= val; };
