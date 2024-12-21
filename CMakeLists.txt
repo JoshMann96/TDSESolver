@@ -38,7 +38,7 @@ include_directories(SYSTEM ${MPI_INCLUDE_PATH})
 
 #BOOST
 find_package(Boost REQUIRED
-    COMPONENTS system filesystem)
+    COMPONENTS system filesystem iostreams)
 include_directories(${BOOST_INCLUDE_DIRS})
 
 #FFTW config
