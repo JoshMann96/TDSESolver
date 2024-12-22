@@ -39,45 +39,16 @@ void testCyclicArray(){
     delete arr2;
 }
 
-void testTridiagonalAlgorithms(int rhsMethod, int lhsMethod, int nPts=1000, int nrhs=10, int nsteps=4000, bool plot=false){
+void testTridiagonalAlgorithms(int nPts=1000, int nrhs=2, int nsteps=2000, bool plot=false){
 	// Test timing of methods for the multiplication and inversion of tridiagonal matrices
 	// rhsMethod: 0 for BLAS matrix multiplication, 1 for direct treatment, 2 for direct + OMP
 	// lhsMethod: 0 for zgtsv (general tridiagonal), 1 for zgtsvx (general tridiagonal with pivoting), 2 for zptsv (positive definite tridiagonal), 3 for zptsvx (positive definite tridiagonal with pivoting)
 
-	std::cout << "Multiplication: ";
-	switch(rhsMethod){
-		case 0:
-			std::cout << "BLAS";
-			break;
-		case 1:
-			std::cout << "Explicit";
-			break;
-		case 2:
-			std::cout << "Explicit + OMP";
-			break;
-	}
-	std::cout << std::endl << "Inversion:      ";
-	switch(lhsMethod){
-		case 0:
-			std::cout << "zgtsv";
-			break;
-		case 1:
-			std::cout << "zgtsvx";
-			break;
-		case 2:
-			std::cout << "zptsv";
-			break;
-		case 3:
-			std::cout << "zptsvx";
-			break;
-	}
-	std::cout << std::endl;
-
 	double dx = 0.2, dt = 0.05;
     double one = 1.0;
 
-	FDBCs::BoundaryCondition* lbc = new FDBCs::HDTransparentBC(2000, nrhs, dx, dt);//new FDBCs::DirichletBC((std::complex<double>)0.0);
-	FDBCs::BoundaryCondition* rbc = new FDBCs::HDTransparentBC(2000, nrhs, dx, dt);//new FDBCs::DirichletBC((std::complex<double>)0.0);
+	FDBCs::BoundaryCondition* lbc = new FDBCs::HDTransparentBC(10000, nrhs, dx, dt);//new FDBCs::DirichletBC((std::complex<double>)0.0);
+	FDBCs::BoundaryCondition* rbc = new FDBCs::HDTransparentBC(10000, nrhs, dx, dt);//new FDBCs::DirichletBC((std::complex<double>)0.0);
 	std::complex<double> *rbct(new std::complex<double>[nrhs]), *lbct(new std::complex<double>[nrhs]), *bct1(new std::complex<double>[nrhs]), *bct2(new std::complex<double>[nrhs]);
 
 	double* temp = (double*)sq_malloc(sizeof(double)*nPts*(nrhs+1));
@@ -138,22 +109,25 @@ void testTridiagonalAlgorithms(int rhsMethod, int lhsMethod, int nPts=1000, int 
 
 	// test tridiagonal inversion
 	std::chrono::high_resolution_clock::time_point time0, time1;
-	int copyTime = 0, rhsTime = 0, invTime = 0;
+	int copyBCTime = 0, rhsTime = 0, invTime = 0;
 	for(int i = 0; i < nsteps; i++){
         for(int k = 0; k < nPts; k++)
-            v0[k] = 0.0;//-std::exp(-dx*dx/100.0*(double)((k-nPts/2)*(k-nPts/2)));
-
-		std::cout << "Step " << i << ": rel norm = " << vtls::getNorm(nPts*nrhs, x, dx) / norm0 <<  std::endl;
-		if(i % 500 == 0 && plot){
-			if (futPlot.valid())
-				futPlot.get();
-			vtls::scaMulArrayRe(nPts, 1.0, v0, temp);
-			vtls::scaMulArrayRe(nPts*nrhs, 1.0, x, &temp[nPts]);
-			futPlot = std::async(std::launch::async, [&](){
-				plotter->update(nPts, nrhs+1, temp);//, -5.0, 5.0);
-				return 0;
-			});
+            v0[k] = 1.0;//-std::exp(-dx*dx/100.0*(double)((k-nPts/2)*(k-nPts/2)));
+		if(i % 50 == 0){
+			std::cout << "Step " << i << ": rel norm = " << vtls::getNorm(nPts*nrhs, x, dx) / norm0 <<  std::endl;
+			if(plot){
+				if (futPlot.valid())
+					futPlot.get();
+				vtls::scaMulArrayRe(nPts, 1.0, v0, temp);
+				vtls::scaMulArrayRe(nPts*nrhs, 1.0, x, &temp[nPts]);
+				futPlot = std::async(std::launch::async, [&](){
+					plotter->update(nPts, nrhs+1, temp, -5.0, 5.0);
+					return 0;
+				});
+			}
 		}
+
+        time0 = std::chrono::high_resolution_clock::now();
 		// get RHS info, update BCs
 		cblas_zcopy(nrhs, x, nPts, bct1, 1); // map first element of all wavefunctions to bct1
 		cblas_zcopy(nrhs, &x[1], nPts, bct2, 1); // map second element of all wavefunctions to bct2
@@ -169,7 +143,6 @@ void testTridiagonalAlgorithms(int rhsMethod, int lhsMethod, int nPts=1000, int 
 		rbc->finishStep(bct1, bct2, std::real(v[nPts-1]));
 
         // reset LHS matrix
-        time0 = std::chrono::high_resolution_clock::now();
 		vtls::copyArray(nPts, d0, d);
 		vtls::scaMulArray(nPts, 0.5*PhysCon::im*dt, v0, v);
         vtls::addArrays(nPts-2, &v[1], &d[1]); // leave out ends to leave BCs alone
@@ -185,12 +158,18 @@ void testTridiagonalAlgorithms(int rhsMethod, int lhsMethod, int nPts=1000, int 
 		ld[nPts-2] = rbc->getLHSAdjEle();
 
         time1 = std::chrono::high_resolution_clock::now();
-        copyTime += std::chrono::duration_cast<std::chrono::microseconds>(time1 - time0).count();
+        copyBCTime += std::chrono::duration_cast<std::chrono::microseconds>(time1 - time0).count();
 
 		// evaluate RHS of equation
 		time0 = std::chrono::high_resolution_clock::now();
 		vtls::copyArray(nPts*nrhs, x, x0);
-		switch(rhsMethod){
+
+		#pragma omp parallel for collapse(2)
+		for(int j = 0; j < nrhs; j++)
+			for(int k = 1; k < nPts-1; k++)
+				x[j*nPts+k] = rd[k]*x0[j*nPts+k] + rhsSupDiag*x0[j*nPts+k-1] + rhsSupDiag*x0[j*nPts+k+1];
+
+		/*switch(rhsMethod){
 			case 0: // with submethods
 				for(int j = 0; j < nrhs; j++){
 					cblas_zscal(nPts, &rd, &x[j*nPts], 1);
@@ -219,17 +198,19 @@ void testTridiagonalAlgorithms(int rhsMethod, int lhsMethod, int nPts=1000, int 
                     x[j*nPts+nPts-1] = rd[nPts-1]*x0[j*nPts+nPts-1] + rhsSupDiag*x0[j*nPts+nPts-2];
                 }
 				break;
-		}
+		}*/
 		// apply RHS BCs
 		cblas_zcopy(nrhs, lbct, 1, x, nPts);
 		cblas_zcopy(nrhs, rbct, 1, &x[nPts-1], nPts);
 		time1 = std::chrono::high_resolution_clock::now();
-		rhsTime += std::chrono::duration_cast<std::chrono::milliseconds>(time1 - time0).count();
+		rhsTime += std::chrono::duration_cast<std::chrono::microseconds>(time1 - time0).count();
 
 		// solve tridiagonal system: (ld, d, ud) x = rhs   ( x initially contains rhs )
 		time0 = std::chrono::high_resolution_clock::now();
+
 		int info;
-		switch(lhsMethod){
+		LAPACK_zgtsv(&nPts, &nrhs, reinterpret_cast<dcomplex*>(ld), reinterpret_cast<dcomplex*>(d), reinterpret_cast<dcomplex*>(ud), reinterpret_cast<dcomplex*>(x), &nPts, &info);
+		/*switch(lhsMethod){
 			case 0: // zgtsv
 				LAPACK_zgtsv(&nPts, &nrhs, reinterpret_cast<dcomplex*>(ld), reinterpret_cast<dcomplex*>(d), reinterpret_cast<dcomplex*>(ud), reinterpret_cast<dcomplex*>(x), &nPts, &info);
 				break;
@@ -242,15 +223,16 @@ void testTridiagonalAlgorithms(int rhsMethod, int lhsMethod, int nPts=1000, int 
 			case 3: // zptsvx
 				throw std::runtime_error("zptsvx not implemented");
 				break;
-		}
+		}*/
 		time1 = std::chrono::high_resolution_clock::now();
-		invTime += std::chrono::duration_cast<std::chrono::milliseconds>(time1 - time0).count();
+		invTime += std::chrono::duration_cast<std::chrono::microseconds>(time1 - time0).count();
 	}
 
     // print results
-    std::cout << "\tCopy time:      " << copyTime/1000 << " ms" << std::endl;
-	std::cout << "\tRHS time:       " << rhsTime << " ms" << std::endl;
-    std::cout << "\tInversion time: " << invTime << " ms" << std::endl;
+    std::cout << "\tCopy + BC time: " << copyBCTime/1000 << " ms" << std::endl;
+	std::cout << "\tRHS time:       " << rhsTime/1000 << " ms" << std::endl;
+    std::cout << "\tInversion time: " << invTime/1000 << " ms" << std::endl;
+	std::cout << "\tTotal time:     " << (copyBCTime + rhsTime + invTime)/1000 << " ms" << std::endl;
 
 	if(futPlot.valid())
 		futPlot.get();
@@ -281,10 +263,7 @@ void testTridiagonalAlgorithms(int rhsMethod, int lhsMethod, int nPts=1000, int 
 }
 
 int main(int argc, char** argv){
-    for(int i = 2; i < 3; i++)
-		for(int j = 0; j < 1; j++)
-        	testTridiagonalAlgorithms(i, j);
-
+    testTridiagonalAlgorithms();
 	std::cout << "Done" << std::endl;
     return 0;
 }
