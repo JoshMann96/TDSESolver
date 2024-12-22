@@ -1,6 +1,7 @@
 #pragma once
 #include <complex>
 #include "PhysCon.h"
+#include "blas.h"
 
 namespace FDBCs
 {
@@ -59,11 +60,19 @@ namespace FDBCs
 		template <typename U>
 		decltype(std::declval<T&>()* std::declval<U&>()) inner(U* arr) {
 			decltype(std::declval<T&>()* std::declval<U&>()) sum = 0;
-			for (int i = 0; i < this->size; i++)
-				sum += this->get(i) * arr[i];
+			if constexpr (std::is_same_v<U, T>) //types are the same
+				if constexpr (std::is_same_v<T, std::complex<double>>){ // complex double inner product
+					std::complex<double> temp;
+					cblas_zdotu_sub(this->size - this->idx, this->arr + idx, 1, arr, 1, &temp);
+					sum += temp;
+					cblas_zdotu_sub(this->idx, this->arr, 1, arr + this->size - this->idx, 1, &temp);
+					sum += temp;
+				}
+			else
+				for (int i = 0; i < this->size; i++)
+					sum += this->get(i) * arr[i];
 			return sum;
 		}
-
     };
 
 	enum class BCSide {
