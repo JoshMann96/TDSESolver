@@ -34,8 +34,11 @@ namespace FDBCs{
         for (int i = 2; i < order; i++)
             kernel[i] = (2.0*i-1.0)/(i+1.0) * mu / lam * kernel[i-1] - (i-2.0)/(i+1.0) / (lam*lam) * kernel[i-2];
         
-        for (int i = 0; i < order; i++)
-            kernel[i] *= std::exp(-PhysCon::im/PhysCon::hbar*(vb*i*dt));
+        std::complex<double> phs0 = std::exp(-PhysCon::im/PhysCon::hbar*(vb*dt)), phs = 1.0;
+        for (int i = 0; i < order; i++){
+            kernel[i] *= phs;
+            phs *= phs0;
+        }
     }
 
     void HDTransparentBC::getRHS(std::complex<double>* psibd, std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec){
