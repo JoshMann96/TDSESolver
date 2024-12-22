@@ -18,7 +18,7 @@ namespace FDBCs
 		CyclicArray(int size, T val) : CyclicArray(size) { std::fill_n(arr, size, val); };
         ~CyclicArray() { sq_free(arr); };
         void push(T val) { step(); arr[idx] = val; };
-		void pushBack(T val) { arr[idx] = val; stepBack(); };
+		void pushBack(T val) { stepBack(); arr[idx] = val; };
         void set(int i, T val) { arr[localIdx(i)] = val; };
         void step() { idx = (idx + 1) % size; };
 		void stepBack() { idx = (idx - 1 + size) % size; };
@@ -144,13 +144,14 @@ namespace FDBCs
 		void getRHS(std::complex<double>* psibd, std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec);
         void finishStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb){
 			for (int i = 0; i < nElec; i++){
-				psis[i]->pushBack(psibd[i]);
+				psis[i]->stepBack();
 				psis[i]->mul(std::exp(PhysCon::im/PhysCon::hbar*vb*dt));
 			}
 		};
 		void prepareStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb){
-			for (int i = 0; i < nElec; i++)
+			for (int i = 0; i < nElec; i++){
 				psis[i]->set(0, psibd[i]);
+			}
 			calcKernel(vb);
 		};
 		void printKernel() { for (int i = 0; i < order; i++) std::cout << kernel[i] << " "; std::cout << std::endl; };

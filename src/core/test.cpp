@@ -39,7 +39,7 @@ void testCyclicArray(){
     delete arr2;
 }
 
-void testTridiagonalAlgorithms(int rhsMethod, int lhsMethod, int nPts=4000, int nrhs=5, int nsteps=20000){
+void testTridiagonalAlgorithms(int rhsMethod, int lhsMethod, int nPts=1000, int nrhs=10, int nsteps=4000, bool plot=false){
 	// Test timing of methods for the multiplication and inversion of tridiagonal matrices
 	// rhsMethod: 0 for BLAS matrix multiplication, 1 for direct treatment, 2 for direct + OMP
 	// lhsMethod: 0 for zgtsv (general tridiagonal), 1 for zgtsvx (general tridiagonal with pivoting), 2 for zptsv (positive definite tridiagonal), 3 for zptsvx (positive definite tridiagonal with pivoting)
@@ -73,11 +73,11 @@ void testTridiagonalAlgorithms(int rhsMethod, int lhsMethod, int nPts=4000, int 
 	}
 	std::cout << std::endl;
 
-	double dx = 0.05, dt = 0.005;
+	double dx = 0.2, dt = 0.05;
     double one = 1.0;
 
-	FDBCs::BoundaryCondition* lbc = new FDBCs::HDTransparentBC(100, nrhs, dx, dt);//new FDBCs::DirichletBC((std::complex<double>)0.0);
-	FDBCs::BoundaryCondition* rbc = new FDBCs::HDTransparentBC(100, nrhs, dx, dt);
+	FDBCs::BoundaryCondition* lbc = new FDBCs::HDTransparentBC(2000, nrhs, dx, dt);//new FDBCs::DirichletBC((std::complex<double>)0.0);
+	FDBCs::BoundaryCondition* rbc = new FDBCs::HDTransparentBC(2000, nrhs, dx, dt);//new FDBCs::DirichletBC((std::complex<double>)0.0);
 	std::complex<double> *rbct(new std::complex<double>[nrhs]), *lbct(new std::complex<double>[nrhs]), *bct1(new std::complex<double>[nrhs]), *bct2(new std::complex<double>[nrhs]);
 
 	double* temp = (double*)sq_malloc(sizeof(double)*nPts*(nrhs+1));
@@ -89,15 +89,17 @@ void testTridiagonalAlgorithms(int rhsMethod, int lhsMethod, int nPts=4000, int 
 	std::complex<double>* x = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts*nrhs);
     std::complex<double>* v0 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts);
 	std::complex<double>* v = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts);
+
+	double* kins = new double[nrhs];
+	for(int i = 0; i < nrhs; i++)
+		kins[i] = 4;
+
 	for(int i = 0; i < nrhs; i++)
 		for(int j = 0; j < nPts; j++)
-			x[i*nPts+j] = 5.0*std::exp(-PhysCon::im*dx/2.0*(double)(i*j))*std::exp(-dx*dx/100.0*(double)((j-nPts/2)*(j-nPts/2)));
+			x[i*nPts+j] = 5.0*std::exp(-PhysCon::im*dx*(std::sqrt(2.0*kins[i])*j))*std::exp(-dx*dx/100.0*(double)((j-nPts/2)*(j-nPts/2)));
 	double norm0 = vtls::getNorm(nPts*nrhs, x, dx);
 
 	// fill BC history
-	double* kins = new double[nrhs];
-	for(int i = 0; i < nrhs; i++)
-		kins[i] = (i/2.0)*(i/2.0)/2.0; // from above
 	std::complex<double> *lvs(new std::complex<double>[nrhs]), *rvs(new std::complex<double>[nrhs]);
 	cblas_zcopy(nrhs, x, nPts, lvs, 1);
 	cblas_zcopy(nrhs, &x[nPts-1], nPts, rvs, 1);
@@ -110,7 +112,7 @@ void testTridiagonalAlgorithms(int rhsMethod, int lhsMethod, int nPts=4000, int 
 	delete[] rvs;
 
 	// LHS matrix default values
-	std::complex<double>* d0 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts);
+	std::complex<double>* d0  = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts);
 	std::complex<double>* ud0 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*(nPts-1));
 	std::complex<double>* ld0 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*(nPts-1));
 	std::fill_n(d0, nPts, 1.0 + 0.5*PhysCon::im*dt/(dx*dx));
@@ -122,14 +124,16 @@ void testTridiagonalAlgorithms(int rhsMethod, int lhsMethod, int nPts=4000, int 
 	ld0[nPts-2] = rbc->getLHSAdjEle();
 
 	// RHS matrix values
-	std::complex<double>* rd = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts);
+	std::complex<double>* rd  = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts);
     std::complex<double>* rd0 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts);
-	std::complex<double>* x0 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts*nrhs);
+	std::complex<double>* x0  = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts*nrhs);
 	std::complex<double> rhsDiag = 1.0 - 0.5*PhysCon::im*dt/(dx*dx), rhsSupDiag = 0.25*PhysCon::im*dt/(dx*dx);
     std::fill_n(rd0, nPts, rhsDiag);
 
-	plotting::GNUPlotter* plotter = new plotting::GNUPlotter();
-
+	plotting::GNUPlotter* plotter;
+	if(plot)
+		plotter = new plotting::GNUPlotter();
+				
 	std::future<int> futPlot;
 
 	// test tridiagonal inversion
@@ -137,19 +141,32 @@ void testTridiagonalAlgorithms(int rhsMethod, int lhsMethod, int nPts=4000, int 
 	int copyTime = 0, rhsTime = 0, invTime = 0;
 	for(int i = 0; i < nsteps; i++){
         for(int k = 0; k < nPts; k++)
-            v0[k] = -std::exp(-dx*dx/100.0*(double)((k-nPts/2)*(k-nPts/2)));
+            v0[k] = 0.0;//-std::exp(-dx*dx/100.0*(double)((k-nPts/2)*(k-nPts/2)));
 
 		std::cout << "Step " << i << ": rel norm = " << vtls::getNorm(nPts*nrhs, x, dx) / norm0 <<  std::endl;
-		if(i % 500 == 0){
+		if(i % 500 == 0 && plot){
 			if (futPlot.valid())
 				futPlot.get();
 			vtls::scaMulArrayRe(nPts, 1.0, v0, temp);
 			vtls::scaMulArrayRe(nPts*nrhs, 1.0, x, &temp[nPts]);
 			futPlot = std::async(std::launch::async, [&](){
-				plotter->update(nPts, nrhs+1, temp, -5.0, 5.0);
+				plotter->update(nPts, nrhs+1, temp);//, -5.0, 5.0);
 				return 0;
 			});
 		}
+		// get RHS info, update BCs
+		cblas_zcopy(nrhs, x, nPts, bct1, 1); // map first element of all wavefunctions to bct1
+		cblas_zcopy(nrhs, &x[1], nPts, bct2, 1); // map second element of all wavefunctions to bct2
+
+		lbc->prepareStep(bct1, bct2, std::real(v[0]));
+		lbc->getRHS(bct1, bct2, std::real(v[0]), lbct, nrhs);
+		lbc->finishStep(bct1, bct2, std::real(v[0]));
+
+		cblas_zcopy(nrhs, &x[nPts-1], nPts, bct1, 1); // map last element of all wavefunctions to bct1
+		cblas_zcopy(nrhs, &x[nPts-2], nPts, bct2, 1); // map second to last element of all wavefunctions to bct2
+		rbc->prepareStep(bct1, bct2, std::real(v[nPts-1]));
+		rbc->getRHS(bct1, bct2, std::real(v[nPts-1]), rbct, nrhs);
+		rbc->finishStep(bct1, bct2, std::real(v[nPts-1]));
 
         // reset LHS matrix
         time0 = std::chrono::high_resolution_clock::now();
@@ -161,19 +178,11 @@ void testTridiagonalAlgorithms(int rhsMethod, int lhsMethod, int nPts=4000, int 
         vtls::copyArray(nPts, rd0, rd);
 		vtls::scaMulArray(nPts, -0.5*PhysCon::im*dt, v0, v);
 		vtls::addArrays(nPts, v, rd);
-
-		// get RHS info
-		cblas_zcopy(nrhs, x, nPts, bct1, 1); // map first element of all wavefunctions to bct1
-		cblas_zcopy(nrhs, &x[1], nPts, bct2, 1); // map second element of all wavefunctions to bct2
-		lbc->prepareStep(bct1, bct2, std::real(v[0]));
-		lbc->getRHS(bct1, bct2, std::real(v[0]), lbct, nrhs);
-		lbc->finishStep(bct1, bct2, std::real(v[0]));
-
-		cblas_zcopy(nrhs, &x[nPts-1], nPts, bct1, 1); // map last element of all wavefunctions to bct1
-		cblas_zcopy(nrhs, &x[nPts-2], nPts, bct2, 1); // map second to last element of all wavefunctions to bct2
-		rbc->prepareStep(bct1, bct2, std::real(v[nPts-1]));
-		rbc->getRHS(bct1, bct2, std::real(v[nPts-1]), rbct, nrhs);
-		rbc->finishStep(bct1, bct2, std::real(v[nPts-1]));
+		// LHS BCs
+		d[0] = lbc->getLHSEle();
+		ud[0] = lbc->getLHSAdjEle();
+		d[nPts-1] = rbc->getLHSEle();
+		ld[nPts-2] = rbc->getLHSAdjEle();
 
         time1 = std::chrono::high_resolution_clock::now();
         copyTime += std::chrono::duration_cast<std::chrono::microseconds>(time1 - time0).count();
@@ -228,7 +237,7 @@ void testTridiagonalAlgorithms(int rhsMethod, int lhsMethod, int nPts=4000, int 
 				throw std::runtime_error("zgtsvx not implemented");
 				break;
 			case 2: // zptsv
-				throw std::runtime_error("zptsv not implemented");
+				throw std::runtime_error("zptsv not implemented"); // assumes positive definite, cannot be the case with TBCs
 				break;
 			case 3: // zptsvx
 				throw std::runtime_error("zptsvx not implemented");
@@ -267,11 +276,11 @@ void testTridiagonalAlgorithms(int rhsMethod, int lhsMethod, int nPts=4000, int 
 	delete lbc;
 	delete rbc;
 
-	delete plotter;
+	if(plot)
+		delete plotter;
 }
 
 int main(int argc, char** argv){
-	
     for(int i = 2; i < 3; i++)
 		for(int j = 0; j < 1; j++)
         	testTridiagonalAlgorithms(i, j);
