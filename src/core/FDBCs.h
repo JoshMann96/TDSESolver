@@ -154,7 +154,8 @@ namespace FDBCs
         void finishStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb){
 			for (int i = 0; i < nElec; i++){
 				psis[i]->stepBack();
-				psis[i]->mul(std::exp(PhysCon::im/PhysCon::hbar*vb*dt));
+				//psis[i]->mul(std::exp(-PhysCon::im/PhysCon::hbar*vb*dt));
+				psis[i]->mul( (2.0 - PhysCon::im/PhysCon::hbar*vb*dt) / (2.0 + PhysCon::im/PhysCon::hbar*vb*dt) );
 			}
 		};
 		void prepareStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb){
@@ -167,7 +168,7 @@ namespace FDBCs
 		void fillHistory(std::complex<double>* psibd, double* kin) { 
 			for (int i = 0; i < nElec; i++)
 				for (int j = 0; j < order; j++)
-					psis[i]->set(j, psibd[i]*std::exp(-PhysCon::im/PhysCon::hbar*kin[i]*(j*dt)));
+					psis[i]->set(j, psibd[i]*std::exp(PhysCon::im/PhysCon::hbar*kin[i]*(j*dt)));
 		};
 	};
 

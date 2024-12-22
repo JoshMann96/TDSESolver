@@ -22,8 +22,8 @@ namespace FDBCs{
 
     void HDTransparentBC::calcKernel(double vb){
         double rr = 4.0*dx*dx/dt;
-        double sig = 2*dx*dx*vb;
-        double phi = std::atan(2*rr*(sig+2.0)/(rr*rr-4.0*sig-sig*sig));
+        double sig = 2.0*dx*dx*vb;
+        double phi = std::atan(2.0*rr*(sig+2.0)/(rr*rr-4.0*sig-sig*sig));
         double mu = (rr*rr+4*sig+sig*sig)/std::sqrt((rr*rr+sig*sig)*(rr*rr+(sig+4.0)*(sig+4.0)));
         std::complex<double> lam = std::exp(PhysCon::im * phi);
         std::complex<double> al = 0.5*PhysCon::im * std::exp(0.5*PhysCon::im*phi) * std::pow((rr*rr+sig*sig)*(rr*rr+(sig+4.0)*(sig+4.0)), 0.25);
@@ -34,7 +34,8 @@ namespace FDBCs{
         for (int i = 2; i < order; i++)
             kernel[i] = (2.0*i-1.0)/(i+1.0) * mu / lam * kernel[i-1] - (i-2.0)/(i+1.0) / (lam*lam) * kernel[i-2];
         
-        std::complex<double> phs0 = std::exp(-PhysCon::im/PhysCon::hbar*(vb*dt)), phs = 1.0;
+        //std::complex<double> phs0 = std::exp(PhysCon::im/PhysCon::hbar*(vb*dt)), phs = 1.0;
+        std::complex<double> phs0 = (2.0 + PhysCon::im/PhysCon::hbar*vb*dt) / (2.0 - PhysCon::im/PhysCon::hbar*vb*dt), phs = 1.0;
         for (int i = 0; i < order; i++){
             kernel[i] *= phs;
             phs *= phs0;
