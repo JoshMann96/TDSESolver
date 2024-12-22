@@ -1,3 +1,5 @@
+#pragma once
+
 #define dcomplex double __complex__
 #define lapack_int int
 #define lapack_complex_double dcomplex
@@ -126,6 +128,8 @@ extern void cblas_zcopy(const int N, const void *X, const int incX,
                  void *Y, const int incY);
 extern void cblas_zaxpy(const int N, const void *alpha, const void *X,
                  const int incX, void *Y, const int incY);
+extern void cblas_zdotu_sub(const int N, const void *X, const int incX,
+                       const void *Y, const int incY, void *dotu);
 
 
 enum CBLAS_ORDER {CblasRowMajor=101, CblasColMajor=102};
