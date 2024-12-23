@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # This script is used to build the project and create a Python virtual environment (venv).
 # To install to a custom venv, cd to build/lib/tdsepy and run `pip install -e .`
