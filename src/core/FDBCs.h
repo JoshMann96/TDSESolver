@@ -144,6 +144,7 @@ namespace FDBCs
         std::complex<double> kernel0, *kernel;
 
         void calcKernel(double vb);
+		std::complex<double> phasePerStep(double vb);
 	public:
 
 		HDTransparentBC(int order, int nElec, double dx, double dt);
@@ -151,25 +152,10 @@ namespace FDBCs
 		std::complex<double> getLHSEle() { return -kernel0; };
 		std::complex<double> getLHSAdjEle() { return 1.0; };
 		void getRHS(std::complex<double>* psibd, std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec);
-        void finishStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb){
-			for (int i = 0; i < nElec; i++){
-				psis[i]->stepBack();
-				//psis[i]->mul(std::exp(-PhysCon::im/PhysCon::hbar*vb*dt));
-				psis[i]->mul( (2.0 - PhysCon::im/PhysCon::hbar*vb*dt) / (2.0 + PhysCon::im/PhysCon::hbar*vb*dt) );
-			}
-		};
-		void prepareStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb){
-			for (int i = 0; i < nElec; i++){
-				psis[i]->set(0, psibd[i]);
-			}
-			calcKernel(vb);
-		};
+        void finishStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb);
+		void prepareStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb);
 		void printKernel() { for (int i = 0; i < order; i++) std::cout << kernel[i] << " "; std::cout << std::endl; };
-		void fillHistory(std::complex<double>* psibd, double* kin) { 
-			for (int i = 0; i < nElec; i++)
-				for (int j = 0; j < order; j++)
-					psis[i]->set(j, psibd[i]*std::exp(PhysCon::im/PhysCon::hbar*kin[i]*(j*dt)));
-		};
+		void fillHistory(std::complex<double>* psibd, double* kin);
 	};
 
 	// Inhomogeneous Discrete Transparent Boundary Condition (incoming current)

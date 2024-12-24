@@ -35,7 +35,7 @@ namespace FDBCs{
             kernel[i] = (2.0*i-1.0)/(i+1.0) * mu / lam * kernel[i-1] - (i-2.0)/(i+1.0) / (lam*lam) * kernel[i-2];
         
         //std::complex<double> phs0 = std::exp(PhysCon::im/PhysCon::hbar*(vb*dt)), phs = 1.0;
-        std::complex<double> phs0 = (2.0 + PhysCon::im/PhysCon::hbar*vb*dt) / (2.0 - PhysCon::im/PhysCon::hbar*vb*dt), phs = 1.0;
+        std::complex<double> phs0 = phasePerStep(vb), phs = 1.0;
         for (int i = 0; i < order; i++){
             kernel[i] *= phs;
             phs *= phs0;
@@ -48,5 +48,34 @@ namespace FDBCs{
 
         for (int i = 0; i < nElec; i++)
             res[i] = psis[i]->inner(kernel) - psiad[i];
+    }
+
+    void HDTransparentBC::prepareStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb){
+        for (int i = 0; i < nElec; i++)
+            psis[i]->set(0, psibd[i]);
+        calcKernel(vb);
+	}
+
+    void HDTransparentBC::finishStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb){
+        std::complex<double> phs = 1.0/phasePerStep(vb);
+        for (int i = 0; i < nElec; i++){
+            psis[i]->stepBack();
+            //psis[i]->mul(std::exp(-PhysCon::im/PhysCon::hbar*vb*dt));
+            psis[i]->mul( phs );
+        }
+	}
+
+    void HDTransparentBC::fillHistory(std::complex<double>* psibd, double* kin) { 
+        for (int i = 0; i < nElec; i++){
+            std::complex<double> phs0 = phasePerStep(kin[i]), phs = 1.0;
+            for (int j = 0; j < order; j++){
+                psis[i]->set(j, psibd[i]*phs);
+                phs *= phs0;
+            }
+        }
+    };
+
+    std::complex<double> HDTransparentBC::phasePerStep(double vb){
+        return (2.0 + PhysCon::im/PhysCon::hbar*vb*dt) / (2.0 - PhysCon::im/PhysCon::hbar*vb*dt);
     }
 }
