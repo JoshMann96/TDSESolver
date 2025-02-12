@@ -97,7 +97,7 @@ namespace FDBCs{
         ihpsi = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * order);
 
         for (int i = 0; i < nElec; i++){
-            dphs[i] = 1.0-0.5*PhysCon::im*dt*PhysCon::hbar/PhysCon::auE_ha*(PhysCon::a0*PhysCon::a0/dx/dx*(1.0-std::cos(k0[i]*dx)) + vb/PhysCon::auE_ha);
+            dphs[i] = 1.0-0.5*PhysCon::im*dt*(1.0/dx/dx*(1.0-std::cos(k0[i]*dx)) + vb/PhysCon::auE_ha);
             dphs[i] /= std::conj(dphs[i]);
 
             adjphs[i] = std::exp(PhysCon::im*k0[i]*dx);
