@@ -3,24 +3,27 @@
 #include "FDBCs.h"
 
 namespace FDBCs{
-    HDTransparentBC::HDTransparentBC(int order, int nElec, double dx, double dt) : order(order), nElec(nElec), dx(dx / PhysCon::a0), dt(dt / PhysCon::hbar * PhysCon::auE_ha) {
+    UniformHDTransparentBC::UniformHDTransparentBC(int order, int nElec, double dx, double dt) : order(order), nElec(nElec), dx(dx / PhysCon::a0), dt(dt / PhysCon::hbar * PhysCon::auE_ha) {
         if (order < 1)
             throw std::invalid_argument("Order of HDTransparentBC must be greater than 0.");
 
         psis = new CyclicArray<std::complex<double>>*[nElec];
-        for (int i = 0; i < nElec; i++)
+        for (int i = 0; i < nElec; i++){
             psis[i] = new CyclicArray<std::complex<double>>(order, 0.0);
+        }
+
         kernel = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * order);
     }
 
-    HDTransparentBC::~HDTransparentBC() {
-        for (int i = 0; i < nElec; i++)
+    UniformHDTransparentBC::~UniformHDTransparentBC() {
+        for (int i = 0; i < nElec; i++){
             delete psis[i];
+        }
         delete[] psis;
         sq_free(kernel);
     }
 
-    void HDTransparentBC::calcKernel(double vb){
+    void UniformHDTransparentBC::calcKernel(double vb){
         double rr = 4.0*dx*dx/dt;
         double sig = 2.0*dx*dx*vb;
         double phi = std::atan(2.0*rr*(sig+2.0)/(rr*rr-4.0*sig-sig*sig));
@@ -33,16 +36,21 @@ namespace FDBCs{
         kernel[1] =  al * std::exp(-PhysCon::im*2.0*phi) * 0.5 * (mu*mu - 1.0);
         for (int i = 2; i < order; i++)
             kernel[i] = (2.0*i-1.0)/(i+1.0) * mu / lam * kernel[i-1] - (i-2.0)/(i+1.0) / (lam*lam) * kernel[i-2];
-        
-        //std::complex<double> phs0 = std::exp(PhysCon::im/PhysCon::hbar*(vb*dt)), phs = 1.0;
-        std::complex<double> phs0 = phasePerStep(vb), phs = 1.0;
-        for (int i = 0; i < order; i++){
-            kernel[i] *= phs;
-            phs *= phs0;
-        }
     }
 
-    void HDTransparentBC::getRHS(std::complex<double>* psibd, std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec){
+    /*void UniformHDTransparentBC::calcCVPsis(double vb){
+        for (int i = 0; i < nElec; i++){
+            std::complex<double> phs = 1.0;
+            for (int j = 0; j < order-1; j++){
+                cvpsis[i]->set(j, phs * psis[i]->get(j));
+                phs *= (2.0 + PhysCon::im*dt*(vb - vbs->get(j+1))*(1.0+psis[i]->get(j)/psis[i]->get(j+1))) /\
+                    (2.0 - PhysCon::im*dt*(vb - vbs->get(j+1))*(1.0+psis[i]->get(j+1)/psis[i]->get(j)));
+            }
+            cvpsis[i]->set(order-1, phs * psis[i]->get(order-1));
+        }
+    }*/
+
+    void UniformHDTransparentBC::getRHS(std::complex<double>* psibd, std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec){
         if (this->nElec != nElec)
             throw std::invalid_argument("Number of electrons in HDTransparentBC does not match the number of electrons in the system.");
 
@@ -50,32 +58,36 @@ namespace FDBCs{
             res[i] = psis[i]->inner(kernel) - psiad[i];
     }
 
-    void HDTransparentBC::prepareStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb){
+    void UniformHDTransparentBC::prepareStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb){
         for (int i = 0; i < nElec; i++)
             psis[i]->set(0, psibd[i]);
-        calcKernel(vb);
-	}
 
-    void HDTransparentBC::finishStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb){
-        std::complex<double> phs = 1.0/phasePerStep(vb);
-        for (int i = 0; i < nElec; i++){
-            psis[i]->stepBack();
-            //psis[i]->mul(std::exp(-PhysCon::im/PhysCon::hbar*vb*dt));
-            psis[i]->mul( phs );
+        if(!kernelCalculated){
+            calcKernel(vb);
+
+            kernelCalculated = 1;
+            kernelVb = vb;
         }
+        else if (abs(kernelVb-vb) > 1e-5/PhysCon::auE_ha)
+            throw std::runtime_error("Potential at UniformHDTransparentBC is not constant. Consider using a different boundary condition.");
 	}
 
-    void HDTransparentBC::fillHistory(std::complex<double>* psibd, double* kin) { 
+    void UniformHDTransparentBC::finishStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb){
+        //std::complex<double> phs = 1.0/phasePerStep(vb);
+        for (int i = 0; i < nElec; i++)
+            psis[i]->stepBack();
+	}
+
+    // TODO: Correct now that history will contain unmodified wavefunction
+    void UniformHDTransparentBC::fillHistory(std::complex<double>* psibd, double* k0, double vb) {
         for (int i = 0; i < nElec; i++){
-            std::complex<double> phs0 = phasePerStep(kin[i]), phs = 1.0;
+            std::complex<double> dphs = 1.0-0.5*PhysCon::im*dt*PhysCon::hbar/PhysCon::auE_ha*(PhysCon::a0*PhysCon::a0/dx/dx*(1.0-std::cos(k0[i]*dx)) + vb/PhysCon::auE_ha);
+            dphs = dphs / std::conj(dphs);
+            std::complex<double> phs = 1.0;
             for (int j = 0; j < order; j++){
                 psis[i]->set(j, psibd[i]*phs);
-                phs *= phs0;
+                phs /= dphs;
             }
         }
     };
-
-    std::complex<double> HDTransparentBC::phasePerStep(double vb){
-        return (2.0 + PhysCon::im/PhysCon::hbar*vb*dt) / (2.0 - PhysCon::im/PhysCon::hbar*vb*dt);
-    }
 }

@@ -87,7 +87,7 @@ namespace FDBCs
 		virtual void getRHS(std::complex<double>* psibd, std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec) = 0; // RHS value for the condition
 		virtual void finishStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb) = 0;
 		virtual void prepareStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb) = 0;
-		virtual void fillHistory(std::complex<double>* psibd, double* kin) = 0;
+		virtual void fillHistory(std::complex<double>* psibd, double* kin, double vb) = 0;
 	};
 
 	/*
@@ -101,7 +101,7 @@ namespace FDBCs
 			for (int i = 0; i < nElec; i++)
 				res[i] = getRHS(vb);
 		}
-		void fillHistory(std::complex<double>* psibd, double* kin) { return; };
+		void fillHistory(std::complex<double>* psibd, double* kin, double vb) { return; };
 		void prepareStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb) {};
 		void finishStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb) {};
 		virtual std::complex<double> getRHS(double vb) = 0; // RHS value for the condition
@@ -134,7 +134,7 @@ namespace FDBCs
 	};
 
 	// Homogeneous Discrete Transparent Boundary Condition
-	class HDTransparentBC :
+	class UniformHDTransparentBC :
 		public BoundaryCondition
 	{
 	private:
@@ -143,24 +143,26 @@ namespace FDBCs
         CyclicArray<std::complex<double>> **psis;
         std::complex<double> kernel0, *kernel;
 
+		int kernelCalculated=0;
+		double kernelVb;
+
         void calcKernel(double vb);
-		std::complex<double> phasePerStep(double vb);
 	public:
 
-		HDTransparentBC(int order, int nElec, double dx, double dt);
-        ~HDTransparentBC();
+		UniformHDTransparentBC(int order, int nElec, double dx, double dt);
+        ~UniformHDTransparentBC();
 		std::complex<double> getLHSEle() { return -kernel0; };
 		std::complex<double> getLHSAdjEle() { return 1.0; };
 		void getRHS(std::complex<double>* psibd, std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec);
         void finishStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb);
 		void prepareStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb);
 		void printKernel() { for (int i = 0; i < order; i++) std::cout << kernel[i] << " "; std::cout << std::endl; };
-		void fillHistory(std::complex<double>* psibd, double* kin);
+		void fillHistory(std::complex<double>* psibd, double* k0, double vb);
 	};
 
 	// Inhomogeneous Discrete Transparent Boundary Condition (incoming current)
-	class IDTransparentBC :
-		public HDTransparentBC
+	class IDUniformTransparentBC :
+		public UniformHDTransparentBC
 	{
 	};
 
