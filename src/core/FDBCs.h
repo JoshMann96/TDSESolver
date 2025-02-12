@@ -158,12 +158,22 @@ namespace FDBCs
 		void prepareStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb);
 		void printKernel() { for (int i = 0; i < order; i++) std::cout << kernel[i] << " "; std::cout << std::endl; };
 		void fillHistory(std::complex<double>* psibd, double* k0, double vb);
+
+		friend class UniformIDTransparentBC;
 	};
 
 	// Inhomogeneous Discrete Transparent Boundary Condition (incoming current)
-	class IDUniformTransparentBC :
+	class UniformIDTransparentBC :
 		public UniformHDTransparentBC
 	{
+	private:
+		std::complex<double> * dphs, * phs, * adjphs, *ihpsi;
+	public:
+		UniformIDTransparentBC(int order, int nElec, double dx, double dt, std::complex<double>* psibd, double* k0, double vb);
+		~UniformIDTransparentBC() { sq_free(dphs); sq_free(phs); sq_free(adjphs); sq_free(ihpsi); };
+		void prepareStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb);
+		void getRHS(std::complex<double>* psibd, std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec);
+		void finishStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb);
 	};
 
 }

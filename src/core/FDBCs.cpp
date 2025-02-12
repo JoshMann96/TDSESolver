@@ -78,7 +78,6 @@ namespace FDBCs{
             psis[i]->stepBack();
 	}
 
-    // TODO: Correct now that history will contain unmodified wavefunction
     void UniformHDTransparentBC::fillHistory(std::complex<double>* psibd, double* k0, double vb) {
         for (int i = 0; i < nElec; i++){
             std::complex<double> dphs = 1.0-0.5*PhysCon::im*dt*PhysCon::hbar/PhysCon::auE_ha*(PhysCon::a0*PhysCon::a0/dx/dx*(1.0-std::cos(k0[i]*dx)) + vb/PhysCon::auE_ha);
@@ -90,4 +89,50 @@ namespace FDBCs{
             }
         }
     };
+
+    UniformIDTransparentBC::UniformIDTransparentBC(int order, int nElec, double dx, double dt, std::complex<double>* psibd, double* k0, double vb) : UniformHDTransparentBC(order, nElec, dx, dt) {
+        dphs = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * order);
+        phs = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * order);
+        adjphs = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * order);
+        ihpsi = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * order);
+
+        for (int i = 0; i < nElec; i++){
+            dphs[i] = 1.0-0.5*PhysCon::im*dt*PhysCon::hbar/PhysCon::auE_ha*(PhysCon::a0*PhysCon::a0/dx/dx*(1.0-std::cos(k0[i]*dx)) + vb/PhysCon::auE_ha);
+            dphs[i] /= std::conj(dphs[i]);
+
+            adjphs[i] = std::exp(PhysCon::im*k0[i]*dx);
+
+            ihpsi[i] = psibd[i];
+        }
+        std::fill_n(phs, order, 1.0);
+    }
+
+    void UniformIDTransparentBC::prepareStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb){
+        for (int i = 0; i < nElec; i++)
+            psis[i]->set(0, psibd[i] - ihpsi[i]*phs[i]/dphs[i]); // subtract off inhomogeneous component
+
+        if(!kernelCalculated){
+            calcKernel(vb);
+
+            kernelCalculated = 1;
+            kernelVb = vb;
+        }
+        else if (abs(kernelVb-vb) > 1e-5/PhysCon::auE_ha)
+            throw std::runtime_error("Potential at UniformHDTransparentBC is not constant. Consider using a different boundary condition.");
+    }
+
+    void UniformIDTransparentBC::getRHS(std::complex<double>* psibd, std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec){
+        if (this->nElec != nElec)
+            throw std::invalid_argument("Number of electrons in HDTransparentBC does not match the number of electrons in the system.");
+
+        for (int i = 0; i < nElec; i++)
+            res[i] = psis[i]->inner(kernel) - psiad[i] + ihpsi[i]*phs[i]*(adjphs[i] - kernel0); // add inhomogeneous component of present step
+    }
+
+    void UniformIDTransparentBC::finishStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb) {
+        UniformHDTransparentBC::finishStep(psibd, psiad, vb);
+
+        for (int i = 0; i < nElec; i++)
+            phs[i] *= dphs[i];
+    }
 }
