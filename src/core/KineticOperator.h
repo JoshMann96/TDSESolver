@@ -189,7 +189,7 @@ namespace KineticOperators {
 		public KineticOperator
 	{
 	public:
-		virtual void stepHalfVirtual(std::complex<double>* psi0, double* v, std::complex<double>* targ, int nElec) = 0; // half timestep without iterating time, for finding the midpoint potential
+		virtual void stepVirtual(std::complex<double>* psi0, double* v, std::complex<double>* targ, int nElec) = 0; // timestep without iterating BCs
 		virtual void step(std::complex<double>* psi0, double* v, std::complex<double>* targ, int nElec) = 0;
 	};
 
@@ -198,9 +198,14 @@ namespace KineticOperators {
 	{
 		int nPts;
 		double dx, dt, m_eff;
-		FDBCs::BoundaryCondition *leftBC, *rightBC;
-		std::complex<double> offDiag, diag; // elements of LHS tridiagonal matrix
-		std::complex<double>* lhs;
+		FDBCs::BoundaryCondition *lbc, *rbc;
+		std::complex<double> offDiag0, diag0, rhsDiag, rhsOffDiag, potmul; // elements of LHS tridiagonal matrix
+		std::complex<double> *d, *ud, *ld;
+
+		int nElec;
+		std::complex<double> *rbct=nullptr, *lbct=nullptr, *bct1=nullptr, *bct2=nullptr;
+	
+		void _step(std::complex<double>* psi0, double* v, std::complex<double>* targ, int nElec, int isVirtual);
 	public:
 		CrankNicolson(int nPts, double dx, double dt, double m_eff, FDBCs::BoundaryCondition* leftBC, FDBCs::BoundaryCondition* rightBC);
 		~CrankNicolson(){};
@@ -208,16 +213,20 @@ namespace KineticOperators {
 		void setBC(FDBCs::BoundaryCondition* bc, FDBCs::BCSide side) { 
 			switch (side) {
 				case FDBCs::BCSide::LEFT:
-					leftBC = bc;
+					lbc = bc;
 					break;
 				case FDBCs::BCSide::RIGHT:
-					rightBC = bc;
+					rbc = bc;
 					break;
 			}
 		};
 
-		void step(std::complex<double>* psi0, double* v, std::complex<double>* targ, int nElec);
-		void stepHalfVirtual(std::complex<double>* psi0, double* v, std::complex<double>* targ, int nElec);
+		void step(std::complex<double>* psi0, double* v, std::complex<double>* targ, int nElec){
+			_step(psi0, v, targ, nElec, 0);
+		};
+		void stepVirtual(std::complex<double>* psi0, double* v, std::complex<double>* targ, int nElec){
+			_step(psi0, v, targ, nElec, 1);
+		}
 		void findEigenStates(double* v, double emin, double emax, std::complex<double>* states, int* nEigs);
 		double evaluateKineticEnergy(std::complex<double>* psi);
 	};

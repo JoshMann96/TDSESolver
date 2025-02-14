@@ -118,6 +118,40 @@ void LAPACK_zptsvx(
     double* rwork,
     lapack_int* info );
 
+#define LAPACK_dstebz_base LAPACK_GLOBAL(dstebz,DSTEBZ)
+void LAPACK_dstebz_base(
+    char const* range, char const* order,
+    lapack_int const* n,
+    double const* vl,
+    double const* vu, lapack_int const* il, lapack_int const* iu,
+    double const* abstol,
+    double const* D,
+    double const* E, lapack_int* m, lapack_int* nsplit,
+    double* W, lapack_int* IBLOCK, lapack_int* ISPLIT,
+    double* work,
+    lapack_int* iwork,
+    lapack_int* info
+#ifdef LAPACK_FORTRAN_STRLEN_END
+    , FORTRAN_STRLEN, FORTRAN_STRLEN
+#endif
+);
+#ifdef LAPACK_FORTRAN_STRLEN_END
+    #define LAPACK_dstebz(...) LAPACK_dstebz_base(__VA_ARGS__, 1, 1)
+#else
+    #define LAPACK_dstebz(...) LAPACK_dstebz_base(__VA_ARGS__)
+#endif
+
+#define LAPACK_dstein LAPACK_GLOBAL(dstein,DSTEIN)
+void LAPACK_dstein(
+    lapack_int const* n,
+    double const* D,
+    double const* E, lapack_int const* m,
+    double const* W, lapack_int const* IBLOCK, lapack_int const* ISPLIT,
+    double* Z, lapack_int const* ldz,
+    double* work,
+    lapack_int* iwork, lapack_int* IFAIL,
+    lapack_int* info );
+
 //selected from cblas.h
 extern void cblas_zscal(const int N, const void *alpha, void *X, const int incX);
 extern void cblas_dscal(const int N, const double alpha, double *X, const int incX);

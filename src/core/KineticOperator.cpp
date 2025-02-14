@@ -5,6 +5,7 @@
 #include <fftw3.h>
 #include "CORECommonHeader.h"
 #include "blas.h"
+#include "MathTools.h"
 
 #define MULTIELEC_FFTW_POLICY FFTW_PATIENT
 
@@ -831,16 +832,126 @@ namespace KineticOperators {
 	}
 
 
-	/*CrankNicolson::CrankNicolson(int nPts, double dx, double dt, double m_eff, FDBCs::BoundaryCondition* leftBC, FDBCs::BoundaryCondition* rightBC) :
-		nPts(nPts), dx(dx), dt(dt), m_eff(m_eff), leftBC(leftBC), rightBC(rightBC)
-	{
-		hasUniqueBCs = FDBCs::isUnique(leftBC) || FDBCs::isUnique(rightBC);
-
-		// initialize LHS matrix
-		offDiag = -0.25 * PhysCon::im * PhysCon::hbar * dt / (m_eff * PhysCon::me * dx * dx);
-		diag    = 1.0 - 0.5 * PhysCon::im * PhysCon::hbar * dt / (m_eff * PhysCon::me * dx * dx); 
+	CrankNicolson::CrankNicolson(int nPts, double dx, double dt, double m_eff, FDBCs::BoundaryCondition* leftBC, FDBCs::BoundaryCondition* rightBC) :
+		nPts(nPts), dx(dx), dt(dt), m_eff(m_eff), lbc(leftBC), rbc(rightBC) {
+			d = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nPts);
+			ud= (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * (nPts-1));
+			ld= (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * (nPts-1));
 
 
-	}*/
+			diag0 = 1.0 + 0.5*PhysCon::im*PhysCon::hbar/PhysCon::me/m_eff*dt/(dx*dx);
+			offDiag0 = -0.25*PhysCon::im*PhysCon::hbar/PhysCon::me/m_eff*dt/(dx*dx);
+
+			rhsDiag = 1.0 - 0.5*PhysCon::im*PhysCon::hbar/PhysCon::me/m_eff*dt/(dx*dx);
+			rhsOffDiag = 0.25*PhysCon::im*PhysCon::hbar/PhysCon::me/m_eff*dt/(dx*dx);
+
+			std::fill_n(d, nPts, diag0);
+			std::fill_n(ud, nPts-1, offDiag0);
+			std::fill_n(ld, nPts-1, offDiag0);
+
+			potmul = 0.5*PhysCon::im*dt/PhysCon::hbar;
+	}
+
+	void CrankNicolson::_step(std::complex<double>* psi0, double* v, std::complex<double>* targ, int nElec, int isVirtual) {
+		//prepare left BC
+		cblas_zcopy(nElec, psi0, nPts, bct1, 1); // map first element of all wavefunctions to bct1
+		cblas_zcopy(nElec, &psi0[1], nPts, bct2, 1); // map second element of all wavefunctions to bct2
+	
+		lbc->prepareStep(bct1, bct2, std::real(v[0]));
+		lbc->getRHS(bct1, bct2, std::real(v[0]), lbct, nElec);
+		if(!isVirtual)
+			lbc->finishStep(bct1, bct2, std::real(v[0]));
+
+		//prepare right BC
+		cblas_zcopy(nElec, &psi0[nPts-1], nPts, bct1, 1); // map last element of all wavefunctions to bct1
+		cblas_zcopy(nElec, &psi0[nPts-2], nPts, bct2, 1); // map second to last element of all wavefunctions to bct2
+		
+		rbc->prepareStep(bct1, bct2, std::real(v[nPts-1]));
+		rbc->getRHS(bct1, bct2, std::real(v[nPts-1]), rbct, nElec);
+		if(!isVirtual)
+			rbc->finishStep(bct1, bct2, std::real(v[nPts-1]));
+
+		//prepare LHS matrix
+		std::fill_n(d, nPts, diag0);
+		vtls::scaMulAddArrays(nPts-2, potmul, &v[1], &d[1]); // d += potmul*v, leave BCs alone
+		std::fill_n(ud, nPts-1, offDiag0);
+		std::fill_n(ld, nPts-1, offDiag0);
+
+		d[0] = lbc->getLHSEle();
+		d[nPts-1] = rbc->getLHSEle();
+		ud[0] = lbc->getLHSAdjEle();
+		ld[nPts-2] = rbc->getLHSAdjEle();
+
+		// evaluate RHS
+		#pragma omp parallel for collapse(2)
+		for(int j = 0; j < nElec; j++)
+			for(int k = 0; k < nPts-1; k++)
+				targ[k*nPts+k] = (-potmul*v[k]+rhsDiag)*psi0[k*nPts+j] +
+					(rhsOffDiag*psi0[j*nPts+k-1] + rhsOffDiag*psi0[j*nPts+k+1]);
+		// apply RHS BC
+		cblas_zcopy(nElec, lbct, 1, targ, nPts);
+		cblas_zcopy(nElec, rbct, 1, &targ[nPts-1], nPts);
+
+		//SOLVE
+		int info;
+		LAPACK_zgtsv(&nPts, &nElec, reinterpret_cast<dcomplex*>(ld), reinterpret_cast<dcomplex*>(d), reinterpret_cast<dcomplex*>(ud), reinterpret_cast<dcomplex*>(targ), &nPts, &info);
+	}
+
+	void CrankNicolson::findEigenStates(double* v, double emin, double emax, std::complex<double>* states, int* nEigs){
+		double* hd = (double*)sq_malloc(sizeof(double)*nPts);
+		double* hod= (double*)sq_malloc(sizeof(double)*(nPts-1));
+		int  nSplit;
+		int* iblock = (int*)sq_malloc(sizeof(int)*nPts);
+		int* isplit = (int*)sq_malloc(sizeof(int)*nPts);
+		int* iwork = (int*)sq_malloc(sizeof(int)*3*nPts);
+		double* work = (double*)sq_malloc(sizeof(double)*5*nPts);
+		double* eigs = (double*)sq_malloc(sizeof(double)*nPts);
+		
+		double energyScaler = PhysCon::me*m_eff*dx*dx/(PhysCon::hbar*PhysCon::hbar); // to make matrix nicely scaled
+		emin = emin*energyScaler;
+		emax = emax*energyScaler;
+
+		std::fill_n(hd, nPts, 1.0);
+		vtls::scaMulAddArrays(nPts, energyScaler, v, hd);
+		std::fill_n(hod, nPts-1, -0.5);
+
+		// get eigenvalues
+		const char* cS = "S";
+		double prec = 2.0*LAPACK_dlamch(cS);
+		int info;
+		LAPACK_dstebz("V", "B", &nPts, &emin, &emax, 0, 0, &prec, hd, hod, nEigs, &nSplit, eigs, iblock, isplit, work, iwork, &info);
+
+		double* statesTemp = (double*)sq_malloc(sizeof(double)*nPts*(*nEigs));
+		int* ifail = (int*)sq_malloc(sizeof(int)*(*nEigs));
+
+		// get eigenvectors
+		LAPACK_dstein(&nPts, hd, hod, nEigs, eigs, iblock, isplit, statesTemp, &nPts, work, iwork, ifail, &info);
+		// copy eigenvectors to states
+		states = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts*(*nEigs));
+		vtls::copyArray(nPts*(*nEigs), statesTemp, states);
+		
+		sq_free(hd);
+		sq_free(hod);
+		sq_free(iblock);
+		sq_free(isplit);
+		sq_free(iwork);
+		sq_free(work);
+		sq_free(eigs);
+		sq_free(statesTemp);
+		sq_free(ifail);
+	}
+
+	double CrankNicolson::evaluateKineticEnergy(std::complex<double>* psi){
+		std::complex<double>* temp = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts);
+		vtls::scaMulArray(nPts, PhysCon::hbar*PhysCon::hbar/(PhysCon::me*m_eff*dx*dx), psi, temp);
+		vtls::scaMulAddArrays(nPts-1, -0.5*PhysCon::hbar*PhysCon::hbar/(PhysCon::me*m_eff*dx*dx), &psi[1], &temp[0]);
+		vtls::scaMulAddArrays(nPts-1, -0.5*PhysCon::hbar*PhysCon::hbar/(PhysCon::me*m_eff*dx*dx), &psi[0], &temp[1]);
+
+		double result = std::real(vtlsInt::rSumMul(nPts, psi, temp, 1.0) / vtls::getNorm(nPts, psi, 1.0));
+
+		sq_free(temp);
+
+		return std::real(vtlsInt::rSumMul(nPts, psi, temp, 1.0) / vtls::getNorm(nPts, psi, 1.0));
+	}
 
 }

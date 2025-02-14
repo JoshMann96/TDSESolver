@@ -257,6 +257,12 @@ namespace vtls {
 			y[i] = boost::math::tools::evaluate_polynomial(polyCoeffs, x[i], nPoly);
 	}
 
+	template <typename T, typename U, typename V>
+	void scaMulAddArrays(int len, T scalar, U* __restrict arr1, V* __restrict arr2targ) {
+		for (int i = 0; i < len; i++)
+			arr2targ[i] += arr1[i] * scalar;
+	}
+
 	// Adds two arrays into a third array
 	template <typename T, typename U, typename V>
 	void addArrays(int len, T* __restrict arr1, U* __restrict arr2, V* __restrict targ) {
