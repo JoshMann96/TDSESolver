@@ -174,6 +174,7 @@ namespace FDBCs
 		void prepareStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb);
 		void getRHS(std::complex<double>* psibd, std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec);
 		void finishStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb);
+		void fillHistory(std::complex<double>* psibd, double* k0, double vb);
 	};
 
 }

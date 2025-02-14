@@ -145,8 +145,8 @@ void SimulationManager::findEigenStates(double emin, double emax, double maxT, d
 		dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
 }
 
-void SimulationManager::findInhomogeneousSteadyStates(double threshold, int nElec){
-	nElec = nElec;
+void SimulationManager::findInhomogeneousSteadyStates(double threshold, int nElec, double* kl, double* kr, bool verbose){
+	this->nElec = nElec;
 
 	freePsis();
 	for(int i = 0; i < 4; i++){
@@ -155,10 +155,13 @@ void SimulationManager::findInhomogeneousSteadyStates(double threshold, int nEle
 		pot->getVBare(0.0, vs[i]);
 	}
 
+	double err;
 	double* temp1 = (double*) sq_malloc(sizeof(double) * nPts * nElec);
 	double* temp2 = (double*) sq_malloc(sizeof(double) * nPts * nElec);
 	bool converged = false;
+	int i = 0;
 	while(!converged){
+		kin_fdm->projectHistory(psis[prevIndex()], kl, kr, vs[index], nElec);
 		kin_fdm->step(psis[prevIndex()], vs[index], spatialDamp, psis[index], nElec);
 
 		vtls::normSqr(nPts*nElec, psis[index], temp1);
@@ -166,9 +169,13 @@ void SimulationManager::findInhomogeneousSteadyStates(double threshold, int nEle
 		vtls::scaMulAddArrays(nPts*nElec, -1.0, temp1, temp2); // temp2 = old - new
 		vtls::abs(nPts*nElec, temp2, temp2); // temp2 = |old - new|
 		// ? (sum of |old - new|) / (sum of |new|) < threshold
+		err = vtlsInt::rSum(nPts*nElec, temp2, 1.0) / vtlsInt::rSum(nPts*nElec, temp1, 1.0);
+		if(verbose && i % 10 == 0)
+			std::cout << "Error: " << err << std::endl;
 		converged = vtlsInt::rSum(nPts*nElec, temp2, 1.0) / vtlsInt::rSum(nPts*nElec, temp1, 1.0) < threshold;
 
 		vtls::copyArray(nPts*nElec, psis[index], psis[prevIndex()]);
+		i++;
 	}
 
 	for(int i = 0; i < 4; i++){
@@ -177,11 +184,9 @@ void SimulationManager::findInhomogeneousSteadyStates(double threshold, int nEle
 
 	sq_free(temp1);
 	sq_free(temp2);
-	calcWeights();
+	calcWeights(); // TODO: check if this calculation is still valid for arbitrary spectrum
 	if(calcDensity)
 		dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
-	
-
 }
 
 void SimulationManager::setPsi(std::complex<double>* npsi) {

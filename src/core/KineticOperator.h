@@ -177,21 +177,35 @@ namespace KineticOperators {
 	class KineticOperator_FDM :
 		public KineticOperator
 	{
+	protected:
+		FDBCs::BoundaryCondition *lbc, *rbc;
+		int nPts;
 	public:
+		KineticOperator_FDM(int nPts, FDBCs::BoundaryCondition* lbc, FDBCs::BoundaryCondition* rbc) : nPts(nPts), lbc(lbc), rbc(rbc) {};
 		virtual void stepVirtual(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec) = 0; // timestep without iterating BCs
 		virtual void step(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec) = 0;
+		virtual void findInhomogeneousEigenStates(double* v, std::complex<double>* states, int nEigs, bool verbose = false) = 0;
+		void projectHistory(std::complex<double>* psi, double* kl, double* kr, double* v, int nElec);
+
+		void setBC(FDBCs::BoundaryCondition* bc, FDBCs::BCSide side) { 
+			switch (side) {
+				case FDBCs::BCSide::LEFT:
+					lbc = bc;
+					break;
+				case FDBCs::BCSide::RIGHT:
+					rbc = bc;
+					break;
+			}
+		};
 	};
 
 	class CrankNicolson:
 		public KineticOperator_FDM
 	{
-		int nPts;
 		double dx, dt, m_eff;
-		FDBCs::BoundaryCondition *lbc, *rbc;
 		std::complex<double> offDiag0, diag0, rhsDiag, rhsOffDiag, potmul; // elements of LHS tridiagonal matrix
 		std::complex<double> *d, *ud, *ld;
 
-		int nElec;
 		std::complex<double> *rbct=nullptr, *lbct=nullptr, *bct1=nullptr, *bct2=nullptr;
 	
 		void _step(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec, int isVirtual);
@@ -214,17 +228,6 @@ namespace KineticOperators {
 
 		};
 
-		void setBC(FDBCs::BoundaryCondition* bc, FDBCs::BCSide side) { 
-			switch (side) {
-				case FDBCs::BCSide::LEFT:
-					lbc = bc;
-					break;
-				case FDBCs::BCSide::RIGHT:
-					rbc = bc;
-					break;
-			}
-		};
-
 		void step(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec){
 			_step(psi0, v, spatialDamp, targ, nElec, 0);
 		};
@@ -232,6 +235,8 @@ namespace KineticOperators {
 			_step(psi0, v, spatialDamp, targ, nElec, 1);
 		}
 		void findEigenStates(double* v, double emin, double emax, std::complex<double>** states, int* nEigs);
+		// iteratively solve inhomogeneous system, k0s and v0s are wavenumbers and potential values for the initial states
+		void findInhomogeneousEigenStates(double* v, double* k0s, double* v0s, std::complex<double>* states, int nElec, bool verbose = false);
 		double evaluateKineticEnergy(std::complex<double>* psi);
 	};
 }

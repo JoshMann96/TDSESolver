@@ -833,8 +833,20 @@ namespace KineticOperators {
 	}
 
 
+	void KineticOperator_FDM::projectHistory(std::complex<double>* psi, double* kl, double* kr, double* v, int nElec) {
+		std::complex<double>* bcwfs = ( std::complex<double>* )sq_malloc(sizeof(std::complex<double>) * nElec);
+
+		cblas_zcopy(nElec, &psi[0], nPts, bcwfs, 1);
+		lbc->fillHistory(bcwfs, kl, v[0]);
+
+		cblas_zcopy(nElec, &psi[nPts-1], nPts, bcwfs, 1);
+		rbc->fillHistory(bcwfs, kr, v[nPts-1]);
+
+		sq_free(bcwfs);
+	}
+
 	CrankNicolson::CrankNicolson(int nPts, double dx, double dt, double m_eff, FDBCs::BoundaryCondition* leftBC, FDBCs::BoundaryCondition* rightBC) :
-		nPts(nPts), dx(dx), dt(dt), m_eff(m_eff), lbc(leftBC), rbc(rightBC) {
+		KineticOperator_FDM(nPts, leftBC, rightBC), dx(dx), dt(dt), m_eff(m_eff) {
 			d = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nPts);
 			ud= (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * (nPts-1));
 			ld= (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * (nPts-1));

@@ -135,4 +135,14 @@ namespace FDBCs{
         for (int i = 0; i < nElec; i++)
             phs[i] *= dphs[i];
     }
+
+    void UniformIDTransparentBC::fillHistory(std::complex<double>* psibd, double* k0, double vb) {
+        std::complex<double>* dpsibd = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nElec);
+        for (int i = 0; i < nElec; i++)
+            dpsibd[i] = psibd[i] - ihpsi[i];
+
+        UniformHDTransparentBC::fillHistory(dpsibd, k0, vb);
+        
+        sq_free(dpsibd);
+    }
 }

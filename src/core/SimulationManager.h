@@ -44,7 +44,7 @@ private:
 	void calcWeights();
 
 public:
-	SimulationManager(int nPts, double dx, double dt, double maxT, std::function<void(int)> callback);
+	SimulationManager(int nPts, double dx, double dt, double maxT, std::function<void(int)> callback = nullptr);
 	~SimulationManager();
 	// Adds a measurer to the simulation.
 	void addMeasurer(Measurers::Measurer * nMeas);
@@ -75,7 +75,7 @@ public:
 	// Same as above, using pseudospectral method (may take up a lot of memory for pseudospectral methods)
 	void findEigenStates(double fermie, double w, double maxT, double rate);
 	// Find steady state from inhomogeneous BCs (FINITE DIFFERENCE METHODS ONLY)
-	void findInhomogeneousSteadyStates(double threshold, int nElec);
+	void findInhomogeneousSteadyStates(double threshold, int nElec, double* kl, double* kr, bool verbose = false);
 	// Sets the wave function of the simulation.
 	void setPsi(std::complex<double>* npsi);
 
