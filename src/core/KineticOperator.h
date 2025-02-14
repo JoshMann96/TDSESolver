@@ -178,8 +178,8 @@ namespace KineticOperators {
 		public KineticOperator
 	{
 	public:
-		virtual void stepVirtual(std::complex<double>* psi0, double* v, std::complex<double>* targ, int nElec) = 0; // timestep without iterating BCs
-		virtual void step(std::complex<double>* psi0, double* v, std::complex<double>* targ, int nElec) = 0;
+		virtual void stepVirtual(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec) = 0; // timestep without iterating BCs
+		virtual void step(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec) = 0;
 	};
 
 	class CrankNicolson:
@@ -194,7 +194,7 @@ namespace KineticOperators {
 		int nElec;
 		std::complex<double> *rbct=nullptr, *lbct=nullptr, *bct1=nullptr, *bct2=nullptr;
 	
-		void _step(std::complex<double>* psi0, double* v, std::complex<double>* targ, int nElec, int isVirtual);
+		void _step(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec, int isVirtual);
 	public:
 		CrankNicolson(int nPts, double dx, double dt, double m_eff, FDBCs::BoundaryCondition* leftBC, FDBCs::BoundaryCondition* rightBC);
 		~CrankNicolson(){
@@ -225,11 +225,11 @@ namespace KineticOperators {
 			}
 		};
 
-		void step(std::complex<double>* psi0, double* v, std::complex<double>* targ, int nElec){
-			_step(psi0, v, targ, nElec, 0);
+		void step(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec){
+			_step(psi0, v, spatialDamp, targ, nElec, 0);
 		};
-		void stepVirtual(std::complex<double>* psi0, double* v, std::complex<double>* targ, int nElec){
-			_step(psi0, v, targ, nElec, 1);
+		void stepVirtual(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec){
+			_step(psi0, v, spatialDamp, targ, nElec, 1);
 		}
 		void findEigenStates(double* v, double emin, double emax, std::complex<double>** states, int* nEigs);
 		double evaluateKineticEnergy(std::complex<double>* psi);

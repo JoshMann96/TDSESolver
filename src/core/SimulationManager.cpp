@@ -121,7 +121,7 @@ void SimulationManager::calcWeights(){
 void SimulationManager::findEigenStates(double emin, double emax, double maxT, double rate) {
 	pot->getVBare(0.0, vs[index]);
 
-	std::complex<double>* states;;
+	std::complex<double>* states;
 
 	kin->findEigenStates(vs[index], emin, emax, &states, &nElec);
 
@@ -143,6 +143,45 @@ void SimulationManager::findEigenStates(double emin, double emax, double maxT, d
 	calcWeights();
 	if(calcDensity)
 		dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
+}
+
+void SimulationManager::findInhomogeneousSteadyStates(double threshold, int nElec){
+	nElec = nElec;
+
+	freePsis();
+	for(int i = 0; i < 4; i++){
+		psis[i] = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nElec);
+		std::fill_n(psis[i], nPts*nElec, 0.0);
+		pot->getVBare(0.0, vs[i]);
+	}
+
+	double* temp1 = (double*) sq_malloc(sizeof(double) * nPts * nElec);
+	double* temp2 = (double*) sq_malloc(sizeof(double) * nPts * nElec);
+	bool converged = false;
+	while(!converged){
+		kin_fdm->step(psis[prevIndex()], vs[index], spatialDamp, psis[index], nElec);
+
+		vtls::normSqr(nPts*nElec, psis[index], temp1);
+		vtls::normSqr(nPts*nElec, psis[prevIndex()], temp2);
+		vtls::scaMulAddArrays(nPts*nElec, -1.0, temp1, temp2); // temp2 = old - new
+		vtls::abs(nPts*nElec, temp2, temp2); // temp2 = |old - new|
+		// ? (sum of |old - new|) / (sum of |new|) < threshold
+		converged = vtlsInt::rSum(nPts*nElec, temp2, 1.0) / vtlsInt::rSum(nPts*nElec, temp1, 1.0) < threshold;
+
+		vtls::copyArray(nPts*nElec, psis[index], psis[prevIndex()]);
+	}
+
+	for(int i = 0; i < 4; i++){
+		vtls::copyArray(nPts*nElec, psis[index], psis[i]);
+	}
+
+	sq_free(temp1);
+	sq_free(temp2);
+	calcWeights();
+	if(calcDensity)
+		dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
+	
+
 }
 
 void SimulationManager::setPsi(std::complex<double>* npsi) {

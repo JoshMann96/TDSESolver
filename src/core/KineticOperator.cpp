@@ -853,7 +853,7 @@ namespace KineticOperators {
 			potmul = 0.5*PhysCon::im*dt/PhysCon::hbar;
 	}
 
-	void CrankNicolson::_step(std::complex<double>* psi0, double* v, std::complex<double>* targ, int nElec, int isVirtual) {
+	void CrankNicolson::_step(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec, int isVirtual) {
 		if(bct1 == nullptr)
 			bct1 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nElec);
 		if(bct2 == nullptr)
@@ -906,6 +906,9 @@ namespace KineticOperators {
 		//SOLVE
 		int info;
 		LAPACK_zgtsv(&nPts, &nElec, reinterpret_cast<dcomplex*>(ld), reinterpret_cast<dcomplex*>(d), reinterpret_cast<dcomplex*>(ud), reinterpret_cast<dcomplex*>(targ), &nPts, &info);
+	
+		for(int i = 0; i < nElec; i++)
+			vtls::seqMulArrays(nPts, spatialDamp, &targ[i*nPts]);
 	}
 
 	void CrankNicolson::findEigenStates(double* v, double emin, double emax, std::complex<double>** states, int* nEigs){
