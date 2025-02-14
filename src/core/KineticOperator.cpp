@@ -248,12 +248,12 @@ namespace KineticOperators {
 		}
 	}
 
-	void GenDisp_PSM::findEigenStates(double* v, double emin, double emax, std::complex<double>* states, int* nEigs) {
+	void GenDisp_PSM::findEigenStates(double* v, double emin, double emax, std::complex<double>** states, int* nEigs) {
 		if (nPts > 46340) {
 			std::cout << "Long datatype is required for grids of size nPts>46340. Rewrite this code (GenDisp_PSM::findEigenStates)" << std::endl;
 			throw -1;
 		}
-
+		*states = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nPts);
 		calcOpMat();
 		for (int i = 0; i < nPts; i++)
 			opMat[(i * (i + 3)) / 2] += v[i];
@@ -270,7 +270,7 @@ namespace KineticOperators {
 		double prec = LAPACK_dlamch(&cS);//(2 * dlamch_(&cS));
 		int info;
 
-		LAPACK_zhpevx(&cV, &cV, &cU, &nPts, reinterpret_cast<dcomplex *>(opMat), &emin, &emax, 0, 0, &prec, nEigs, eigs, reinterpret_cast<dcomplex *>(states), &nPts, work, work2, iwork3, ifail, &info);
+		LAPACK_zhpevx(&cV, &cV, &cU, &nPts, reinterpret_cast<dcomplex *>(opMat), &emin, &emax, 0, 0, &prec, nEigs, eigs, reinterpret_cast<dcomplex *>(*states), &nPts, work, work2, iwork3, ifail, &info);
 
 		clearOpMat();
 
@@ -698,7 +698,8 @@ namespace KineticOperators {
 		}
 	}
 
-	void NonUnifGenDisp_PSM::findEigenStates(double* v, double emin, double emax, std::complex<double>* states, int* nEigs) {
+	void NonUnifGenDisp_PSM::findEigenStates(double* v, double emin, double emax, std::complex<double>** states, int* nEigs) {
+		*states = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nPts);
 		calcOpMat();
 		for (int i = 0; i < nPts; i++)
 			opMat[(i * (i + 3)) / 2] += v[i];
@@ -714,7 +715,7 @@ namespace KineticOperators {
 		double prec = LAPACK_dlamch(&cS);//(2 * dlamch_(&cS));
 		int info;
 
-		LAPACK_zhpevx(&cV, &cV, &cU, &nPts, reinterpret_cast<dcomplex *>(opMat), &emin, &emax, 0, 0, &prec, nEigs, eigs, reinterpret_cast<dcomplex *>(states), &nPts, work, work2, iwork3, ifail, &info);
+		LAPACK_zhpevx(&cV, &cV, &cU, &nPts, reinterpret_cast<dcomplex *>(opMat), &emin, &emax, 0, 0, &prec, nEigs, eigs, reinterpret_cast<dcomplex *>(*states), &nPts, work, work2, iwork3, ifail, &info);
 
 		clearOpMat();
 
@@ -853,6 +854,15 @@ namespace KineticOperators {
 	}
 
 	void CrankNicolson::_step(std::complex<double>* psi0, double* v, std::complex<double>* targ, int nElec, int isVirtual) {
+		if(bct1 == nullptr)
+			bct1 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nElec);
+		if(bct2 == nullptr)
+			bct2 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nElec);
+		if(lbct == nullptr)
+			lbct = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nElec);
+		if(rbct == nullptr)
+			rbct = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nElec);
+
 		//prepare left BC
 		cblas_zcopy(nElec, psi0, nPts, bct1, 1); // map first element of all wavefunctions to bct1
 		cblas_zcopy(nElec, &psi0[1], nPts, bct2, 1); // map second element of all wavefunctions to bct2
@@ -886,8 +896,9 @@ namespace KineticOperators {
 		#pragma omp parallel for collapse(2)
 		for(int j = 0; j < nElec; j++)
 			for(int k = 0; k < nPts-1; k++)
-				targ[k*nPts+k] = (-potmul*v[k]+rhsDiag)*psi0[k*nPts+j] +
+				targ[j*nPts+k] = (-potmul*v[k]+rhsDiag)*psi0[j*nPts+k] +
 					(rhsOffDiag*psi0[j*nPts+k-1] + rhsOffDiag*psi0[j*nPts+k+1]);
+
 		// apply RHS BC
 		cblas_zcopy(nElec, lbct, 1, targ, nPts);
 		cblas_zcopy(nElec, rbct, 1, &targ[nPts-1], nPts);
@@ -897,7 +908,7 @@ namespace KineticOperators {
 		LAPACK_zgtsv(&nPts, &nElec, reinterpret_cast<dcomplex*>(ld), reinterpret_cast<dcomplex*>(d), reinterpret_cast<dcomplex*>(ud), reinterpret_cast<dcomplex*>(targ), &nPts, &info);
 	}
 
-	void CrankNicolson::findEigenStates(double* v, double emin, double emax, std::complex<double>* states, int* nEigs){
+	void CrankNicolson::findEigenStates(double* v, double emin, double emax, std::complex<double>** states, int* nEigs){
 		double* hd = (double*)sq_malloc(sizeof(double)*nPts);
 		double* hod= (double*)sq_malloc(sizeof(double)*(nPts-1));
 		int  nSplit;
@@ -927,8 +938,8 @@ namespace KineticOperators {
 		// get eigenvectors
 		LAPACK_dstein(&nPts, hd, hod, nEigs, eigs, iblock, isplit, statesTemp, &nPts, work, iwork, ifail, &info);
 		// copy eigenvectors to states
-		states = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts*(*nEigs));
-		vtls::copyArray(nPts*(*nEigs), statesTemp, states);
+		*states = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts*(*nEigs));
+		vtls::copyArray(nPts*(*nEigs), statesTemp, *states);
 		
 		sq_free(hd);
 		sq_free(hod);

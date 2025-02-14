@@ -8,9 +8,8 @@ namespace KineticOperators {
 	class KineticOperator
 	{
 	public:
-		virtual std::complex<double>* getOperatorMatrix() = 0;
 		virtual double evaluateKineticEnergy(std::complex<double>* psi) = 0;
-		virtual void findEigenStates(double* v, double emin, double emax, std::complex<double>* states, int* nEigs) = 0;
+		virtual void findEigenStates(double* v, double emin, double emax, std::complex<double>** states, int* nEigs) = 0;
 	};
 
 	class KineticOperator_PSM :
@@ -44,18 +43,13 @@ namespace KineticOperators {
 		//Full OSFM step
 		void stepOS_U2TU(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec);
 
-		std::complex<double>* getOperatorMatrix() {
-			calcOpMat();
-			return opMat;
-		}
-
 		void clearOpMat() {
 			if (opMat)
 				sq_free(opMat); opMat = nullptr;
 			needMat = 1;
 		}
 
-		void findEigenStates(double* v, double emin, double emax, std::complex<double>* states, int* nEigs);
+		void findEigenStates(double* v, double emin, double emax, std::complex<double>** states, int* nEigs);
 
 		double evaluateKineticEnergy(std::complex<double>* psi);
 
@@ -125,18 +119,13 @@ namespace KineticOperators {
 		//Full OSFM step
 		void stepOS_U2TU(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec);
 
-		std::complex<double>* getOperatorMatrix() {
-			calcOpMat();
-			return opMat;
-		}
-
 		void clearOpMat() {
 			if (opMat)
 				sq_free(opMat); opMat = NULL;
 			needMat = 1;
 		}
 
-		void findEigenStates(double* v, double emin, double emax, std::complex<double>* states, int* nEigs);
+		void findEigenStates(double* v, double emin, double emax, std::complex<double>** states, int* nEigs);
 
 		double evaluateKineticEnergy(std::complex<double>* psi);
 
@@ -208,7 +197,22 @@ namespace KineticOperators {
 		void _step(std::complex<double>* psi0, double* v, std::complex<double>* targ, int nElec, int isVirtual);
 	public:
 		CrankNicolson(int nPts, double dx, double dt, double m_eff, FDBCs::BoundaryCondition* leftBC, FDBCs::BoundaryCondition* rightBC);
-		~CrankNicolson(){};
+		~CrankNicolson(){
+			sq_free(d);
+			sq_free(ud);
+			sq_free(ld);
+
+			if(rbct)
+				sq_free(rbct);
+			if(lbct)
+				sq_free(lbct);
+			if(bct1)
+				sq_free(bct1);
+			if(bct2)
+				sq_free(bct2);
+
+
+		};
 
 		void setBC(FDBCs::BoundaryCondition* bc, FDBCs::BCSide side) { 
 			switch (side) {
@@ -227,7 +231,7 @@ namespace KineticOperators {
 		void stepVirtual(std::complex<double>* psi0, double* v, std::complex<double>* targ, int nElec){
 			_step(psi0, v, targ, nElec, 1);
 		}
-		void findEigenStates(double* v, double emin, double emax, std::complex<double>* states, int* nEigs);
+		void findEigenStates(double* v, double emin, double emax, std::complex<double>** states, int* nEigs);
 		double evaluateKineticEnergy(std::complex<double>* psi);
 	};
 }

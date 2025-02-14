@@ -121,9 +121,9 @@ void SimulationManager::calcWeights(){
 void SimulationManager::findEigenStates(double emin, double emax, double maxT, double rate) {
 	pot->getVBare(0.0, vs[index]);
 
-	std::complex<double>* states = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nPts);
+	std::complex<double>* states;;
 
-	kin->findEigenStates(vs[index], emin, emax, states, &nElec);
+	kin->findEigenStates(vs[index], emin, emax, &states, &nElec);
 
 	freePsis();
 	psis[0] = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nElec);
