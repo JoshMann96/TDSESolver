@@ -24,6 +24,16 @@ namespace FDBCs{
     }
 
     void UniformHDTransparentBC::calcKernel(double vb){
+        if(!kernelCalculated){
+            kernelCalculated = 1;
+            kernelVb = vb;
+        }
+        else if (abs(kernelVb-vb) > 1e-5/PhysCon::auE_ha)
+            throw std::runtime_error("Potential at UniformHDTransparentBC is not constant. Consider using a different boundary condition.");
+        else
+            return;
+
+        
         double rr = 4.0*dx*dx/dt;
         double sig = 2.0*dx*dx*vb;
         double phi = std::atan(2.0*rr*(sig+2.0)/(rr*rr-4.0*sig-sig*sig));
@@ -62,14 +72,7 @@ namespace FDBCs{
         for (int i = 0; i < nElec; i++)
             psis[i]->set(0, psibd[i]);
 
-        if(!kernelCalculated){
             calcKernel(vb);
-
-            kernelCalculated = 1;
-            kernelVb = vb;
-        }
-        else if (abs(kernelVb-vb) > 1e-5/PhysCon::auE_ha)
-            throw std::runtime_error("Potential at UniformHDTransparentBC is not constant. Consider using a different boundary condition.");
 	}
 
     void UniformHDTransparentBC::finishStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb){
