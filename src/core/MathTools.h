@@ -30,6 +30,17 @@ namespace vtlsInt {
 		return sum * dx;
 	}
 
+	template <typename T, typename U, typename V>
+	decltype(std::declval<T&>()* std::declval<U&>()* std::declval<V&>()) rSumMulConj(int len, T* __restrict arr1, U* __restrict arr2, V dx) {
+		if (len <= 1)
+			return 0;
+
+		decltype(std::declval<T&>() * std::declval<U&>()) sum = 0;
+		for (int i = 0; i < len; i++)
+			sum += std::conj(arr1[i]) * arr2[i];
+		return sum * dx;
+	}
+
 	// Trapezoidal integration.
 	template <typename T, typename U>
 	decltype(std::declval<T&>() * std::declval<U&>()) trapz(int len, T* __restrict arr, U dx) {
