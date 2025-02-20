@@ -87,7 +87,12 @@ namespace FDBCs
 		virtual void getRHS(std::complex<double>* psibd, std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec) = 0; // RHS value for the condition
 		virtual void finishStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb) = 0;
 		virtual void prepareStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb) = 0;
-		virtual void fillHistory(std::complex<double>* psibd, double* kin, double vb) = 0;
+		virtual void fillHistory(std::complex<double>* psibd, std::complex<double>* historialPhaseAdvance, double vb) = 0;
+
+		// Steady state boundary conditions -- these should be consistent with the phase advance associated with k0, vb
+		virtual std::complex<double> getSteadyRHS(std::complex<double> phaseAdvance, double k0, double vb) = 0; // assuming the wavefunction is an eigenstate of the open system, what is the right-hand-side value in the first row?
+		virtual std::complex<double> getSteadyLHSEle(std::complex<double> phaseAdvance, double k0, double vb) = 0; // '' what is the diagonal first-row LHS component?
+		virtual std::complex<double> getSteadyLHSAdjEle(std::complex<double> phaseAdvance, double k0, double vb) = 0; // '' what is the first-row LHS component adjacent to the diagonal?
 	};
 
 	/*
@@ -101,14 +106,29 @@ namespace FDBCs
 			for (int i = 0; i < nElec; i++)
 				res[i] = getRHS(vb);
 		}
-		void fillHistory(std::complex<double>* psibd, double* kin, double vb) { return; };
+		void fillHistory(std::complex<double>* psibd, std::complex<double>* historialPhaseAdvance, double vb) { return; };
 		void prepareStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb) {};
 		void finishStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb) {};
 		virtual std::complex<double> getRHS(double vb) = 0; // RHS value for the condition
 	};
 
-	class DirichletBC :
+	class TimeIndependentBC :
 		public CommonBC
+	{
+	public:
+		std::complex<double> getSteadyRHS(std::complex<double> phaseAdvance, double k0, double vb){
+			return getRHS(vb);
+		};
+		std::complex<double> getSteadyLHSEle(std::complex<double> phaseAdvance, double k0, double vb){
+			return getLHSEle();
+		};
+		std::complex<double> getSteadyLHSAdjEle(std::complex<double> phaseAdvance, double k0, double vb){
+			return getLHSAdjEle();
+		};
+	};
+
+	class DirichletBC :
+		public TimeIndependentBC
 	{
 	private:
 		std::complex<double> bdVal;
@@ -120,7 +140,7 @@ namespace FDBCs
 	};
 
 	class NeumannBC :
-		public CommonBC
+		public TimeIndependentBC
 	{
 	private:
 		std::complex<double> bdDer;
@@ -133,11 +153,11 @@ namespace FDBCs
 		std::complex<double> getRHS(double vb) { return bdDer; };
 	};
 
-	// Homogeneous Discrete Transparent Boundary Condition
+	// Homogeneous Discrete Transparent Boundary Condition for the Crank-Nicolson method
 	class UniformHDTransparentBC :
 		public BoundaryCondition
 	{
-	private:
+	protected:
         int order, nElec;
         double dx, dt;
         CyclicArray<std::complex<double>> **psis;
@@ -148,7 +168,6 @@ namespace FDBCs
 
         void calcKernel(double vb);
 	public:
-
 		UniformHDTransparentBC(int order, int nElec, double dx, double dt);
         ~UniformHDTransparentBC();
 		std::complex<double> getLHSEle() { return -kernel0; };
@@ -157,9 +176,11 @@ namespace FDBCs
         void finishStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb);
 		void prepareStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb);
 		void printKernel() { for (int i = 0; i < order; i++) std::cout << kernel[i] << " "; std::cout << std::endl; };
-		void fillHistory(std::complex<double>* psibd, double* k0, double vb);
+		void fillHistory(std::complex<double>* psibd, std::complex<double>* historialPhaseAdvance, double vb);
 
-		friend class UniformIDTransparentBC;
+		std::complex<double> getSteadyRHS(std::complex<double> phaseAdvance, double k0, double vb);
+		std::complex<double> getSteadyLHSEle(std::complex<double> phaseAdvance, double k0, double vb);
+		std::complex<double> getSteadyLHSAdjEle(std::complex<double> phaseAdvance, double k0, double vb);
 	};
 
 	// Inhomogeneous Discrete Transparent Boundary Condition (incoming current)
@@ -167,14 +188,16 @@ namespace FDBCs
 		public UniformHDTransparentBC
 	{
 	private:
-		std::complex<double> * dphs, * phs, * adjphs, *ihpsi;
+		std::complex<double> * phaseAdvance, * phs, * adjphs, *ihpsi, *hompsi;
 	public:
 		UniformIDTransparentBC(int order, int nElec, double dx, double dt, std::complex<double>* psibd, double* k0, double vb);
-		~UniformIDTransparentBC() { sq_free(dphs); sq_free(phs); sq_free(adjphs); sq_free(ihpsi); };
+		~UniformIDTransparentBC() { sq_free(phaseAdvance); sq_free(phs); sq_free(adjphs); sq_free(ihpsi); sq_free(hompsi); };
 		void prepareStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb);
 		void getRHS(std::complex<double>* psibd, std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec);
 		void finishStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb);
-		void fillHistory(std::complex<double>* psibd, double* k0, double vb);
+		void fillHistory(std::complex<double>* psibd, std::complex<double>* historialPhaseAdvance, double vb);
+
+		std::complex<double> getSteadyRHS(std::complex<double> phaseAdvance, double k0, double vb);
 	};
 
 }

@@ -72,8 +72,8 @@ namespace FDBCs{
         for (int i = 0; i < nElec; i++)
             psis[i]->set(0, psibd[i]);
 
-            calcKernel(vb);
-	}
+        calcKernel(vb);
+    }
 
     void UniformHDTransparentBC::finishStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb){
         //std::complex<double> phs = 1.0/phasePerStep(vb);
@@ -81,38 +81,60 @@ namespace FDBCs{
             psis[i]->stepBack();
 	}
 
-    void UniformHDTransparentBC::fillHistory(std::complex<double>* psibd, double* k0, double vb) {
+    void UniformHDTransparentBC::fillHistory(std::complex<double>* psibd, std::complex<double>* historicalPhaseAdvance, double vb) {
+        std::complex<double> phs;
         for (int i = 0; i < nElec; i++){
-            std::complex<double> dphs = 1.0-0.5*PhysCon::im*dt*PhysCon::hbar/PhysCon::auE_ha*(PhysCon::a0*PhysCon::a0/dx/dx*(1.0-std::cos(k0[i]*dx)) + vb/PhysCon::auE_ha);
-            dphs = dphs / std::conj(dphs);
-            std::complex<double> phs = 1.0;
+            phs = 1.0;
             for (int j = 0; j < order; j++){
                 psis[i]->set(j, psibd[i]*phs);
-                phs /= dphs;
+                phs /= historicalPhaseAdvance[i];
             }
         }
     };
 
+    std::complex<double> UniformHDTransparentBC::getSteadyRHS(std::complex<double> phaseAdvance, double k0, double vb){
+        return 0.0; // homogeneous, no source
+    }
+
+    std::complex<double> UniformHDTransparentBC::getSteadyLHSEle(std::complex<double> phaseAdvance, double k0, double vb){
+        calcKernel(vb);
+
+        std::complex<double> phs = phaseAdvance;
+        std::complex<double> sum = -phs * kernel0;
+        for (int i = 0; i < order; i++){
+            phs /= phaseAdvance;
+            sum -= phs * kernel[i];
+        }
+        return sum;
+    }
+
+    std::complex<double> UniformHDTransparentBC::getSteadyLHSAdjEle(std::complex<double> phaseAdvance, double k0, double vb){
+        return 1.0 + phaseAdvance;
+    }
+
     UniformIDTransparentBC::UniformIDTransparentBC(int order, int nElec, double dx, double dt, std::complex<double>* psibd, double* k0, double vb) : UniformHDTransparentBC(order, nElec, dx, dt) {
-        dphs = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * order);
-        phs = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * order);
-        adjphs = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * order);
-        ihpsi = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * order);
+        phaseAdvance = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nElec);
+        phs = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nElec);
+        adjphs = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nElec);
+        ihpsi = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nElec);
+
+        hompsi = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nElec);
 
         for (int i = 0; i < nElec; i++){
-            dphs[i] = 1.0-0.5*PhysCon::im*dt*(1.0/dx/dx*(1.0-std::cos(k0[i]*dx)) + vb/PhysCon::auE_ha);
-            dphs[i] /= std::conj(dphs[i]);
+            // TODO: pull from input or from KineticOperator instead of CN result
+            phaseAdvance[i] = 1.0-0.5*PhysCon::im*this->dt*(1.0/this->dx/this->dx*(1.0-std::cos(k0[i]*PhysCon::a0*this->dx)) + vb/PhysCon::auE_ha);
+            phaseAdvance[i] /= std::conj(phaseAdvance[i]);
 
-            adjphs[i] = std::exp(PhysCon::im*k0[i]*dx);
+            adjphs[i] = std::exp(PhysCon::im*k0[i]*PhysCon::a0*this->dx);
 
             ihpsi[i] = psibd[i];
         }
-        std::fill_n(phs, order, 1.0);
+        std::fill_n(phs, nElec, 1.0);
     }
 
     void UniformIDTransparentBC::prepareStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb){
         for (int i = 0; i < nElec; i++)
-            psis[i]->set(0, psibd[i] - ihpsi[i]*phs[i]/dphs[i]); // subtract off inhomogeneous component
+            psis[i]->set(0, psibd[i] - ihpsi[i]*phs[i]); // subtract off inhomogeneous component
 
         if(!kernelCalculated){
             calcKernel(vb);
@@ -120,32 +142,53 @@ namespace FDBCs{
             kernelCalculated = 1;
             kernelVb = vb;
         }
-        else if (abs(kernelVb-vb) > 1e-5/PhysCon::auE_ha)
+        else if (abs(kernelVb-vb) > 1e-5*PhysCon::auE_ha)
             throw std::runtime_error("Potential at UniformHDTransparentBC is not constant. Consider using a different boundary condition.");
+        
     }
 
     void UniformIDTransparentBC::getRHS(std::complex<double>* psibd, std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec){
         if (this->nElec != nElec)
-            throw std::invalid_argument("Number of electrons in HDTransparentBC does not match the number of electrons in the system.");
+            throw std::invalid_argument("Number of electrons in IDTransparentBC does not match the number of electrons in the system.");
 
         for (int i = 0; i < nElec; i++)
-            res[i] = psis[i]->inner(kernel) - psiad[i] + ihpsi[i]*phs[i]*(adjphs[i] - kernel0); // add inhomogeneous component of present step
+            res[i] = psis[i]->inner(kernel) - psiad[i] + ihpsi[i]*phs[i]*(adjphs[i]+phaseAdvance[i]*(adjphs[i] - kernel0)); // add inhomogeneous component of present step
     }
 
     void UniformIDTransparentBC::finishStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb) {
         UniformHDTransparentBC::finishStep(psibd, psiad, vb);
 
         for (int i = 0; i < nElec; i++)
-            phs[i] *= dphs[i];
+            phs[i] *= phaseAdvance[i];
     }
 
-    void UniformIDTransparentBC::fillHistory(std::complex<double>* psibd, double* k0, double vb) {
+    void UniformIDTransparentBC::fillHistory(std::complex<double>* psibd, std::complex<double>* historicalPhaseAdvance, double vb) {
         std::complex<double>* dpsibd = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nElec);
         for (int i = 0; i < nElec; i++)
             dpsibd[i] = psibd[i] - ihpsi[i];
 
-        UniformHDTransparentBC::fillHistory(dpsibd, k0, vb);
+        vtlsPrnt::printArray(nElec, dpsibd);
+        vtlsPrnt::printArray(nElec, psibd);
+        vtlsPrnt::printArray(nElec, ihpsi);
+        vtlsPrnt::printArray(nElec, historicalPhaseAdvance);
+
+        UniformHDTransparentBC::fillHistory(dpsibd, historicalPhaseAdvance, vb);
         
         sq_free(dpsibd);
+    }
+
+    std::complex<double> UniformIDTransparentBC::getSteadyRHS(std::complex<double> phaseAdvance, double k0, double vb){
+        calcKernel(vb);
+
+        std::complex<double> ihPhs = phaseAdvance;
+        std::complex<double> sum = 0.0;
+        for (int i = 0; i < order; i++){
+            ihPhs /= phaseAdvance;
+            sum -= ihPhs * kernel[i];
+        }
+                                        // Interpret negative k0 as exponential growth (thereby decaying in the external domain) instead of wave
+        sum += (1.0+phaseAdvance) * std::exp((k0>=0.0 ? PhysCon::im : 1.0)*k0*dx*PhysCon::a0) - phaseAdvance*kernel0;
+
+        return sum;
     }
 }

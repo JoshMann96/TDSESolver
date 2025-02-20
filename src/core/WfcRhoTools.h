@@ -4,6 +4,8 @@
 #include "MathTools.h"
 
 // Different ways of calculating weights (w*|psi(x)|^2 = rho(x) [e/m^3]) for density functional potentials
+// TODO: implement different normalizations (total bound probability, or incident flux/inhomogeneous)
+//			similarly, adjust normalization within SimulationManager and Measurers
 namespace WfcToRho {
 	// Template function for Weight (will result in error if weight is needed and this is used).
 	class Weight {

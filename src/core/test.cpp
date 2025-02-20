@@ -1,12 +1,14 @@
 #include <chrono>
 #include "CORECommonHeader.h"
 #include "KineticOperator.h"
+#include "SimulationManager.h"
+#include "WfcRhoTools.h"
 #include "blas.h"
 
 void testTransparentBCs(){
     using namespace FDBCs;
     int ne = 10;
-    BoundaryCondition* bc = new HDTransparentBC(1000, ne, 0.1*PhysCon::a0, 0.1*PhysCon::hbar/PhysCon::auE_ha);
+    BoundaryCondition* bc = new UniformHDTransparentBC(1000, ne, 0.1*PhysCon::a0, 0.1*PhysCon::hbar/PhysCon::auE_ha);
     std::complex<double>* res = new std::complex<double>[ne];
     std::complex<double>* psibd = new std::complex<double>[ne];
     std::complex<double>* psiad = new std::complex<double>[ne];
@@ -39,12 +41,12 @@ void testCyclicArray(){
     delete arr2;
 }
 
-void testTridiagonalAlgorithms(int nRhs=2, bool plot=false){
+void testTridiagonalAlgorithms(int nRhs=2, bool plot=true){
 	// Test timing of methods for the multiplication and inversion of tridiagonal matrices
 	// rhsMethod: 0 for BLAS matrix multiplication, 1 for direct treatment, 2 for direct + OMP
 	// lhsMethod: 0 for zgtsv (general tridiagonal), 1 for zgtsvx (general tridiagonal with pivoting), 2 for zptsv (positive definite tridiagonal), 3 for zptsvx (positive definite tridiagonal with pivoting)
 
-	double tmax = 100.0;
+	double tmax = 400.0;
 	double xmax = 200.0;
 
 	double dx = 0.2, dt = 0.1;
@@ -57,10 +59,25 @@ void testTridiagonalAlgorithms(int nRhs=2, bool plot=false){
 
 	double* kins = new double[nRhs];
 	for(int i = 0; i < nRhs; i++)
-		kins[i] = 4.0;
+		kins[i] = i+1.0;
 
-	FDBCs::BoundaryCondition* lbc = new FDBCs::HDTransparentBC(10000, nRhs, dx, dt);//new FDBCs::DirichletBC((std::complex<double>)0.0);
-	FDBCs::BoundaryCondition* rbc = new FDBCs::HDTransparentBC(10000, nRhs, dx, dt);//new FDBCs::DirichletBC((std::complex<double>)0.0);
+	std::cout << "nPts = " << nPts << std::endl;
+	std::cout << "nsteps = " << nsteps << std::endl;
+
+	FDBCs::BoundaryCondition* lbc = new FDBCs::UniformHDTransparentBC(1000, nRhs, dx, dt);//new FDBCs::DirichletBC((std::complex<double>)0.0);
+	//FDBCs::BoundaryCondition* rbc = new FDBCs::DirichletBC((std::complex<double>)0.0);//new FDBCs::UniformHDTransparentBC(10000, nRhs, dx, dt);
+
+	// inhomogeneous DTBC
+	std::complex<double>* psibd = new std::complex<double>[nRhs];
+	double* k0 = new double[nRhs];
+	for (int i = 0; i < nRhs; i++){
+		psibd[i] = 1.0;
+		k0[i] = std::sqrt(2.0*kins[i]);
+	}
+	FDBCs::BoundaryCondition* rbc = new FDBCs::UniformIDTransparentBC(1000, nRhs, dx, dt, psibd, k0, 0.0);
+	delete[] psibd;
+	delete[] k0;
+
 	std::complex<double> *rbct(new std::complex<double>[nRhs]), *lbct(new std::complex<double>[nRhs]), *bct1(new std::complex<double>[nRhs]), *bct2(new std::complex<double>[nRhs]);
 
 	double* temp = (double*)sq_malloc(sizeof(double)*nPts*(nRhs+1));
@@ -75,20 +92,24 @@ void testTridiagonalAlgorithms(int nRhs=2, bool plot=false){
 
 	for(int i = 0; i < nRhs; i++)
 		for(int j = 0; j < nPts; j++)
-			x[i*nPts+j] = 5.0*std::exp(-PhysCon::im*dx*(std::sqrt(2.0*kins[i])*j))*std::exp(-dx*dx/100.0*(double)((j-nPts/2)*(j-nPts/2)));
+			x[i*nPts+j] = 5.0*std::exp(PhysCon::im*dx*(std::sqrt(2.0*kins[i])*j))*std::exp(-dx*dx/100.0*(double)((j-nPts/2)*(j-nPts/2)));
 	double norm0 = vtls::getNorm(nPts*nRhs, x, dx);
 
 	// fill BC history
 	std::complex<double> *lvs(new std::complex<double>[nRhs]), *rvs(new std::complex<double>[nRhs]);
 	cblas_zcopy(nRhs, x, nPts, lvs, 1);
 	cblas_zcopy(nRhs, &x[nPts-1], nPts, rvs, 1);
+	std::complex<double>* phs = new std::complex<double>[nRhs];
+	for(int i = 0; i < nRhs; i++)
+		phs[i] = KineticOperators::CrankNicolson::phaseAdvanceFromEnergy(kins[i], dt);
 	for(int i = 0; i < nRhs; i++){
-		lbc->fillHistory(lvs, kins);
-		rbc->fillHistory(rvs, kins);
+		lbc->fillHistory(lvs, phs, 0.0);
+		rbc->fillHistory(rvs, phs, 0.0);
 	}
 	delete[] kins;
 	delete[] lvs;
 	delete[] rvs;
+	delete[] phs;
 
 	// LHS matrix default values
 	std::complex<double>* d0  = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts);
@@ -119,9 +140,8 @@ void testTridiagonalAlgorithms(int nRhs=2, bool plot=false){
 	std::chrono::high_resolution_clock::time_point time0, time1;
 	int copyBCTime = 0, rhsTime = 0, invTime = 0;
 	for(int i = 0; i < nsteps; i++){
-
         for(int k = 0; k < nPts; k++)
-            v0[k] = 0.1*dt*i;//-std::exp(-dx*dx/100.0*(double)((k-nPts/2)*(k-nPts/2)));
+            v0[k] = 0.0;//(nPts-1-k)*10.0/nPts;//-std::exp(-dx*dx/100.0*(double)((k-nPts/2)*(k-nPts/2)));//10.0*std::sin((30.0*i)/nsteps);//
 
 		// status update
 		if(i % plotSteps == 0){
@@ -130,9 +150,10 @@ void testTridiagonalAlgorithms(int nRhs=2, bool plot=false){
 				if (futPlot.valid())
 					futPlot.get();
 				vtls::scaMulArrayRe(nPts, 1.0, v0, temp);
-				vtls::scaMulArrayRe(nPts*nRhs, 1.0, x, &temp[nPts]);
+				//vtls::scaMulArrayRe(nPts*nRhs, 1.0, x, &temp[nPts]);
+				vtls::abs(nPts*nRhs, x, &temp[nPts]);
 				futPlot = std::async(std::launch::async, [&](){
-					plotter->update(nPts, nRhs+1, temp, -5.0, 5.0);
+					plotter->update(nPts, nRhs+1, temp, -1.0, 10.0);
 					return 0;
 				});
 			}
@@ -273,8 +294,198 @@ void testTridiagonalAlgorithms(int nRhs=2, bool plot=false){
 		delete plotter;
 }
 
+void testCrankNicolson(){
+	int nPts = 1000;
+	double dx = 1e-11;
+	double dt = 1e-18;
+	int numSteps = 10000;
+	int plotSteps = 1000;
+
+	double* v0 = new double[nPts];
+	double* xs = new double[nPts];
+	double* damp = new double[nPts];
+
+	for(int i = 0; i < nPts; i++){
+		xs[i] = dx*(i-nPts/2);
+		v0[i] = -PhysCon::qe*10*std::exp(-xs[i]*xs[i]/(2.0*1e-18));
+		damp[i] = 1.0;
+	}
+
+	KineticOperators::CrankNicolson* cn = new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, new FDBCs::DirichletBC((std::complex<double>)0.0), new FDBCs::DirichletBC((std::complex<double>)0.0));
+
+	std::complex<double>* psi0, *psi;
+	int nElec;
+
+	cn->findEigenStates(v0, vtls::min(nPts, v0), 0.5*vtls::min(nPts, v0), &psi0, &nElec);
+	psi = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts*nElec);
+
+	std::cout << "nElec: " << nElec << std::endl;
+
+	cn->setBC(new FDBCs::UniformHDTransparentBC(1000, nElec, dx, dt), FDBCs::BCSide::LEFT);
+	cn->setBC(new FDBCs::UniformHDTransparentBC(1000, nElec, dx, dt), FDBCs::BCSide::RIGHT);
+
+	plotting::GNUPlotter* plotter = new plotting::GNUPlotter();
+	
+	double* temp = (double*)sq_malloc(sizeof(double)*nPts*(nElec+1));
+	vtls::scaMulArrayRe(nPts, 1.0, v0, temp);
+	//vtls::scaMulArrayRe(nPts*nRhs, 1.0, x, &temp[nPts]);
+	vtls::abs(nPts*nElec, psi0, &temp[nPts]);
+	plotter->update(nPts, nElec+1, temp);
+
+	// pause
+	std::cout << "Press enter to continue..." << std::endl;
+	std::cin.get();	
+	
+	for(int i = 0; i < nPts; i++)
+		v0[i] = 1e9*PhysCon::qe*(i*dx);
+
+	double norm0 = vtls::getNorm(nPts*nElec, psi0, dx);
+	for(int i = 0; i < numSteps; i++){
+		cn->step(psi0, v0, damp, psi, nElec);
+
+		if(i % plotSteps == 0){
+			std::cout << "Step " << i << ": rel norm = " << vtls::getNorm(nPts*nElec, psi, dx) / norm0 <<  std::endl;
+			vtls::scaMulArrayRe(nPts, 1.0, v0, temp);
+			//vtls::scaMulArrayRe(nPts*nRhs, 1.0, x, &temp[nPts]);
+			vtls::abs(nPts*nElec, psi, &temp[nPts]);
+			plotter->update(nPts, nElec+1, temp);
+			std::cout << "Press enter to continue..." << std::endl;
+			std::cin.get();
+		}
+
+		vtls::copyArray(nPts*nElec, psi, psi0);
+	}
+}
+
+void testInhomogeneousSteadyState(){
+	int nPts = 1000;
+	double dx = 1e-11;
+	double dt = 1e-18;
+
+	double* xs = new double[nPts];
+	for(int i = 0; i < nPts; i++)
+		xs[i] = dx*(i-nPts/2);
+
+	SimulationManager* sm = new SimulationManager(nPts, dx, dt, 100.0*dt);
+	sm->addPotential(new Potentials::JelliumPotential(nPts, xs, 0.0, 5*PhysCon::qe, 5*PhysCon::qe, 0));
+
+	// define incoming wavefunctions
+	int nElec = 5;
+	std::complex<double>* psibd = new std::complex<double>[nElec];
+	double* k0 = new double[nElec];
+	for (int i = 0; i < nElec; i++){
+		psibd[i] = 1.0;
+		k0[i] = std::sqrt(5.0*i*2.0*PhysCon::qe*PhysCon::me/(nElec-1))/PhysCon::hbar; // 0-5 eV
+	}
+
+	FDBCs::BoundaryCondition* rbc = new FDBCs::UniformHDTransparentBC(1000, nElec, dx, dt);
+	FDBCs::BoundaryCondition* lbc = new FDBCs::UniformIDTransparentBC(1000, nElec, dx, dt, psibd, k0, 0.0);
+	KineticOperators::CrankNicolson* cn = new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, lbc, rbc);
+	sm->setKineticOperator_FDM(cn);
+
+	sm->finishInitialization();
+
+	sm->findInhomogeneousSteadyStates_OBSOLETE(1e-10, nElec, k0, k0, true);
+
+	delete[] psibd;
+	delete[] k0;
+	delete[] xs;
+}
+
+void testInhomogeneousEigenState(){
+	int nPts = 1000;
+	double dx = 1e-11;
+	double dt = 1e-18;
+
+	double* xs = new double[nPts];
+	for(int i = 0; i < nPts; i++)
+		xs[i] = dx*(i-nPts/2);
+
+	plotting::GNUPlotter* plotter = new plotting::GNUPlotter();
+
+	SimulationManager* sm = new SimulationManager(nPts, dx, dt, 100.0*dt);
+	sm->addPotential(new Potentials::JelliumPotential(nPts, xs, 0.0, 5*PhysCon::qe, 5*PhysCon::qe, 0));
+	sm->addPotential(new Potentials::ShieldedAtomicPotential(nPts, xs, -2e-10, 4e-10, 1.5, 1e-10) );
+	//sm->addPotential(new Potentials::FiniteBox(nPts, xs, -2e-9, -1e-9, -5.0*PhysCon::qe, 0));
+
+	// define incoming wavefunctions
+	int nElec = 3;
+	std::complex<double>* psibd = new std::complex<double>[nElec];
+	double* energy = new double[nElec];
+	double* ks = new double[nElec];
+	for (int i = 0; i < nElec; i++){
+		psibd[i] = 1.0;
+		energy[i] = 5.0*PhysCon::qe*(i+1.0)/nElec; // 0-5 eV
+		//ks[i] = std::sqrt(2.0*PhysCon::me*energy[i]/PhysCon::hbar/PhysCon::hbar);
+		ks[i] = KineticOperators::CrankNicolson::wavenumberFromEnergy(energy[i], 0.0, dx, dt, 1.0);
+	}
+
+	FDBCs::BoundaryCondition* rbc = new FDBCs::UniformHDTransparentBC(1000, nElec, dx, dt);
+	FDBCs::BoundaryCondition* lbc = new FDBCs::UniformIDTransparentBC(1000, nElec, dx, dt, psibd, ks, 0.0);
+	KineticOperators::CrankNicolson* cn = new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, lbc, rbc);
+	sm->setKineticOperator_FDM(cn);
+	sm->setWeight(new WfcToRho::FermiGasDistro(5.0*PhysCon::qe));
+	sm->setDensity(new WfcToRho::DirectDensity());
+	sm->finishInitialization();
+
+	// plot potential
+	/*double* temp = new double[nPts];
+	sm->getPotPointer()->getVBare(0.0, temp);
+	plotter->update(nPts, 1, temp);
+	delete[] temp;*/
+
+	sm->findInhomogeneousEigenStates(nElec, energy);
+
+	// plot wavefunctions
+	std::complex<double>* psi = sm->getPsi();
+	double* temp = (double*)sq_malloc(sizeof(double)*nPts*nElec);
+	vtls::normSqr(nPts*nElec, psi, temp);
+	//plotter->update(nPts, nElec, temp);
+	sq_free(temp);
+
+	double* state_energies = new double[nElec];
+	sm->calcEnergies(0, state_energies);
+	for(int i = 0; i < nElec; i++)
+		std::cout << "Expected " << i << ": " << energy[i]/PhysCon::qe << ", Got : " << state_energies[i]/PhysCon::qe << " eV" << std::endl;
+	delete[] state_energies;
+
+	delete[] psibd;
+	delete[] ks;
+	delete[] xs;
+	delete[] energy;
+
+	std::complex<double>* psi0 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts*nElec);
+	std::complex<double>* psi1 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts*nElec);
+	std::complex<double>* initial_psi = sm->getPsi();
+	vtls::copyArray(nPts*nElec, initial_psi, psi0);
+	double* v = (double*)sq_malloc(sizeof(double)*nPts);
+	sm->getPotPointer()->getVBare(0.0, v);
+	double* damp = (double*)sq_malloc(sizeof(double)*nPts);
+	std::fill_n(damp, nPts, 1.0);
+	temp = (double*)sq_malloc(sizeof(double)*nPts*nElec);
+	for(int j = 0; j < 100; j++){
+		for(int i = 0; i < 100; i++){
+			cn->step(psi0, v, damp, psi1, nElec);
+			vtls::copyArray(nPts*nElec, psi1, psi0);
+		}
+		vtls::normSqr(nPts*nElec, psi1, temp);
+		//plotter->update(nPts, nElec, temp);
+		std::cout << vtls::getNorm(nPts*nElec, psi1, dx) << std::endl;
+	}
+	sq_free(temp);
+
+
+	sq_free(psi0);
+	sq_free(psi1);
+	sq_free(v);
+	sq_free(damp);
+
+	//delete plotter;
+	delete sm;
+}
+
 int main(int argc, char** argv){
-    testTridiagonalAlgorithms();
+    testInhomogeneousEigenState();
 	std::cout << "Done" << std::endl;
     return 0;
 }

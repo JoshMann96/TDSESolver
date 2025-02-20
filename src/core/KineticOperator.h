@@ -184,8 +184,8 @@ namespace KineticOperators {
 		KineticOperator_FDM(int nPts, FDBCs::BoundaryCondition* lbc, FDBCs::BoundaryCondition* rbc) : nPts(nPts), lbc(lbc), rbc(rbc) {};
 		virtual void stepVirtual(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec) = 0; // timestep without iterating BCs
 		virtual void step(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec) = 0;
-		virtual void findInhomogeneousEigenStates(double* v, std::complex<double>* states, int nEigs, bool verbose = false) = 0;
-		void projectHistory(std::complex<double>* psi, double* kl, double* kr, double* v, int nElec);
+		virtual void findInhomogeneousEigenStates(double* v, double* es, std::complex<double>* states, int nElec) = 0;
+		void projectHistory(std::complex<double>* psi, std::complex<double>* phsL, std::complex<double>* phsR, double* v, int nElec);
 
 		void setBC(FDBCs::BoundaryCondition* bc, FDBCs::BCSide side) { 
 			switch (side) {
@@ -203,7 +203,7 @@ namespace KineticOperators {
 		public KineticOperator_FDM
 	{
 		double dx, dt, m_eff;
-		std::complex<double> offDiag0, diag0, rhsDiag, rhsOffDiag, potmul; // elements of LHS tridiagonal matrix
+		std::complex<double> lhsOffDiag0, lhsDiag0, rhsDiag0, rhsOffDiag, potmul; // elements of LHS tridiagonal matrix
 		std::complex<double> *d, *ud, *ld;
 
 		std::complex<double> *rbct=nullptr, *lbct=nullptr, *bct1=nullptr, *bct2=nullptr;
@@ -236,7 +236,51 @@ namespace KineticOperators {
 		}
 		void findEigenStates(double* v, double emin, double emax, std::complex<double>** states, int* nEigs);
 		// iteratively solve inhomogeneous system, k0s and v0s are wavenumbers and potential values for the initial states
-		void findInhomogeneousEigenStates(double* v, double* k0s, double* v0s, std::complex<double>* states, int nElec, bool verbose = false);
+		void findInhomogeneousEigenStates(double* v, double* es, std::complex<double>* states, int nElec);
 		double evaluateKineticEnergy(std::complex<double>* psi);
+
+		static double wavenumberFromPhase(std::complex<double> phase, double v, double dx, double dt, double m_eff){
+			dx /= PhysCon::a0;
+			dt *= PhysCon::auE_ha/PhysCon::hbar;
+			v  /= PhysCon::auE_ha;
+			
+			double cosine = 1.0 - m_eff*dx*dx*( 2.0/dt*std::tan(std::arg(phase)/2.0) - v ) ;
+
+			if(std::abs(cosine) > 1.0)
+				throw std::runtime_error("Crank-Nicolson iteration phase is too large.");
+			return 1.0/dx/PhysCon::a0 * std::acos(cosine);
+		};
+
+		static double wavenumberFromEnergy(double energy, double v, double dx, double dt, double m_eff){
+			energy /= PhysCon::auE_ha;
+			dx /= PhysCon::a0;
+			dt *= PhysCon::auE_ha/PhysCon::hbar;
+			v  /= PhysCon::auE_ha;
+			
+			//std::cout << "energy: " << energy << std::endl;
+			//std::cout << "v: " << v << std::endl;
+
+			double cosine = 1.0 - m_eff*dx*dx*( energy - v ) ;
+
+			//std::cout << "cosine: " << cosine << std::endl;
+
+			if(std::abs(cosine) > 1.0)
+				throw std::runtime_error("Crank-Nicolson iteration phase is too large.");
+			return 1.0/dx/PhysCon::a0 * std::acos(cosine);
+		};
+
+		static std::complex<double> phaseAdvanceFromWavenumber(double k0, double v, double dx, double dt, double m_eff){
+			k0 *= PhysCon::a0;
+			dx /= PhysCon::a0;
+			dt *= PhysCon::auE_ha/PhysCon::hbar;
+			v  /= PhysCon::auE_ha;
+			std::complex<double> num = 1.0-0.5*dt*PhysCon::im*( (1.0-std::cos(k0*dx))/dx/dx/m_eff + v );
+			return num/std::conj(num);
+		};
+
+		static std::complex<double> phaseAdvanceFromEnergy(double e, double dt){
+			std::complex<double> num = 1.0-0.5*dt*PhysCon::im*e/PhysCon::hbar;
+			return num/std::conj(num);
+		};
 	};
 }

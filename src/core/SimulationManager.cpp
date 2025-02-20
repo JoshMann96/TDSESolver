@@ -90,7 +90,7 @@ void SimulationManager::calcEnergies(int curStep, double* energies) {
 				double* rho = (double*) sq_malloc(sizeof(double)*nPts);
 				for(int j = 0; j < nElec; j++){
 					vtls::normSqr(nPts, &psis[i][j*nPts], rho);
-					energies[j] = vtlsInt::rSumMul(nPts, rho, vs[i], dx) + kin->evaluateKineticEnergy(&psis[i][j*nPts]);
+					energies[j] = vtlsInt::rSumMul(nPts, rho, vs[i], dx)/vtlsInt::rSum(nPts, rho,dx) + kin->evaluateKineticEnergy(&psis[i][j*nPts]); // TODO: This calculation may need to be modified for different normalizations
 					//potential energy + kinetic energy
 				}
 				sq_free(rho);
@@ -105,6 +105,9 @@ void SimulationManager::calcEnergies(int curStep, double* energies) {
 void SimulationManager::calcWeights(){
 	if (nElec < 1)
 		throw std::runtime_error("SimulationManager::calcEnergies: Number of electrons is not finite! Failed to initialize.");
+
+	if (wght == nullptr)
+		throw std::runtime_error("SimulationManager::calcEnergies: No weight function set!");
 
 	if(weights)
 		sq_free(weights); weights = nullptr;
@@ -145,7 +148,8 @@ void SimulationManager::findEigenStates(double emin, double emax, double maxT, d
 		dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
 }
 
-void SimulationManager::findInhomogeneousSteadyStates(double threshold, int nElec, double* kl, double* kr, bool verbose){
+// DEPRECATED
+void SimulationManager::findInhomogeneousSteadyStates_OBSOLETE(double threshold, int nElec, double* kl, double* kr, bool verbose){
 	this->nElec = nElec;
 
 	freePsis();
@@ -161,7 +165,7 @@ void SimulationManager::findInhomogeneousSteadyStates(double threshold, int nEle
 	bool converged = false;
 	int i = 0;
 	while(!converged){
-		kin_fdm->projectHistory(psis[prevIndex()], kl, kr, vs[index], nElec);
+		//kin_fdm->projectHistory(psis[prevIndex()], kl, kr, vs[index], nElec); // THIS MUST BE FIXED TO USE THIS FUNCTION AGAIN
 		kin_fdm->step(psis[prevIndex()], vs[index], spatialDamp, psis[index], nElec);
 
 		vtls::normSqr(nPts*nElec, psis[index], temp1);
@@ -184,6 +188,33 @@ void SimulationManager::findInhomogeneousSteadyStates(double threshold, int nEle
 
 	sq_free(temp1);
 	sq_free(temp2);
+	calcWeights(); // TODO: check if this calculation is still valid for arbitrary spectrum
+	if(calcDensity)
+		dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
+}
+
+void SimulationManager::findInhomogeneousEigenStates(int nElec, double* energies){
+	this->nElec = nElec;
+
+	freePsis();
+	for(int i = 0; i < 4; i++){
+		psis[i] = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nElec);
+		std::fill_n(psis[i], nPts*nElec, 0.0);
+		pot->getVBare(0.0, vs[i]);
+	}
+
+	kin_fdm->findInhomogeneousEigenStates(vs[index], energies, psis[index], nElec);
+
+	// TODO: Only do this for some normalization schemes, see todo note in WfcRhoTools.h. 
+	// This should probably just be removed, and include some method of renormalizing BCs collectively
+	/*for (int i = 0; i < nElec; i++)
+		vtls::normalizeSqrNorm(nPts, &psis[index][i * nPts], dx);*/
+
+	// TODO: remove magic number 4, make this history storage modifiable
+	for (int i = 1; i < 4; i++) {
+		vtls::copyArray(nPts * nElec, psis[index], psis[i]);
+	}
+
 	calcWeights(); // TODO: check if this calculation is still valid for arbitrary spectrum
 	if(calcDensity)
 		dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
@@ -332,7 +363,7 @@ int SimulationManager::getNumSteps(){
 	return numSteps;
 }
 
-std::complex<double> * SimulationManager::getPsi() {
+std::complex<double>* SimulationManager::getPsi() {
 	return psis[index];
 }
 

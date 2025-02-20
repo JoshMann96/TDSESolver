@@ -310,12 +310,12 @@ namespace Potentials {
 		getVBare(t, targ);
 	}
 
-	ShieldedAtomicPotential::ShieldedAtomicPotential(int nPts, double * x, double center, double latticeSpacing, double zProtons, double decayConst) {
+	ShieldedAtomicPotential::ShieldedAtomicPotential(int nPts, double * x, double center, double latticeSpacing, double zProtons, double decayLength) {
 		ShieldedAtomicPotential::nPts = nPts;
 		v = (double*) sq_malloc(sizeof(double)*nPts);
 		using namespace PhysCon;
 		for (int i = 0; i < nPts; i++)
-			v[i] = -zProtons * qe*qe / (2 * e0*latticeSpacing*latticeSpacing / decayConst)*std::exp(-std::abs(x[i] - center) / decayConst);
+			v[i] = -zProtons * qe*qe / (2 * e0*latticeSpacing*latticeSpacing / decayLength)*std::exp(-std::abs(x[i] - center) / decayLength);
 	}
 
 	ShieldedAtomicPotential::~ShieldedAtomicPotential(){

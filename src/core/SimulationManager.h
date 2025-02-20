@@ -75,7 +75,8 @@ public:
 	// Same as above, using pseudospectral method (may take up a lot of memory for pseudospectral methods)
 	void findEigenStates(double fermie, double w, double maxT, double rate);
 	// Find steady state from inhomogeneous BCs (FINITE DIFFERENCE METHODS ONLY)
-	void findInhomogeneousSteadyStates(double threshold, int nElec, double* kl, double* kr, bool verbose = false);
+	void findInhomogeneousSteadyStates_OBSOLETE(double threshold, int nElec, double* kl, double* kr, bool verbose = false);
+	void findInhomogeneousEigenStates(int nElec, double* energies);
 	// Sets the wave function of the simulation.
 	void setPsi(std::complex<double>* npsi);
 

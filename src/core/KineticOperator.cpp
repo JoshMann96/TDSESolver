@@ -833,14 +833,14 @@ namespace KineticOperators {
 	}
 
 
-	void KineticOperator_FDM::projectHistory(std::complex<double>* psi, double* kl, double* kr, double* v, int nElec) {
+	void KineticOperator_FDM::projectHistory(std::complex<double>* psi, std::complex<double>* phsL, std::complex<double>* phsR, double* v, int nElec) {
 		std::complex<double>* bcwfs = ( std::complex<double>* )sq_malloc(sizeof(std::complex<double>) * nElec);
 
 		cblas_zcopy(nElec, &psi[0], nPts, bcwfs, 1);
-		lbc->fillHistory(bcwfs, kl, v[0]);
+		lbc->fillHistory(bcwfs, phsL, v[0]);
 
 		cblas_zcopy(nElec, &psi[nPts-1], nPts, bcwfs, 1);
-		rbc->fillHistory(bcwfs, kr, v[nPts-1]);
+		rbc->fillHistory(bcwfs, phsR, v[nPts-1]);
 
 		sq_free(bcwfs);
 	}
@@ -852,15 +852,15 @@ namespace KineticOperators {
 			ld= (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * (nPts-1));
 
 
-			diag0 = 1.0 + 0.5*PhysCon::im*PhysCon::hbar/PhysCon::me/m_eff*dt/(dx*dx);
-			offDiag0 = -0.25*PhysCon::im*PhysCon::hbar/PhysCon::me/m_eff*dt/(dx*dx);
+			lhsDiag0 = 1.0 + 0.5*PhysCon::im*PhysCon::hbar/PhysCon::me/m_eff*dt/(dx*dx);
+			lhsOffDiag0 = -0.25*PhysCon::im*PhysCon::hbar/PhysCon::me/m_eff*dt/(dx*dx);
 
-			rhsDiag = 1.0 - 0.5*PhysCon::im*PhysCon::hbar/PhysCon::me/m_eff*dt/(dx*dx);
+			rhsDiag0 = 1.0 - 0.5*PhysCon::im*PhysCon::hbar/PhysCon::me/m_eff*dt/(dx*dx);
 			rhsOffDiag = 0.25*PhysCon::im*PhysCon::hbar/PhysCon::me/m_eff*dt/(dx*dx);
 
-			std::fill_n(d, nPts, diag0);
-			std::fill_n(ud, nPts-1, offDiag0);
-			std::fill_n(ld, nPts-1, offDiag0);
+			std::fill_n(d, nPts, lhsDiag0);
+			std::fill_n(ud, nPts-1, lhsOffDiag0);
+			std::fill_n(ld, nPts-1, lhsOffDiag0);
 
 			potmul = 0.5*PhysCon::im*dt/PhysCon::hbar;
 	}
@@ -894,10 +894,10 @@ namespace KineticOperators {
 			rbc->finishStep(bct1, bct2, std::real(v[nPts-1]));
 
 		//prepare LHS matrix
-		std::fill_n(d, nPts, diag0);
+		std::fill_n(d, nPts, lhsDiag0);
 		vtls::scaMulAddArrays(nPts-2, potmul, &v[1], &d[1]); // d += potmul*v, leave BCs alone
-		std::fill_n(ud, nPts-1, offDiag0);
-		std::fill_n(ld, nPts-1, offDiag0);
+		std::fill_n(ud, nPts-1, lhsOffDiag0);
+		std::fill_n(ld, nPts-1, lhsOffDiag0);
 
 		d[0] = lbc->getLHSEle();
 		d[nPts-1] = rbc->getLHSEle();
@@ -908,7 +908,7 @@ namespace KineticOperators {
 		#pragma omp parallel for collapse(2)
 		for(int j = 0; j < nElec; j++)
 			for(int k = 0; k < nPts-1; k++)
-				targ[j*nPts+k] = (-potmul*v[k]+rhsDiag)*psi0[j*nPts+k] +
+				targ[j*nPts+k] = (-potmul*v[k]+rhsDiag0)*psi0[j*nPts+k] +
 					(rhsOffDiag*psi0[j*nPts+k-1] + rhsOffDiag*psi0[j*nPts+k+1]);
 
 		// apply RHS BC
@@ -967,17 +967,78 @@ namespace KineticOperators {
 		sq_free(ifail);
 	}
 
-	double CrankNicolson::evaluateKineticEnergy(std::complex<double>* psi){
-		std::complex<double>* temp = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts);
-		vtls::scaMulArray(nPts, PhysCon::hbar*PhysCon::hbar/(PhysCon::me*m_eff*dx*dx), psi, temp);
-		vtls::scaMulAddArrays(nPts-1, -0.5*PhysCon::hbar*PhysCon::hbar/(PhysCon::me*m_eff*dx*dx), &psi[1], &temp[0]);
-		vtls::scaMulAddArrays(nPts-1, -0.5*PhysCon::hbar*PhysCon::hbar/(PhysCon::me*m_eff*dx*dx), &psi[0], &temp[1]);
+	void CrankNicolson::findInhomogeneousEigenStates(double* v, double* es, std::complex<double>* states, int nElec){
+		std::complex<double>* lhs_d = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts);
+		std::complex<double>* lhs_ld= (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*(nPts-1));
+		std::complex<double>* lhs_ud= (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*(nPts-1));
+		std::complex<double>* rhs   = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts);
 
-		double result = std::real(vtlsInt::rSumMul(nPts, psi, temp, 1.0) / vtls::getNorm(nPts, psi, 1.0));
+		double* kls = (double*)sq_malloc(sizeof(double)*nElec);
+		double* krs = (double*)sq_malloc(sizeof(double)*nElec);
+
+		std::complex<double>* phaseAdvancement = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nElec);
+
+		for(int i = 0; i < nElec; i++){
+			//std::complex<double> phase = (1.0 - 0.5*PhysCon::im*es[i]*dt/PhysCon::hbar) / (1.0 + 0.5*PhysCon::im*es[i]*dt/PhysCon::hbar);
+			phaseAdvancement[i] = phaseAdvanceFromEnergy(es[i], dt);
+
+			// define inner system
+			for(int k = 1; k < nPts-1; k++)
+				lhs_d[k] = phaseAdvancement[i]*lhsDiag0 - rhsDiag0 + (1.0+phaseAdvancement[i])*potmul*v[k];
+			for(int k = 0; k < nPts-2; k++){
+				lhs_ld[k] = phaseAdvancement[i]*lhsOffDiag0 - rhsOffDiag;
+				lhs_ud[k+1] = phaseAdvancement[i]*lhsOffDiag0 - rhsOffDiag;
+			}
+
+			// get wavenumbers on either side associated with energy
+			// if energy is less than potential, wavenumber is set to decay constant
+			//     this is encoded with a negative value
+			try{ kls[i] = wavenumberFromEnergy(es[i], v[0], dx, dt, m_eff); }
+			catch(const std::exception& e) { kls[i] = -wavenumberFromEnergy(-es[i], -v[0], dx, dt, m_eff); }
+			try{ krs[i] = wavenumberFromEnergy(es[i], v[nPts-1], dx, dt, m_eff); }
+			catch(const std::exception& e) { krs[i] = -wavenumberFromEnergy(-es[i], -v[nPts-1], dx, dt, m_eff); }
+			
+			// define boundaries of system
+			lhs_d[0] = lbc->getSteadyLHSEle(phaseAdvancement[i], kls[i], v[0]);
+			lhs_d[nPts-1] = rbc->getSteadyLHSEle(phaseAdvancement[i], krs[i], v[nPts-1]);
+			lhs_ud[0] = lbc->getSteadyLHSAdjEle(phaseAdvancement[i], kls[i], v[0]);
+			lhs_ld[nPts-2] = rbc->getSteadyLHSAdjEle(phaseAdvancement[i], krs[i], v[nPts-1]);
+
+			// get inhomogeneous matrix
+			std::fill_n(rhs, nPts, 0.0);
+			rhs[0] = lbc->getSteadyRHS(phaseAdvancement[i], kls[i], v[0]);
+			rhs[nPts-1] = rbc->getSteadyRHS(phaseAdvancement[i], krs[i], v[nPts-1]);
+
+			// check if the sytem is inhomogeneous
+			if(std::abs(rhs[0]) < 1e-10 && std::abs(rhs[nPts-1]) < 1e-10)
+				throw std::runtime_error("System must be inhomogeneous to use findInhomogeneousEigenStates");
+			//SOLVE
+			int info, one=1;
+			LAPACK_zgtsv(&nPts, &one, reinterpret_cast<dcomplex*>(lhs_ld), reinterpret_cast<dcomplex*>(lhs_d), reinterpret_cast<dcomplex*>(lhs_ud), reinterpret_cast<dcomplex*>(rhs), &nPts, &info);
+		
+			vtls::copyArray(nPts, rhs, &states[i*nPts]);
+		}
+
+		projectHistory(states, phaseAdvancement, phaseAdvancement, v, nElec);
+
+		sq_free(lhs_d);
+		sq_free(lhs_ld);
+		sq_free(lhs_ud);
+		sq_free(rhs);
+		sq_free(kls);
+		sq_free(krs);
+		sq_free(phaseAdvancement);
+	}
+
+	double CrankNicolson::evaluateKineticEnergy(std::complex<double>* psi){
+		std::complex<double>* temp = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*(nPts-2));
+		vtls::scaMulArray(nPts-2, PhysCon::hbar*PhysCon::hbar/(PhysCon::me*m_eff*dx*dx), &psi[1], temp);
+		vtls::scaMulAddArrays(nPts-3, -0.5*PhysCon::hbar*PhysCon::hbar/(PhysCon::me*m_eff*dx*dx), &psi[2], &temp[0]);
+		vtls::scaMulAddArrays(nPts-3, -0.5*PhysCon::hbar*PhysCon::hbar/(PhysCon::me*m_eff*dx*dx), &psi[1], &temp[1]);
 
 		sq_free(temp);
 
-		return std::real(vtlsInt::rSumMul(nPts, psi, temp, 1.0) / vtls::getNorm(nPts, psi, 1.0));
+		return std::real(vtlsInt::rSumMulConj(nPts-2, &psi[1], temp, 1.0) / vtls::getNorm(nPts-2, &psi[1], 1.0));
 	}
 
 }
