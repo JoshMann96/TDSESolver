@@ -90,7 +90,7 @@ void SimulationManager::calcEnergies(int curStep, double* energies) {
 				double* rho = (double*) sq_malloc(sizeof(double)*nPts);
 				for(int j = 0; j < nElec; j++){
 					vtls::normSqr(nPts, &psis[i][j*nPts], rho);
-					energies[j] = vtlsInt::rSumMul(nPts, rho, vs[i], dx)/vtlsInt::rSum(nPts, rho,dx) + kin->evaluateKineticEnergy(&psis[i][j*nPts]); // TODO: This calculation may need to be modified for different normalizations
+					energies[j] = vtlsInt::rSumMul(nPts, rho, vs[i], dx)/vtlsInt::rSum(nPts, rho,dx) + kin->evaluateKineticEnergy(&psis[i][j*nPts]);
 					//potential energy + kinetic energy
 				}
 				sq_free(rho);
