@@ -82,10 +82,6 @@ void SimulationManager::addSpatialDamp(double* arr) {
 	vtls::seqMulArrays(nPts, arr, spatialDamp);
 }
 
-void SimulationManager::finishInitialization() {
-	pot->finishAddingPotentials();
-}
-
 void SimulationManager::calcEnergies(int curStep, double* energies) {
 		for(int i = 0; i < HISTORY_LENGTH; i++){
 			if(curStep == step[i]){ //look for the present step's index

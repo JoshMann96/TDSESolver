@@ -265,7 +265,7 @@ namespace Potentials {
 	private:
 		int assembled = 0;
 
-		virtual void assemble_(double* rho, std::complex<double> * psi, va_list args) = 0; // class needs to implement assembly
+		virtual void _assemble(double* rho, std::complex<double> * psi, va_list args) = 0; // class needs to implement assembly
 		virtual void getV_(double* rho, std::complex<double> * psi, double t, double * targ) = 0; // class implements unprotected potential calculation.
 	public:
 		void assemble(double* rho, std::complex<double> * psi, ...){
@@ -274,7 +274,7 @@ namespace Potentials {
 			va_start(args, psi);
 
 			// call the assembly function
-			assemble_(rho, psi, args);
+			_assemble(rho, psi, args);
 			
 			va_end(args);
 
@@ -313,7 +313,7 @@ namespace Potentials {
 		void calcPot(double* rho, std::complex<double>* psi, double cur_t, double* targ);
 		CurrentIntegrator * curInt;
 
-		void assemble_(double* rho, std::complex<double>* psi, va_list args);
+		void _assemble(double* rho, std::complex<double>* psi, va_list args);
 		void getV_(double* rho, std::complex<double>* psi, double t, double* targ);
 	public:
 		CylindricalImageCharge(int nPts, double* x, double dx, double ef, double w, double rad, int* nElec, double** weights, int posMin, int posMax, int refPoint);
@@ -333,7 +333,7 @@ namespace Potentials {
 		CurrentIntegrator * curInt;
 		double totalCharge;
 
-		void assemble_(double* rho, std::complex<double>* psi, va_list args);
+		void _assemble(double* rho, std::complex<double>* psi, va_list args);
 		void getV_(double* rho, std::complex<double>* psi, double t, double* targ);
 	public:
 		PlanarToCylindricalHartree(int nPts, double* x, double dx, double rad, int* nElec, double** weights, int posMin, int posMax, int refPoint);
@@ -357,7 +357,7 @@ namespace Potentials {
 
 		LDAFunctionalType typ;
 		
-		void assemble_(double* rho, std::complex<double>* psi, va_list args);
+		void _assemble(double* rho, std::complex<double>* psi, va_list args);
 		void getV_(double* rho, std::complex<double>* psi, double t, double* targ);
 	public:
 		LDAFunctional(LDAFunctionalType typ, int nPts, double dx, int refPoint);
@@ -391,6 +391,7 @@ namespace Potentials {
 	class PotentialManager :
 		public Potential {
 	private:
+		bool compositeRefreshed = false;
 		int nPts;
 		std::vector<Potential*> staticPots, dynamicPots, waveFuncDependentPots;
 		CompositePotential * pot=nullptr;
@@ -401,7 +402,7 @@ namespace Potentials {
 		~PotentialManager(){if(pot) delete pot; if(spots) delete[] spots; if(dpots) delete[] dpots; if(wpots) delete[] wpots;};
 		void addPotential(Potential * pot);
 		void addPotential(Potential * pot, Measurers::Measurer* meas);
-		void finishAddingPotentials();
+		void refreshCompositePotential();
 		void getVBare(double t, double * targ);
 		void getV(double* rho, std::complex<double> * psi, double t, double * targ);
 		PotentialComplexity getComplexity(){return myComplex;};

@@ -393,7 +393,7 @@ namespace Potentials {
 		delete curInt;
 	}
 	
-	void CylindricalImageCharge::assemble_(double* rho, std::complex<double>* psi, va_list args) {
+	void CylindricalImageCharge::_assemble(double* rho, std::complex<double>* psi, va_list args) {
 		// Extract additional arguments from va_list
         int sp = va_arg(args, int);
 		surfPos = sp > nPts - 1 ? nPts - 1 : sp;
@@ -481,7 +481,7 @@ namespace Potentials {
 		delete curInt;
 	}
 
-	void PlanarToCylindricalHartree::assemble_(double* rho, std::complex<double>* psi, va_list args){
+	void PlanarToCylindricalHartree::_assemble(double* rho, std::complex<double>* psi, va_list args){
 		// Extract additional arguments from va_list
         int sp = va_arg(args, int);
 		surfPos = sp > nPts - 1 ? nPts - 1 : sp;
@@ -536,7 +536,7 @@ namespace Potentials {
 		sq_free(rho);
 	};
 
-	void LDAFunctional::assemble_(double* rho, std::complex<double>* psi, va_list args){
+	void LDAFunctional::_assemble(double* rho, std::complex<double>* psi, va_list args){
 		calcPot(rho, origPot);
 	}
 
@@ -644,6 +644,7 @@ namespace Potentials {
 	}
 
 	void PotentialManager::addPotential(Potential * pot) {
+		compositeRefreshed = false;
 		switch(pot->getComplexity()){
 			case PotentialComplexity::STATIC:
 				staticPots.push_back(pot);
@@ -662,7 +663,8 @@ namespace Potentials {
 		}
 	}
 
-	void PotentialManager::finishAddingPotentials() {
+	void PotentialManager::refreshCompositePotential() {
+		// copy vectors to pointer arrays
 		int ns = staticPots.size();
 		int nd = dynamicPots.size();
 		int nw = waveFuncDependentPots.size();
@@ -684,21 +686,25 @@ namespace Potentials {
 			dpots[i] = dynamicPots[i];
 		for (int i = 0; i < nw; i++)
 			wpots[i] = waveFuncDependentPots[i];
+		
+		// recreate composite potential
+		if (pot)
+			delete pot;
 		pot = new CompositePotential(nPts, ns, nd, nw, spots, dpots, wpots);
+
+		compositeRefreshed = true;
 	}
 
 	void PotentialManager::getVBare(double t, double * targ) {
-		if (pot)
-			pot->getVBare(t, targ);
-		else
-			throw std::runtime_error("Must run finishAddingPotentials() function on PotentialManager before using getV().");
+		if(!compositeRefreshed)
+			refreshCompositePotential();
+		pot->getVBare(t, targ);
 	}
 
 	void PotentialManager::getV(double* rho, std::complex<double> * psi, double t, double * targ) {
-		if (pot)
-			pot->getV(rho, psi, t, targ);
-		else
-			throw std::runtime_error("Must run finishAddingPotentials() function on PotentialManager before using getV().");
+		if(!compositeRefreshed)
+			refreshCompositePotential();
+		pot->getV(rho, psi, t, targ);
 	}
 
 	namespace ElectricFieldProfiles {
