@@ -1,11 +1,9 @@
 #pragma once
 #include "CORECommonHeader.h"
 #include "KineticOperator.h"
+#include "SimulationManager.h"
 #include "MathTools.h"
 
-// Different ways of calculating weights (w*|psi(x)|^2 = rho(x) [e/m^3]) for density functional potentials
-// TODO: implement different normalizations (total bound probability, or incident flux/inhomogeneous)
-//			similarly, adjust normalization within SimulationManager and Measurers
 namespace WfcToRho {
 	// Template function for Weight (will result in error if weight is needed and this is used).
 	class Weight {
@@ -21,7 +19,7 @@ namespace WfcToRho {
 		double ef;
 	public:
 		BoundFermiGas(double ef) : ef(ef) {}
-		void calcWeights(int nElec, double* energies, double* weights);
+		void calcWeights(int nElec, double* energies, double* weights, NormalizationScheme norm);
 	};
 
 	// Fermi gas in semi-infinite system
@@ -33,7 +31,7 @@ namespace WfcToRho {
 		double ef;
 	public:
 		SemiInfiniteFermiGas(double ef) : ef(ef) {}
-		void calcWeights(int nElec, double* energies, double* weights);
+		void calcWeights(int nElec, double* energies, double* weights, NormalizationScheme norm);
 	};
 
 	class FromDOS :
@@ -44,7 +42,7 @@ namespace WfcToRho {
 		boost::math::interpolators::cardinal_cubic_b_spline<double> dosISpline;
 	public:
 		FromDOS(double fl, double ef, double leff, const char* fil);
-		void calcWeights(int nElec, double* energies, double* weights);
+		void calcWeights(int nElec, double* energies, double* weights, NormalizationScheme norm);
 	};
 
 	class Density {

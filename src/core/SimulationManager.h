@@ -5,6 +5,11 @@
 #include "KineticOperator.h"
 // Manages simulation by controling potentials, measurements, and TDSE iterator(s) for multiple electrons at the same time.
 
+enum NormalizationScheme{
+	UNNORMALIZED,
+	NORMALIZED
+};
+
 class SimulationManager
 {
 private:
@@ -23,6 +28,8 @@ private:
 	int* step;
 	std::function <void(int)> progCallback;
 	std::complex<double> *scratch1, *scratch2;
+
+	NormalizationScheme normScheme = UNNORMALIZED;
 
 	int updatePotential(std::complex<double>* psi, int idx, double* rho);
 	int stepItPAR(int idx0, int idx1);
@@ -44,8 +51,10 @@ private:
 	void calcWeights();
 
 public:
+
 	SimulationManager(int nPts, double dx, double dt, double maxT, std::function<void(int)> callback = nullptr);
 	~SimulationManager();
+
 	// Adds a measurer to the simulation.
 	void addMeasurer(Measurers::Measurer * nMeas);
 	// Adds potential to simulation.
@@ -53,6 +62,7 @@ public:
 	// Adds spatial absorptive region.
 	void addSpatialDamp(double* arr);
 
+	// Setting functions relating to density calculation.
 	void setWeight(WfcToRho::Weight* nwght) { wght = nwght; }
 	void setDensity(WfcToRho::Density* ndens) { dens = ndens; }
 	WfcToRho::Weight* getWeight() { return wght; }
@@ -63,9 +73,11 @@ public:
 	double* getWeightValues(){ return weights; }
 	double* getRho(int curStep);
 
+	// Sets the kinetic operator to be used in the simulation. Differentiates between pseudospectral and finite difference methods.
 	void setKineticOperator_PSM(KineticOperators::KineticOperator_PSM* nkin) { kin = nkin; kin_psm = nkin; }
 	void setKineticOperator_FDM(KineticOperators::KineticOperator_FDM* nkin) { kin = nkin; kin_fdm = nkin; }
 
+	// Split-step iteration schemes
 	void runOS_U2TU();
 	void runOS_UW2TUW();
 
@@ -78,7 +90,7 @@ public:
 	void findInhomogeneousSteadyStates_OBSOLETE(double threshold, int nElec, double* kl, double* kr, bool verbose = false);
 	void findInhomogeneousEigenStates(int nElec, double* energies);
 	// Sets the wave function of the simulation.
-	void setPsi(std::complex<double>* npsi);
+	void setPsi(std::complex<double>* npsi, NormalizationScheme norm = UNNORMALIZED);
 
 	void iterateIndex();
 	int getIndex();

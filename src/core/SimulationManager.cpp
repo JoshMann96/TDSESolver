@@ -148,6 +148,8 @@ void SimulationManager::findEigenStates(double emin, double emax, double maxT, d
 	calcWeights();
 	if(calcDensity)
 		dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
+	
+	normScheme = NormalizationScheme::NORMALIZED;
 }
 
 // DEPRECATED
@@ -189,7 +191,7 @@ void SimulationManager::findInhomogeneousSteadyStates_OBSOLETE(double threshold,
 
 	sq_free(temp1);
 	sq_free(temp2);
-	calcWeights(); // TODO: check if this calculation is still valid for arbitrary spectrum
+	calcWeights();
 	if(calcDensity)
 		dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
 	for(int i = 0; i < 4; i++)
@@ -208,22 +210,21 @@ void SimulationManager::findInhomogeneousEigenStates(int nElec, double* energies
 
 	kin_fdm->findInhomogeneousEigenStates(vs[index], energies, psis[index], nElec);
 
-	// TODO: Only do this for some normalization schemes, see todo note in WfcRhoTools.h. 
-	// This should probably just be removed, and include some method of renormalizing BCs collectively
-	/*for (int i = 0; i < nElec; i++)
-		vtls::normalizeSqrNorm(nPts, &psis[index][i * nPts], dx);*/
-
 	// TODO: remove magic number 4, make this history storage modifiable
 	for (int i = 1; i < 4; i++) {
 		vtls::copyArray(nPts * nElec, psis[index], psis[i]);
 	}
 
-	calcWeights(); // TODO: check if this calculation is still valid for arbitrary spectrum
+	calcWeights();
 	if(calcDensity)
 		dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
+
+	normScheme = NormalizationScheme::UNNORMALIZED;
 }
 
-void SimulationManager::setPsi(std::complex<double>* npsi) {
+void SimulationManager::setPsi(std::complex<double>* npsi, NormalizationScheme norm) {
+	normScheme = norm;
+
 	if (!nElec) {
 		nElec = 1;
 		freePsis();
@@ -232,7 +233,9 @@ void SimulationManager::setPsi(std::complex<double>* npsi) {
 		}
 	}
 	vtls::copyArray(nPts, npsi, psis[index]);
-	vtls::normalizeSqrNorm(nPts, psis[index], dx);
+
+	if(normScheme == NormalizationScheme::NORMALIZED)
+		vtls::normalizeSqrNorm(nPts, psis[index], dx);
 }
 
 int SimulationManager::updatePotential(std::complex<double>* psi, int idx, double* rho) {

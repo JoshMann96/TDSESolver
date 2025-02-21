@@ -3,7 +3,10 @@
 #include <stdexcept>
 
 namespace WfcToRho {
-	void BoundFermiGas::calcWeights(int nElec, double* energies, double* weights) {
+	void BoundFermiGas::calcWeights(int nElec, double* energies, double* weights, NormalizationScheme norm) {
+		if(norm == NormalizationScheme::UNNORMALIZED)
+			throw std::runtime_error("WfcToRho::BoundFermiGas Cannot use UNNORMALIZED scheme with BoundFermiGas");
+
 		double minE = vtls::min(nElec, energies);
 		double maxE = vtls::max(nElec, energies);
 		//Find center of Fermi slab, and set new 0-energy accoridngly, and convert to Fermi energy difference
@@ -20,7 +23,10 @@ namespace WfcToRho {
 			weights[i] *= fact;
 	}
 
-	void SemiInfiniteFermiGas::calcWeights(int nElec, double* energies, double* weights) {
+	void SemiInfiniteFermiGas::calcWeights(int nElec, double* energies, double* weights, NormalizationScheme norm) {
+		if(norm == NormalizationScheme::NORMALIZED)
+			throw std::runtime_error("WfcToRho::SemiInfiniteFermiGas expects a wavefunction which has a normalization dicated by boundary conditions, not the total norm.");
+
 		double minE = vtls::min(nElec, energies);
 		double maxE = vtls::max(nElec, energies);
 		double bottom = maxE - ef;
@@ -70,10 +76,13 @@ namespace WfcToRho {
 		sq_free(fE);
 	}
 
-	void FromDOS::calcWeights(int nElec, double* energies, double* weights) {
+	void FromDOS::calcWeights(int nElec, double* energies, double* weights, NormalizationScheme norm) {
 		//approximate effective width of well... will need to be reconsidered if using non square-ish wells
 		//corrects for lost normalized density for larger wells (densities should be O(1))
 		//double leff = PhysCon::hbar * 2.0 * PhysCon::pi * nElec / (2.0 * std::sqrt(2.0 * ef * PhysCon::me));
+
+		if(norm == NormalizationScheme::UNNORMALIZED)
+			std::cout << "Warning: FromDOS: UNNORMALIZED scheme is not recommended with FromDOS, but could work if you know what you're doing." << std::endl;
 
 		if (nElec == 1) {
 			std::cout << "FromDOS: Only single electron provided, weight set to total DOS from energies[0]-ef to energies[0]" << std::endl;
