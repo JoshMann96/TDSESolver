@@ -2,14 +2,10 @@
 #include "CORECommonHeader.h"
 #include "Measurers.h"
 #include "Potentials.h"
+#include "WfcRhoTools.h"
 #include "KineticOperator.h"
+
 // Manages simulation by controling potentials, measurements, and TDSE iterator(s) for multiple electrons at the same time.
-
-enum NormalizationScheme{
-	UNNORMALIZED,
-	NORMALIZED
-};
-
 class SimulationManager
 {
 private:
@@ -29,7 +25,7 @@ private:
 	std::function <void(int)> progCallback;
 	std::complex<double> *scratch1, *scratch2;
 
-	NormalizationScheme normScheme = UNNORMALIZED;
+	WfcToRho::NormalizationScheme normScheme = WfcToRho::UNNORMALIZED;
 
 	int updatePotential(std::complex<double>* psi, int idx, double* rho);
 	int stepItPAR(int idx0, int idx1);
@@ -90,7 +86,7 @@ public:
 	void findInhomogeneousSteadyStates_OBSOLETE(double threshold, int nElec, double* kl, double* kr, bool verbose = false);
 	void findInhomogeneousEigenStates(int nElec, double* energies);
 	// Sets the wave function of the simulation.
-	void setPsi(std::complex<double>* npsi, NormalizationScheme norm = UNNORMALIZED);
+	void setPsi(std::complex<double>* npsi, WfcToRho::NormalizationScheme norm = WfcToRho::UNNORMALIZED);
 
 	void iterateIndex();
 	int getIndex();

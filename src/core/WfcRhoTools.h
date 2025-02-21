@@ -1,14 +1,19 @@
 #pragma once
 #include "CORECommonHeader.h"
-#include "KineticOperator.h"
-#include "SimulationManager.h"
 #include "MathTools.h"
+#include "KineticOperator.h"
 
 namespace WfcToRho {
+
+	enum NormalizationScheme{
+		UNNORMALIZED,
+		NORMALIZED
+	};
+
 	// Template function for Weight (will result in error if weight is needed and this is used).
 	class Weight {
 	public:
-		virtual void calcWeights(int nElec, double* energies, double* weights) = 0;
+		virtual void calcWeights(int nElec, double* energies, double* weights, NormalizationScheme norm) = 0;
 	};
 
 	// Fermi gas in slab system
