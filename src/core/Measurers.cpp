@@ -1042,6 +1042,8 @@ namespace Measurers {
 	WfcRhoWeights::WfcRhoWeights(int* nElec, double** weights, const char* fol) : 
 		nElec(nElec), weights(weights)
 	{
+		needsDens = true;
+		
 		int l1 = std::strlen(fol), l2 = std::strlen(fname);
 		char* nfil = new char[l1 + l2 + 1];
 		strncpy(nfil, fol, l1);

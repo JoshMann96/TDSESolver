@@ -307,7 +307,7 @@ void testCrankNicolson(){
 
 	for(int i = 0; i < nPts; i++){
 		xs[i] = dx*(i-nPts/2);
-		v0[i] = -PhysCon::qe*10*std::exp(-xs[i]*xs[i]/(2.0*1e-18));
+		v0[i] = -PhysCon::eV*10*std::exp(-xs[i]*xs[i]/(2.0*1e-18));
 		damp[i] = 1.0;
 	}
 
@@ -337,7 +337,7 @@ void testCrankNicolson(){
 	std::cin.get();	
 	
 	for(int i = 0; i < nPts; i++)
-		v0[i] = 1e9*PhysCon::qe*(i*dx);
+		v0[i] = 1e9*PhysCon::eV*(i*dx);
 
 	double norm0 = vtls::getNorm(nPts*nElec, psi0, dx);
 	for(int i = 0; i < numSteps; i++){
@@ -367,7 +367,7 @@ void testInhomogeneousSteadyState(){
 		xs[i] = dx*(i-nPts/2);
 
 	SimulationManager* sm = new SimulationManager(nPts, dx, dt, 100.0*dt);
-	sm->addPotential(new Potentials::JelliumPotential(nPts, xs, 0.0, 5*PhysCon::qe, 5*PhysCon::qe, 0));
+	sm->addPotential(new Potentials::JelliumPotential(nPts, xs, 0.0, 5*PhysCon::eV, 5*PhysCon::eV, 0));
 
 	// define incoming wavefunctions
 	int nElec = 5;
@@ -375,7 +375,7 @@ void testInhomogeneousSteadyState(){
 	double* k0 = new double[nElec];
 	for (int i = 0; i < nElec; i++){
 		psibd[i] = 1.0;
-		k0[i] = std::sqrt(5.0*i*2.0*PhysCon::qe*PhysCon::me/(nElec-1))/PhysCon::hbar; // 0-5 eV
+		k0[i] = std::sqrt(5.0*i*2.0*PhysCon::eV*PhysCon::me/(nElec-1))/PhysCon::hbar; // 0-5 eV
 	}
 
 	FDBCs::BoundaryCondition* rbc = new FDBCs::UniformHDTransparentBC(1000, nElec, dx, dt);
@@ -393,9 +393,9 @@ void testInhomogeneousSteadyState(){
 }
 
 void testInhomogeneousEigenState(){
-	int nPts = 1000;
-	double dx = 1e-11;
-	double dt = 1e-18;
+	int nPts = 5000;
+	double dx = 0.02*PhysCon::a0;
+	double dt = 0.1*PhysCon::hbar/PhysCon::auE_ha;
 
 	double* xs = new double[nPts];
 	for(int i = 0; i < nPts; i++)
@@ -404,18 +404,21 @@ void testInhomogeneousEigenState(){
 	plotting::GNUPlotter* plotter = new plotting::GNUPlotter();
 
 	SimulationManager* sm = new SimulationManager(nPts, dx, dt, 100.0*dt);
-	sm->addPotential(new Potentials::JelliumPotential(nPts, xs, 0.0, 5*PhysCon::qe, 5*PhysCon::qe, 0));
-	sm->addPotential(new Potentials::ShieldedAtomicPotential(nPts, xs, -2e-10, 4e-10, 1.5, 1e-10) );
-	//sm->addPotential(new Potentials::FiniteBox(nPts, xs, -2e-9, -1e-9, -5.0*PhysCon::qe, 0));
+	sm->addPotential(new Potentials::JelliumPotential(nPts, xs, 0.0, 5*PhysCon::eV, 5*PhysCon::eV, 0));
+	//sm->addPotential(new Potentials::ShieldedAtomicPotential(nPts, xs, -2e-10, 4e-10, 1.5, 1e-10) );
+	//sm->addPotential(new Potentials::FiniteBox(nPts, xs, -2e-9, -1e-9, -5.0*PhysCon::eV, 0));
+
+	Measurers::Measurer* m = new Measurers::WfcRhoWeights(sm->getNElecPtr(), sm->getWeightsPtr(), "data/test");
+	sm->addMeasurer(m);
 
 	// define incoming wavefunctions
-	int nElec = 3;
+	int nElec = 50;
 	std::complex<double>* psibd = new std::complex<double>[nElec];
 	double* energy = new double[nElec];
 	double* ks = new double[nElec];
 	for (int i = 0; i < nElec; i++){
 		psibd[i] = 1.0;
-		energy[i] = 5.0*PhysCon::qe*(i+1.0)/nElec; // 0-5 eV
+		energy[i] = 5.0*PhysCon::eV*std::pow((i+1.0)/nElec, 2.0);//(i+1.0)/nElec; // 0-5 eV
 		//ks[i] = std::sqrt(2.0*PhysCon::me*energy[i]/PhysCon::hbar/PhysCon::hbar);
 		ks[i] = KineticOperators::CrankNicolson::wavenumberFromEnergy(energy[i], 0.0, dx, dt, 1.0);
 	}
@@ -424,7 +427,7 @@ void testInhomogeneousEigenState(){
 	FDBCs::BoundaryCondition* lbc = new FDBCs::UniformIDTransparentBC(1000, nElec, dx, dt, psibd, ks, 0.0);
 	KineticOperators::CrankNicolson* cn = new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, lbc, rbc);
 	sm->setKineticOperator_FDM(cn);
-	sm->setWeight(new WfcToRho::FermiGasDistro(5.0*PhysCon::qe));
+	sm->setWeight(new WfcToRho::SemiInfiniteFermiGas(5.0*PhysCon::eV));
 	sm->setDensity(new WfcToRho::DirectDensity());
 	sm->finishInitialization();
 
@@ -446,14 +449,24 @@ void testInhomogeneousEigenState(){
 	double* state_energies = new double[nElec];
 	sm->calcEnergies(0, state_energies);
 	for(int i = 0; i < nElec; i++)
-		std::cout << "Expected " << i << ": " << energy[i]/PhysCon::qe << ", Got : " << state_energies[i]/PhysCon::qe << " eV" << std::endl;
+		std::cout << "Expected " << i << ": " << energy[i]/PhysCon::eV << ", Got : " << state_energies[i]/PhysCon::eV << " eV" << std::endl;
 	delete[] state_energies;
+
+	// plot density and potential
+	temp = (double*)sq_malloc(sizeof(double)*nPts*2);
+	vtls::copyArray(nPts, sm->getRho(), temp);
+	sm->getPotPointer()->getVBare(0.0, &temp[nPts]);
+	vtls::scaMulArray(nPts, 1e-3/(PhysCon::eV*std::pow(PhysCon::a0,3)), &temp[nPts]);
+	plotter->update(nPts, 2, temp);
+	sq_free(temp);
 
 	delete[] psibd;
 	delete[] ks;
 	delete[] xs;
 	delete[] energy;
 
+	// time evolution
+	/*
 	std::complex<double>* psi0 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts*nElec);
 	std::complex<double>* psi1 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts*nElec);
 	std::complex<double>* initial_psi = sm->getPsi();
@@ -479,7 +492,7 @@ void testInhomogeneousEigenState(){
 	sq_free(psi1);
 	sq_free(v);
 	sq_free(damp);
-
+*/
 	//delete plotter;
 	delete sm;
 }

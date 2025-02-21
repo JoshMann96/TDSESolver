@@ -14,8 +14,11 @@ namespace Measurers {
 	class Measurer
 	{
 	private:
-		int isTerminated=0;
 		virtual void terminate() = 0;
+		const char* fname = "";
+	protected:
+		int isTerminated=0;
+		bool needsDens = false;
 	public:;
 		virtual ~Measurer() = default;
 		// Required function that takes a measurement whenever called.
@@ -28,9 +31,7 @@ namespace Measurers {
 			}
 		}
 		virtual int getIndex() = 0;
-	private:
-		int index;
-		const char* fname = "";
+		bool needsDensity(){return needsDens;};
 	};
 
 	// Writes a double constant to a file for future reference.

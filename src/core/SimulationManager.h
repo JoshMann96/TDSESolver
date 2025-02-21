@@ -81,6 +81,7 @@ public:
 	void setPsi(std::complex<double>* npsi);
 
 	void iterateIndex();
+	int getIndex();
 	int nextIndex();
 	int prevIndex();
 	int prevPrevIndex();
@@ -93,8 +94,8 @@ public:
 	double getMaxT();
 	int getNumSteps();
 	// Returns a pointer to the current psis.
-	std::complex<double> * getPsi();
-	double * getRho();
+	std::complex<double>* getPsi();
+	double* getRho();
 	int getNElec();
 	int* getNElecPtr();
 	double** getWeightsPtr() { return &weights; }

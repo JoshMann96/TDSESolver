@@ -68,6 +68,8 @@ SimulationManager::~SimulationManager()
 
 void SimulationManager::addMeasurer(Measurers::Measurer* m) {
 	meas->addMeasurer(m);
+	if (m->needsDensity())
+		calcDensity = 1;
 }
 
 void SimulationManager::addPotential(Potentials::Potential* p) {
@@ -182,15 +184,16 @@ void SimulationManager::findInhomogeneousSteadyStates_OBSOLETE(double threshold,
 		i++;
 	}
 
-	for(int i = 0; i < 4; i++){
+	for(int i = 0; i < 4; i++)
 		vtls::copyArray(nPts*nElec, psis[index], psis[i]);
-	}
 
 	sq_free(temp1);
 	sq_free(temp2);
 	calcWeights(); // TODO: check if this calculation is still valid for arbitrary spectrum
 	if(calcDensity)
 		dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
+	for(int i = 0; i < 4; i++)
+		vtls::copyArray(nPts, rhos[index], rhos[i]);
 }
 
 void SimulationManager::findInhomogeneousEigenStates(int nElec, double* energies){
@@ -322,6 +325,10 @@ void SimulationManager::iterateIndex() {
 		index = 0;
 }
 
+int SimulationManager::getIndex(){
+	return index;
+}
+
 int SimulationManager::prevIndex() {
 	if (index == 0)
 		return 3;
@@ -367,7 +374,7 @@ std::complex<double>* SimulationManager::getPsi() {
 	return psis[index];
 }
 
-double * SimulationManager::getRho(){
+double* SimulationManager::getRho(){
 	return rhos[index];
 }
 

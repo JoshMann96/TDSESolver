@@ -3,15 +3,9 @@
 #include <stdexcept>
 
 namespace WfcToRho {
-	void FermiGasDistro::calcWeights(int nElec, double* energies, double* weights) {
-		double minE = energies[0], maxE = energies[0];
-		//Find min/max energy
-		for (int i = 0; i < nElec; i++) {
-			if (energies[i] > maxE)
-				maxE = energies[i];
-			if (energies[i] < minE)
-				minE = energies[i];
-		}
+	void BoundFermiGas::calcWeights(int nElec, double* energies, double* weights) {
+		double minE = vtls::min(nElec, energies);
+		double maxE = vtls::max(nElec, energies);
 		//Find center of Fermi slab, and set new 0-energy accoridngly, and convert to Fermi energy difference
 		double bottom = (maxE + minE) / 2 - ef / 2;
 		for (int i = 0; i < nElec; i++)
@@ -26,6 +20,31 @@ namespace WfcToRho {
 			weights[i] *= fact;
 	}
 
+	void SemiInfiniteFermiGas::calcWeights(int nElec, double* energies, double* weights) {
+		double minE = vtls::min(nElec, energies);
+		double maxE = vtls::max(nElec, energies);
+		double bottom = maxE - ef;
+
+		// get energy range boundaries relative to bottom
+		double* energyRangeBoundaries = (double*) sq_malloc(sizeof(double) * (nElec+1));
+		energyRangeBoundaries[0] = 0.0;
+		for (int i = 0; i < nElec-1; i++){
+			if(energies[i] > energies[i+1])
+				throw std::runtime_error("WfcToRho::SemiInfiniteFermiGas::calcWeights: energies not sorted");
+			energyRangeBoundaries[i + 1] = (energies[i] + energies[i+1])/2.0 - bottom;
+		}
+		energyRangeBoundaries[nElec] = ef;
+
+		// Fermi gas (one direction only): N = sqrt(2)/(3 pi^2) (Ef m/hbar^2)^(3/2)
+		// density wrt k \propto Ef-E
+		// density between energies \propto (Ef-E1)^2-(Ef-E0)^2
+		// each state has density = N * [(Ef-E1)^2-(Ef-E0)^2] / Ef^2
+		double n0 = std::sqrt(2)/(3.0*PhysCon::pi*PhysCon::pi)*std::pow(ef * PhysCon::me/PhysCon::hbar/PhysCon::hbar, 1.5);
+		for(int i = 0; i < nElec; i++)
+			weights[i] = n0 * (std::pow(ef - energyRangeBoundaries[i], 2) - std::pow(ef - energyRangeBoundaries[i+1], 2)) / ef / ef;
+
+		sq_free(energyRangeBoundaries);
+	}
 
 	//NOTE: fl here is the Fermi level (relative to vacuum) of the model system, not Fermi energy. Typically -W
 	//		ef is the Fermi energy

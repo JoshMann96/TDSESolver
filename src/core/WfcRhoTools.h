@@ -13,13 +13,26 @@ namespace WfcToRho {
 		virtual void calcWeights(int nElec, double* energies, double* weights) = 0;
 	};
 
-	class FermiGasDistro :
+	// Fermi gas in slab system
+	class BoundFermiGas :
 		public Weight
 	{
 	private:
 		double ef;
 	public:
-		FermiGasDistro(double ef) : ef(ef) {}
+		BoundFermiGas(double ef) : ef(ef) {}
+		void calcWeights(int nElec, double* energies, double* weights);
+	};
+
+	// Fermi gas in semi-infinite system
+	// Assumes incoming wavefunctions are normalized like 1.0*e^ikx-iwt
+	class SemiInfiniteFermiGas :
+		public Weight
+	{
+	private:
+		double ef;
+	public:
+		SemiInfiniteFermiGas(double ef) : ef(ef) {}
 		void calcWeights(int nElec, double* energies, double* weights);
 	};
 

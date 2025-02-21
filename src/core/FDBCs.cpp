@@ -167,11 +167,6 @@ namespace FDBCs{
         for (int i = 0; i < nElec; i++)
             dpsibd[i] = psibd[i] - ihpsi[i];
 
-        vtlsPrnt::printArray(nElec, dpsibd);
-        vtlsPrnt::printArray(nElec, psibd);
-        vtlsPrnt::printArray(nElec, ihpsi);
-        vtlsPrnt::printArray(nElec, historicalPhaseAdvance);
-
         UniformHDTransparentBC::fillHistory(dpsibd, historicalPhaseAdvance, vb);
         
         sq_free(dpsibd);
