@@ -46,6 +46,8 @@ private:
 
 	void calcWeights();
 
+	const int HISTORY_LENGTH = 4; // TODO: See how much history is necessary for each scheme (psi/pot/mea asynchronous vs pot/mea asyncrhonous vs only mea asynchronous)
+
 public:
 
 	SimulationManager(int nPts, double dx, double dt, double maxT, std::function<void(int)> callback = nullptr);
@@ -90,9 +92,9 @@ public:
 
 	void iterateIndex();
 	int getIndex();
-	int nextIndex();
-	int prevIndex();
-	int prevPrevIndex();
+	int getNextIndex();
+	int getPrevIndex();
+	int getPrevPrevIndex();
 
 	// Returns the number of points in the simulation.
 	int getNumPoints();

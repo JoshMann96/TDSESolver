@@ -10,21 +10,21 @@ SimulationManager::SimulationManager(int nPts, double dx, double dt, double maxT
 
 	pot = new Potentials::PotentialManager(nPts);
 	meas = new Measurers::MeasurementManager("");
-	psis = (std::complex<double>**) sq_malloc(sizeof(std::complex<double>*)*4);
-	for(int i = 0; i < 4; i++)
+	psis = (std::complex<double>**) sq_malloc(sizeof(std::complex<double>*)*HISTORY_LENGTH);
+	for(int i = 0; i < HISTORY_LENGTH; i++)
 		psis[i] = nullptr;
 
-	vs = (double**) sq_malloc(sizeof(double*)*4);
-	rhos = (double**) sq_malloc(sizeof(double*)*4);
-	ts = (double*) sq_malloc(sizeof(double)*4);
-	for (int i = 0; i < 4; i++){
+	vs = (double**) sq_malloc(sizeof(double*)*HISTORY_LENGTH);
+	rhos = (double**) sq_malloc(sizeof(double*)*HISTORY_LENGTH);
+	ts = (double*) sq_malloc(sizeof(double)*HISTORY_LENGTH);
+	for (int i = 0; i < HISTORY_LENGTH; i++){
 		vs[i] = (double*) sq_malloc(sizeof(double) * nPts);
 		rhos[i] = (double*) sq_malloc(sizeof(double) * nPts);
 	}
-	std::fill_n(ts, 4, 0.0);
+	std::fill_n(ts, HISTORY_LENGTH, 0.0);
 
-	step = (int*) sq_malloc(sizeof(int) * 4);
-	std::fill_n(step, 4, 0);
+	step = (int*) sq_malloc(sizeof(int) * HISTORY_LENGTH);
+	std::fill_n(step, HISTORY_LENGTH, 0);
 
 	scratch1 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts);
 	scratch2 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts);
@@ -43,7 +43,7 @@ SimulationManager::SimulationManager(int nPts, double dx, double dt, double maxT
 
 SimulationManager::~SimulationManager()
 {
-	for(int i = 0; i < 4; i++){
+	for(int i = 0; i < HISTORY_LENGTH; i++){
 		sq_free(vs[i]);
 		sq_free(rhos[i]);
 	}
@@ -87,7 +87,7 @@ void SimulationManager::finishInitialization() {
 }
 
 void SimulationManager::calcEnergies(int curStep, double* energies) {
-		for(int i = 0; i < 4; i++){
+		for(int i = 0; i < HISTORY_LENGTH; i++){
 			if(curStep == step[i]){ //look for the present step's index
 				double* rho = (double*) sq_malloc(sizeof(double)*nPts);
 				for(int j = 0; j < nElec; j++){
@@ -142,7 +142,7 @@ void SimulationManager::findEigenStates(double emin, double emax, double maxT, d
 	for (int i = 0; i < nElec; i++)
 		vtls::normalizeSqrNorm(nPts, &psis[0][i * nPts], dx);
 
-	for (int i = 1; i < 4; i++) {
+	for (int i = 1; i < HISTORY_LENGTH; i++) {
 		psis[i] = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nElec);
 		vtls::copyArray(nPts * nElec, psis[0], psis[i]);
 	}
@@ -157,7 +157,7 @@ void SimulationManager::findInhomogeneousSteadyStates_OBSOLETE(double threshold,
 	this->nElec = nElec;
 
 	freePsis();
-	for(int i = 0; i < 4; i++){
+	for(int i = 0; i < HISTORY_LENGTH; i++){
 		psis[i] = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nElec);
 		std::fill_n(psis[i], nPts*nElec, 0.0);
 		pot->getVBare(0.0, vs[i]);
@@ -170,10 +170,10 @@ void SimulationManager::findInhomogeneousSteadyStates_OBSOLETE(double threshold,
 	int i = 0;
 	while(!converged){
 		//kin_fdm->projectHistory(psis[prevIndex()], kl, kr, vs[index], nElec); // THIS MUST BE FIXED TO USE THIS FUNCTION AGAIN
-		kin_fdm->step(psis[prevIndex()], vs[index], spatialDamp, psis[index], nElec);
+		kin_fdm->step(psis[getPrevIndex()], vs[index], spatialDamp, psis[index], nElec);
 
 		vtls::normSqr(nPts*nElec, psis[index], temp1);
-		vtls::normSqr(nPts*nElec, psis[prevIndex()], temp2);
+		vtls::normSqr(nPts*nElec, psis[getPrevIndex()], temp2);
 		vtls::scaMulAddArrays(nPts*nElec, -1.0, temp1, temp2); // temp2 = old - new
 		vtls::abs(nPts*nElec, temp2, temp2); // temp2 = |old - new|
 		// ? (sum of |old - new|) / (sum of |new|) < threshold
@@ -182,11 +182,11 @@ void SimulationManager::findInhomogeneousSteadyStates_OBSOLETE(double threshold,
 			std::cout << "Error: " << err << std::endl;
 		converged = vtlsInt::rSum(nPts*nElec, temp2, 1.0) / vtlsInt::rSum(nPts*nElec, temp1, 1.0) < threshold;
 
-		vtls::copyArray(nPts*nElec, psis[index], psis[prevIndex()]);
+		vtls::copyArray(nPts*nElec, psis[index], psis[getPrevIndex()]);
 		i++;
 	}
 
-	for(int i = 0; i < 4; i++)
+	for(int i = 0; i < HISTORY_LENGTH; i++)
 		vtls::copyArray(nPts*nElec, psis[index], psis[i]);
 
 	sq_free(temp1);
@@ -194,7 +194,7 @@ void SimulationManager::findInhomogeneousSteadyStates_OBSOLETE(double threshold,
 	calcWeights();
 	if(calcDensity)
 		dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
-	for(int i = 0; i < 4; i++)
+	for(int i = 0; i < HISTORY_LENGTH; i++)
 		vtls::copyArray(nPts, rhos[index], rhos[i]);
 }
 
@@ -202,18 +202,15 @@ void SimulationManager::findInhomogeneousEigenStates(int nElec, double* energies
 	this->nElec = nElec;
 
 	freePsis();
-	for(int i = 0; i < 4; i++){
+	for(int i = 0; i < HISTORY_LENGTH; i++){
 		psis[i] = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nElec);
 		std::fill_n(psis[i], nPts*nElec, 0.0);
 		pot->getVBare(0.0, vs[i]);
 	}
 
 	kin_fdm->findInhomogeneousEigenStates(vs[index], energies, psis[index], nElec);
-
-	// TODO: remove magic number 4, make this history storage modifiable
-	for (int i = 1; i < 4; i++) {
+	for (int i = 1; i < HISTORY_LENGTH; i++) 
 		vtls::copyArray(nPts * nElec, psis[index], psis[i]);
-	}
 
 	calcWeights();
 	if(calcDensity)
@@ -228,7 +225,7 @@ void SimulationManager::setPsi(std::complex<double>* npsi, WfcToRho::Normalizati
 	if (!nElec) {
 		nElec = 1;
 		freePsis();
-		for (int i = 0; i < 4; i++) {
+		for (int i = 0; i < HISTORY_LENGTH; i++) {
 			psis[i] = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts);
 		}
 	}
@@ -258,23 +255,23 @@ int SimulationManager::measure(int idx) {
 
 //Run simulation using operator splitting Fourier method (applies potential as linear)
 void SimulationManager::runOS_U2TU() {
-	updatePotential(psis[prevIndex()], prevIndex(), rhos[prevIndex()]);
-	kin_psm->stepOS_U2TU(psis[prevIndex()], vs[prevIndex()], spatialDamp, psis[index], nElec);
+	updatePotential(psis[getPrevIndex()], getPrevIndex(), rhos[getPrevIndex()]);
+	kin_psm->stepOS_U2TU(psis[getPrevIndex()], vs[getPrevIndex()], spatialDamp, psis[index], nElec);
 	iterateIndex();
 
 	int percDone = 0;
 	std::future<int> f1;
 	auto rM = &SimulationManager::measure;
-	while (step[prevPrevIndex()] < numSteps) {
-		f1 = std::async(rM, this, prevPrevIndex());
+	while (step[getPrevPrevIndex()] < numSteps) {
+		f1 = std::async(rM, this, getPrevPrevIndex());
 
-		updatePotential(psis[prevIndex()], prevIndex(), rhos[prevIndex()]);
-		kin_psm->stepOS_U2TU(psis[prevIndex()], vs[prevIndex()], spatialDamp, psis[index], nElec);
+		updatePotential(psis[getPrevIndex()], getPrevIndex(), rhos[getPrevIndex()]);
+		kin_psm->stepOS_U2TU(psis[getPrevIndex()], vs[getPrevIndex()], spatialDamp, psis[index], nElec);
 
 		f1.get();
 
 		iterateIndex();
-		if (ts[prevPrevIndex()] / maxT * 100.0 > percDone) {
+		if (ts[getPrevPrevIndex()] / maxT * 100.0 > percDone) {
 			if (progCallback != NULL)
 				progCallback(percDone);
 			percDone++;
@@ -288,28 +285,28 @@ void SimulationManager::runOS_U2TU() {
 void SimulationManager::runOS_UW2TUW() {
 	std::complex<double>* tpsi = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nElec);
 
-	updatePotential(psis[prevIndex()], prevIndex(), rhos[prevIndex()]);
-	kin_psm->stepOS_UW2T(psis[prevIndex()], vs[prevIndex()], spatialDamp, tpsi, nElec);
-	ts[prevIndex()] += dt / 2.0;
-	updatePotential(tpsi, prevIndex(), rhos[prevIndex()]);
-	kin_psm->stepOS_UW(tpsi, vs[prevIndex()], spatialDamp, psis[index], nElec);
+	updatePotential(psis[getPrevIndex()], getPrevIndex(), rhos[getPrevIndex()]);
+	kin_psm->stepOS_UW2T(psis[getPrevIndex()], vs[getPrevIndex()], spatialDamp, tpsi, nElec);
+	ts[getPrevIndex()] += dt / 2.0;
+	updatePotential(tpsi, getPrevIndex(), rhos[getPrevIndex()]);
+	kin_psm->stepOS_UW(tpsi, vs[getPrevIndex()], spatialDamp, psis[index], nElec);
 	iterateIndex();
 
 	int percDone = 0;
 	std::future<int> f1;
 	auto rM = &SimulationManager::measure;
-	while (step[prevPrevIndex()] < numSteps) {
-		f1 = std::async(rM, this, prevPrevIndex());
+	while (step[getPrevPrevIndex()] < numSteps) {
+		f1 = std::async(rM, this, getPrevPrevIndex());
 
-		updatePotential(psis[prevIndex()], prevIndex(), rhos[prevIndex()]);
-		kin_psm->stepOS_UW2T(psis[prevIndex()], vs[prevIndex()], spatialDamp, tpsi, nElec);
-		ts[prevIndex()] += dt / 2.0;
-		updatePotential(tpsi, prevIndex(), rhos[prevIndex()]);
-		kin_psm->stepOS_UW(tpsi, vs[prevIndex()], spatialDamp, psis[index], nElec);
+		updatePotential(psis[getPrevIndex()], getPrevIndex(), rhos[getPrevIndex()]);
+		kin_psm->stepOS_UW2T(psis[getPrevIndex()], vs[getPrevIndex()], spatialDamp, tpsi, nElec);
+		ts[getPrevIndex()] += dt / 2.0;
+		updatePotential(tpsi, getPrevIndex(), rhos[getPrevIndex()]);
+		kin_psm->stepOS_UW(tpsi, vs[getPrevIndex()], spatialDamp, psis[getIndex()], nElec);
 		f1.get();
 
 		iterateIndex();
-		if (ts[prevPrevIndex()] / maxT * 100.0 > percDone) {
+		if (ts[getPrevPrevIndex()] / maxT * 100.0 > percDone) {
 			if (progCallback != NULL)
 				progCallback(percDone);
 			percDone++;
@@ -320,11 +317,11 @@ void SimulationManager::runOS_UW2TUW() {
 }
 
 void SimulationManager::iterateIndex() {
-	step[nextIndex()] = step[index] + 1;
-	ts[nextIndex()] = step[nextIndex()] * dt;
+	step[getNextIndex()] = step[getIndex()] + 1;
+	ts[getNextIndex()] = step[getNextIndex()] * dt;
 
 	index++;
-	if (index > 3)
+	if (index >= HISTORY_LENGTH)
 		index = 0;
 }
 
@@ -332,22 +329,22 @@ int SimulationManager::getIndex(){
 	return index;
 }
 
-int SimulationManager::prevIndex() {
+int SimulationManager::getPrevIndex() {
 	if (index == 0)
-		return 3;
+		return HISTORY_LENGTH-1;
 	else
 		return index - 1;
 }
 
-int SimulationManager::prevPrevIndex() {
+int SimulationManager::getPrevPrevIndex() {
 	if (index <= 1)
-		return 2 + index;
+		return HISTORY_LENGTH - 2 + index;
 	else
 		return index - 2;
 }
 
-int SimulationManager::nextIndex() {
-	if (index == 3)
+int SimulationManager::getNextIndex() {
+	if (index == HISTORY_LENGTH - 1)
 		return 0;
 	else
 		return index + 1;
