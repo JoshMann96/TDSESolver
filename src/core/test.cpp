@@ -366,7 +366,7 @@ void testInhomogeneousSteadyState(){
 	for(int i = 0; i < nPts; i++)
 		xs[i] = dx*(i-nPts/2);
 
-	SimulationManager* sm = new SimulationManager(nPts, dx, dt, 100.0*dt);
+	SimulationManager* sm = new SimulationManager(nPts, dx, dt);
 	sm->addPotential(new Potentials::JelliumPotential(nPts, xs, 0.0, 5*PhysCon::eV, 5*PhysCon::eV, 0));
 
 	// define incoming wavefunctions
@@ -382,8 +382,6 @@ void testInhomogeneousSteadyState(){
 	FDBCs::BoundaryCondition* lbc = new FDBCs::UniformIDTransparentBC(1000, nElec, dx, dt, psibd, k0, 0.0);
 	KineticOperators::CrankNicolson* cn = new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, lbc, rbc);
 	sm->setKineticOperator_FDM(cn);
-
-	sm->finishInitialization();
 
 	sm->findInhomogeneousSteadyStates_OBSOLETE(1e-10, nElec, k0, k0, true);
 
@@ -403,7 +401,7 @@ void testInhomogeneousEigenState(){
 
 	plotting::GNUPlotter* plotter = new plotting::GNUPlotter();
 
-	SimulationManager* sm = new SimulationManager(nPts, dx, dt, 100.0*dt);
+	SimulationManager* sm = new SimulationManager(nPts, dx, dt);
 	sm->addPotential(new Potentials::JelliumPotential(nPts, xs, 0.0, 5*PhysCon::eV, 5*PhysCon::eV, 0));
 	//sm->addPotential(new Potentials::ShieldedAtomicPotential(nPts, xs, -2e-10, 4e-10, 1.5, 1e-10) );
 	//sm->addPotential(new Potentials::FiniteBox(nPts, xs, -2e-9, -1e-9, -5.0*PhysCon::eV, 0));
@@ -429,7 +427,6 @@ void testInhomogeneousEigenState(){
 	sm->setKineticOperator_FDM(cn);
 	sm->setWeight(new WfcToRho::SemiInfiniteFermiGas(5.0*PhysCon::eV));
 	sm->setDensity(new WfcToRho::DirectDensity());
-	sm->finishInitialization();
 
 	// plot potential
 	/*double* temp = new double[nPts];

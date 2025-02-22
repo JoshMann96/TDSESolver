@@ -3,11 +3,9 @@
 #include "MathTools.h"
 
 //callback sends progress int 0-100 (can be nullptr for no callback)
-SimulationManager::SimulationManager(int nPts, double dx, double dt, double maxT, std::function<void(int)> callback)
-	: maxT(maxT), dx(dx), nPts(nPts), numSteps(std::ceil(maxT / dt))
+SimulationManager::SimulationManager(int nPts, double dx, double dt, std::function<void(int)> callback)
+	: dx(dx), nPts(nPts), dt(dt), progTracker(callback)
 {
-	SimulationManager::dt = maxT / (numSteps - 1);
-
 	pot = new Potentials::PotentialManager(nPts);
 	meas = new Measurers::MeasurementManager("");
 	psis = (std::complex<double>**) sq_malloc(sizeof(std::complex<double>*)*HISTORY_LENGTH);
@@ -34,8 +32,6 @@ SimulationManager::SimulationManager(int nPts, double dx, double dt, double maxT
 	SimulationManager::maxT = maxT; SimulationManager::dt = dt; SimulationManager::dx = dx; SimulationManager::nPts = nPts;
 	SimulationManager::mpiRoot = mpiRoot; SimulationManager::mpiUpdateTag = mpiUpdateTag; SimulationManager::mpiJob = mpiJob;
 	*/
-
-	progCallback = callback;
 
 	index = 0;
 	nElec = 0;
@@ -231,15 +227,17 @@ void SimulationManager::setPsi(std::complex<double>* npsi, WfcToRho::Normalizati
 		vtls::normalizeSqrNorm(nPts, psis[index], dx);
 }
 
-int SimulationManager::updatePotential(std::complex<double>* psi, int idx, double* rho) {
+int SimulationManager::calculatePotential(double* rho, std::complex<double>* psi, double t, double* v){
 	auto strt = std::chrono::high_resolution_clock::now();
 	if(calcDensity)
 		dens->calcRho(nPts, nElec, dx, weights, psi, rho);
-	pot->getV(rho, psi, ts[idx], vs[idx]);
+	pot->getV(rho, psi, t, v);
 	auto end = std::chrono::high_resolution_clock::now();
 	auto dur = std::chrono::duration_cast<std::chrono::microseconds>(end - strt);
 	return dur.count();
 }
+
+int SimulationManager::updatePotential(int idx) {return calculatePotential(rhos[idx], psis[idx], ts[idx], vs[idx]);}
 
 int SimulationManager::measure(int idx) {
 	auto strt = std::chrono::high_resolution_clock::now();
@@ -250,31 +248,46 @@ int SimulationManager::measure(int idx) {
 }
 
 //Run simulation using operator splitting Fourier method (applies potential as linear)
-void SimulationManager::runOS_U2TU() {
-	updatePotential(psis[getPrevIndex()], getPrevIndex(), rhos[getPrevIndex()]);
-	kin_psm->stepOS_U2TU(psis[getPrevIndex()], vs[getPrevIndex()], spatialDamp, psis[index], nElec);
-	iterateIndex();
+void SimulationManager::runOS_U2TU(int nSteps) {
+	auto rMeasure = &SimulationManager::measure;
+	auto rUpdatePotential = &SimulationManager::updatePotential;
+	std::future<int> fM, fUP;
 
-	int percDone = 0;
-	std::future<int> f1;
-	auto rM = &SimulationManager::measure;
-	while (step[getPrevPrevIndex()] < numSteps) {
-		f1 = std::async(rM, this, getPrevPrevIndex());
+	// if potential depends on wavefunction, we need to calculate it in tandem with wavefunction
+	bool asyncPotCalc = pot->getComplexity() != Potentials::PotentialComplexity::WAVEFUNCTION_DEPENDENT;
 
-		updatePotential(psis[getPrevIndex()], getPrevIndex(), rhos[getPrevIndex()]);
-		kin_psm->stepOS_U2TU(psis[getPrevIndex()], vs[getPrevIndex()], spatialDamp, psis[index], nElec);
+	// initialize progress tracker
+	progTracker.reset(nSteps);
 
-		f1.get();
+	// prepare starting potential
+	for(int i = 0; i < nSteps; i++){
+		if(asyncPotCalc){
+			// evaluate potential n+1
+			if (i == 0)
+				updatePotential(getIndex());
+			else
+				fUP.get();
+			fUP = std::async(rUpdatePotential, this, getNextIndex());
+		}
+		else{
+			// evaluate potential n
+			updatePotential(getIndex());
+		}
+
+		// evalute n->n+1
+		kin_psm->stepOS_U2TU(psis[getIndex()], vs[getIndex()], spatialDamp, psis[getNextIndex()], nElec);
+		
+		// measure step n while n+1->n+2 begins
+		if(i != 0)
+			fM.get();
+		fM = std::async(rMeasure, this, getIndex());
+		
+		progTracker.update(i);
 
 		iterateIndex();
-		if (ts[getPrevPrevIndex()] / maxT * 100.0 > percDone) {
-			if (progCallback != NULL)
-				progCallback(percDone);
-			percDone++;
-		}
 	}
-	if (progCallback != NULL)
-		progCallback(percDone);
+	
+	progTracker.update(nSteps);
 }
 
 //Run simulation using operator splitting Fourier method (applies potential as nonlinear, second potential phase is recalculated after propagation phase)
@@ -356,14 +369,6 @@ double SimulationManager::getDX() {
 
 double SimulationManager::getDT() {
 	return dt;
-}
-
-double SimulationManager::getMaxT() {
-	return maxT;
-}
-
-int SimulationManager::getNumSteps(){
-	return numSteps;
 }
 
 std::complex<double>* SimulationManager::getPsi() {
