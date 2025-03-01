@@ -249,10 +249,9 @@ namespace KineticOperators {
 	}
 
 	void GenDisp_PSM::findEigenStates(double* v, double emin, double emax, std::complex<double>** states, int* nEigs) {
-		if (nPts > 46340) {
-			std::cout << "Long datatype is required for grids of size nPts>46340. Rewrite this code (GenDisp_PSM::findEigenStates)" << std::endl;
-			throw -1;
-		}
+		if (nPts > 46340)
+			throw std::runtime_error("Long datatype is required for grids of size nPts>46340. Rewrite this code (GenDisp_PSM::findEigenStates)");
+			
 		*states = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nPts);
 		calcOpMat();
 		for (int i = 0; i < nPts; i++)

@@ -222,8 +222,6 @@ void init_Simulation(py::module &m) {
             width : float
                 Width of boundary.)V0G0N",
             "rate"_a, "width"_a)
-        .def("finishInit", &PySimulation::finishInitialization, R"V0G0N(
-            Finishes initialization of simulation.)V0G0N")
         .def("eigenSolve", &PySimulation::findEigenStates, R"V0G0N(
             Finds eigenstates of current system, without self-consistent potentials.
 

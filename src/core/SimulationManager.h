@@ -101,9 +101,15 @@ public:
 
 	// Split-step iteration schemes
 	void runOS_U2TU(int nSteps); // Assumes linear potential
+	void runOS_UW2TUW(int nSteps); // Appropriate for nonlinear potentials
+
+	// Finite difference methods
+	//void runFD_L(int nSteps); // Assumes linear potential
+	//void runFD_NL(int nSteps); // Appropriate for nonlinear potential
+
 	// Attemps to find ground state.
 	// Same as above, using pseudospectral method (may take up a lot of memory for pseudospectral methods)
-	void findEigenStates(double fermie, double w, double maxT, double rate);
+	void findEigenStates(double emin, double emax);
 	// Find steady state from inhomogeneous BCs (FINITE DIFFERENCE METHODS ONLY)
 	void findInhomogeneousSteadyStates_OBSOLETE(double threshold, int nElec, double* kl, double* kr, bool verbose = false);
 	void findInhomogeneousEigenStates(int nElec, double* energies);
@@ -126,6 +132,9 @@ public:
 	double* getRho();
 	int getNElec();
 	int* getNElecPtr();
+
+	bool canAsyncCalcPot() { return pot->getComplexity() != Potentials::PotentialComplexity::WAVEFUNCTION_DEPENDENT; }
+
 	double** getWeightsPtr() { return &weights; }
 	KineticOperators::KineticOperator** getKin() { return &kin; }
 

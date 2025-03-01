@@ -115,7 +115,7 @@ void SimulationManager::calcWeights(){
 	sq_free(energies);
 }
 
-void SimulationManager::findEigenStates(double emin, double emax, double maxT, double rate) {
+void SimulationManager::findEigenStates(double emin, double emax) {
 	normScheme = WfcToRho::NormalizationScheme::NORMALIZED;
 	
 	pot->getVBare(0.0, vs[index]);
@@ -253,15 +253,14 @@ void SimulationManager::runOS_U2TU(int nSteps) {
 	auto rUpdatePotential = &SimulationManager::updatePotential;
 	std::future<int> fM, fUP;
 
-	// if potential depends on wavefunction, we need to calculate it in tandem with wavefunction
-	bool asyncPotCalc = pot->getComplexity() != Potentials::PotentialComplexity::WAVEFUNCTION_DEPENDENT;
-
 	// initialize progress tracker
 	progTracker.reset(nSteps);
 
+	bool asyncCalc = canAsyncCalcPot();
+
 	// prepare starting potential
 	for(int i = 0; i < nSteps; i++){
-		if(asyncPotCalc){
+		if(asyncCalc){
 			// evaluate potential n+1
 			if (i == 0)
 				updatePotential(getIndex());
@@ -287,42 +286,54 @@ void SimulationManager::runOS_U2TU(int nSteps) {
 		iterateIndex();
 	}
 	
+	// collect remaining futures
+	if(asyncCalc)
+		fUP.get();
+	fM.get();
+
 	progTracker.update(nSteps);
 }
 
 //Run simulation using operator splitting Fourier method (applies potential as nonlinear, second potential phase is recalculated after propagation phase)
-void SimulationManager::runOS_UW2TUW() {
+void SimulationManager::runOS_UW2TUW(int nSteps) {
+	// variables for the midpoint of step
 	std::complex<double>* tpsi = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nElec);
+	double* trho = (double*) sq_malloc(sizeof(double) * nPts);
+	double* tv = (double*) sq_malloc(sizeof(double) * nPts);
 
-	updatePotential(psis[getPrevIndex()], getPrevIndex(), rhos[getPrevIndex()]);
-	kin_psm->stepOS_UW2T(psis[getPrevIndex()], vs[getPrevIndex()], spatialDamp, tpsi, nElec);
-	ts[getPrevIndex()] += dt / 2.0;
-	updatePotential(tpsi, getPrevIndex(), rhos[getPrevIndex()]);
-	kin_psm->stepOS_UW(tpsi, vs[getPrevIndex()], spatialDamp, psis[index], nElec);
-	iterateIndex();
+	auto rMeasure = &SimulationManager::measure;
+	auto rUpdatePotential = &SimulationManager::updatePotential;
+	std::future<int> fM, fUP;
 
-	int percDone = 0;
-	std::future<int> f1;
-	auto rM = &SimulationManager::measure;
-	while (step[getPrevPrevIndex()] < numSteps) {
-		f1 = std::async(rM, this, getPrevPrevIndex());
+	// initialize progress tracker
+	progTracker.reset(nSteps);
 
-		updatePotential(psis[getPrevIndex()], getPrevIndex(), rhos[getPrevIndex()]);
-		kin_psm->stepOS_UW2T(psis[getPrevIndex()], vs[getPrevIndex()], spatialDamp, tpsi, nElec);
-		ts[getPrevIndex()] += dt / 2.0;
-		updatePotential(tpsi, getPrevIndex(), rhos[getPrevIndex()]);
-		kin_psm->stepOS_UW(tpsi, vs[getPrevIndex()], spatialDamp, psis[getIndex()], nElec);
-		f1.get();
+	// initial potential
+	for(int i = 0; i < nSteps; i++){
+		// step n->n+1/2
+		updatePotential(getIndex());
+		kin_psm->stepOS_UW2T(psis[getIndex()], vs[getIndex()], spatialDamp, tpsi, nElec);
+
+		// measure step n while n+1/2->n+1 begins
+		if(i != 0)
+			fM.get();
+		fM = std::async(rMeasure, this, getIndex());
+
+		// step n+1/2->n+1
+		calculatePotential(trho, tpsi, ts[getIndex()] + dt / 2.0, tv);
+		kin_psm->stepOS_UW(tpsi, tv, spatialDamp, psis[getNextIndex()], nElec);
+		
+		progTracker.update(i);
 
 		iterateIndex();
-		if (ts[getPrevPrevIndex()] / maxT * 100.0 > percDone) {
-			if (progCallback != NULL)
-				progCallback(percDone);
-			percDone++;
-		}
 	}
+	
+	fM.get();
+	progTracker.update(nSteps);
 
 	sq_free(tpsi);
+	sq_free(trho);
+	sq_free(tv);
 }
 
 void SimulationManager::iterateIndex() {
