@@ -494,8 +494,54 @@ void testInhomogeneousEigenState(){
 	delete sm;
 }
 
+void testSplitStep(){
+	int nPts = 100;
+	double dx = 0.16*PhysCon::a0;
+	double dt = 0.1*PhysCon::hbar/PhysCon::auE_ha;
+
+	double* xs = new double[nPts];
+	for(int i = 0; i < nPts; i++)
+		xs[i] = dx*(i-nPts/2);
+
+	SimulationManager* sm = new SimulationManager(nPts, dx, dt);
+	sm->setWeight(new WfcToRho::BoundFermiGas(5.0*PhysCon::eV));
+	sm->setDensity(new WfcToRho::DirectDensity());
+	sm->setKineticOperator_PSM(new KineticOperators::GenDisp_PSM_FreeElec(nPts, dx, dt, 1.0));
+	sm->addPotential(new Potentials::FiniteBox(nPts, xs, xs[nPts/4], xs[nPts/4*3], -10.0*PhysCon::eV, 0));
+
+	// plot potential
+	/*{
+	plotting::GNUPlotter* plotter = new plotting::GNUPlotter();
+	double* temp = new double[nPts];
+	sm->getPotPointer()->getVBare(0.0, temp);
+	plotter->update(nPts, 1, xs, temp);
+	std::cout << "Press enter to continue..." << std::endl;
+	std::cin.get();
+	delete[] temp;
+	delete plotter;
+	}*/
+
+
+	sm->addMeasurer(new Measurers::DensityPlotter(nPts, sm->getNElecPtr(), dx, xs, sm->getDensity(), sm->getWeightsPtr(), 50, false));
+
+	std::cout << "Finding Eigenstates" << std::endl;
+	sm->findEigenStates(-10.0*PhysCon::eV, -5.0*PhysCon::eV);
+
+	// remove finite well
+	sm->addPotential(new Potentials::FiniteBox(nPts, xs, xs[nPts/4], xs[nPts/4*3], 10.0*PhysCon::eV, 0));
+
+	std::cout << "Running OS_U2TU for 1000 steps" << std::endl;
+	sm->runOS_U2TU(1000);
+
+	std::cout << "Running OS_UW2TUW for 1000 steps" << std::endl;
+	sm->runOS_UW2TUW(1000);
+
+	delete sm;
+	delete[] xs;
+}
+
 int main(int argc, char** argv){
-    testInhomogeneousEigenState();
+    testSplitStep();
 	std::cout << "Done" << std::endl;
     return 0;
 }
