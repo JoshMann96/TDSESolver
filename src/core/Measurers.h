@@ -8,6 +8,12 @@
 // Measurers used for use with a simulation manager (or not).
 namespace Measurers {
 
+	enum MeasurerStatus {
+		SUCCESS,
+		FAIL,
+		ALL_DONE
+	};
+
 	std::fstream openFile(const char* fol);
 
 	// Template class.
@@ -22,7 +28,7 @@ namespace Measurers {
 	public:;
 		virtual ~Measurer() = default;
 		// Required function that takes a measurement whenever called.
-		virtual int measure(int step, std::complex<double> * psi, double * v, double t) = 0;
+		virtual MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t) = 0;
 		// Required function which terminates the measurer (closes file).
 		void kill(){
 			if(!isTerminated){
@@ -47,7 +53,7 @@ namespace Measurers {
 		int getIndex(){ return index; };
 		DoubleConst(double c, const char* filName, const char* fol);
 		~DoubleConst();
-		int measure(int step, std::complex<double> * psi, double * v, double t);
+		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Writes text (8 chars required) to file.
@@ -63,7 +69,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		Header(const char* title, const char* fol);
 		~Header();
-		int measure(int step, std::complex<double> * psi, double * v, double t);
+		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records the number of points in simulation.
@@ -78,7 +84,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		NPts(int nPts, const char* fol);
 		~NPts();
-		int measure(int step, std::complex<double> * psi, double * v, double t);
+		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records the number of time steps in simulation.
@@ -95,7 +101,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		NSteps(int numSteps, const char* fol);
 		~NSteps();
-		int measure(int step, std::complex<double> * psi, double * v, double t);
+		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records dx spacing.
@@ -110,7 +116,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		DX(double dx, const char* fol);
 		~DX();
-		int measure(int step, std::complex<double> * psi, double * v, double t);
+		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records dt spacing.
@@ -125,7 +131,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		DT(double dt, const char* fol);
 		~DT();
-		int measure(int step, std::complex<double> * psi, double * v, double t);
+		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records x-array.
@@ -140,7 +146,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		XS(int len, double* xs, const char* fol);
 		~XS();
-		int measure(int step, std::complex<double> * psi, double * v, double t);
+		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records t-array.
@@ -155,7 +161,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		TS(const char* fol);
 		~TS();
-		int measure(int step, std::complex<double> * psi, double * v, double t);
+		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records the original potential at beginning of simulation.
@@ -172,7 +178,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		OrigPot(int n, const char* fol);
 		~OrigPot();
-		int measure(int step, std::complex<double> * psi, double * v, double t);
+		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records the wave function's probability distribution some number of times during the simulation, and also downsamples it.
@@ -200,7 +206,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		Psi2t(int nPts, int nx, int nt, int numSteps, double maxT, double * x, int* nElec, const char* fol);
 		~Psi2t();
-		int measure(int step, std::complex<double> * psi, double * v, double t);
+		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records expectation value of energy.
@@ -219,7 +225,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		ExpectE(int len, double dx, int* nElec, const char* fol, KineticOperators::KineticOperator** kin);
 		~ExpectE();
-		int measure(int step, std::complex<double> * psi, double * v, double t);
+		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records expectation value of position.
@@ -238,7 +244,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		ExpectX(int len, double* xs, double dx, int* nElec, const char* fol);
 		~ExpectX();
-		int measure(int step, std::complex<double> * psi, double * v, double t);
+		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records expectation value of momentum (fairly computationally expensive).
@@ -256,7 +262,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		ExpectP(int len, double dx, int* nElec, const char* fol);
 		~ExpectP();
-		int measure(int step, std::complex<double> * psi, double * v, double t);
+		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records expectation value of acceleration.
@@ -274,7 +280,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		ExpectA(int nPts, double dx, int* nElec, const char* fol);
 		~ExpectA();
-		int measure(int step, std::complex<double> * psi, double * v, double t);
+		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records the total probability remaining in simulation.
@@ -293,7 +299,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		TotProb(int n, double dx, int* nElec, const char* fol);
 		~TotProb();
-		int measure(int step, std::complex<double> * psi, double * v, double t);
+		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records the probability current at the virtual detector position (index).
@@ -312,7 +318,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		VDProbCurrent(int n, double dx, int *nElec, int vdPos, int vdNum, const char* name, const char* fol);
 		~VDProbCurrent();
-		int measure(int step, std::complex<double> * psi, double * v, double t);
+		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records the wave function at the virtual detector position (index).
@@ -330,7 +336,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		VDPsi(int* nElec, int vdPos, int vdNum, const char* name, const char* fol);
 		~VDPsi();
-		int measure(int step, std::complex<double> * psi, double * v, double t);
+		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	class VDPot :
@@ -348,7 +354,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		VDPot(int vdPos, int vdNum, const char* name, const char* fol);
 		~VDPot();
-		int measure(int step, std::complex<double> * psi, double * v, double t);
+		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	//Records the Fourier Transform in time at the VD position and one grid point to the right
@@ -369,7 +375,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		VDFluxSpec(int nPts, int vdPos, int vdNum, int* nElec, int nsamp, double emax, double tmax, const char* name, const char* fol);
 		~VDFluxSpec();
-		int measure(int step, std::complex<double>* psi, double* v, double t);
+		MeasurerStatus measure(int step, std::complex<double>* psi, double* v, double t);
 	};
 
 	// Records the entire wave function at sample time
@@ -389,7 +395,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		PsiT(int n, double meaT, int* nElec, int vdNum, const char* name, const char* fol);
 		~PsiT();
-		int measure(int step, std::complex<double> * psi, double * v, double t);
+		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records the entire potential at sample time
@@ -408,7 +414,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		PotT(int n, double meaT, int vdNum, const char* name, const char* fol);
 		~PotT();
-		int measure(int step, std::complex<double> * psi, double * v, double t);
+		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Records the potential function some number of times during the simulation, and also downsamples it.
@@ -433,7 +439,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		Vfunct(int potNum, int nPts, int nx, int nt, int numSteps, double maxT, double * x, const char* fol);
 		~Vfunct();
-		int measure(int step, std::complex<double> * psi, double * v, double t);
+		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	class NElec :
@@ -450,7 +456,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		NElec(int* nElec, const char* fol);
 		~NElec();
-		int measure(int step, std::complex<double> * psi, double * v, double t);
+		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	class ExpectE0 :
@@ -470,7 +476,7 @@ namespace Measurers {
 		int getIndex() { return index; };
 		ExpectE0(int nPts, double dx, int* nElec, const char* fol, KineticOperators::KineticOperator** kin);
 		~ExpectE0();
-		int measure(int step, std::complex<double>* psi, double* v, double t);
+		MeasurerStatus measure(int step, std::complex<double>* psi, double* v, double t);
 	};
 
 	class WfcRhoWeights :
@@ -487,8 +493,25 @@ namespace Measurers {
 		int getIndex() { return index; };
 		WfcRhoWeights(int* nElec, double ** weights, const char* fol);
 		~WfcRhoWeights();
-		int measure(int step, std::complex<double>* psi, double* v, double t);
+		MeasurerStatus measure(int step, std::complex<double>* psi, double* v, double t);
 	};
+
+	class DensityPlotter :
+		public Measurer {
+	private:
+		plotting::GNUPlotter* plotter=nullptr;
+		int *nElec, nPts, stepsPerPlot;
+		WfcToRho::Density* dens;
+		double** wght, dx, *xs, *rho=nullptr;
+		bool pause;
+		void terminate();
+	public:
+		int getIndex() { return INT_MIN; };
+		DensityPlotter(int nPts, int* nElec, double dx, double* xs, WfcToRho::Density* dens, double** wght, int stepsPerPlot=1, bool pause=true);
+		~DensityPlotter();
+		MeasurerStatus measure(int step, std::complex<double>* psi, double* v, double t);
+	};
+		
 
 	// Includes several basic measurements. See cpp file for specifics.
 	class BasicMeasurers :
@@ -500,7 +523,7 @@ namespace Measurers {
 		int getIndex() { return INT_MIN + 1; };
 		BasicMeasurers(int nPts, int numSteps, double dx, double dt, double * xs, const char* fol);
 		~BasicMeasurers();
-		int measure(int step, std::complex<double> * psi, double * v, double t);
+		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
 	// Manages multiple measurements. Ideal if using more than one.
@@ -517,6 +540,6 @@ namespace Measurers {
 		MeasurementManager(const char* fname);
 		~MeasurementManager();
 		void addMeasurer(Measurer * m);
-		int measure(int step, std::complex<double> * psi, double * v, double t);
+		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 }
