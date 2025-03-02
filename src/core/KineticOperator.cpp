@@ -7,8 +7,6 @@
 #include "blas.h"
 #include "MathTools.h"
 
-#define MULTIELEC_FFTW_POLICY FFTW_PATIENT
-
 namespace KineticOperators {
 
 	GenDisp_PSM::~GenDisp_PSM(){
@@ -20,10 +18,6 @@ namespace KineticOperators {
 			sq_free(opMat);
 		if (osKineticEnergy)
 			sq_free(osKineticEnergy);
-		if (temp1)
-			sq_free(temp1);
-		if (temp2)
-			sq_free(temp2);
 
 		mtx.lock();
 		if(fftwOneForward)
@@ -142,10 +136,13 @@ namespace KineticOperators {
 			fftw_plan_with_nthreads(omp_get_max_threads());
 			//std::cout << "Assigned FFTW threads: " << fftw_planner_nthreads() << std:: endl;
 
-			fftwAllForward = fftw_plan_many_dft(1, &nPts, nElec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_FORWARD, MULTIELEC_FFTW_POLICY);
-			fftwAllBackward = fftw_plan_many_dft(1, &nPts, nElec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_BACKWARD, MULTIELEC_FFTW_POLICY);
-			
+			fftwAllForward = fftw_plan_many_dft(1, &nPts, nElec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_FORWARD, fftwPlanPolicy);
+			fftwAllBackward = fftw_plan_many_dft(1, &nPts, nElec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_BACKWARD, fftwPlanPolicy);
+
 			mtx.unlock();
+
+			if(!fftwAllForward || !fftwAllBackward)
+				throw std::runtime_error("FFTW \"all\" plan creation failed");
 			
 			sq_free(test);
 
@@ -168,17 +165,7 @@ namespace KineticOperators {
 
 	void GenDisp_PSM::initializeOneFFT() {
 		if (firstStepOne) {
-			/*DftiCreateDescriptor(&dftiHandleKin, DFTI_DOUBLE, DFTI_COMPLEX, 1, nPts);
-			DftiSetValue(dftiHandleKin, DFTI_BACKWARD_SCALE, 1.0 / nPts);
-			DftiCommitDescriptor(dftiHandleKin);*/
-
-			if (temp1)
-				sq_free(temp1); temp1 = nullptr;
-			if (temp2)
-				sq_free(temp2); temp2 = nullptr;
-
-			temp1 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts);
-			temp2 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts);
+			fftw_complex *temp = (fftw_complex*) sq_malloc(sizeof(fftw_complex) * nPts);
 
 			mtx.lock();
 
@@ -190,12 +177,17 @@ namespace KineticOperators {
 			fftw_plan_with_nthreads(1);
 			//std::cout << "Assigned FFTW threads: " << fftw_planner_nthreads() << std:: endl;
 
-			fftwOneForward = fftw_plan_dft(1, &nPts, reinterpret_cast<fftw_complex*>(temp1), reinterpret_cast<fftw_complex*>(temp1), FFTW_FORWARD, FFTW_ESTIMATE);
-			fftwOneBackward = fftw_plan_dft(1, &nPts, reinterpret_cast<fftw_complex*>(temp2), reinterpret_cast<fftw_complex*>(temp2), FFTW_BACKWARD, FFTW_ESTIMATE);
+			fftwOneForward = fftw_plan_dft(1, &nPts, temp, temp, FFTW_FORWARD, FFTW_ESTIMATE);
+			fftwOneBackward = fftw_plan_dft(1, &nPts, temp, temp, FFTW_BACKWARD, FFTW_ESTIMATE);
 
 			mtx.unlock();
 
+			if(!fftwOneForward || !fftwOneBackward)
+				throw std::runtime_error("FFTW \"one\" plan creation failed");
+
 			firstStepOne = 0;
+
+			sq_free(temp);
 		}
 	}
 
@@ -243,7 +235,7 @@ namespace KineticOperators {
 					opMat[(i * i + (2 * d + 3) * i + d * (d + 1)) / 2] = cv;
 			}
 
-			sq_free(kinDiags); kinDiags = nullptr;
+			sq_free(kinDiags);
 
 		}
 	}
@@ -271,24 +263,22 @@ namespace KineticOperators {
 
 		LAPACK_zhpevx(&cV, &cV, &cU, &nPts, reinterpret_cast<dcomplex *>(opMat), &emin, &emax, 0, 0, &prec, nEigs, eigs, reinterpret_cast<dcomplex *>(*states), &nPts, work, work2, iwork3, ifail, &info);
 
-		clearOpMat();
+		freeOpMat();
 
 		nElec = *nEigs;
 
-		if (work)
-			sq_free(work); work = nullptr;
-		if (work2)
-			sq_free(work2); work2 = nullptr;
-		if (iwork3)
-			sq_free(iwork3); iwork3 = nullptr;
-		if (eigs)
-			sq_free(eigs); eigs = nullptr;
-		if (ifail)
-			sq_free(ifail); ifail = nullptr;
+		sq_free(work);
+		sq_free(work2);
+		sq_free(iwork3);
+		sq_free(eigs);
+		sq_free(ifail);
 	}
 
 	double GenDisp_PSM::evaluateKineticEnergy(std::complex<double>* psi) {
 		initializeOneFFT();
+
+		std::complex<double>* temp1 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nPts);
+		std::complex<double>* temp2 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nPts);
 
 		vtls::copyArray(nPts, psi, temp1);
 		//DftiComputeForward(dftiHandleKin, temp1);
@@ -297,11 +287,16 @@ namespace KineticOperators {
 		for (int i = 0; i < nPts; i++)
 			temp1[i] = std::conj(temp1[i]);
 
-		return std::real(vtlsInt::rSumMul(nPts, temp1, temp2, 1.0) / vtls::getNorm(nPts, temp1, 1.0));
+		double res = std::real(vtlsInt::rSumMul(nPts, temp1, temp2, 1.0) / vtls::getNorm(nPts, temp1, 1.0));
+
+		sq_free(temp1);
+		sq_free(temp2);
+
+		return res;
 	}
 
 
-	GenDisp_PSM_FreeElec::GenDisp_PSM_FreeElec(int nPts, double dx, double dt, double m_eff) : GenDisp_PSM(nPts, dx, dt) {
+	GenDisp_PSM_FreeElec::GenDisp_PSM_FreeElec(int nPts, double dx, double dt, double m_eff, uint fftwPlanPolicy) : GenDisp_PSM(nPts, dx, dt, fftwPlanPolicy) {
 		std::complex<double>* osKineticEnergy = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts);//new std::complex<double>[nPts];
 
 		double dphs = PhysCon::hbar*PhysCon::hbar / (2.0 * PhysCon::me*m_eff) * std::pow(2.0 * PhysCon::pi / ((nPts)*dx), 2);
@@ -316,7 +311,7 @@ namespace KineticOperators {
 			sq_free(osKineticEnergy); osKineticEnergy = nullptr;
 	}
 
-	GenDisp_PSM_Series::GenDisp_PSM_Series(int nPts, double dx, double dt, int nPoly, double* polyCoeffs) : GenDisp_PSM(nPts, dx, dt) {
+	GenDisp_PSM_Series::GenDisp_PSM_Series(int nPts, double dx, double dt, int nPoly, double* polyCoeffs, uint fftwPlanPolicy) : GenDisp_PSM(nPts, dx, dt, fftwPlanPolicy) {
 		std::complex<double>* osKineticEnergy = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts);
 
 		double dk = 2.0 * PhysCon::pi / (nPts * dx);
@@ -332,7 +327,7 @@ namespace KineticOperators {
 			sq_free(osKineticEnergy); osKineticEnergy = nullptr;
 	}
 
-	GenDisp_PSM_MathExpr::GenDisp_PSM_MathExpr(int nPts, double dx, double dt, std::string expr) : GenDisp_PSM(nPts, dx, dt) {
+	GenDisp_PSM_MathExpr::GenDisp_PSM_MathExpr(int nPts, double dx, double dt, std::string expr, uint fftwPlanPolicy) : GenDisp_PSM(nPts, dx, dt, fftwPlanPolicy) {
 		std::complex<double>* osKineticEnergy = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts);
 		double* ks = (double*) sq_malloc(nPts * sizeof(double));
 
@@ -362,12 +357,6 @@ namespace KineticOperators {
 			sq_free(tempPsi);
 		if (tempPsiCum)
 			sq_free(tempPsiCum);
-		if (temp1)
-			sq_free(temp1);
-		if (temp2)
-			sq_free(temp2);
-		if (temp3)
-			sq_free(temp3);
 		if (osKineticMask)
 			sq_free(osKineticMask);
 		if (norms)
@@ -546,14 +535,8 @@ namespace KineticOperators {
 	void NonUnifGenDisp_PSM::initializeAllFFT(int nElec) {
 		if (firstStepAll || NonUnifGenDisp_PSM::nElec != nElec) {
 			NonUnifGenDisp_PSM::nElec = nElec;
-			/*DftiCreateDescriptor(&dftiHandle, DFTI_DOUBLE, DFTI_COMPLEX, 1, nPts);
-			DftiSetValue(dftiHandle, DFTI_NUMBER_OF_TRANSFORMS, nElec);
-			DftiSetValue(dftiHandle, DFTI_INPUT_DISTANCE, nPts);
-			DftiSetValue(dftiHandle, DFTI_BACKWARD_SCALE, 1.0 / nPts);
-			//DftiSetValue(dftiHandle, DFTI_THREAD_LIMIT, numThreads);
-			DftiCommitDescriptor(dftiHandle);*/
 
-			std::complex<double>* test = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nElec);
+			std::complex<double>* temp = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nElec);
 
 			mtx.lock();
 
@@ -565,12 +548,15 @@ namespace KineticOperators {
 			fftw_plan_with_nthreads(omp_get_max_threads());
 			//std::cout << "Assigned FFTW threads: " << fftw_planner_nthreads() << std:: endl;
 			
-			fftwAllForward = fftw_plan_many_dft(1, &nPts, nElec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_FORWARD, MULTIELEC_FFTW_POLICY);
-			fftwAllBackward = fftw_plan_many_dft(1, &nPts, nElec, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(test), &nPts, 1, nPts, FFTW_BACKWARD, MULTIELEC_FFTW_POLICY);
+			fftwAllForward = fftw_plan_many_dft(1, &nPts, nElec, reinterpret_cast<fftw_complex*>(temp), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(temp), &nPts, 1, nPts, FFTW_FORWARD, fftwPlanPolicy);
+			fftwAllBackward = fftw_plan_many_dft(1, &nPts, nElec, reinterpret_cast<fftw_complex*>(temp), &nPts, 1, nPts, reinterpret_cast<fftw_complex*>(temp), &nPts, 1, nPts, FFTW_BACKWARD, fftwPlanPolicy);
 			
 			mtx.unlock();
 			
-			sq_free(test);
+			if(!fftwAllForward || !fftwAllBackward)
+				throw std::runtime_error("FFTW \"all\" plan creation failed");
+
+			sq_free(temp);
 
 			if (osPotentialPhase)
 				sq_free(osPotentialPhase); osPotentialPhase = nullptr;
@@ -592,20 +578,7 @@ namespace KineticOperators {
 
 	void NonUnifGenDisp_PSM::initializeOneFFT() {
 		if (firstStepOne) {
-			/*DftiCreateDescriptor(&dftiHandleKin, DFTI_DOUBLE, DFTI_COMPLEX, 1, nPts);
-			DftiSetValue(dftiHandleKin, DFTI_BACKWARD_SCALE, 1.0 / nPts);
-			DftiCommitDescriptor(dftiHandleKin);*/
-
-			if (temp1)
-				sq_free(temp1); temp1 = nullptr;
-			if (temp2)
-				sq_free(temp2); temp2 = nullptr;
-			if (temp3)
-				sq_free(temp3); temp3 = nullptr;
-
-			temp1 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts);
-			temp2 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts);
-			temp3 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts);
+			std::complex<double>* temp = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts);
 
 			mtx.lock();
 
@@ -618,19 +591,17 @@ namespace KineticOperators {
 			fftw_plan_with_nthreads(1);
 			//std::cout << "Assigned FFTW threads: " << fftw_planner_nthreads() << std:: endl;
 
-			fftwOneForward = fftw_plan_dft(1, &nPts, reinterpret_cast<fftw_complex*>(temp1), reinterpret_cast<fftw_complex*>(temp1), FFTW_FORWARD, FFTW_ESTIMATE);
-			fftwOneBackward = fftw_plan_dft(1, &nPts, reinterpret_cast<fftw_complex*>(temp1), reinterpret_cast<fftw_complex*>(temp2), FFTW_BACKWARD, FFTW_ESTIMATE);
+			fftwOneForward = fftw_plan_dft(1, &nPts, reinterpret_cast<fftw_complex*>(temp), reinterpret_cast<fftw_complex*>(temp), FFTW_FORWARD, FFTW_ESTIMATE);
+			fftwOneBackward = fftw_plan_dft(1, &nPts, reinterpret_cast<fftw_complex*>(temp), reinterpret_cast<fftw_complex*>(temp), FFTW_BACKWARD, FFTW_ESTIMATE);
 
 			mtx.unlock();
 
+			if(!fftwOneForward || !fftwOneBackward)
+				throw std::runtime_error("FFTW \"one\" plan creation failed");
+
 			firstStepOne = 0;
 
-			if (temp1)
-				sq_free(temp1); temp1 = nullptr;
-			if (temp2)
-				sq_free(temp2); temp2 = nullptr;
-			if (temp3)
-				sq_free(temp3); temp3 = nullptr;
+			sq_free(temp);
 		}
 	}
 
@@ -716,7 +687,7 @@ namespace KineticOperators {
 
 		LAPACK_zhpevx(&cV, &cV, &cU, &nPts, reinterpret_cast<dcomplex *>(opMat), &emin, &emax, 0, 0, &prec, nEigs, eigs, reinterpret_cast<dcomplex *>(*states), &nPts, work, work2, iwork3, ifail, &info);
 
-		clearOpMat();
+		freeOpMat();
 
 		nElec = nEigs[0];
 
@@ -734,6 +705,10 @@ namespace KineticOperators {
 
 	double NonUnifGenDisp_PSM::evaluateKineticEnergy(std::complex<double>* psi) {
 		initializeOneFFT();
+
+		std::complex<double>* temp1 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nPts);
+		std::complex<double>* temp2 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nPts);
+		std::complex<double>* temp3 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nPts);
 
 		vtls::copyArray(nPts, psi, temp1);
 		//DftiComputeForward(dftiHandleKin, temp1);
@@ -753,11 +728,17 @@ namespace KineticOperators {
 		for (int i = 0; i < nPts; i++)
 			temp1[i] = std::conj(temp1[i]);
 
-		return std::real(vtlsInt::rSumMul(nPts, temp1, temp2, 1.0) / vtls::getNorm(nPts, temp1, 1.0));
+		double res = std::real(vtlsInt::rSumMul(nPts, temp1, temp2, 1.0) / vtls::getNorm(nPts, temp1, 1.0));
+
+		sq_free(temp1);
+		sq_free(temp2);
+		sq_free(temp3);
+
+		return res;
 	}
 
 
-	NonUnifGenDisp_PSM_EffMassBoundary::NonUnifGenDisp_PSM_EffMassBoundary(int nPts, double dx, double dt, int expOrder, int forceNormalization, double meff_l, double meff_r, double transRate, int transPos, double edgeRate) : NonUnifGenDisp_PSM(nPts, dx, dt, 2, expOrder, forceNormalization) {
+	NonUnifGenDisp_PSM_EffMassBoundary::NonUnifGenDisp_PSM_EffMassBoundary(int nPts, double dx, double dt, int expOrder, int forceNormalization, double meff_l, double meff_r, double transRate, int transPos, double edgeRate, uint fftwPlanPolicy) : NonUnifGenDisp_PSM(nPts, dx, dt, 2, expOrder, forceNormalization, fftwPlanPolicy) {
 		std::complex<double>* osKineticEnergy = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts*2);
 		double* mask = (double*)sq_malloc(sizeof(double)*nPts*2);
 
@@ -795,7 +776,7 @@ namespace KineticOperators {
 			sq_free(mask); mask = nullptr;
 	}
 
-	NonUnifGenDisp_PSM_MathExprBoundary::NonUnifGenDisp_PSM_MathExprBoundary(int nPts, double dx, double dt, int expOrder, int forceNormalization, int nDisp, std::vector<std::string> exprs, double* transRates, int* transPoss) : NonUnifGenDisp_PSM(nPts, dx, dt, nDisp, expOrder, forceNormalization) {
+	NonUnifGenDisp_PSM_MathExprBoundary::NonUnifGenDisp_PSM_MathExprBoundary(int nPts, double dx, double dt, int expOrder, int forceNormalization, int nDisp, std::vector<std::string> exprs, double* transRates, int* transPoss, uint fftwPlanPolicy) : NonUnifGenDisp_PSM(nPts, dx, dt, nDisp, expOrder, forceNormalization, fftwPlanPolicy) {
 		std::complex<double>* osKineticEnergy = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts*nDisp);
 		double* mask = (double*) sq_malloc(nPts * nDisp * sizeof(double));
 		std::fill_n(mask, nPts * nDisp, 1.0);

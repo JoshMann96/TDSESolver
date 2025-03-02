@@ -15,6 +15,9 @@ namespace KineticOperators {
 	class KineticOperator_PSM :
 		public KineticOperator
 	{
+	protected:
+		uint fftwPlanPolicy;
+		KineticOperator_PSM(uint fftwPlanPolicy) : fftwPlanPolicy(fftwPlanPolicy) {};
 	public:
 		//Functions useful for updating potential immediately after kinetic phase for nonlinear systems
 		//Half potential then full kinetic (returns in real space)
@@ -31,7 +34,7 @@ namespace KineticOperators {
 		public KineticOperator_PSM
 	{
 	protected:
-		GenDisp_PSM(int nPts, double dx, double dt) : nPts(nPts), dx(dx), dt(dt), osKineticEnergy((std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts)) {};
+		GenDisp_PSM(int nPts, double dx, double dt, uint fftwPlanPolicy=FFTW_PATIENT) : nPts(nPts), dx(dx), dt(dt), osKineticEnergy((std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts)), KineticOperator_PSM(fftwPlanPolicy) {};
 	public:
 		~GenDisp_PSM();
 		//Functions useful for updating potential immediately after kinetic phase for nonlinear systems
@@ -43,7 +46,7 @@ namespace KineticOperators {
 		//Full OSFM step
 		void stepOS_U2TU(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec);
 
-		void clearOpMat() {
+		void freeOpMat() {
 			if (opMat)
 				sq_free(opMat); opMat = nullptr;
 			needMat = 1;
@@ -61,11 +64,9 @@ namespace KineticOperators {
 		//DFTI_DESCRIPTOR_HANDLE dftiHandle = 0, dftiHandleMat = 0, dftiHandleKin = 0;
 		fftw_plan fftwAllForward=NULL, fftwAllBackward=NULL, fftwOneForward=NULL, fftwOneBackward=NULL;
 
-
 		int nPts, nElec;
 		std::complex<double> *osKineticPhase = nullptr, * osPotentialPhase = nullptr, *opMat = nullptr;
 		std::complex<double>* osKineticEnergy = nullptr;
-		std::complex<double>* temp1 = nullptr, *temp2 = nullptr;
 		double dx, dt;
 
 		void calcOpMat();
@@ -82,21 +83,21 @@ namespace KineticOperators {
 		public GenDisp_PSM
 	{
 	public:
-		GenDisp_PSM_FreeElec(int nPts, double dx, double dt, double m_eff);
+		GenDisp_PSM_FreeElec(int nPts, double dx, double dt, double m_eff, uint fftwPlanPolicy=FFTW_PATIENT);
 	};
 
 	class GenDisp_PSM_Series :
 		public GenDisp_PSM
 	{
 	public:
-		GenDisp_PSM_Series(int nPts, double dx, double dt, int nPoly, double* polyCoeffs);
+		GenDisp_PSM_Series(int nPts, double dx, double dt, int nPoly, double* polyCoeffs, uint fftwPlanPolicy=FFTW_PATIENT);
 	};
 
 	class GenDisp_PSM_MathExpr :
 		public GenDisp_PSM
 	{
 	public:
-		GenDisp_PSM_MathExpr(int nPts, double dx, double dt, std::string expr);
+		GenDisp_PSM_MathExpr(int nPts, double dx, double dt, std::string expr, uint fftwPlanPolicy=FFTW_PATIENT);
 	};
 
 
@@ -104,10 +105,11 @@ namespace KineticOperators {
 		public KineticOperator_PSM
 	{
 	protected:
-		NonUnifGenDisp_PSM(int nPts, double dx, double dt, int nDisp, int expOrder, int forceNormalization) : 
+		NonUnifGenDisp_PSM(int nPts, double dx, double dt, int nDisp, int expOrder, int forceNormalization, uint fftwPlanPolicy=FFTW_PATIENT) : 
 			nPts(nPts), dx(dx), dt(dt), nDisp(nDisp), expOrder(expOrder), forceNorm(forceNormalization), 
 			osKineticEnergy((std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts*nDisp)),
-			osKineticMask((double*)sq_malloc(sizeof(double)*nPts*nDisp)) {};
+			osKineticMask((double*)sq_malloc(sizeof(double)*nPts*nDisp)),
+			KineticOperator_PSM(fftwPlanPolicy) {};
 	public:
 		~NonUnifGenDisp_PSM();
 		//Functions useful for updating potential immediately after kinetic phase for nonlinear systems
@@ -119,7 +121,7 @@ namespace KineticOperators {
 		//Full OSFM step
 		void stepOS_U2TU(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec);
 
-		void clearOpMat() {
+		void freeOpMat() {
 			if (opMat)
 				sq_free(opMat); opMat = NULL;
 			needMat = 1;
@@ -145,7 +147,6 @@ namespace KineticOperators {
 		std::complex<double>* osPotentialPhase = nullptr, * opMat = nullptr;
 		std::complex<double>* osKineticEnergy = nullptr;
 		std::complex<double>* tempPsi = nullptr, *tempPsiCum = nullptr;
-		std::complex<double>* temp1 = nullptr, * temp2 = nullptr, *temp3 = nullptr;
 		double* osKineticMask = nullptr, *norms = nullptr;
 		double dx, dt;
 
@@ -163,7 +164,7 @@ namespace KineticOperators {
 	{
 	public:
 		//meff_r and meff_l are relative effective masses (1 for electron rest mass)
-		NonUnifGenDisp_PSM_EffMassBoundary(int nPts, double dx, double dt, int expOrder, int forceNormalization, double meff_l, double meff_r, double transRate, int transPos, double edgeRate);
+		NonUnifGenDisp_PSM_EffMassBoundary(int nPts, double dx, double dt, int expOrder, int forceNormalization, double meff_l, double meff_r, double transRate, int transPos, double edgeRate, uint fftwPlanPolicy=FFTW_PATIENT);
 	};
 
 	class NonUnifGenDisp_PSM_MathExprBoundary :
@@ -171,7 +172,7 @@ namespace KineticOperators {
 	{
 	public:
 		//different regions with different dispersion relations as text, in order from left to right
-		NonUnifGenDisp_PSM_MathExprBoundary(int nPts, double dx, double dt, int expOrder, int forceNormalization, int nDisp, std::vector<std::string> exprs, double* transRates, int* transPoss);
+		NonUnifGenDisp_PSM_MathExprBoundary(int nPts, double dx, double dt, int expOrder, int forceNormalization, int nDisp, std::vector<std::string> exprs, double* transRates, int* transPoss, uint fftwPlanPolicy=FFTW_PATIENT);
 	};
 
 	class KineticOperator_FDM :
