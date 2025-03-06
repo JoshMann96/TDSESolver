@@ -77,7 +77,7 @@ void SimulationManager::addSpatialDamp(double* arr) {
 	vtls::seqMulArrays(nPts, arr, spatialDamp);
 }
 
-void SimulationManager::calcEnergies(int curStep, double* energies) {
+void SimulationManager::calcEnergies(int curStep, double* energies) const {
 		for(int i = 0; i < HISTORY_LENGTH; i++){
 			if(curStep == step[i]){ //look for the present step's index
 				double* rho = (double*) sq_malloc(sizeof(double)*nPts);
@@ -409,34 +409,6 @@ void SimulationManager::iterateIndex() {
 	ts[index+1] = step[index+1] * dt;
 
 	index++;
-}
-
-int SimulationManager::getNumPoints() {
-	return nPts;
-}
-
-double SimulationManager::getDX() {
-	return dx;
-}
-
-double SimulationManager::getDT() {
-	return dt;
-}
-
-std::complex<double>* SimulationManager::getPsi() {
-	return psis[index];
-}
-
-double* SimulationManager::getRho(){
-	return rhos[index];
-}
-
-int SimulationManager::getNElec() {
-	return nElec;
-}
-
-int* SimulationManager::getNElecPtr(){
-	return &nElec;
 }
 
 int SimulationManager::findElectricalSurfaceCentroidRule(int minPos, int maxPos){

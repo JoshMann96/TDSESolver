@@ -512,6 +512,20 @@ namespace Measurers {
 		MeasurerStatus measure(int step, std::complex<double>* psi, double* v, double t);
 	};
 		
+	class PotentialPlotter :
+		public Measurer {
+	private:
+		plotting::GNUPlotter* plotter=nullptr;
+		int nPts, stepsPerPlot;
+		double *xs;
+		bool pause;
+		void terminate();
+	public:
+		int getIndex() { return INT_MIN + 1; };
+		PotentialPlotter(int nPts, double* xs, int stepsPerPlot=1, bool pause=true);
+		~PotentialPlotter(){kill();};
+		MeasurerStatus measure(int step, std::complex<double>* psi, double* v, double t);
+	};
 
 	// Includes several basic measurements. See cpp file for specifics.
 	class BasicMeasurers :

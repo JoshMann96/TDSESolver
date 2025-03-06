@@ -107,13 +107,13 @@ public:
 	// Setting functions relating to density calculation.
 	void setWeight(WfcToRho::Weight* nwght) { wght = nwght; }
 	void setDensity(WfcToRho::Density* ndens) { dens = ndens; }
-	WfcToRho::Weight* getWeight() { return wght; }
-	WfcToRho::Density* getDensity() { return dens; }
+	WfcToRho::Weight* getWeight () const { return wght; }
+	WfcToRho::Density* getDensity () const { return dens; }
 
-	void calcEnergies(int step, double* energies);
+	void calcEnergies(int step, double* energies) const;
 
-	double* getWeightValues(){ return weights; }
-	double* getRho(int curStep);
+	double* getWeightValues() const { return weights; }
+	double* getRho(int curStep) const;
 
 	// Sets the kinetic operator to be used in the simulation.
 	void setKineticOperator(KineticOperators::KineticOperator* nkin) { kin = nkin; }
@@ -138,22 +138,22 @@ public:
 	void iterateIndex();
 
 	// Returns the number of points in the simulation.
-	int getNumPoints();
+	int getNumPoints() const {return nPts;};
 	// Returns the dx or dt spacing.
-	double getDX();
-	double getDT();
+	double getDX() const {return dx;};
+	double getDT() const {return dt;};
 	// Returns a pointer to the current psis.
-	std::complex<double>* getPsi();
-	double* getRho();
-	int getNElec();
-	int* getNElecPtr();
+	std::complex<double>* getPsi() const {return psis[index];};
+	double* getRho() const {return rhos[index];};
+	int getNElec() const {return nElec;};
+	int* getNElecPtr() {return &nElec;};
 
-	bool canAsyncCalcPot() { return pot->getComplexity() != Potentials::PotentialComplexity::WAVEFUNCTION_DEPENDENT; }
+	bool canAsyncCalcPot() const { return pot->getComplexity() != Potentials::PotentialComplexity::WAVEFUNCTION_DEPENDENT; }
 
 	double** getWeightsPtr() { return &weights; }
 	KineticOperators::KineticOperator** getKin() { return &kin; }
 
-	Potentials::Potential* getPotPointer() { return pot; }
+	Potentials::Potential* getPotPointer() const { return pot; }
 
 	int findElectricalSurfaceCentroidRule(int minPos, int maxPos);
 };

@@ -495,7 +495,7 @@ void testInhomogeneousEigenState(){
 }
 
 void testIterationMethods(int stepType=-1){
-	int nPts = 10000;
+	int nPts = 1000;
 	int nSteps = 1000;
 	double dx = 0.16*PhysCon::a0;
 	double dt = 0.1*PhysCon::hbar/PhysCon::auE_ha;
@@ -523,12 +523,19 @@ void testIterationMethods(int stepType=-1){
 	}*/
 
 	//sm->addMeasurer(new Measurers::DensityPlotter(nPts, sm->getNElecPtr(), dx, xs, sm->getDensity(), sm->getWeightsPtr(), 50, false));
+	//sm->addMeasurer(new Measurers::PotentialPlotter(nPts, xs, 50, false));
 
 	std::cout << "\nFinding Eigenstates" << std::endl;
 	sm->findEigenStates(-10.0*PhysCon::eV, -5.0*PhysCon::eV);
 
 	// remove finite well
 	sm->addPotential(new Potentials::FiniteBox(nPts, xs, xs[nPts/4], xs[nPts/4*3], 10.0*PhysCon::eV, 0));
+	/*sm->addPotential(
+		new Potentials::ElectricFieldProfileToPotential(
+			nPts, new Potentials::ElectricFieldProfiles::ConstantFieldProfile(nPts, xs, 1e9, xs[nPts/4], xs[nPts/4*3]),
+			dx, 0.0, 1.0, 800e-9, new Potentials::Envelopes::GaussianEnvelope(nSteps*dt, nSteps*dt/2.0), 0.0
+		)
+	);*/
 
 	std::cout << "\nTime iterating with "  << sm->getNElec() << " wavefunctions, " << sm->getNumPoints() << " gridpoints, " << nSteps << " steps..." << std::endl;
 
@@ -574,9 +581,9 @@ int main(int argc, char** argv){
 	fftw_init_threads();
 	fftw_import_wisdom_from_filename(wisdomFile);
 
-	/*for(int i = 0; i < 3; i++)
-		testIterationMethods(i);*/
-	testIterationMethods();
+	for(int i = 0; i < 3; i++)
+		testIterationMethods(i);
+	//testIterationMethods();
 	std::cout << "Done" << std::endl;
 
 	fftw_export_wisdom_to_filename(wisdomFile);

@@ -1141,6 +1141,27 @@ namespace Measurers {
 		return MeasurerStatus::SUCCESS;
 	}
 
+	PotentialPlotter::PotentialPlotter(int nPts, double *xs, int stepsPerPlot, bool pause):
+		nPts(nPts), xs(xs), pause(pause), stepsPerPlot(stepsPerPlot)
+	{
+		plotter = new plotting::GNUPlotter();
+	}
+
+	void PotentialPlotter::terminate(){
+		delete plotter;
+	}
+
+	MeasurerStatus PotentialPlotter::measure(int step, std::complex<double> * psi, double * v, double t){
+		if(step%stepsPerPlot == 0){
+			plotter->update(nPts, 1, xs, v);
+
+			if(pause)
+				std::cin.get();
+		}
+		
+		return MeasurerStatus::SUCCESS;
+	}
+
 	MeasurementManager::MeasurementManager(const char* fname) {
 		MeasurementManager::fname = fname;
 	}

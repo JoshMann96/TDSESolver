@@ -704,8 +704,7 @@ namespace Potentials {
 	}
 
 	namespace ElectricFieldProfiles {
-		ConstantFieldProfile::ConstantFieldProfile(int nPts, double * x, double eMax, double minX, double maxX) {
-			fs = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
+		ConstantFieldProfile::ConstantFieldProfile(int nPts, double * x, double eMax, double minX, double maxX) : ElectricFieldProfile(nPts) {
 			for (int i = 0; i < nPts; i++) {
 				if (x[i] > minX && x[i] < maxX)
 					fs[i] = eMax;
@@ -714,13 +713,7 @@ namespace Potentials {
 			}
 		}
 
-		std::complex<double> * ConstantFieldProfile::getProfile() {
-			return fs;
-		}
-
-
-		CylindricalToLinearProfile::CylindricalToLinearProfile(int nPts, double * x, double minX, double maxX, double r, double eMax, double enhFact) {
-			fs = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
+		CylindricalToLinearProfile::CylindricalToLinearProfile(int nPts, double * x, double minX, double maxX, double r, double eMax, double enhFact) : ElectricFieldProfile(nPts) {
 			double xc = -enhFact * r + minX + std::sqrt((enhFact - 1.0)*r*(enhFact*r + maxX - minX));
 			double xn;
 			for (int i = 0; i < nPts; i++) {
@@ -734,17 +727,7 @@ namespace Potentials {
 			}
 		}
 
-		CylindricalToLinearProfile::~CylindricalToLinearProfile() {
-			sq_free(fs);
-		}
-
-		std::complex<double> * CylindricalToLinearProfile::getProfile() {
-			return fs;
-		}
-
-
-		CylindricalToCutoffProfile::CylindricalToCutoffProfile(int nPts, double * x, double minX, double maxX, double r, double eMax, double enhFact, double decayLength) {
-			fs = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
+		CylindricalToCutoffProfile::CylindricalToCutoffProfile(int nPts, double * x, double minX, double maxX, double r, double eMax, double enhFact, double decayLength) : ElectricFieldProfile(nPts) {
 			double xn, k;
 			for (int i = 0; i < nPts; i++) {
 				xn = x[i];
@@ -766,17 +749,7 @@ namespace Potentials {
 			}
 		}
 
-		CylindricalToCutoffProfile::~CylindricalToCutoffProfile() {
-			sq_free(fs);
-		}
-
-		std::complex<double> * CylindricalToCutoffProfile::getProfile() {
-			return fs;
-		}
-
-
-		InMetalFieldProfile::InMetalFieldProfile(int nPts, double * x, double minX, double maxX, double eMax, double lam, std::complex<double> er, double cond) {
-			fs = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
+		InMetalFieldProfile::InMetalFieldProfile(int nPts, double * x, double minX, double maxX, double eMax, double lam, std::complex<double> er, double cond) : ElectricFieldProfile(nPts) {
 			double xn;
 			//double w = PhysCon::c / lam * PhysCon::pi*2.0;
 			std::complex<double> k, kx, kz;
@@ -801,13 +774,7 @@ namespace Potentials {
 			}
 		}
 
-		std::complex<double> * InMetalFieldProfile::getProfile() {
-			return fs;
-		}
-
-
-		FileFieldProfile::FileFieldProfile(int nPts, double * x, double offset, double rightDecayPos, double leftDecayPos, double decayLength, double emax, const char * fil) {
-			fs = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
+		FileFieldProfile::FileFieldProfile(int nPts, double * x, double offset, double rightDecayPos, double leftDecayPos, double decayLength, double emax, const char * fil) : ElectricFieldProfile(nPts) {
 			double * tre = (double*) sq_malloc(sizeof(double)*nPts);
 			double * tim = (double*) sq_malloc(sizeof(double)*nPts);
 			std::fstream ifil = std::fstream(fil, std::ios::in | std::ios::binary);
@@ -860,17 +827,7 @@ namespace Potentials {
 			sq_free(fim);
 		}
 
-		FileFieldProfile::~FileFieldProfile() {
-			sq_free(fs);
-		}
-
-		std::complex<double> * FileFieldProfile::getProfile() {
-			return fs;
-		}
-
-
-		ExponentialToLinearProfile::ExponentialToLinearProfile(int nPts, double* x, double minX, double maxX, double r, double eMax) {
-			fs = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
+		ExponentialToLinearProfile::ExponentialToLinearProfile(int nPts, double* x, double minX, double maxX, double r, double eMax) : ElectricFieldProfile(nPts) {
 			double xn;
 			for (int i = 0; i < nPts; i++) {
 				xn = x[i];
@@ -882,15 +839,6 @@ namespace Potentials {
 					fs[i] = eMax / r * std::exp(-(maxX - r) / r) * (maxX - xn);
 			}
 		}
-
-		ExponentialToLinearProfile::~ExponentialToLinearProfile() {
-			sq_free(fs);
-		}
-
-		std::complex<double>* ExponentialToLinearProfile::getProfile() {
-			return fs;
-		}
-
 	}
 
 	namespace Envelopes {

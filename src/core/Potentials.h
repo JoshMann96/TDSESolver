@@ -6,20 +6,21 @@
 namespace Potentials {
 	// Electric field profiles for use of creating potentials.
 	namespace ElectricFieldProfiles {
-		// Template class (no field).
+		// Template
 		class ElectricFieldProfile {
+		protected:
+			std::complex<double>* fs = nullptr;
 		public:
-			virtual std::complex<double> * getProfile() = 0;
+			std::complex<double> * getProfile() const {return fs;};
+			ElectricFieldProfile(int nPts) : fs((std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts)) {};
+			~ElectricFieldProfile(){if(fs) sq_free(fs);};
 		};
 
 		// Constant field between minPos and maxPos of strength e.
 		class ConstantFieldProfile :
 			public ElectricFieldProfile {
-		private:
-			std::complex<double> * fs;
 		public:
 			ConstantFieldProfile(int nPts, double * x, double eMax, double minX, double maxX);
-			std::complex<double> * getProfile();
 		};
 
 		// Uses a cylindrical profile (enhFact*r/x+1) from minX until a linear approximation leads to the field dying out at maxX, at which point the linear approximation is used.
@@ -27,51 +28,32 @@ namespace Potentials {
 		// Otherwise we may see extraneous plateaus, for instance, in HHG.
 		class CylindricalToLinearProfile :
 			public ElectricFieldProfile {
-		private:
-			std::complex<double> * fs;
 		public:
 			CylindricalToLinearProfile(int nPts, double * x, double minX, double maxX, double r, double eMax, double enhFact);
-			~CylindricalToLinearProfile();
-			std::complex<double> * getProfile();
 		};
 
 		class CylindricalToCutoffProfile :
 			public ElectricFieldProfile {
-		private:
-			std::complex<double> * fs;
 		public:
 			CylindricalToCutoffProfile(int nPts, double * x, double minX, double maxX, double r, double eMax, double enhFact, double decayLength);
-			~CylindricalToCutoffProfile();
-			std::complex<double> * getProfile();
 		};
 
 		class InMetalFieldProfile :
 			public ElectricFieldProfile {
-		private:
-			std::complex<double> * fs;
 		public:
 			InMetalFieldProfile(int nPts, double * x, double minX, double maxX, double eMax, double lam, std::complex<double> er, double cond);
-			~InMetalFieldProfile();
-			std::complex<double> * getProfile();
 		};
 
 		class ExponentialToLinearProfile :
 			public ElectricFieldProfile {
-		private:
-			std::complex<double>* fs;
 		public:
 			ExponentialToLinearProfile(int nPts, double* x, double minX, double maxX, double r, double eMax);
-			~ExponentialToLinearProfile();
-			std::complex<double>* getProfile();
 		};
 
 		class FileFieldProfile :
 			public ElectricFieldProfile {
-			std::complex<double> * fs;
 		public:
 			FileFieldProfile(int nPts, double * x, double offset, double rightDecayPos, double leftDecayPos, double decayLength, double emax, const char * fil);
-			~FileFieldProfile();
-			std::complex<double> * getProfile();
 		};
 	}
 
