@@ -511,6 +511,7 @@ void testIterationMethods(int stepType=-1){
 	sm->addPotential(new Potentials::FiniteBox(nPts, xs, xs[nPts/4], xs[nPts/4*3], -10.0*PhysCon::eV, 0));
 	sm->addMeasurer(new Measurers::BasicMeasurers(nPts, dx, dt, "data/test/"));
 	sm->addMeasurer(new Measurers::TotProb(nPts, dx, sm->getNElecPtr(), "data/test/"));
+	sm->addMeasurer(new Measurers::VDProbCurrent(nPts, dx, sm->getNElecPtr(), 0, 0, "surf", "data/test/"));
 
 	// plot potential
 	/*{

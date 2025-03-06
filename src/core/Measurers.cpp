@@ -10,28 +10,23 @@
 namespace Measurers {
 
 	std::fstream openFile(const char* fil) {
-		return std::fstream(fil, std::ios::out | std::ios::binary);
+		std::fstream fstrm = std::fstream(fil, std::ios::out | std::ios::binary);
+		if(!fstrm)
+			throw std::system_error(errno, std::system_category(), "Could not open file: " + std::string(fil));
+		return fstrm;
 	}
 
-	DoubleConst::DoubleConst(double c, const char* filName, const char* fol){
-		DoubleConst::c = c;
-		const char *ext = ".dat";
-		int l1 = std::strlen(fol), l2 = std::strlen(filName), l3 = std::strlen(ext);
-		char* nfil = new char[l1 + l2 + l3 + 1];
-		strncpy(nfil, fol, l1);
-		strncpy(&nfil[l1], filName, l2);
-		strcpy(&nfil[l1 + l2], ext);
-		/*std::stringstream ss;
-		ss << fol << filName << ".dat";
-		std::string str = ss.str();
-		const char* nfil = str.c_str();*/
+	std::fstream openFile(std::initializer_list<const char*> args) {
+		std::string fil("");
+		for( auto ele : args )
+			fil += ele;
+		std::fstream fstrm = openFile(fil.c_str());
+		return fstrm;
+	}
 
-		fil = openFile(nfil);
-		delete[] nfil;
-		if (!fil) {
-			std::cout << "Could not open file: " << nfil;
-			std::cin.ignore();
-		}
+
+	DoubleConst::DoubleConst(double c, const char* filName, const char* fol) : c(c){
+		fil = openFile({fol, filName, ".dat"});
 
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 		fil.write(reinterpret_cast<char*>(&c), sizeof c);
@@ -39,33 +34,18 @@ namespace Measurers {
 	}
 
 
-	NElec::NElec(int* nElec, const char* fol)
-		: nElec(nElec) {
-			int l1 = std::strlen(fol), l2 = std::strlen(fname);
-			nfil = new char[l1 + l2 + 1];
-			strncpy(nfil, fol, l1);
-			strcpy(&nfil[l1], fname);
-		}
-
-	NElec::~NElec() {
-		fil.close();
-		if(nfil)
-			delete[] nfil; nfil = nullptr;
-	}
+	NElec::NElec(int* nElec, const char* fol) : nElec(nElec), fol(fol) {}
 
 	MeasurerStatus NElec::measure(int step, std::complex<double>* psi, double* v, double t) { 
 		if(first){
 			first = 0;
 			
-			fil = openFile(nfil);
-			delete[] nfil; nfil = nullptr;
-			if (!fil) {
-				std::cout << "Could not open file: " << nfil;
-				std::cin.ignore();
-			}
+			fil = openFile({fol, fname});
 
 			fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 			fil.write(reinterpret_cast<char*>(nElec), sizeof(int));
+
+			fil.close();
 		}
 		
 		return MeasurerStatus::ALL_DONE; 
@@ -73,20 +53,9 @@ namespace Measurers {
 
 	
 	Header::Header(const char* title, const char* fol) {
-		int l1 = std::strlen(fol), l2 = std::strlen(fname);
-		char* nfil = new char[l1 + l2 + 1];
-		strncpy(nfil, fol, l1);
-		strcpy(&nfil[l1], fname);
-
-		fil = openFile(nfil);
-		delete[] nfil;
-		if (!fil) {
-			std::cout << "Could not open file: " << nfil;
-			std::cin.ignore();
-		}
+		fil = openFile({fol, fname});
 
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
-
 		fil.write(title, sizeof(title));
 
 		fil.close();
@@ -94,21 +63,7 @@ namespace Measurers {
 
 	
 	NPts::NPts(int nPts, const char* fol) {
-		int l1 = std::strlen(fol), l2 = std::strlen(fname);
-		char* nfil = new char[l1 + l2 + 1];
-		strncpy(nfil, fol, l1);
-		strcpy(&nfil[l1], fname);
-		//std::stringstream ss;
-		//ss << fol << fname;
-		//std::string str = ss.str();
-		//const char* nfil = str.c_str();
-
-		fil = openFile(nfil);
-		delete[] nfil;
-		if (!fil) {
-			std::cout << "Could not open file: " << nfil;
-			std::cin.ignore();
-		}
+		fil = openFile({fol, fname});
 
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 		fil.write(reinterpret_cast<char*>(&nPts), sizeof(int));
@@ -118,22 +73,7 @@ namespace Measurers {
 
 
 	NSteps::NSteps(const char* fol) : steps(0) {
-		int l1 = std::strlen(fol), l2 = std::strlen(fname);
-		char* nfil = new char[l1 + l2 + 1];
-		strncpy(nfil, fol, l1);
-		strcpy(&nfil[l1], fname);
-		//std::stringstream ss;
-		//ss << fol << fname;
-		//std::string str = ss.str();
-		//const char* nfil = str.c_str();
-
-		fil = openFile(nfil);
-		delete[] nfil;
-		if (!fil) {
-			std::cout << "Could not open file: " << nfil;
-			std::cin.ignore();
-		}
-
+		fil = openFile({fol, fname});
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 	}
 	
@@ -149,21 +89,7 @@ namespace Measurers {
 	
 
 	DX::DX(double dx, const char* fol) {
-		int l1 = std::strlen(fol), l2 = std::strlen(fname);
-		char* nfil = new char[l1 + l2 + 1];
-		strncpy(nfil, fol, l1);
-		strcpy(&nfil[l1], fname);
-		//std::stringstream ss;
-		//ss << fol << fname;
-		//std::string str = ss.str();
-		//const char* nfil = str.c_str();
-
-		fil = openFile(nfil);
-		delete[] nfil;
-		if (!fil) {
-			std::cout << "Could not open file: " << nfil;
-			std::cin.ignore();
-		}
+		fil = openFile({fol, fname});
 
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 		fil.write(reinterpret_cast<char*>(&dx), sizeof(double));
@@ -173,21 +99,7 @@ namespace Measurers {
 
 	
 	DT::DT(double dt, const char* fol) {
-		int l1 = std::strlen(fol), l2 = std::strlen(fname);
-		char* nfil = new char[l1 + l2 + 1];
-		strncpy(nfil, fol, l1);
-		strcpy(&nfil[l1], fname);
-		//std::stringstream ss;
-		//ss << fol << fname;
-		//std::string str = ss.str();
-		//const char* nfil = str.c_str();
-
-		fil = openFile(nfil);
-		delete[] nfil;
-		if (!fil) {
-			std::cout << "Could not open file: " << nfil;
-			std::cin.ignore();
-		}
+		fil = openFile({fol, fname});
 
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 		fil.write(reinterpret_cast<char*>(&dt), sizeof(double));
@@ -197,21 +109,7 @@ namespace Measurers {
 
 	
 	XS::XS(int len, double* xs, const char* fol) {
-		int l1 = std::strlen(fol), l2 = std::strlen(fname);
-		char* nfil = new char[l1 + l2 + 1];
-		strncpy(nfil, fol, l1);
-		strcpy(&nfil[l1], fname);
-		//std::stringstream ss;
-		//ss << fol << fname;
-		//std::string str = ss.str();
-		//const char* nfil = str.c_str();
-
-		fil = openFile(nfil);
-		delete[] nfil;
-		if (!fil) {
-			std::cout << "Could not open file: " << nfil;
-			std::cin.ignore();
-		}
+		fil = openFile({fol, fname});
 
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 		fil.write(reinterpret_cast<char*>(&xs[0]), sizeof(double)*len);
@@ -221,21 +119,7 @@ namespace Measurers {
 
 	
 	TS::TS(const char* fol) {
-		int l1 = std::strlen(fol), l2 = std::strlen(fname);
-		char* nfil = new char[l1 + l2 + 1];
-		strncpy(nfil, fol, l1);
-		strcpy(&nfil[l1], fname);
-		//std::stringstream ss;
-		//ss << fol << fname;
-		//std::string str = ss.str();
-		//const char* nfil = str.c_str();
-
-		fil = openFile(nfil);
-		delete[] nfil;
-		if (!fil) {
-			std::cout << "Could not open file: " << nfil;
-			std::cin.ignore();
-		}
+		fil = openFile({fol, fname});
 
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 	}
@@ -250,23 +134,8 @@ namespace Measurers {
 	}
 
 
-	OrigPot::OrigPot(int n, const char* fol) {
-		OrigPot::n = n;
-		int l1 = std::strlen(fol), l2 = std::strlen(fname);
-		char* nfil = new char[l1 + l2 + 1];
-		strncpy(nfil, fol, l1);
-		strcpy(&nfil[l1], fname);
-		//std::stringstream ss;
-		//ss << fol << fname;
-		//std::string str = ss.str();
-		//const char* nfil = str.c_str();
-
-		fil = openFile(nfil);
-		delete[] nfil;
-		if (!fil) {
-			std::cout << "Could not open file: " << nfil;
-			std::cin.ignore();
-		}
+	OrigPot::OrigPot(int n, const char* fol) : n(n){
+		fil = openFile({fol, fname});
 
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 		fil.write(reinterpret_cast<char*>(&n), sizeof(int));
@@ -296,17 +165,7 @@ namespace Measurers {
 
 		vtls::linspace(nt, 0.0, maxT, ts);
 
-		int l1 = std::strlen(fol), l2 = std::strlen(fname);
-		char* nfil = new char[l1 + l2 + 1];
-		strncpy(nfil, fol, l1);
-		strcpy(&nfil[l1], fname);
-
-		fil = openFile(nfil);
-		delete[] nfil;
-		if (!fil) {
-			std::cout << "Could not open file: " << nfil;
-			std::cin.ignore();
-		}
+		fil = openFile({fol, fname});
 
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 		fil.write(reinterpret_cast<char*>(&nx), sizeof(int));
@@ -344,18 +203,7 @@ namespace Measurers {
 	ExpectE::ExpectE(int nPts, double dx, int* nElec, const char* fol, KineticOperators::KineticOperator ** kin) : nPts(nPts), dx(dx), kin(kin), nElec(nElec) {
 		rho = (double*) sq_malloc(sizeof(double)*nPts);
 
-		int l1 = std::strlen(fol), l2 = std::strlen(fname);
-		char* nfil = new char[l1 + l2 + 1];
-		strncpy(nfil, fol, l1);
-		strcpy(&nfil[l1], fname);
-
-		fil = openFile(nfil);
-		delete[] nfil;
-		if (!fil) {
-			std::cout << "Could not open file: " << nfil;
-			std::cin.ignore();
-		}
-
+		fil = openFile({fol, fname});
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 	}
 
@@ -383,18 +231,7 @@ namespace Measurers {
 	 {
 		scratch = (double*) sq_malloc(sizeof(double)*nPts);
 
-		int l1 = std::strlen(fol), l2 = std::strlen(fname);
-		char* nfil = new char[l1 + l2 + 1];
-		strncpy(nfil, fol, l1);
-		strcpy(&nfil[l1], fname);
-
-		fil = openFile(nfil);
-		delete[] nfil;
-		if (!fil) {
-			std::cout << "Could not open file: " << nfil;
-			std::cin.ignore();
-		}
-
+		fil = openFile({fol, fname});
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 	}
 
@@ -420,18 +257,7 @@ namespace Measurers {
 		scratch1 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*len);
 		scratch2 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*len);
 
-		int l1 = std::strlen(fol), l2 = std::strlen(fname);
-		char* nfil = new char[l1 + l2 + 1];
-		strncpy(nfil, fol, l1);
-		strcpy(&nfil[l1], fname);
-
-		fil = openFile(nfil);
-		delete[] nfil;
-		if (!fil) {
-			std::cout << "Could not open file: " << nfil;
-			std::cin.ignore();
-		}
-
+		fil = openFile({fol, fname});
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 	}
 
@@ -460,19 +286,8 @@ namespace Measurers {
 		 {
 		scratch1 = (double*) sq_malloc(sizeof(double)*nPts);
 		scratch2 = (double*) sq_malloc(sizeof(double)*nPts);
-
-		int l1 = std::strlen(fol), l2 = std::strlen(fname);
-		char* nfil = new char[l1 + l2 + 1];
-		strncpy(nfil, fol, l1);
-		strcpy(&nfil[l1], fname);
-
-		fil = openFile(nfil);
-		delete[] nfil;
-		if (!fil) {
-			std::cout << "Could not open file: " << nfil;
-			std::cin.ignore();
-		}
-
+		
+		fil = openFile({fol, fname});
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 	}
 
@@ -501,18 +316,7 @@ namespace Measurers {
 	{
 		psi2 = (double*) sq_malloc(sizeof(double)*nPts);
 
-		int l1 = std::strlen(fol), l2 = std::strlen(fname);
-		char* nfil = new char[l1 + l2 + 1];
-		strncpy(nfil, fol, l1);
-		strcpy(&nfil[l1], fname);
-
-		fil = openFile(nfil);
-		if (!fil) {
-			std::cout << "Could not open file: " << nfil;
-			std::cin.ignore();
-		}
-		delete[] nfil;
-
+		fil = openFile({fol, fname});
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 	}
 
@@ -536,20 +340,7 @@ namespace Measurers {
 	VDProbCurrent::VDProbCurrent(int nPts, double dx, int* nElec, int vdPos, int vdNum, const char* name, const char* fol) :
 		nPts(nPts), dx(dx), vdPos(vdPos), vdNum(vdNum), nElec(nElec)
 	 {
-		std::string tempstr = std::to_string(vdNum);
-		const char* nm = tempstr.c_str();
-		int l1 = std::strlen(fol), l2 = std::strlen(nm), l3 = std::strlen(fname);
-		char* nfil = new char[l1 + l2 + l3 + 1];
-		strncpy(nfil, fol, l1);
-		strncpy(&nfil[l1], nm, l2);
-		strcpy(&nfil[l1+l2], fname);
-
-		fil = openFile(nfil);
-		delete[] nfil;
-		if (!fil) {
-			std::cout << "Could not open file: " << nfil;
-			std::cin.ignore();
-		}
+		fil = openFile({fol, std::to_string(vdNum).c_str(), fname});
 
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 		fil.write(reinterpret_cast<char*>(&vdNum), sizeof(int));
@@ -581,20 +372,7 @@ namespace Measurers {
 		PsiT::vdNum = vdNum;
 		PsiT::nPts = nPts;
 
-		std::string tempstr = std::to_string(vdNum);
-		const char* nm = tempstr.c_str();
-		int l1 = std::strlen(fol), l2 = std::strlen(nm), l3 = std::strlen(fname);
-		char* nfil = new char[l1 + l2 + l3 + 1];
-		strncpy(nfil, fol, l1);
-		strncpy(&nfil[l1], nm, l2);
-		strcpy(&nfil[l1 + l2], fname);
-
-		fil = openFile(nfil);
-		delete[] nfil;
-		if (!fil) {
-			std::cout << "Could not open file: " << nfil;
-			std::cin.ignore();
-		}
+		fil = openFile({fol, std::to_string(vdNum).c_str(), fname});
 
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 		fil.write(reinterpret_cast<char*>(&vdNum), sizeof(int));
@@ -623,20 +401,7 @@ namespace Measurers {
 		PotT::vdNum = vdNum;
 		PotT::n = n;
 
-		std::string tempstr = std::to_string(vdNum);
-		const char* nm = tempstr.c_str();
-		int l1 = std::strlen(fol), l2 = std::strlen(nm), l3 = std::strlen(fname);
-		char* nfil = new char[l1 + l2 + l3 + 1];
-		strncpy(nfil, fol, l1);
-		strncpy(&nfil[l1], nm, l2);
-		strcpy(&nfil[l1 + l2], fname);
-
-		fil = openFile(nfil);
-		delete[] nfil;
-		if (!fil) {
-			std::cout << "Could not open file: " << nfil;
-			std::cin.ignore();
-		}
+		fil = openFile({fol, std::to_string(vdNum).c_str(), fname});
 
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 		fil.write(reinterpret_cast<char*>(&vdNum), sizeof(int));
@@ -661,20 +426,7 @@ namespace Measurers {
 	VDPsi::VDPsi(int* nElec, int vdPos, int vdNum, const char* name, const char* fol) : 
 		nElec(nElec), vdPos(vdPos), vdNum(vdNum)
 	{
-		std::string tempstr = std::to_string(vdNum);
-		const char* nm = tempstr.c_str();
-		int l1 = std::strlen(fol), l2 = std::strlen(nm), l3 = std::strlen(fname);
-		char* nfil = new char[l1 + l2 + l3 + 1];
-		strncpy(nfil, fol, l1);
-		strncpy(&nfil[l1], nm, l2);
-		strcpy(&nfil[l1 + l2], fname);
-
-		fil = openFile(nfil);
-		delete[] nfil;
-		if (!fil) {
-			std::cout << "Could not open file: " << nfil;
-			std::cin.ignore();
-		}
+		fil = openFile({fol, std::to_string(vdNum).c_str(), fname});
 
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 		fil.write(reinterpret_cast<char*>(&vdNum), sizeof(int));
@@ -696,20 +448,7 @@ namespace Measurers {
 	VDPot::VDPot(int vdPos, int vdNum, const char* name, const char* fol) :
 		vdPos(vdPos), vdNum(vdNum)
 	 {
-		std::string tempstr = std::to_string(vdNum);
-		const char* nm = tempstr.c_str();
-		int l1 = std::strlen(fol), l2 = std::strlen(nm), l3 = std::strlen(fname);
-		char* nfil = new char[l1 + l2 + l3 + 1];
-		strncpy(nfil, fol, l1);
-		strncpy(&nfil[l1], nm, l2);
-		strcpy(&nfil[l1 + l2], fname);
-
-		fil = openFile(nfil);
-		delete[] nfil;
-		if (!fil) {
-			std::cout << "Could not open file: " << nfil;
-			std::cin.ignore();
-		}
+		fil = openFile({fol, std::to_string(vdNum).c_str(), fname});
 
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 		fil.write(reinterpret_cast<char*>(&vdNum), sizeof(int));
@@ -739,20 +478,7 @@ namespace Measurers {
 		
 		cumPotPhs = 1;
 
-		std::string tempstr = std::to_string(vdNum);
-		const char* nm = tempstr.c_str();
-		int l1 = std::strlen(fol), l2 = std::strlen(nm), l3 = std::strlen(fname);
-		char* nfil = new char[l1 + l2 + l3 + 1];
-		strncpy(nfil, fol, l1);
-		strncpy(&nfil[l1], nm, l2);
-		strcpy(&nfil[l1 + l2], fname);
-
-		fil = openFile(nfil);
-		delete[] nfil;
-		if (!fil) {
-			std::cout << "Could not open file: " << nfil;
-			std::cin.ignore();
-		}
+		fil = openFile({fol, std::to_string(vdNum).c_str(), fname});
 
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 		fil.write(reinterpret_cast<char*>(&vdNum), sizeof(int));
@@ -837,25 +563,7 @@ namespace Measurers {
 
 		vtls::linspace(nt, 0.0, maxT, ts);
 
-		const char* nm;
-		if (potNum >= 0){
-			std::string tempstr = std::to_string(potNum);
-			nm = tempstr.c_str();
-		}
-		else
-			nm = "";
-		int l1 = std::strlen(fol), l2 = std::strlen(nm), l3 = std::strlen(fname);
-		char* nfil = new char[l1 + l2 + l3 + 1];
-		strncpy(nfil, fol, l1);
-		strncpy(&nfil[l1], nm, l2);
-		strcpy(&nfil[l1 + l2], fname);
-
-		fil = openFile(nfil);
-		delete[] nfil;
-		if (!fil) {
-			std::cout << "Could not open file: " << nfil;
-			std::cin.ignore();
-		}
+		fil = openFile({fol, std::to_string(potNum).c_str(), fname});
 
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 		fil.write(reinterpret_cast<char*>(&nx), sizeof(int));
@@ -891,18 +599,7 @@ namespace Measurers {
 	{
 		rho = (double*) sq_malloc(sizeof(double)*nPts);
 
-		int l1 = std::strlen(fol), l2 = std::strlen(fname);
-		char* nfil = new char[l1 + l2 + 1];
-		strncpy(nfil, fol, l1);
-		strcpy(&nfil[l1], fname);
-
-		fil = openFile(nfil);
-		delete[] nfil;
-		if (!fil) {
-			std::cout << "Could not open file: " << nfil;
-			std::cin.ignore();
-		}
-
+		fil = openFile({fol, fname});
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 	}
 
@@ -932,18 +629,7 @@ namespace Measurers {
 	{
 		needsDens = true;
 		
-		int l1 = std::strlen(fol), l2 = std::strlen(fname);
-		char* nfil = new char[l1 + l2 + 1];
-		strncpy(nfil, fol, l1);
-		strcpy(&nfil[l1], fname);
-
-		fil = openFile(nfil);
-		delete[] nfil;
-		if (!fil) {
-			std::cout << "Could not open file: " << nfil;
-			std::cin.ignore();
-		}
-
+		fil = openFile({fol, fname});
 		fil.write(reinterpret_cast<char*>(&index), sizeof(int));
 	}
 

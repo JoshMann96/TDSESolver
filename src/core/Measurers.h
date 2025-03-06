@@ -16,6 +16,8 @@ namespace Measurers {
 
 	std::fstream openFile(const char* fol);
 
+	std::fstream openFile(std::initializer_list<const char*> args);
+
 	// Template class.
 	class Measurer
 	{
@@ -41,6 +43,7 @@ namespace Measurers {
 		double c;
 		std::fstream fil;
 		int index = -2;
+		const char *ext = ".dat";
 	public:
 		int getIndex(){ return index; };
 		DoubleConst(double c, const char* filName, const char* fol);
@@ -416,11 +419,10 @@ namespace Measurers {
 		int first = 1;
 		int* nElec;
 		const char* fname = "nElec.dat";
-		char* nfil = nullptr;
+		const char* fol;
 	public:
 		int getIndex() { return index; };
 		NElec(int* nElec, const char* fol);
-		~NElec();
 		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
 	};
 
