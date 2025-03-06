@@ -602,10 +602,6 @@ namespace Potentials {
 	}
 
 	CompositePotential::~CompositePotential(){
-		sq_free(staticPots);
-		sq_free(dynamicPots);
-		sq_free(waveFuncDependentPots);
-
 		sq_free(v0);
 		sq_free(nv);
 	}
@@ -676,9 +672,9 @@ namespace Potentials {
 		if (wpots)
 			delete[] wpots;
 
-		Potential ** spots = new Potential*[ns];
-		Potential ** dpots = new Potential*[nd];
-		Potential ** wpots = new Potential*[nw];
+		spots = new Potential*[ns];
+		dpots = new Potential*[nd];
+		wpots = new Potential*[nw];
 
 		for (int i = 0; i < ns; i++)
 			spots[i] = staticPots[i];

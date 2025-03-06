@@ -125,7 +125,7 @@ public:
 	void runOS_UW2TUW(int nSteps); // Appropriate for nonlinear potentials
 
 	// Finite difference methods
-	//void runFD_L(int nSteps); // Assumes linear potential
+	void runFD_L(int nSteps); // Assumes linear potential
 	//void runFD_NL(int nSteps); // Appropriate for nonlinear potential
 
 	// Attemps to find ground state.

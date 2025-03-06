@@ -845,7 +845,7 @@ namespace KineticOperators {
 			potmul = 0.5*PhysCon::im*dt/PhysCon::hbar;
 	}
 
-	void CrankNicolson::_step(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec, int isVirtual) {
+	void CrankNicolson::_step(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec, bool isVirtual) {
 		if(bct1 == nullptr)
 			bct1 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nElec);
 		if(bct2 == nullptr)
@@ -854,13 +854,13 @@ namespace KineticOperators {
 			lbct = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nElec);
 		if(rbct == nullptr)
 			rbct = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nElec);
-
+			
 		//prepare left BC
 		cblas_zcopy(nElec, psi0, nPts, bct1, 1); // map first element of all wavefunctions to bct1
 		cblas_zcopy(nElec, &psi0[1], nPts, bct2, 1); // map second element of all wavefunctions to bct2
 	
-		lbc->prepareStep(bct1, bct2, std::real(v[0]));
-		lbc->getRHS(bct1, bct2, std::real(v[0]), lbct, nElec);
+		lbc->prepareStep(bct1, bct2, v[0]);
+		lbc->getRHS(bct1, bct2, v[0], lbct, nElec);
 		if(!isVirtual)
 			lbc->finishStep(bct1, bct2, std::real(v[0]));
 
@@ -868,8 +868,8 @@ namespace KineticOperators {
 		cblas_zcopy(nElec, &psi0[nPts-1], nPts, bct1, 1); // map last element of all wavefunctions to bct1
 		cblas_zcopy(nElec, &psi0[nPts-2], nPts, bct2, 1); // map second to last element of all wavefunctions to bct2
 		
-		rbc->prepareStep(bct1, bct2, std::real(v[nPts-1]));
-		rbc->getRHS(bct1, bct2, std::real(v[nPts-1]), rbct, nElec);
+		rbc->prepareStep(bct1, bct2, v[nPts-1]);
+		rbc->getRHS(bct1, bct2, v[nPts-1], rbct, nElec);
 		if(!isVirtual)
 			rbc->finishStep(bct1, bct2, std::real(v[nPts-1]));
 
@@ -898,7 +898,10 @@ namespace KineticOperators {
 		//SOLVE
 		int info;
 		LAPACK_zgtsv(&nPts, &nElec, reinterpret_cast<dcomplex*>(ld), reinterpret_cast<dcomplex*>(d), reinterpret_cast<dcomplex*>(ud), reinterpret_cast<dcomplex*>(targ), &nPts, &info);
-	
+		
+		// 10x slower
+		//LAPACK_zgtsvx("N", "N", &nPts, &nElec,  reinterpret_cast<dcomplex*>(ld), reinterpret_cast<dcomplex*>(d), reinterpret_cast<dcomplex*>(ud), templ, tempd, tempu, tempu2, ipiv, reinterpret_cast<dcomplex*>(rhs), &nPts, reinterpret_cast<dcomplex*>(targ), &nPts, &rcond, ferr, berr, work, rwork, &info);
+
 		for(int i = 0; i < nElec; i++)
 			vtls::seqMulArrays(nPts, spatialDamp, &targ[i*nPts]);
 	}

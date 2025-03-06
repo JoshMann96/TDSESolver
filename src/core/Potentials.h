@@ -401,7 +401,6 @@ namespace Potentials {
 		PotentialManager(int nPts);
 		~PotentialManager(){if(pot) delete pot; if(spots) delete[] spots; if(dpots) delete[] dpots; if(wpots) delete[] wpots;};
 		void addPotential(Potential * pot);
-		void addPotential(Potential * pot, Measurers::Measurer* meas);
 		void refreshCompositePotential();
 		void getVBare(double t, double * targ);
 		void getV(double* rho, std::complex<double> * psi, double t, double * targ);

@@ -209,7 +209,7 @@ namespace KineticOperators {
 
 		std::complex<double> *rbct=nullptr, *lbct=nullptr, *bct1=nullptr, *bct2=nullptr;
 	
-		void _step(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec, int isVirtual);
+		void _step(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec, bool isVirtual);
 	public:
 		CrankNicolson(int nPts, double dx, double dt, double m_eff, FDBCs::BoundaryCondition* leftBC, FDBCs::BoundaryCondition* rightBC);
 		~CrankNicolson(){
@@ -230,10 +230,10 @@ namespace KineticOperators {
 		};
 
 		void step(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec){
-			_step(psi0, v, spatialDamp, targ, nElec, 0);
+			_step(psi0, v, spatialDamp, targ, nElec, false);
 		};
 		void stepVirtual(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec){
-			_step(psi0, v, spatialDamp, targ, nElec, 1);
+			_step(psi0, v, spatialDamp, targ, nElec, true);
 		}
 		void findEigenStates(double* v, double emin, double emax, std::complex<double>** states, int* nEigs);
 		// iteratively solve inhomogeneous system, k0s and v0s are wavenumbers and potential values for the initial states

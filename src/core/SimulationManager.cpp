@@ -336,6 +336,55 @@ void SimulationManager::runOS_UW2TUW(int nSteps) {
 	sq_free(tv);
 }
 
+void SimulationManager::runFD_L(int nSteps){
+	double* tpot = (double*) sq_malloc(sizeof(double) * nPts);
+	auto rMeasure = &SimulationManager::measure;
+	auto rUpdatePotential = &SimulationManager::updatePotential;
+	std::future<int> fM, fUP;
+
+	// initialize progress tracker
+	progTracker.reset(nSteps);
+
+	bool asyncCalc = canAsyncCalcPot();
+	if(!asyncCalc)
+		std::cout << "Warning: Potential is not wavefunction independent! It is recommended to use runFD_NL to more accurately account for the nonlinearity." << std::endl;
+
+	for(int i = 0; i < nSteps; i++){
+		if(asyncCalc){
+			// evaluate potential n+1
+			if (i == 0){ // evaluate potential n, n+1 if needed
+				updatePotential(index);
+				updatePotential(index + 1);
+			}
+			else
+				fUP.get();
+			fUP = std::async(rUpdatePotential, this, index + 2);
+		}
+		else{
+			// evaluate potential n
+			if(i == 0)
+				updatePotential(index);
+			updatePotential(index + 1);
+		}
+		// potentials n, n+1 are now calculated
+		// calculate averaged potential
+		vtls::addArrays(nPts, vs[index], vs[index + 1], tpot);
+		vtls::scaMulArray(nPts, 0.5, tpot);
+
+		// evalute n->n+1
+		kin_fdm->step(psis[index], tpot, spatialDamp, psis[index+1], nElec);
+		
+		// measure step n while n+1->n+2 begins
+		if(i != 0)
+			fM.get();
+		fM = std::async(rMeasure, this, index);
+		
+		progTracker.update(i);
+
+		iterateIndex();
+	}
+}
+
 void SimulationManager::iterateIndex() {
 	step[index+1] = step[index] + 1;
 	ts[index+1] = step[index+1] * dt;

@@ -11,3 +11,5 @@ mybuilder.sh
 runTest.sh
 data*
 *.wisdom
+logs*
+runTest*
