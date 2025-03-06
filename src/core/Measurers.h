@@ -20,7 +20,6 @@ namespace Measurers {
 	class Measurer
 	{
 	private:
-		virtual void terminate() = 0;
 		const char* fname = "";
 	protected:
 		int isTerminated=0;
@@ -30,12 +29,6 @@ namespace Measurers {
 		// Required function that takes a measurement whenever called.
 		virtual MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t) = 0;
 		// Required function which terminates the measurer (closes file).
-		void kill(){
-			if(!isTerminated){
-				isTerminated=1;
-				terminate();
-			}
-		}
 		virtual int getIndex() = 0;
 		bool needsDensity(){return needsDens;};
 	};
@@ -48,12 +41,10 @@ namespace Measurers {
 		double c;
 		std::fstream fil;
 		int index = -2;
-		void terminate();
 	public:
 		int getIndex(){ return index; };
 		DoubleConst(double c, const char* filName, const char* fol);
-		~DoubleConst();
-		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
+		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t){return MeasurerStatus::ALL_DONE;};
 	};
 
 	// Writes text (8 chars required) to file.
@@ -64,12 +55,10 @@ namespace Measurers {
 		std::fstream fil;
 		int index = -1;
 		const char* fname = "head.dat";
-		void terminate();
 	public:
 		int getIndex() { return index; };
 		Header(const char* title, const char* fol);
-		~Header();
-		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
+		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t) { return MeasurerStatus::ALL_DONE; };
 	};
 
 	// Records the number of points in simulation.
@@ -79,12 +68,10 @@ namespace Measurers {
 		std::fstream fil;
 		int index = 0;
 		const char* fname = "nPts.dat";
-		void terminate();
 	public:
 		int getIndex() { return index; };
 		NPts(int nPts, const char* fol);
-		~NPts();
-		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
+		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t) { return MeasurerStatus::ALL_DONE; };
 	};
 
 	// Records the number of time steps in simulation.
@@ -96,10 +83,9 @@ namespace Measurers {
 		const char* fname = "nSteps.dat";
 		int steps = 0;
 		double tmea = -1;
-		void terminate();
 	public:
 		int getIndex() { return index; };
-		NSteps(int numSteps, const char* fol);
+		NSteps(const char* fol);
 		~NSteps();
 		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
 	};
@@ -111,12 +97,10 @@ namespace Measurers {
 		std::fstream fil;
 		int index = 2;
 		const char* fname = "dx.dat";
-		void terminate();
 	public:
 		int getIndex() { return index; };
 		DX(double dx, const char* fol);
-		~DX();
-		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
+		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t) { return MeasurerStatus::ALL_DONE; };
 	};
 
 	// Records dt spacing.
@@ -126,12 +110,10 @@ namespace Measurers {
 		std::fstream fil;
 		int index = 3;
 		const char* fname = "dt.dat";
-		void terminate();
 	public:
 		int getIndex() { return index; };
 		DT(double dt, const char* fol);
-		~DT();
-		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
+		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t) { return MeasurerStatus::ALL_DONE; };
 	};
 
 	// Records x-array.
@@ -141,12 +123,10 @@ namespace Measurers {
 		std::fstream fil;
 		int index = 4;
 		const char* fname = "xs.dat";
-		void terminate();
 	public:
 		int getIndex() { return index; };
 		XS(int len, double* xs, const char* fol);
-		~XS();
-		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
+		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t) { return MeasurerStatus::ALL_DONE; };
 	};
 
 	// Records t-array.
@@ -156,7 +136,6 @@ namespace Measurers {
 		std::fstream fil;
 		int index = 5;
 		const char* fname = "ts.dat";
-		void terminate();
 	public:
 		int getIndex() { return index; };
 		TS(const char* fol);
@@ -173,7 +152,6 @@ namespace Measurers {
 		int index = 6;
 		int n;
 		const char* fname = "v0.dat";
-		void terminate();
 	public:
 		int getIndex() { return index; };
 		OrigPot(int n, const char* fol);
@@ -201,7 +179,7 @@ namespace Measurers {
 
 		int *measSteps;
 
-		void terminate();
+		
 	public:
 		int getIndex() { return index; };
 		Psi2t(int nPts, int nx, int nt, int numSteps, double maxT, double * x, int* nElec, const char* fol);
@@ -219,7 +197,6 @@ namespace Measurers {
 		int nPts, *nElec;
 		double* rho;
 		double dx;
-		void terminate();
 		KineticOperators::KineticOperator** kin;
 	public:
 		int getIndex() { return index; };
@@ -239,7 +216,6 @@ namespace Measurers {
 		int nPts, *nElec;
 		double* scratch;
 		double dx;
-		void terminate();
 	public:
 		int getIndex() { return index; };
 		ExpectX(int len, double* xs, double dx, int* nElec, const char* fol);
@@ -257,7 +233,6 @@ namespace Measurers {
 		int nPts, *nElec;
 		std::complex<double> *scratch1, *scratch2;
 		double dx;
-		void terminate();
 	public:
 		int getIndex() { return index; };
 		ExpectP(int len, double dx, int* nElec, const char* fol);
@@ -275,7 +250,6 @@ namespace Measurers {
 		int nPts, *nElec;
 		double *scratch1, *scratch2;
 		double dx;
-		void terminate();
 	public:
 		int getIndex() { return index; };
 		ExpectA(int nPts, double dx, int* nElec, const char* fol);
@@ -294,7 +268,6 @@ namespace Measurers {
 		int nPts, *nElec;
 		int index = 16;
 		const char* fname = "totProb.dat";
-		void terminate();
 	public:
 		int getIndex() { return index; };
 		TotProb(int n, double dx, int* nElec, const char* fol);
@@ -313,7 +286,6 @@ namespace Measurers {
 		int index = 14;
 		int vdNum;
 		const char* fname = "jrd.dat";
-		void terminate();
 	public:
 		int getIndex() { return index; };
 		VDProbCurrent(int n, double dx, int *nElec, int vdPos, int vdNum, const char* name, const char* fol);
@@ -331,7 +303,6 @@ namespace Measurers {
 		int index = 15;
 		int vdNum;
 		const char* fname = "psird.dat";
-		void terminate();
 	public:
 		int getIndex() { return index; };
 		VDPsi(int* nElec, int vdPos, int vdNum, const char* name, const char* fol);
@@ -349,7 +320,6 @@ namespace Measurers {
 		int vdNum;
 		int curStep = -1;
 		const char* fname = "vrd.dat";
-		void terminate();
 	public:
 		int getIndex() { return index; };
 		VDPot(int vdPos, int vdNum, const char* name, const char* fol);
@@ -370,7 +340,6 @@ namespace Measurers {
 		double dw, tmax, tukeyAl=0.05;
 		const char* fname = "fluxspecvd.dat";
 		std::complex<double>* wfcs0 = nullptr, * wfcs1 = nullptr, *phss, cumPotPhs, *phaseCalcExpMul, *temp;
-		void terminate();
 	public:
 		int getIndex() { return index; };
 		VDFluxSpec(int nPts, int vdPos, int vdNum, int* nElec, int nsamp, double emax, double tmax, const char* name, const char* fol);
@@ -390,7 +359,6 @@ namespace Measurers {
 		const char* fname = "psit.dat";
 		int done = 0;
 		double curTime=-1;
-		void terminate();
 	public:
 		int getIndex() { return index; };
 		PsiT(int n, double meaT, int* nElec, int vdNum, const char* name, const char* fol);
@@ -409,7 +377,6 @@ namespace Measurers {
 		int vdNum;
 		const char* fname = "pott.dat";
 		int done = 0;
-		void terminate();
 	public:
 		int getIndex() { return index; };
 		PotT(int n, double meaT, int vdNum, const char* name, const char* fol);
@@ -434,7 +401,6 @@ namespace Measurers {
 		double * xs;
 		double * ts;
 		const char* fname = "Vfunct.dat";
-		void terminate();
 	public:
 		int getIndex() { return index; };
 		Vfunct(int potNum, int nPts, int nx, int nt, int numSteps, double maxT, double * x, const char* fol);
@@ -451,7 +417,6 @@ namespace Measurers {
 		int* nElec;
 		const char* fname = "nElec.dat";
 		char* nfil = nullptr;
-		void terminate();
 	public:
 		int getIndex() { return index; };
 		NElec(int* nElec, const char* fol);
@@ -470,7 +435,6 @@ namespace Measurers {
 		double tmea;
 		double* rho;
 		int first = 1;
-		void terminate();
 		KineticOperators::KineticOperator** kin;
 	public:
 		int getIndex() { return index; };
@@ -488,7 +452,6 @@ namespace Measurers {
 		int *nElec;
 		int first = 1;
 		double ** weights;
-		void terminate();
 	public:
 		int getIndex() { return index; };
 		WfcRhoWeights(int* nElec, double ** weights, const char* fol);
@@ -504,14 +467,13 @@ namespace Measurers {
 		WfcToRho::Density* dens;
 		double** wght, dx, *xs, *rho=nullptr;
 		bool pause;
-		void terminate();
 	public:
-		int getIndex() { return INT_MIN; };
+		int getIndex() { return INT_MIN + 1; };
 		DensityPlotter(int nPts, int* nElec, double dx, double* xs, WfcToRho::Density* dens, double** wght, int stepsPerPlot=1, bool pause=true);
 		~DensityPlotter();
 		MeasurerStatus measure(int step, std::complex<double>* psi, double* v, double t);
 	};
-		
+	
 	class PotentialPlotter :
 		public Measurer {
 	private:
@@ -519,11 +481,10 @@ namespace Measurers {
 		int nPts, stepsPerPlot;
 		double *xs;
 		bool pause;
-		void terminate();
 	public:
-		int getIndex() { return INT_MIN + 1; };
+		int getIndex() { return INT_MIN + 2; };
 		PotentialPlotter(int nPts, double* xs, int stepsPerPlot=1, bool pause=true);
-		~PotentialPlotter(){kill();};
+		~PotentialPlotter();
 		MeasurerStatus measure(int step, std::complex<double>* psi, double* v, double t);
 	};
 
@@ -532,10 +493,9 @@ namespace Measurers {
 		public Measurer {
 	private:
 		std::vector<Measurer*> meas;
-		void terminate();
 	public:
-		int getIndex() { return INT_MIN + 1; };
-		BasicMeasurers(int nPts, int numSteps, double dx, double dt, double * xs, const char* fol);
+		int getIndex() { return INT_MIN; };
+		BasicMeasurers(int nPts, double dx, double dt, const char* fol);
 		~BasicMeasurers();
 		MeasurerStatus measure(int step, std::complex<double> * psi, double * v, double t);
 	};
@@ -548,7 +508,6 @@ namespace Measurers {
 		int index = INT_MAX;
 		std::vector<Measurer*> meas;
 		const char* fname;
-		void terminate();
 	public:
 		int getIndex() { return index; };
 		MeasurementManager(const char* fname);

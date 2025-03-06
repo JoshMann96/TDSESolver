@@ -509,6 +509,8 @@ void testIterationMethods(int stepType=-1){
 	sm->setDensity(new WfcToRho::DirectDensity());
 	sm->setKineticOperator(new KineticOperators::GenDisp_PSM_FreeElec(nPts, dx, dt, 1.0, FFTW_ESTIMATE));
 	sm->addPotential(new Potentials::FiniteBox(nPts, xs, xs[nPts/4], xs[nPts/4*3], -10.0*PhysCon::eV, 0));
+	sm->addMeasurer(new Measurers::BasicMeasurers(nPts, dx, dt, "data/test/"));
+	sm->addMeasurer(new Measurers::TotProb(nPts, dx, sm->getNElecPtr(), "data/test/"));
 
 	// plot potential
 	/*{
@@ -581,9 +583,9 @@ int main(int argc, char** argv){
 	fftw_init_threads();
 	fftw_import_wisdom_from_filename(wisdomFile);
 
-	for(int i = 0; i < 3; i++)
-		testIterationMethods(i);
-	//testIterationMethods();
+	/*for(int i = 0; i < 3; i++)
+		testIterationMethods(i);*/
+	testIterationMethods();
 	std::cout << "Done" << std::endl;
 
 	fftw_export_wisdom_to_filename(wisdomFile);
