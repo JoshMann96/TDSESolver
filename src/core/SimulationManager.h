@@ -8,13 +8,15 @@
 // A cyclic integer class that wraps around a maximum value. Useful for managing the local wavefunction and potential history.
 class cyclic_int
 {
-private:
+protected:
 	int val, max;
 public:
+	cyclic_int() : val(0), max(0) {};
 	cyclic_int(int max) : val(0), max(max) {};
+	cyclic_int(int val, int max) : val(val), max(max) {};
 	inline void increment() { val = (val + 1) % max; };
 	inline cyclic_int& operator++() { increment(); return *this; }; //prefix
-	inline cyclic_int operator++(int) { cyclic_int c(max); c.val = val; c.increment(); return c; }; //postfix
+	inline cyclic_int operator++(int) { cyclic_int c = *this; increment(); return c; }; //postfix
 	inline cyclic_int operator+(int n) { cyclic_int c(max); c.val = (val + n) % max; return c; };
 	inline cyclic_int& operator+=(int n) { val = (val + n) % max; return *this; };
 	inline cyclic_int& operator=(int n) { val = n % max; return *this; };

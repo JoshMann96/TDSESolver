@@ -4,8 +4,10 @@
 
 //callback sends progress int 0-100 (can be nullptr for no callback)
 SimulationManager::SimulationManager(int nPts, double dx, double dt, std::function<void(int)> callback)
-	: dx(dx), nPts(nPts), dt(dt), progTracker(callback), index(HISTORY_LENGTH)
+	: dx(dx), nPts(nPts), dt(dt), progTracker(callback), nElec(0)
 {
+	index = cyclic_int(0, HISTORY_LENGTH);
+
 	pot = new Potentials::PotentialManager(nPts);
 	meas = new Measurers::MeasurementManager("");
 	psis = (std::complex<double>**) sq_malloc(sizeof(std::complex<double>*)*HISTORY_LENGTH);
@@ -32,9 +34,6 @@ SimulationManager::SimulationManager(int nPts, double dx, double dt, std::functi
 	SimulationManager::maxT = maxT; SimulationManager::dt = dt; SimulationManager::dx = dx; SimulationManager::nPts = nPts;
 	SimulationManager::mpiRoot = mpiRoot; SimulationManager::mpiUpdateTag = mpiUpdateTag; SimulationManager::mpiJob = mpiJob;
 	*/
-
-	index = 0;
-	nElec = 0;
 }
 
 SimulationManager::~SimulationManager()

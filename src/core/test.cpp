@@ -494,8 +494,9 @@ void testInhomogeneousEigenState(){
 	delete sm;
 }
 
-void testSplitStep(){
-	int nPts = 100;
+void testSplitStep(int stepType=-1){
+	int nPts = 1000;
+	int nSteps = 1000;
 	double dx = 0.16*PhysCon::a0;
 	double dt = 0.1*PhysCon::hbar/PhysCon::auE_ha;
 
@@ -506,7 +507,7 @@ void testSplitStep(){
 	SimulationManager* sm = new SimulationManager(nPts, dx, dt);
 	sm->setWeight(new WfcToRho::BoundFermiGas(5.0*PhysCon::eV));
 	sm->setDensity(new WfcToRho::DirectDensity());
-	sm->setKineticOperator_PSM(new KineticOperators::GenDisp_PSM_FreeElec(nPts, dx, dt, 1.0));
+	sm->setKineticOperator_PSM(new KineticOperators::GenDisp_PSM_FreeElec(nPts, dx, dt, 1.0, FFTW_ESTIMATE));
 	sm->addPotential(new Potentials::FiniteBox(nPts, xs, xs[nPts/4], xs[nPts/4*3], -10.0*PhysCon::eV, 0));
 
 	// plot potential
@@ -521,27 +522,64 @@ void testSplitStep(){
 	delete plotter;
 	}*/
 
-
 	sm->addMeasurer(new Measurers::DensityPlotter(nPts, sm->getNElecPtr(), dx, xs, sm->getDensity(), sm->getWeightsPtr(), 50, false));
 
-	std::cout << "Finding Eigenstates" << std::endl;
+	std::cout << "\nFinding Eigenstates" << std::endl;
 	sm->findEigenStates(-10.0*PhysCon::eV, -5.0*PhysCon::eV);
 
 	// remove finite well
 	sm->addPotential(new Potentials::FiniteBox(nPts, xs, xs[nPts/4], xs[nPts/4*3], 10.0*PhysCon::eV, 0));
 
-	std::cout << "Running OS_U2TU for 1000 steps" << std::endl;
-	sm->runOS_U2TU(1000);
+	std::cout << "\nTime iterating with "  << sm->getNElec() << " wavefunctions, " << sm->getNumPoints() << " gridpoints, " << nSteps << " steps..." << std::endl;
 
-	std::cout << "Running OS_UW2TUW for 1000 steps" << std::endl;
-	sm->runOS_UW2TUW(1000);
+	//std::cout << "\n\tInitializing FFTW..." << std::endl;
+	//sm->runOS_U2TU(1);
+
+	auto t1 = std::chrono::high_resolution_clock::now();
+	auto t2 = std::chrono::high_resolution_clock::now();
+
+	if (stepType == -1 || stepType == 0){
+		std::cout << "\n\tRunning OS_U2TU..." << std::endl;
+		t1 = std::chrono::high_resolution_clock::now();
+		sm->runOS_U2TU(nSteps);
+		t2 = std::chrono::high_resolution_clock::now();
+		std::cout << "\t\tTook " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << " ms" << std::endl;
+	}
+
+	if (stepType == -1 || stepType == 1){
+		std::cout << "\n\tRunning OS_UW2TUW..." << std::endl;
+		t1 = std::chrono::high_resolution_clock::now();
+		sm->runOS_UW2TUW(nSteps);
+		t2 = std::chrono::high_resolution_clock::now();
+		std::cout << "\t\tTook " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << " ms" << std::endl;
+	}
+
+	if (stepType == -1 || stepType == 2){
+		//sm->setKineticOperator_FDM(new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, new FDBCs::DirichletBC(0.0), new FDBCs::DirichletBC(0.0)));
+		sm->setKineticOperator_FDM(new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, new FDBCs::UniformHDTransparentBC(1000, sm->getNElec(), dx, dt), new FDBCs::UniformHDTransparentBC(1000, sm->getNElec(), dx, dt)));
+		std::cout << "\n\tRunning FD_L..." << std::endl;
+		t1 = std::chrono::high_resolution_clock::now();
+		sm->runFD_L(nSteps);
+		t2 = std::chrono::high_resolution_clock::now();
+		std::cout << "\t\tTook " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << " ms" << std::endl;
+	}
 
 	delete sm;
 	delete[] xs;
 }
 
 int main(int argc, char** argv){
-    testSplitStep();
+	char* wisdomFile = new char[64];
+	std::snprintf(wisdomFile, 64, "fftw_nt_%04d.wisdom", omp_get_max_threads());
+	fftw_init_threads();
+	fftw_import_wisdom_from_filename(wisdomFile);
+
+	for(int i = 0; i < 3; i++)
+		testSplitStep(i);
 	std::cout << "Done" << std::endl;
+
+	fftw_export_wisdom_to_filename(wisdomFile);
+	delete[] wisdomFile;
+
     return 0;
 }
