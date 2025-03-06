@@ -5,7 +5,23 @@
 #include "WfcRhoTools.h"
 #include "KineticOperator.h"
 
-// Manages simulation by controling potentials, measurements, and TDSE iterator(s) for multiple electrons at the same time.
+// A cyclic integer class that wraps around a maximum value. Useful for managing the local wavefunction and potential history.
+class cyclic_int
+{
+private:
+	int val, max;
+public:
+	cyclic_int(int max) : val(0), max(max) {};
+	inline void increment() { val = (val + 1) % max; };
+	inline cyclic_int& operator++() { increment(); return *this; }; //prefix
+	inline cyclic_int operator++(int) { cyclic_int c(max); c.val = val; c.increment(); return c; }; //postfix
+	inline cyclic_int operator+(int n) { cyclic_int c(max); c.val = (val + n) % max; return c; };
+	inline cyclic_int& operator+=(int n) { val = (val + n) % max; return *this; };
+	inline cyclic_int& operator=(int n) { val = n % max; return *this; };
+	inline operator int() const { return val; };
+};
+
+// Tool for tracking progress, calling a callback function when a certain percentage of the task is done.
 class ProgressTracker
 {
 	private:
@@ -28,6 +44,10 @@ class ProgressTracker
 	};
 };
 
+// Manages simulation by calling Potentials, Measuruers, and KineticOperators (with corresponding numerical methods for time integration) 
+// 		using task parallelism as well as the parallelism used within each object.
+// Stores a brief history of the potential and wavefunctions so that measurements can be done in parallel.
+// For linear systems the potential calcualtion may be done in parallel as well.
 class SimulationManager
 {
 private:
@@ -42,7 +62,8 @@ private:
 
 	double *ts, dt, dx;
 	double **vs, **rhos, *spatialDamp;
-	int nPts, index, nElec, calcDensity = 0;
+	int nPts, nElec, calcDensity = 0;
+	cyclic_int index;
 	int* step;
 	std::complex<double> *scratch1, *scratch2;
 
@@ -117,10 +138,6 @@ public:
 	void setPsi(std::complex<double>* npsi, WfcToRho::NormalizationScheme norm = WfcToRho::UNNORMALIZED);
 
 	void iterateIndex();
-	int getIndex();
-	int getNextIndex();
-	int getPrevIndex();
-	int getPrevPrevIndex();
 
 	// Returns the number of points in the simulation.
 	int getNumPoints();

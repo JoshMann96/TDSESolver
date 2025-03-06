@@ -4,7 +4,7 @@
 
 //callback sends progress int 0-100 (can be nullptr for no callback)
 SimulationManager::SimulationManager(int nPts, double dx, double dt, std::function<void(int)> callback)
-	: dx(dx), nPts(nPts), dt(dt), progTracker(callback)
+	: dx(dx), nPts(nPts), dt(dt), progTracker(callback), index(HISTORY_LENGTH)
 {
 	pot = new Potentials::PotentialManager(nPts);
 	meas = new Measurers::MeasurementManager("");
@@ -162,10 +162,10 @@ void SimulationManager::findInhomogeneousSteadyStates_OBSOLETE(double threshold,
 	int i = 0;
 	while(!converged){
 		//kin_fdm->projectHistory(psis[prevIndex()], kl, kr, vs[index], nElec); // THIS MUST BE FIXED TO USE THIS FUNCTION AGAIN
-		kin_fdm->step(psis[getPrevIndex()], vs[index], spatialDamp, psis[index], nElec);
+		kin_fdm->step(psis[index - 1], vs[index], spatialDamp, psis[index], nElec);
 
 		vtls::normSqr(nPts*nElec, psis[index], temp1);
-		vtls::normSqr(nPts*nElec, psis[getPrevIndex()], temp2);
+		vtls::normSqr(nPts*nElec, psis[index - 1], temp2);
 		vtls::scaMulAddArrays(nPts*nElec, -1.0, temp1, temp2); // temp2 = old - new
 		vtls::abs(nPts*nElec, temp2, temp2); // temp2 = |old - new|
 		// ? (sum of |old - new|) / (sum of |new|) < threshold
@@ -174,7 +174,7 @@ void SimulationManager::findInhomogeneousSteadyStates_OBSOLETE(double threshold,
 			std::cout << "Error: " << err << std::endl;
 		converged = vtlsInt::rSum(nPts*nElec, temp2, 1.0) / vtlsInt::rSum(nPts*nElec, temp1, 1.0) < threshold;
 
-		vtls::copyArray(nPts*nElec, psis[index], psis[getPrevIndex()]);
+		vtls::copyArray(nPts*nElec, psis[index], psis[index - 1]);
 		i++;
 	}
 
@@ -257,29 +257,30 @@ void SimulationManager::runOS_U2TU(int nSteps) {
 	progTracker.reset(nSteps);
 
 	bool asyncCalc = canAsyncCalcPot();
+	if(!asyncCalc)
+		std::cout << "Warning: Potential is not wavefunction independent! It is recommended to use runOS_UW2TUW to more accurately account for the nonlinearity." << std::endl;
 
-	// prepare starting potential
 	for(int i = 0; i < nSteps; i++){
 		if(asyncCalc){
 			// evaluate potential n+1
 			if (i == 0)
-				updatePotential(getIndex());
+				updatePotential(index);
 			else
 				fUP.get();
-			fUP = std::async(rUpdatePotential, this, getNextIndex());
+			fUP = std::async(rUpdatePotential, this, index + 1);
 		}
 		else{
 			// evaluate potential n
-			updatePotential(getIndex());
+			updatePotential(index);
 		}
 
 		// evalute n->n+1
-		kin_psm->stepOS_U2TU(psis[getIndex()], vs[getIndex()], spatialDamp, psis[getNextIndex()], nElec);
+		kin_psm->stepOS_U2TU(psis[index], vs[index], spatialDamp, psis[index + 1], nElec);
 		
 		// measure step n while n+1->n+2 begins
 		if(i != 0)
 			fM.get();
-		fM = std::async(rMeasure, this, getIndex());
+		fM = std::async(rMeasure, this, index);
 		
 		progTracker.update(i);
 
@@ -308,20 +309,19 @@ void SimulationManager::runOS_UW2TUW(int nSteps) {
 	// initialize progress tracker
 	progTracker.reset(nSteps);
 
-	// initial potential
 	for(int i = 0; i < nSteps; i++){
 		// step n->n+1/2
-		updatePotential(getIndex());
-		kin_psm->stepOS_UW2T(psis[getIndex()], vs[getIndex()], spatialDamp, tpsi, nElec);
+		updatePotential(index);
+		kin_psm->stepOS_UW2T(psis[index], vs[index], spatialDamp, tpsi, nElec);
 
 		// measure step n while n+1/2->n+1 begins
 		if(i != 0)
 			fM.get();
-		fM = std::async(rMeasure, this, getIndex());
+		fM = std::async(rMeasure, this, index);
 
 		// step n+1/2->n+1
-		calculatePotential(trho, tpsi, ts[getIndex()] + dt / 2.0, tv);
-		kin_psm->stepOS_UW(tpsi, tv, spatialDamp, psis[getNextIndex()], nElec);
+		calculatePotential(trho, tpsi, ts[index] + dt / 2.0, tv);
+		kin_psm->stepOS_UW(tpsi, tv, spatialDamp, psis[index + 1], nElec);
 		
 		progTracker.update(i);
 
@@ -337,37 +337,10 @@ void SimulationManager::runOS_UW2TUW(int nSteps) {
 }
 
 void SimulationManager::iterateIndex() {
-	step[getNextIndex()] = step[getIndex()] + 1;
-	ts[getNextIndex()] = step[getNextIndex()] * dt;
+	step[index+1] = step[index] + 1;
+	ts[index+1] = step[index+1] * dt;
 
 	index++;
-	if (index >= HISTORY_LENGTH)
-		index = 0;
-}
-
-int SimulationManager::getIndex(){
-	return index;
-}
-
-int SimulationManager::getPrevIndex() {
-	if (index == 0)
-		return HISTORY_LENGTH-1;
-	else
-		return index - 1;
-}
-
-int SimulationManager::getPrevPrevIndex() {
-	if (index <= 1)
-		return HISTORY_LENGTH - 2 + index;
-	else
-		return index - 2;
-}
-
-int SimulationManager::getNextIndex() {
-	if (index == HISTORY_LENGTH - 1)
-		return 0;
-	else
-		return index + 1;
 }
 
 int SimulationManager::getNumPoints() {
