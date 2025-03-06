@@ -147,6 +147,10 @@ void SimulationManager::findEigenStates(double emin, double emax) {
 void SimulationManager::findInhomogeneousSteadyStates_OBSOLETE(double threshold, int nElec, double* kl, double* kr, bool verbose){
 	this->nElec = nElec;
 
+	KineticOperators::KineticOperator_FDM* kin_fdm = dynamic_cast<KineticOperators::KineticOperator_FDM*>(kin);
+	if(kin_fdm == nullptr)
+		throw std::runtime_error("SimulationManager::findInhomogeneousSteadyStates_OBSOLETE: Kinetic operator is not a finite difference method!");
+
 	freePsis();
 	for(int i = 0; i < HISTORY_LENGTH; i++){
 		psis[i] = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nElec);
@@ -190,6 +194,10 @@ void SimulationManager::findInhomogeneousSteadyStates_OBSOLETE(double threshold,
 }
 
 void SimulationManager::findInhomogeneousEigenStates(int nElec, double* energies){
+	KineticOperators::KineticOperator_FDM* kin_fdm = dynamic_cast<KineticOperators::KineticOperator_FDM*>(kin);
+	if(kin_fdm == nullptr)
+		throw std::runtime_error("SimulationManager::findInhomogeneousEigenStates: Kinetic operator is not a finite difference method!");
+	
 	this->nElec = nElec;
 
 	freePsis();
@@ -248,6 +256,10 @@ int SimulationManager::measure(int idx) {
 
 //Run simulation using operator splitting Fourier method (applies potential as linear)
 void SimulationManager::runOS_U2TU(int nSteps) {
+	KineticOperators::KineticOperator_PSM* kin_psm = dynamic_cast<KineticOperators::KineticOperator_PSM*>(kin);
+	if(kin_psm == nullptr)
+		throw std::runtime_error("SimulationManager::runOS_U2TU: Kinetic operator is not a pseudospectral method!");
+
 	auto rMeasure = &SimulationManager::measure;
 	auto rUpdatePotential = &SimulationManager::updatePotential;
 	std::future<int> fM, fUP;
@@ -296,6 +308,10 @@ void SimulationManager::runOS_U2TU(int nSteps) {
 
 //Run simulation using operator splitting Fourier method (applies potential as nonlinear, second potential phase is recalculated after propagation phase)
 void SimulationManager::runOS_UW2TUW(int nSteps) {
+	KineticOperators::KineticOperator_PSM* kin_psm = dynamic_cast<KineticOperators::KineticOperator_PSM*>(kin);
+	if(kin_psm == nullptr)
+		throw std::runtime_error("SimulationManager::runOS_UW2TUW: Kinetic operator is not a pseudospectral method!");
+
 	// variables for the midpoint of step
 	std::complex<double>* tpsi = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nElec);
 	double* trho = (double*) sq_malloc(sizeof(double) * nPts);
@@ -336,6 +352,10 @@ void SimulationManager::runOS_UW2TUW(int nSteps) {
 }
 
 void SimulationManager::runFD_L(int nSteps){
+	KineticOperators::KineticOperator_FDM* kin_fdm = dynamic_cast<KineticOperators::KineticOperator_FDM*>(kin);
+	if(kin_fdm == nullptr)
+		throw std::runtime_error("SimulationManager::runFD_L: Kinetic operator is not a finite difference method!");
+
 	double* tpot = (double*) sq_malloc(sizeof(double) * nPts);
 	auto rMeasure = &SimulationManager::measure;
 	auto rUpdatePotential = &SimulationManager::updatePotential;

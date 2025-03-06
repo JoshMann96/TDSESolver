@@ -59,8 +59,6 @@ private:
 	WfcToRho::Density* dens = nullptr;
 
 	KineticOperators::KineticOperator* kin;
-	KineticOperators::KineticOperator_PSM * kin_psm;
-	KineticOperators::KineticOperator_FDM* kin_fdm;
 
 	double *ts, dt, dx;
 	double **vs, **rhos, *spatialDamp;
@@ -73,7 +71,6 @@ private:
 
 	int calculatePotential(double* rho, std::complex<double>* psi, double t, double* v);
 	int updatePotential(int idx);
-	int stepItPAR(int idx0, int idx1);
 	int measure(int idx);
 
 	std::complex<double> **psis;
@@ -118,9 +115,8 @@ public:
 	double* getWeightValues(){ return weights; }
 	double* getRho(int curStep);
 
-	// Sets the kinetic operator to be used in the simulation. Differentiates between pseudospectral and finite difference methods.
-	void setKineticOperator_PSM(KineticOperators::KineticOperator_PSM* nkin) { kin = nkin; kin_psm = nkin; }
-	void setKineticOperator_FDM(KineticOperators::KineticOperator_FDM* nkin) { kin = nkin; kin_fdm = nkin; }
+	// Sets the kinetic operator to be used in the simulation.
+	void setKineticOperator(KineticOperators::KineticOperator* nkin) { kin = nkin; }
 
 	// Split-step iteration schemes
 	void runOS_U2TU(int nSteps); // Assumes linear potential

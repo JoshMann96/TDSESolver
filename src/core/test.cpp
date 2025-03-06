@@ -381,7 +381,7 @@ void testInhomogeneousSteadyState(){
 	FDBCs::BoundaryCondition* rbc = new FDBCs::UniformHDTransparentBC(1000, nElec, dx, dt);
 	FDBCs::BoundaryCondition* lbc = new FDBCs::UniformIDTransparentBC(1000, nElec, dx, dt, psibd, k0, 0.0);
 	KineticOperators::CrankNicolson* cn = new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, lbc, rbc);
-	sm->setKineticOperator_FDM(cn);
+	sm->setKineticOperator(cn);
 
 	sm->findInhomogeneousSteadyStates_OBSOLETE(1e-10, nElec, k0, k0, true);
 
@@ -424,7 +424,7 @@ void testInhomogeneousEigenState(){
 	FDBCs::BoundaryCondition* rbc = new FDBCs::UniformHDTransparentBC(1000, nElec, dx, dt);
 	FDBCs::BoundaryCondition* lbc = new FDBCs::UniformIDTransparentBC(1000, nElec, dx, dt, psibd, ks, 0.0);
 	KineticOperators::CrankNicolson* cn = new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, lbc, rbc);
-	sm->setKineticOperator_FDM(cn);
+	sm->setKineticOperator(cn);
 	sm->setWeight(new WfcToRho::SemiInfiniteFermiGas(5.0*PhysCon::eV));
 	sm->setDensity(new WfcToRho::DirectDensity());
 
@@ -494,8 +494,8 @@ void testInhomogeneousEigenState(){
 	delete sm;
 }
 
-void testSplitStep(int stepType=-1){
-	int nPts = 1000;
+void testIterationMethods(int stepType=-1){
+	int nPts = 10000;
 	int nSteps = 1000;
 	double dx = 0.16*PhysCon::a0;
 	double dt = 0.1*PhysCon::hbar/PhysCon::auE_ha;
@@ -507,7 +507,7 @@ void testSplitStep(int stepType=-1){
 	SimulationManager* sm = new SimulationManager(nPts, dx, dt);
 	sm->setWeight(new WfcToRho::BoundFermiGas(5.0*PhysCon::eV));
 	sm->setDensity(new WfcToRho::DirectDensity());
-	sm->setKineticOperator_PSM(new KineticOperators::GenDisp_PSM_FreeElec(nPts, dx, dt, 1.0, FFTW_ESTIMATE));
+	sm->setKineticOperator(new KineticOperators::GenDisp_PSM_FreeElec(nPts, dx, dt, 1.0, FFTW_ESTIMATE));
 	sm->addPotential(new Potentials::FiniteBox(nPts, xs, xs[nPts/4], xs[nPts/4*3], -10.0*PhysCon::eV, 0));
 
 	// plot potential
@@ -522,7 +522,7 @@ void testSplitStep(int stepType=-1){
 	delete plotter;
 	}*/
 
-	sm->addMeasurer(new Measurers::DensityPlotter(nPts, sm->getNElecPtr(), dx, xs, sm->getDensity(), sm->getWeightsPtr(), 50, false));
+	//sm->addMeasurer(new Measurers::DensityPlotter(nPts, sm->getNElecPtr(), dx, xs, sm->getDensity(), sm->getWeightsPtr(), 50, false));
 
 	std::cout << "\nFinding Eigenstates" << std::endl;
 	sm->findEigenStates(-10.0*PhysCon::eV, -5.0*PhysCon::eV);
@@ -556,7 +556,7 @@ void testSplitStep(int stepType=-1){
 
 	if (stepType == -1 || stepType == 2){
 		//sm->setKineticOperator_FDM(new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, new FDBCs::DirichletBC(0.0), new FDBCs::DirichletBC(0.0)));
-		sm->setKineticOperator_FDM(new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, new FDBCs::UniformHDTransparentBC(1000, sm->getNElec(), dx, dt), new FDBCs::UniformHDTransparentBC(1000, sm->getNElec(), dx, dt)));
+		sm->setKineticOperator(new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, new FDBCs::UniformHDTransparentBC(1000, sm->getNElec(), dx, dt), new FDBCs::UniformHDTransparentBC(1000, sm->getNElec(), dx, dt)));
 		std::cout << "\n\tRunning FD_L..." << std::endl;
 		t1 = std::chrono::high_resolution_clock::now();
 		sm->runFD_L(nSteps);
@@ -574,8 +574,9 @@ int main(int argc, char** argv){
 	fftw_init_threads();
 	fftw_import_wisdom_from_filename(wisdomFile);
 
-	for(int i = 0; i < 3; i++)
-		testSplitStep(i);
+	/*for(int i = 0; i < 3; i++)
+		testIterationMethods(i);*/
+	testIterationMethods();
 	std::cout << "Done" << std::endl;
 
 	fftw_export_wisdom_to_filename(wisdomFile);
