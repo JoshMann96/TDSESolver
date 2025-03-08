@@ -825,8 +825,8 @@ namespace KineticOperators {
 		sq_free(bcwfs);
 	}
 
-	CrankNicolson::CrankNicolson(int nPts, double dx, double dt, double m_eff, FDBCs::BoundaryCondition* leftBC, FDBCs::BoundaryCondition* rightBC) :
-		KineticOperator_FDM(nPts, leftBC, rightBC), dx(dx), dt(dt), m_eff(m_eff) {
+	CrankNicolson::CrankNicolson(int nPts, double dx, double dt, double m_eff, FDBCs::BoundaryCondition* leftBC, FDBCs::BoundaryCondition* rightBC, bool useCuda) :
+		KineticOperator_FDM(nPts, leftBC, rightBC), dx(dx), dt(dt), m_eff(m_eff), useCuda(useCuda) {
 			d = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nPts);
 			ud= (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * (nPts-1));
 			ld= (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * (nPts-1));
@@ -854,6 +854,8 @@ namespace KineticOperators {
 			lbct = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nElec);
 		if(rbct == nullptr)
 			rbct = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nElec);
+		if(useCuda && !cuSolver)
+			cuSolver = new cuTridiagSolver(nPts, nElec);
 			
 		//prepare left BC
 		cblas_zcopy(nElec, psi0, nPts, bct1, 1); // map first element of all wavefunctions to bct1
@@ -896,11 +898,19 @@ namespace KineticOperators {
 		cblas_zcopy(nElec, rbct, 1, &targ[nPts-1], nPts);
 
 		//SOLVE
-		int info;
-		LAPACK_zgtsv(&nPts, &nElec, reinterpret_cast<dcomplex*>(ld), reinterpret_cast<dcomplex*>(d), reinterpret_cast<dcomplex*>(ud), reinterpret_cast<dcomplex*>(targ), &nPts, &info);
-		
-		// 10x slower
+		if(useCuda)
+			cuSolver->solve(ld, d, ud, targ);
+		else{
+			int info;
+			LAPACK_zgtsv(&nPts, &nElec, reinterpret_cast<dcomplex*>(ld), reinterpret_cast<dcomplex*>(d), reinterpret_cast<dcomplex*>(ud), reinterpret_cast<dcomplex*>(targ), &nPts, &info);
+		}
+
+		// Using "expert" LAPACK driver (WORKSPACE MUST BE ALLOCATED, NOT A SIMPLE UNCOMMENT)
+		// much slower
+		//auto t1 = std::chrono::high_resolution_clock::now();
 		//LAPACK_zgtsvx("N", "N", &nPts, &nElec,  reinterpret_cast<dcomplex*>(ld), reinterpret_cast<dcomplex*>(d), reinterpret_cast<dcomplex*>(ud), templ, tempd, tempu, tempu2, ipiv, reinterpret_cast<dcomplex*>(rhs), &nPts, reinterpret_cast<dcomplex*>(targ), &nPts, &rcond, ferr, berr, work, rwork, &info);
+		//auto t2 = std::chrono::high_resolution_clock::now();
+		//std::cout << "Time taken for LAPACK_zgtsvx: " << std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() << " us" << std::endl;
 
 		for(int i = 0; i < nElec; i++)
 			vtls::seqMulArrays(nPts, spatialDamp, &targ[i*nPts]);

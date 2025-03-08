@@ -78,7 +78,9 @@ else()
         HINTS ${BLAS_HINTS})
 endif()
 
+find_package(CUDA REQUIRED)
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lstdc++ -O3 -march=${CPU_MARCH} -mtune=native -fPIC -fopenmp")
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Og -fPIC -fopenmp")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fPIC -fopenmp")
 
 add_subdirectory(src)

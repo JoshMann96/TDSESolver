@@ -2,6 +2,7 @@
 #include "CORECommonHeader.h"
 #include "MathTools.h"
 #include "FDBCs.h"
+#include "CuTridiagSolver.h"
 
 namespace KineticOperators {
 
@@ -203,15 +204,18 @@ namespace KineticOperators {
 	class CrankNicolson:
 		public KineticOperator_FDM
 	{
+		bool useCuda;
 		double dx, dt, m_eff;
 		std::complex<double> lhsOffDiag0, lhsDiag0, rhsDiag0, rhsOffDiag, potmul; // elements of LHS tridiagonal matrix
 		std::complex<double> *d, *ud, *ld;
 
 		std::complex<double> *rbct=nullptr, *lbct=nullptr, *bct1=nullptr, *bct2=nullptr;
 	
+		cuTridiagSolver *cuSolver = nullptr;
+
 		void _step(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec, bool isVirtual);
 	public:
-		CrankNicolson(int nPts, double dx, double dt, double m_eff, FDBCs::BoundaryCondition* leftBC, FDBCs::BoundaryCondition* rightBC);
+		CrankNicolson(int nPts, double dx, double dt, double m_eff, FDBCs::BoundaryCondition* leftBC, FDBCs::BoundaryCondition* rightBC, bool useCuda=true);
 		~CrankNicolson(){
 			sq_free(d);
 			sq_free(ud);
@@ -226,7 +230,8 @@ namespace KineticOperators {
 			if(bct2)
 				sq_free(bct2);
 
-
+			if(cuSolver)
+				delete cuSolver;
 		};
 
 		void step(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec){

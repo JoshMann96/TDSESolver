@@ -505,7 +505,7 @@ void testIterationMethods(int stepType=-1){
 		xs[i] = dx*(i-nPts/2);
 
 	SimulationManager* sm = new SimulationManager(nPts, dx, dt);
-	KineticOperators::KineticOperator* cnKin = new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, new FDBCs::DirichletBC(0.0), new FDBCs::DirichletBC(0.0));
+	KineticOperators::KineticOperator* cnKin = new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, new FDBCs::DirichletBC(0.0), new FDBCs::DirichletBC(0.0), true);
 	KineticOperators::KineticOperator* osKin = new KineticOperators::GenDisp_PSM_FreeElec(nPts, dx, dt, 1.0, FFTW_ESTIMATE);
 	sm->setKineticOperator(cnKin);
 	sm->setWeight(new WfcToRho::BoundFermiGas(5.0*PhysCon::eV));
@@ -527,7 +527,7 @@ void testIterationMethods(int stepType=-1){
 	delete plotter;
 	}*/
 
-	//sm->addMeasurer(new Measurers::DensityPlotter(nPts, sm->getNElecPtr(), dx, xs, sm->getDensity(), sm->getWeightsPtr(), 50, false));
+	sm->addMeasurer(new Measurers::DensityPlotter(nPts, sm->getNElecPtr(), dx, xs, sm->getDensity(), sm->getWeightsPtr(), 100, false));
 	//sm->addMeasurer(new Measurers::PotentialPlotter(nPts, xs, 50, false));
 
 	std::cout << "\nFinding Eigenstates" << std::endl;
@@ -589,13 +589,14 @@ int main(int argc, char** argv){
 	fftw_init_threads();
 	fftw_import_wisdom_from_filename(wisdomFile);
 
-	/*for(int i = 0; i < 3; i++)
-		testIterationMethods(i);*/
-	testIterationMethods();
+	for(int i = 0; i < 3; i++)
+		testIterationMethods(i);
+	//testIterationMethods();
 	std::cout << "Done" << std::endl;
 
 	fftw_export_wisdom_to_filename(wisdomFile);
 	delete[] wisdomFile;
+
 
     return 0;
 }
