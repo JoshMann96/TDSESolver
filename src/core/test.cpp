@@ -495,7 +495,7 @@ void testInhomogeneousEigenState(){
 }
 
 void testIterationMethods(int stepType=-1){
-	int nPts = 1000;
+	int nPts = 8192;
 	int nSteps = 1000;
 	double dx = 0.16*PhysCon::a0;
 	double dt = 0.1*PhysCon::hbar/PhysCon::auE_ha;
@@ -505,9 +505,11 @@ void testIterationMethods(int stepType=-1){
 		xs[i] = dx*(i-nPts/2);
 
 	SimulationManager* sm = new SimulationManager(nPts, dx, dt);
+	KineticOperators::KineticOperator* cnKin = new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, new FDBCs::DirichletBC(0.0), new FDBCs::DirichletBC(0.0));
+	KineticOperators::KineticOperator* osKin = new KineticOperators::GenDisp_PSM_FreeElec(nPts, dx, dt, 1.0, FFTW_ESTIMATE);
+	sm->setKineticOperator(cnKin);
 	sm->setWeight(new WfcToRho::BoundFermiGas(5.0*PhysCon::eV));
 	sm->setDensity(new WfcToRho::DirectDensity());
-	sm->setKineticOperator(new KineticOperators::GenDisp_PSM_FreeElec(nPts, dx, dt, 1.0, FFTW_ESTIMATE));
 	sm->addPotential(new Potentials::FiniteBox(nPts, xs, xs[nPts/4], xs[nPts/4*3], -10.0*PhysCon::eV, 0));
 	sm->addMeasurer(new Measurers::BasicMeasurers(nPts, dx, dt, "data/test/"));
 	sm->addMeasurer(new Measurers::TotProb(nPts, dx, sm->getNElecPtr(), "data/test/"));
@@ -548,7 +550,19 @@ void testIterationMethods(int stepType=-1){
 	auto t1 = std::chrono::high_resolution_clock::now();
 	auto t2 = std::chrono::high_resolution_clock::now();
 
+
+	if (stepType == -1 || stepType == 2){
+		omp_set_num_threads(omp_get_max_threads());
+		sm->setKineticOperator(cnKin);
+		std::cout << "\n\tRunning FD_L..." << std::endl;
+		t1 = std::chrono::high_resolution_clock::now();
+		sm->runFD_L(nSteps);
+		t2 = std::chrono::high_resolution_clock::now();
+		std::cout << "\t\tTook " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << " ms" << std::endl;
+	}
+
 	if (stepType == -1 || stepType == 0){
+		sm->setKineticOperator(osKin);
 		std::cout << "\n\tRunning OS_U2TU..." << std::endl;
 		t1 = std::chrono::high_resolution_clock::now();
 		sm->runOS_U2TU(nSteps);
@@ -557,19 +571,10 @@ void testIterationMethods(int stepType=-1){
 	}
 
 	if (stepType == -1 || stepType == 1){
+		sm->setKineticOperator(osKin);
 		std::cout << "\n\tRunning OS_UW2TUW..." << std::endl;
 		t1 = std::chrono::high_resolution_clock::now();
 		sm->runOS_UW2TUW(nSteps);
-		t2 = std::chrono::high_resolution_clock::now();
-		std::cout << "\t\tTook " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << " ms" << std::endl;
-	}
-
-	if (stepType == -1 || stepType == 2){
-		//sm->setKineticOperator_FDM(new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, new FDBCs::DirichletBC(0.0), new FDBCs::DirichletBC(0.0)));
-		sm->setKineticOperator(new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, new FDBCs::UniformHDTransparentBC(1000, sm->getNElec(), dx, dt), new FDBCs::UniformHDTransparentBC(1000, sm->getNElec(), dx, dt)));
-		std::cout << "\n\tRunning FD_L..." << std::endl;
-		t1 = std::chrono::high_resolution_clock::now();
-		sm->runFD_L(nSteps);
 		t2 = std::chrono::high_resolution_clock::now();
 		std::cout << "\t\tTook " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << " ms" << std::endl;
 	}

@@ -318,8 +318,7 @@ void SimulationManager::runOS_UW2TUW(int nSteps) {
 	double* tv = (double*) sq_malloc(sizeof(double) * nPts);
 
 	auto rMeasure = &SimulationManager::measure;
-	auto rUpdatePotential = &SimulationManager::updatePotential;
-	std::future<int> fM, fUP;
+	std::future<int> fM;
 
 	// initialize progress tracker
 	progTracker.reset(nSteps);
@@ -356,7 +355,7 @@ void SimulationManager::runFD_L(int nSteps){
 	if(kin_fdm == nullptr)
 		throw std::runtime_error("SimulationManager::runFD_L: Kinetic operator is not a finite difference method!");
 
-	double* tpot = (double*) sq_malloc(sizeof(double) * nPts);
+	double* tv = (double*) sq_malloc(sizeof(double) * nPts);
 	auto rMeasure = &SimulationManager::measure;
 	auto rUpdatePotential = &SimulationManager::updatePotential;
 	std::future<int> fM, fUP;
@@ -387,11 +386,11 @@ void SimulationManager::runFD_L(int nSteps){
 		}
 		// potentials n, n+1 are now calculated
 		// calculate averaged potential
-		vtls::addArrays(nPts, vs[index], vs[index + 1], tpot);
-		vtls::scaMulArray(nPts, 0.5, tpot);
+		vtls::addArrays(nPts, vs[index], vs[index + 1], tv);
+		vtls::scaMulArray(nPts, 0.5, tv);
 
 		// evalute n->n+1
-		kin_fdm->step(psis[index], tpot, spatialDamp, psis[index+1], nElec);
+		kin_fdm->step(psis[index], tv, spatialDamp, psis[index+1], nElec);
 		
 		// measure step n while n+1->n+2 begins
 		if(i != 0)
@@ -402,6 +401,14 @@ void SimulationManager::runFD_L(int nSteps){
 
 		iterateIndex();
 	}
+
+	if(asyncCalc)
+		fUP.get();
+	fM.get();
+
+	progTracker.update(nSteps);
+
+	sq_free(tv);
 }
 
 void SimulationManager::iterateIndex() {
