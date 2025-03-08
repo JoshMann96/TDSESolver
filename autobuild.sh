@@ -15,7 +15,8 @@ set -e
 #then echo ".venv folder already exists. Deleting..." & rm -r .venv
 #fi
 
-echo "$@"
+original_params=("$@")
+echo "${original_params[@]}"
 
 PYTHON_BINDINGS=TRUE
 
@@ -49,7 +50,14 @@ else
 mkdir build
 fi
 
-cmake -S . -B build "$@" -DPYTHON_BINDINGS=$PYTHON_BINDINGS
+filtered_params=()
+for param in "${original_params[@]}"; do
+    if [[ $param == -D* ]]; then
+        filtered_params+=("$param")
+    fi
+done
+
+cmake -S . -B build "${filtered_params[@]}" -DPYTHON_BINDINGS=$PYTHON_BINDINGS
 cd build
 make -j 8
 
