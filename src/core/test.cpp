@@ -4,6 +4,11 @@
 #include "SimulationManager.h"
 #include "WfcRhoTools.h"
 #include "blas.h"
+#include "CuTridiagSolver.h"
+
+#include "cuda.h"
+#include "cuda_runtime.h"
+#include "cublas_v2.h"
 
 void testTransparentBCs(){
     using namespace FDBCs;
@@ -495,6 +500,21 @@ void testInhomogeneousEigenState(){
 }
 
 void testIterationMethods(int stepType=-1){
+	/* FOR RUNNING WITH WISDOM DO THIS IN MAIN
+	char* wisdomFile = new char[64];
+	std::snprintf(wisdomFile, 64, "fftw_nt_%04d.wisdom", omp_get_max_threads());
+	fftw_init_threads();
+	fftw_import_wisdom_from_filename(wisdomFile);
+
+	//for(int i = 0; i < 3; i++)
+	//	testIterationMethods(i);
+	testIterationMethods();
+	std::cout << "Done" << std::endl;
+
+	fftw_export_wisdom_to_filename(wisdomFile);
+	delete[] wisdomFile;
+	*/
+
 	int nPts = 8192;
 	int nSteps = 1000;
 	double dx = 0.16*PhysCon::a0;
@@ -527,7 +547,7 @@ void testIterationMethods(int stepType=-1){
 	delete plotter;
 	}*/
 
-	sm->addMeasurer(new Measurers::DensityPlotter(nPts, sm->getNElecPtr(), dx, xs, sm->getDensity(), sm->getWeightsPtr(), 100, false));
+	//sm->addMeasurer(new Measurers::DensityPlotter(nPts, sm->getNElecPtr(), dx, xs, sm->getDensity(), sm->getWeightsPtr(), 100, false));
 	//sm->addMeasurer(new Measurers::PotentialPlotter(nPts, xs, 50, false));
 
 	std::cout << "\nFinding Eigenstates" << std::endl;
@@ -583,20 +603,106 @@ void testIterationMethods(int stepType=-1){
 	delete[] xs;
 }
 
+std::complex<double> randComplex(){
+	return std::complex<double>(rand() / (double)RAND_MAX - 0.5, rand() / (double)RAND_MAX - 0.5);
+}
+
+void testCuTridiagSolver(){
+	int n=20000, nrhs=64;
+	std::complex<double> *d = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*n);
+	std::complex<double> *ud = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*(n-1));
+	std::complex<double> *ld = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*(n-1));
+	std::complex<double> *x = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*n*nrhs);
+	std::complex<double> *b_c = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*n*nrhs);
+	std::complex<double> *b_m = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*n*nrhs);
+
+	// fill matrix and x with random values
+	for(int i = 0; i < n; i++){
+		d[i] = randComplex();
+		if(i < n-1){
+			ud[i] = randComplex();
+			ld[i] = randComplex();
+		}
+		for(int j = 0; j < nrhs; j++){
+			x[j*n+i] = randComplex();
+			//x[j*n+i] = (i == 8190) ? 1.0 : 0.0; // onehot to probe structure
+		}
+	}
+	// fill matrix with constants, vector with onehot to probe structure
+	/*for(int i = 0; i < n; i++){
+		d[i] = i;
+		if(i < n-1){
+			ud[i] = n+i;
+			ld[i] = 2*n+i;
+		}
+		for(int j = 0; j < nrhs; j++){
+			x[j*n+i] = (i == 8191) ? 1.0 : 0.0;
+		}
+	}*/
+
+	std::cout << "Testing tridiagonal matrix multiplication..." << std::endl;
+
+	// calculate tridiagonal matrix product manually
+	auto t1 = std::chrono::high_resolution_clock::now();
+	for(int j = 0; j < nrhs; j++){
+		for(int i = 0; i < n; i++){
+			b_m[j*n+i] = d[i]*x[j*n+i];
+			if(i < n-1)
+				b_m[j*n+i] += ud[i]*x[j*n+i+1];
+			if(i > 0)
+				b_m[j*n+i] += ld[i-1]*x[j*n+i-1];
+		}
+	}
+	auto t2 = std::chrono::high_resolution_clock::now();
+	std::cout << "\tManual product took " << std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() << " us" << std::endl;
+
+	//vtlsPrnt::printArray(n*nrhs, b_m);
+
+	// calculate tridiagonal matrix product with cudaTridiagonalSolverSystem
+	cudaTridiagonalSolverSystem* solver = new cudaTridiagonalSolverSystem(n, nrhs);
+	solver->setX(x);
+	solver->setOffDiag(ld, ud, cudaTridiagonalSolverSystem::RHS);
+	t1 = std::chrono::high_resolution_clock::now(); // the present state will be stored on the device, setX and setOffDiag is not called repeatedly
+	solver->rhsProduct(d, true);
+	t2 = std::chrono::high_resolution_clock::now();
+	solver->gatherRHS(b_c, true);
+	std::cout << "\tCUDA product took " << std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() << " us" << std::endl;
+	
+	// compare results
+	std::cout << "\tChecking for errors..." << std::endl;
+	for(int j = 0; j < nrhs; j++)
+		for(int i = 0; i < n; i++)
+			if(std::abs(b_c[j*n+i] - b_m[j*n+i]) > 1e-10)
+				std::cout << "\t\tMismatch at " << i << ", " << j << " : CUDA != CPU : " << b_c[j*n+i] << " != " << b_m[j*n+i] << std::endl;
+
+	std::cout << "Testing tridiagonal matrix inversion (undoing product)..." << std::endl;
+	solver->setOffDiag(ld, ud, cudaTridiagonalSolverSystem::LHS);
+	t1 = std::chrono::high_resolution_clock::now();
+	solver->solve(d, false, true);
+	solver->gatherX(b_c, false);
+	t2 = std::chrono::high_resolution_clock::now();
+	std::cout << "\tCUDA inversion took " << std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() << " us" << std::endl;
+	
+	// compare results, should be same as original vector
+	std::cout << "\tChecking for errors..." << std::endl;
+	for(int j = 0; j < nrhs; j++)
+		for(int i = 0; i < n; i++)
+			if(std::abs(x[j*n+i] - b_c[j*n+i]) > 1e-10)
+				std::cout << "\t\tMismatch at " << i << ", " << j << " : CUDA != EXPCTD : " << b_c[j*n+i] << " != " << x[j*n+i] << std::endl;
+
+	std::cout << "Done!" << std::endl;
+
+	delete solver;
+	sq_free(d);
+	sq_free(ud);
+	sq_free(ld);
+	sq_free(x);
+	sq_free(b_c);
+	sq_free(b_m);
+}
+
 int main(int argc, char** argv){
-	char* wisdomFile = new char[64];
-	std::snprintf(wisdomFile, 64, "fftw_nt_%04d.wisdom", omp_get_max_threads());
-	fftw_init_threads();
-	fftw_import_wisdom_from_filename(wisdomFile);
-
-	for(int i = 0; i < 3; i++)
-		testIterationMethods(i);
-	//testIterationMethods();
-	std::cout << "Done" << std::endl;
-
-	fftw_export_wisdom_to_filename(wisdomFile);
-	delete[] wisdomFile;
-
+	testCuTridiagSolver();
 
     return 0;
 }
