@@ -193,14 +193,19 @@ extern void cblas_zaxpy(const int N, const void *alpha, const void *X,
 extern void cblas_zdotu_sub(const int N, const void *X, const int incX,
                        const void *Y, const int incY, void *dotu);
 
-
 enum CBLAS_ORDER {CblasRowMajor=101, CblasColMajor=102};
+typedef CBLAS_ORDER CBLAS_LAYOUT;
 enum CBLAS_TRANSPOSE {CblasNoTrans=111, CblasTrans=112, CblasConjTrans=113};
 extern void cblas_dgemv(const enum CBLAS_ORDER order,
-                 const enum CBLAS_TRANSPOSE TransA, const int M, const int N,
-                 const double alpha, const double *A, const int lda,
-                 const double *X, const int incX, const double beta,
-				 double *Y, const int incY);
+                const enum CBLAS_TRANSPOSE TransA, const int M, const int N,
+                const double alpha, const double *A, const int lda,
+                const double *X, const int incX, const double beta,
+                double *Y, const int incY);
+void cblas_zgbmv(CBLAS_LAYOUT layout,
+                CBLAS_TRANSPOSE TransA, const int M, const int N,
+                const int KL, const int KU, const void *alpha,
+                const void *A, const int lda, const void *X,
+                const int incX, const void *beta, void *Y, const int incY);
 
 #ifdef __cplusplus
 }

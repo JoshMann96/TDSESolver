@@ -28,6 +28,8 @@ private:
 
     bool lhsOffdiagDefined, rhsOffdiagDefined;
 
+    cuDoubleComplex *bdyRHSL = nullptr, *bdyRHSR = nullptr; // boundary condition values for the LHS and RHS
+
     void cudaStatCheck(cudaError_t status){
         if (status != cudaSuccess)
             throw std::runtime_error("cudaTridiagonalSolverSystem : cuda error with status: " + std::string(cudaGetErrorString(status)));
@@ -47,8 +49,8 @@ public:
     cudaTridiagonalSolverSystem(int n, int nrhs);
     ~cudaTridiagonalSolverSystem();
     
-    // methods, descriptions assume system is A X = B X0
-    // virtual states which preserve the system are also supported
+    // descriptions assume system is A X = B X0
+    // virtual states which preserve the original system are also supported
 
     void solve(const std::complex<double> *DL, const std::complex<double> *D, const std::complex<double> *DU, std::complex<double> *x); // solve a tridiagonal system, x contains X0 and is overwritten with X
     void setOffDiag(const std::complex<double>* DL, const std::complex<double>* DU, Side side); // sets the internal off-diagonal elements of the tridiagonal system, side determines whether it is A or B being set
@@ -57,8 +59,9 @@ public:
     void gatherX(std::complex<double>* x, bool virt = false); // gathers the solution vector from the GPU to the CPU, virt = true returns the virtual solution
     void gatherRHS(std::complex<double>* x, bool virt = false); // gathers the RHS vector from the GPU to the CPU, virt = true returns the virtual RHS
     void rhsProduct(const std::complex<double>* D, bool destVirt = false, bool sourceVirt = false); // computes the product B X0 and stores it in the RHS, destVirt determines whether the result (B X0) is stored in the regular or virtual state, and sourceVirt determines whether the source (X0) is taken from the regular or virtual state
-    
-    // TODO below
+    void setBdyCond(std::complex<double> DOv, const std::complex<double>* RHSv, Side side); // sets the boundary conditions for the LHS or RHS of the physical system
+    void resetBdyCond(Side side); // resets the boundary conditions for the LHS or RHS of the physical system
+
     void solve(const std::complex<double> *D, bool destVirt = false, bool sourceVirt = false); // solves a tridiagonal system with the LHS diagonals already set, destVirt determines whether the solution X is stored in the regular or virtual state, and sourceVirt determines whether the source (B X0) is taken from the regular or virtual state
     void getRho(const double* weights, std::complex<double>* rho, bool virt = false); // calculates the density of the state on the GPU and returns it to the CPU, virt determines whether the density is calculated from the regular or virtual state
 };

@@ -207,20 +207,24 @@ namespace KineticOperators {
 		bool useCuda;
 		double dx, dt, m_eff;
 		std::complex<double> lhsOffDiag0, lhsDiag0, rhsDiag0, rhsOffDiag, potmul; // elements of LHS tridiagonal matrix
-		std::complex<double> *d, *ud, *ld;
+		std::complex<double> *d, *ud, *ld, *r_d=nullptr;
 
 		std::complex<double> *rbct=nullptr, *lbct=nullptr, *bct1=nullptr, *bct2=nullptr;
 	
-		cuTridiagSolver *cuSolver = nullptr;
+		cudaTridiagonalSolverSystem *cuSolver = nullptr;
 
 		void _step(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec, bool isVirtual);
 	public:
+		// note: if useCuda is true, then the CUDA solver will be used for the tridiagonal system
+		//       the present state of the system will be managed internally
 		CrankNicolson(int nPts, double dx, double dt, double m_eff, FDBCs::BoundaryCondition* leftBC, FDBCs::BoundaryCondition* rightBC, bool useCuda=true);
 		~CrankNicolson(){
 			sq_free(d);
 			sq_free(ud);
 			sq_free(ld);
-
+			if(r_d)
+				sq_free(r_d);
+			
 			if(rbct)
 				sq_free(rbct);
 			if(lbct)
@@ -237,6 +241,8 @@ namespace KineticOperators {
 		void step(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec){
 			_step(psi0, v, spatialDamp, targ, nElec, false);
 		};
+
+		// if using CUDA this function will not gather the results for targ
 		void stepVirtual(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec){
 			_step(psi0, v, spatialDamp, targ, nElec, true);
 		}

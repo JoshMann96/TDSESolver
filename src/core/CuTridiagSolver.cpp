@@ -126,19 +126,25 @@ void cudaTridiagonalSolverSystem::rhsProduct(const std::complex<double>* D, bool
     cudaStatCheck(  cudaMemcpy(rhsTemp, D, n * sizeof(cuDoubleComplex), cudaMemcpyHostToDevice));
     cudaStatCheck(  cublasZcopy_v2(cbHandle, n, rhsTemp, 1, cRHSMat+1, 3));
 
-    cuDoubleComplex alpha = make_cuDoubleComplex(1.0, 0.0);
-    cuDoubleComplex beta = make_cuDoubleComplex(0.0, 0.0);
+    cuDoubleComplex one = make_cuDoubleComplex(1.0, 0.0);
+    cuDoubleComplex zero = make_cuDoubleComplex(0.0, 0.0);
     // gbmv cannot work in-place, so if the source and dest are the same use a temporary buffer
     if(destVirt == sourceVirt){
         for(int i = 0; i < nrhs; i++){
-            cudaStatCheck(  cublasZgbmv_v2(cbHandle, CUBLAS_OP_N, n, n, 1, 1, &alpha, cRHSMat, 3, sourceX.data+(i*n), 1, &beta, rhsTemp, 1));
+            cudaStatCheck(  cublasZgbmv_v2(cbHandle, CUBLAS_OP_N, n, n, 1, 1, &one, cRHSMat, 3, sourceX.data+(i*n), 1, &zero, rhsTemp, 1));
             cudaStatCheck(  cublasZcopy_v2(cbHandle, n, rhsTemp, 1, destX.data+(i*n), 1));
         }
     }
     else{
         for(int i = 0; i < nrhs; i++)
-            cudaStatCheck(  cublasZgbmv_v2(cbHandle, CUBLAS_OP_N, n, n, 1, 1, &alpha, cRHSMat, 3, sourceX.data+(i*n), 1, &beta, destX.data+(i*n), 1));
+            cudaStatCheck(  cublasZgbmv_v2(cbHandle, CUBLAS_OP_N, n, n, 1, 1, &one, cRHSMat, 3, sourceX.data+(i*n), 1, &zero, destX.data+(i*n), 1));
     }
+
+    // enforce BCs if set
+    if(bdyRHSL != nullptr)
+        cudaStatCheck(  cublasZcopy_v2(cbHandle, nrhs, bdyRHSL, 1, destX.data, n));
+    if(bdyRHSR != nullptr)
+        cudaStatCheck(  cublasZcopy_v2(cbHandle, nrhs, bdyRHSR, 1, destX.data+(n-1), n));
 
     destX.status = OPERATED;
 }
@@ -162,6 +168,30 @@ void cudaTridiagonalSolverSystem::solve(const std::complex<double> *D, bool dest
         cudaStatCheck(  cudaMemcpy(tempState, sourceX.data, n * nrhs * sizeof(cuDoubleComplex), cudaMemcpyDeviceToDevice));
         cudaStatCheck(  cusparseZgtsv2(csHandle, n, nrhs, cDL, cD, cDU, tempState, n, cPBuf));
         cudaStatCheck(  cudaMemcpy(destX.data, tempState, n * nrhs * sizeof(cuDoubleComplex), cudaMemcpyDeviceToDevice));
+    }
+
+    destX.status = BARE;
+}
+
+void cudaTridiagonalSolverSystem::setBdyCond(std::complex<double> DOv, const std::complex<double>* RHSv, Side side){
+    cuDoubleComplex* myDO = side == LHS ? cDU : cDL+(n-1);
+    if (side == LHS && bdyRHSL == nullptr)
+        cudaStatCheck(  cudaMalloc((void**)&bdyRHSL, sizeof(cuDoubleComplex)*nrhs));
+    if (side == RHS && bdyRHSR == nullptr)
+        cudaStatCheck(  cudaMalloc((void**)&bdyRHSR, sizeof(cuDoubleComplex)*nrhs));
+    cuDoubleComplex* myRHS = side == LHS ? bdyRHSL : bdyRHSR;
+    
+    cudaStatCheck(  cudaMemcpy(myDO, &DOv, sizeof(cuDoubleComplex), cudaMemcpyHostToDevice));
+    cudaStatCheck(  cudaMemcpy(myRHS, RHSv, sizeof(cuDoubleComplex)*nrhs, cudaMemcpyHostToDevice));
+}
+
+void cudaTridiagonalSolverSystem::resetBdyCond(Side side){
+    if (side == LHS && bdyRHSL != nullptr) {
+        cudaStatCheck(  cudaFree(bdyRHSL));
+        bdyRHSL = nullptr;
+    } else if (side == RHS && bdyRHSR != nullptr) {
+        cudaStatCheck(  cudaFree(bdyRHSR));
+        bdyRHSR = nullptr;
     }
 }
 

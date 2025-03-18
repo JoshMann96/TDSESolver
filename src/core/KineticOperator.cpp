@@ -854,8 +854,22 @@ namespace KineticOperators {
 			lbct = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nElec);
 		if(rbct == nullptr)
 			rbct = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nElec);
-		if(useCuda && !cuSolver)
-			cuSolver = new cuTridiagSolver(nPts, nElec);
+		if(useCuda && !cuSolver){
+			cuSolver = new cudaTridiagonalSolverSystem(nPts, nElec);
+			if(!r_d)
+				r_d = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nPts);
+
+			std::fill_n(ud, nPts-1, lhsOffDiag0);
+			std::fill_n(ld, nPts-1, lhsOffDiag0);
+			ud[0] = lbc->getLHSAdjEle();
+			ld[nPts-2] = rbc->getLHSAdjEle();
+			cuSolver->setOffDiag(ld, ud, cudaTridiagonalSolverSystem::LHS);
+
+			std::fill_n(ud, nPts-1, rhsOffDiag);
+			std::fill_n(ld, nPts-1, rhsOffDiag);
+			cuSolver->setOffDiag(ld, ud, cudaTridiagonalSolverSystem::RHS);
+			cuSolver->setX(psi0);
+		}
 			
 		//prepare left BC
 		cblas_zcopy(nElec, psi0, nPts, bct1, 1); // map first element of all wavefunctions to bct1
@@ -878,28 +892,42 @@ namespace KineticOperators {
 		//prepare LHS matrix
 		std::fill_n(d, nPts, lhsDiag0);
 		vtls::scaMulAddArrays(nPts-2, potmul, &v[1], &d[1]); // d += potmul*v, leave BCs alone
-		std::fill_n(ud, nPts-1, lhsOffDiag0);
-		std::fill_n(ld, nPts-1, lhsOffDiag0);
 
 		d[0] = lbc->getLHSEle();
 		d[nPts-1] = rbc->getLHSEle();
 		ud[0] = lbc->getLHSAdjEle();
 		ld[nPts-2] = rbc->getLHSAdjEle();
+		if(useCuda){
+			cuSolver->setBdyCond(ud[0], lbct, cudaTridiagonalSolverSystem::LHS);
+			cuSolver->setBdyCond(ld[nPts-2], rbct, cudaTridiagonalSolverSystem::RHS);
 
-		// evaluate RHS
-		#pragma omp parallel for collapse(2)
-		for(int j = 0; j < nElec; j++)
-			for(int k = 0; k < nPts-1; k++)
-				targ[j*nPts+k] = (-potmul*v[k]+rhsDiag0)*psi0[j*nPts+k] +
-					(rhsOffDiag*psi0[j*nPts+k-1] + rhsOffDiag*psi0[j*nPts+k+1]);
+			// evaluate RHS
+			std::fill_n(r_d, nPts, rhsDiag0);
+			vtls::scaMulAddArrays(nPts, -potmul, v, r_d); // r_d += potmul*v
+			cuSolver->rhsProduct(r_d, false, isVirtual);
+		}
+		else{
+			std::fill_n(ud, nPts-1, lhsOffDiag0);
+			std::fill_n(ld, nPts-1, lhsOffDiag0);
 
-		// apply RHS BC
-		cblas_zcopy(nElec, lbct, 1, targ, nPts);
-		cblas_zcopy(nElec, rbct, 1, &targ[nPts-1], nPts);
+			// evaluate RHS
+			#pragma omp parallel for collapse(2)
+			for(int j = 0; j < nElec; j++)
+				for(int k = 0; k < nPts-1; k++)
+					targ[j*nPts+k] = (-potmul*v[k]+rhsDiag0)*psi0[j*nPts+k] +
+						(rhsOffDiag*psi0[j*nPts+k-1] + rhsOffDiag*psi0[j*nPts+k+1]);
+
+			// apply RHS BC
+			cblas_zcopy(nElec, lbct, 1, targ, nPts);
+			cblas_zcopy(nElec, rbct, 1, &targ[nPts-1], nPts);
+		}
 
 		//SOLVE
-		if(useCuda)
-			cuSolver->solve(ld, d, ud, targ);
+		if(useCuda){
+			cuSolver->solve(d, isVirtual, isVirtual);
+			if(!isVirtual)
+				cuSolver->gatherX(targ, false);
+		}
 		else{
 			int info;
 			LAPACK_zgtsv(&nPts, &nElec, reinterpret_cast<dcomplex*>(ld), reinterpret_cast<dcomplex*>(d), reinterpret_cast<dcomplex*>(ud), reinterpret_cast<dcomplex*>(targ), &nPts, &info);

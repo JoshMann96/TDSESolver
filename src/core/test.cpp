@@ -608,7 +608,7 @@ std::complex<double> randComplex(){
 }
 
 void testCuTridiagSolver(){
-	int n=20000, nrhs=64;
+	int n=32768, nrhs=128;
 	std::complex<double> *d = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*n);
 	std::complex<double> *ud = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*(n-1));
 	std::complex<double> *ld = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*(n-1));
@@ -645,16 +645,25 @@ void testCuTridiagSolver(){
 	// calculate tridiagonal matrix product manually
 	auto t1 = std::chrono::high_resolution_clock::now();
 	for(int j = 0; j < nrhs; j++){
-		for(int i = 0; i < n; i++){
-			b_m[j*n+i] = d[i]*x[j*n+i];
-			if(i < n-1)
-				b_m[j*n+i] += ud[i]*x[j*n+i+1];
-			if(i > 0)
-				b_m[j*n+i] += ld[i-1]*x[j*n+i-1];
-		}
+		b_m[j*n] = d[0]*x[j*n] + ud[0]*x[j*n+1];
+		for(int i = 1; i < n-1; i++)
+			b_m[j*n+i] = d[i]*x[j*n+i] + ud[i]*x[j*n+i+1] + ld[i-1]*x[j*n+i-1];
+		b_m[j*n+n-1] = d[n-1]*x[j*n+n-1] + ld[n-2]*x[j*n+n-2];
 	}
 	auto t2 = std::chrono::high_resolution_clock::now();
-	std::cout << "\tManual product took " << std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() << " us" << std::endl;
+	std::cout << "\tManual product " << std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() << " us" << std::endl;
+
+	// calculate using cblas
+	std::complex<double>* amat = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*3*n);
+	std::fill_n(amat, 3*n, 0.0);
+	cblas_zcopy(n-1, ld, 1, amat+2, 3);
+	cblas_zcopy(n-1, ud, 1, amat+3, 3);
+	t1 = std::chrono::high_resolution_clock::now();
+	cblas_zcopy(n, d, 1, amat+1, 3);
+	std::complex<double> alpha(1.0,0.0), beta(0.0,0.0);
+	cblas_zgbmv(CblasColMajor, CblasNoTrans, n, n, 1, 1, &alpha, amat, 3, x, 1, &beta, b_c, 1);
+	t2 = std::chrono::high_resolution_clock::now();
+	std::cout << "\tBLAS product took " << std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() << " us" << std::endl;
 
 	//vtlsPrnt::printArray(n*nrhs, b_m);
 
@@ -676,6 +685,20 @@ void testCuTridiagSolver(){
 				std::cout << "\t\tMismatch at " << i << ", " << j << " : CUDA != CPU : " << b_c[j*n+i] << " != " << b_m[j*n+i] << std::endl;
 
 	std::cout << "Testing tridiagonal matrix inversion (undoing product)..." << std::endl;
+	std::complex<double>* ldt = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*(n-1));
+	std::complex<double>* udt = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*(n-1));
+	std::complex<double>* dt = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*n);
+	// cpu
+	t1 = std::chrono::high_resolution_clock::now();
+	cblas_zcopy(n-1, ld, 1, ldt, 1);
+	cblas_zcopy(n-1, ud, 1, udt, 1);
+	cblas_zcopy(n, d, 1, dt, 1);
+	int info;
+	LAPACK_zgtsv(&n, &nrhs, reinterpret_cast<dcomplex*>(ldt), reinterpret_cast<dcomplex*>(dt), reinterpret_cast<dcomplex*>(udt), reinterpret_cast<dcomplex*>(b_m), &n, &info);
+	t2 = std::chrono::high_resolution_clock::now();
+	std::cout << "\tLAPACK inversion took " << std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() << " us" << std::endl;
+
+	// gpu
 	solver->setOffDiag(ld, ud, cudaTridiagonalSolverSystem::LHS);
 	t1 = std::chrono::high_resolution_clock::now();
 	solver->solve(d, false, true);
@@ -685,6 +708,12 @@ void testCuTridiagSolver(){
 	
 	// compare results, should be same as original vector
 	std::cout << "\tChecking for errors..." << std::endl;
+	// cpu
+	for(int j = 0; j < nrhs; j++)
+		for(int i = 0; i < n; i++)
+			if(std::abs(x[j*n+i] - b_m[j*n+i]) > 1e-10)
+				std::cout << "\t\tMismatch at " << i << ", " << j << " : CPU != EXPCTD : " << b_m[j*n+i] << " != " << x[j*n+i] << std::endl;
+	// gpu
 	for(int j = 0; j < nrhs; j++)
 		for(int i = 0; i < n; i++)
 			if(std::abs(x[j*n+i] - b_c[j*n+i]) > 1e-10)
@@ -699,10 +728,12 @@ void testCuTridiagSolver(){
 	sq_free(x);
 	sq_free(b_c);
 	sq_free(b_m);
+	sq_free(amat);
 }
 
 int main(int argc, char** argv){
 	testCuTridiagSolver();
+	//testIterationMethods(2);
 
     return 0;
 }
