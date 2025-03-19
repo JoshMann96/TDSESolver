@@ -63,5 +63,5 @@ public:
     void resetBdyCond(Side side); // resets the boundary conditions for the LHS or RHS of the physical system
 
     void solve(const std::complex<double> *D, bool destVirt = false, bool sourceVirt = false); // solves a tridiagonal system with the LHS diagonals already set, destVirt determines whether the solution X is stored in the regular or virtual state, and sourceVirt determines whether the source (B X0) is taken from the regular or virtual state
-    void getRho(const double* weights, std::complex<double>* rho, bool virt = false); // calculates the density of the state on the GPU and returns it to the CPU, virt determines whether the density is calculated from the regular or virtual state
+    void calcRawRho(const double* weights, double* rho, bool virt = false); // calculates the density of the state on the GPU and returns it to the CPU, virt determines whether the density is calculated from the regular or virtual state
 };

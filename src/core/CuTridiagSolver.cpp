@@ -195,6 +195,6 @@ void cudaTridiagonalSolverSystem::resetBdyCond(Side side){
     }
 }
 
-void cudaTridiagonalSolverSystem::getRho(const double* weights, std::complex<double>* rho, bool virt) {
-    std::cerr << "cudaTridiagonalSolverSystem::calcRho : Not implemented." << std::endl;
+void cudaTridiagonalSolverSystem::calcRawRho(const double* weights, double* rho, bool virt) {
+    std::cerr << "cudaTridiagonalSolverSystem::calcRawRho : Not implemented." << std::endl;
 }

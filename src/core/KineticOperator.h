@@ -188,6 +188,7 @@ namespace KineticOperators {
 		virtual void step(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec) = 0;
 		virtual void findInhomogeneousEigenStates(double* v, double* es, std::complex<double>* states, int nElec) = 0;
 		void projectHistory(std::complex<double>* psi, std::complex<double>* phsL, std::complex<double>* phsR, double* v, int nElec);
+		virtual bool calcRawRhoByDevice(const double* weights, double* rho, bool virt) = 0;
 
 		void setBC(FDBCs::BoundaryCondition* bc, FDBCs::BCSide side) { 
 			switch (side) {
@@ -250,6 +251,8 @@ namespace KineticOperators {
 		// iteratively solve inhomogeneous system, k0s and v0s are wavenumbers and potential values for the initial states
 		void findInhomogeneousEigenStates(double* v, double* es, std::complex<double>* states, int nElec);
 		double evaluateKineticEnergy(std::complex<double>* psi);
+
+		bool calcRawRhoByDevice(const double* weights, double* rho, bool virt);
 
 		static double wavenumberFromPhase(std::complex<double> phase, double v, double dx, double dt, double m_eff){
 			dx /= PhysCon::a0;

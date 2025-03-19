@@ -1062,4 +1062,12 @@ namespace KineticOperators {
 		return std::real(vtlsInt::rSumMulConj(nPts-2, &psi[1], temp, 1.0) / vtls::getNorm(nPts-2, &psi[1], 1.0));
 	}
 
+	bool CrankNicolson::calcRawRhoByDevice(const double* weights, double* rho, bool virt){
+		if(useCuda)
+			return false;
+
+		cuSolver->calcRawRho(weights, rho, virt);
+		return true;
+	}
+
 }
