@@ -22,7 +22,7 @@ private:
     cublasHandle_t cbHandle;
     cuDoubleComplex *cDL, *cD, *cDU; // LHS matrix definition
     cuDoubleComplex *_cX, *_cXV, *cPBuf, *tempState = nullptr; // solution vector (data) and workspace
-    double *cRho; // density
+    double *cRho, *cWeights; // density
 
     cuDoubleComplex *cRHSMat, *rhsTemp; // RHS matrix values
 

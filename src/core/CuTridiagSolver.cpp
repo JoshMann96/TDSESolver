@@ -1,4 +1,5 @@
 #include "CuTridiagSolver.h"
+#include "cudaTools.cuh"
 
 cudaTridiagonalSolverSystem::cudaTridiagonalSolverSystem(int n, int nrhs) : n(n), nrhs(nrhs), lhsOffdiagDefined(false), rhsOffdiagDefined(false) {
     cudaStatCheck(  cusparseCreate(&csHandle));
@@ -17,6 +18,7 @@ cudaTridiagonalSolverSystem::cudaTridiagonalSolverSystem(int n, int nrhs) : n(n)
 
     // density
     cudaStatCheck(  cudaMalloc((void**)&cRho, n * sizeof(double)));
+    cudaStatCheck(  cudaMalloc((void**)&cWeights, nrhs * sizeof(double)));
 
     // workspace
     size_t cPBufSize;
@@ -46,6 +48,7 @@ cudaTridiagonalSolverSystem::~cudaTridiagonalSolverSystem() {
         cudaStatCheck(  cudaFree(tempState));
 
     cudaStatCheck(  cudaFree(cRho));
+    cudaStatCheck(  cudaFree(cWeights));
 
     cudaStatCheck(  cudaFree(cPBuf));
 }
@@ -196,5 +199,11 @@ void cudaTridiagonalSolverSystem::resetBdyCond(Side side){
 }
 
 void cudaTridiagonalSolverSystem::calcRawRho(const double* weights, double* rho, bool virt) {
-    std::cerr << "cudaTridiagonalSolverSystem::calcRawRho : Not implemented." << std::endl;
+    CudaVector& myX = virt ? cXV : cX;
+    if (myX.status != BARE)
+        throw std::runtime_error("cudaTridiagonalSolverSystem::calcRawRho : Stored state is not BARE.");
+    
+    cudaStatCheck(  cudaMemcpy(cWeights, weights, nrhs * sizeof(double), cudaMemcpyHostToDevice));
+    cudaStatCheck(  cudaDensity(cWeights, myX.data, cRho, n, nrhs));
+    cudaStatCheck(  cudaMemcpy(rho, cRho, n * sizeof(double), cudaMemcpyDeviceToHost)); // TEMPORARY FOR TESTING
 }

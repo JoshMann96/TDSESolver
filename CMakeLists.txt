@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(TDSESolver)
+project(TDSESolver LANGUAGES C CXX CUDA)
 
 set(CMAKE_CXX_STANDARD 17)
 

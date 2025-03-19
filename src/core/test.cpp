@@ -516,7 +516,7 @@ void testIterationMethods(int stepType=-1){
 	*/
 
 	int nPts = 8192;
-	int nSteps = 1000;
+	int nSteps = 100000;
 	double dx = 0.16*PhysCon::a0;
 	double dt = 0.1*PhysCon::hbar/PhysCon::auE_ha;
 
@@ -526,6 +526,7 @@ void testIterationMethods(int stepType=-1){
 
 	SimulationManager* sm = new SimulationManager(nPts, dx, dt);
 	KineticOperators::KineticOperator* cnKin = new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, new FDBCs::DirichletBC(0.0), new FDBCs::DirichletBC(0.0), true);
+	KineticOperators::KineticOperator* cnKin_cpu = new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, new FDBCs::DirichletBC(0.0), new FDBCs::DirichletBC(0.0), false);
 	KineticOperators::KineticOperator* osKin = new KineticOperators::GenDisp_PSM_FreeElec(nPts, dx, dt, 1.0, FFTW_ESTIMATE);
 	sm->setKineticOperator(cnKin);
 	sm->setWeight(new WfcToRho::BoundFermiGas(5.0*PhysCon::eV));
@@ -535,22 +536,22 @@ void testIterationMethods(int stepType=-1){
 	sm->addMeasurer(new Measurers::TotProb(nPts, dx, sm->getNElecPtr(), "data/test/"));
 	sm->addMeasurer(new Measurers::VDProbCurrent(nPts, dx, sm->getNElecPtr(), 0, 0, "surf", "data/test/"));
 
-	// plot potential
-	/*{
-	plotting::GNUPlotter* plotter = new plotting::GNUPlotter();
-	double* temp = new double[nPts];
-	sm->getPotPointer()->getVBare(0.0, temp);
-	plotter->update(nPts, 1, xs, temp);
-	std::cout << "Press enter to continue..." << std::endl;
-	std::cin.get();
-	delete[] temp;
-	delete plotter;
-	}*/
+	if(false){
+		plotting::GNUPlotter* plotter = new plotting::GNUPlotter();
+		double* temp = new double[nPts];
+		sm->getPotPointer()->getVBare(0.0, temp);
+		plotter->update(nPts, 1, xs, temp);
+		std::cout << "Press enter to continue..." << std::endl;
+		std::cin.get();
+		delete[] temp;
+		delete plotter;
+	}
 
-	//sm->addMeasurer(new Measurers::DensityPlotter(nPts, sm->getNElecPtr(), dx, xs, sm->getDensity(), sm->getWeightsPtr(), 100, false));
+	sm->addMeasurer(new Measurers::DensityPlotter(nPts, sm->getNElecPtr(), dx, xs, sm->getDensity(), sm->getWeightsPtr(), 1000, false));
 	//sm->addMeasurer(new Measurers::PotentialPlotter(nPts, xs, 50, false));
 
-	std::cout << "\nFinding Eigenstates" << std::endl;
+	std::cout << "Testing the implemented iteration methods..." << std::endl;
+	std::cout << "\tFinding Eigenstates..." << std::endl;
 	sm->findEigenStates(-10.0*PhysCon::eV, -5.0*PhysCon::eV);
 
 	// remove finite well
@@ -562,7 +563,7 @@ void testIterationMethods(int stepType=-1){
 		)
 	);*/
 
-	std::cout << "\nTime iterating with "  << sm->getNElec() << " wavefunctions, " << sm->getNumPoints() << " gridpoints, " << nSteps << " steps..." << std::endl;
+	std::cout << "\tTime iterating with "  << sm->getNElec() << " wavefunctions, " << sm->getNumPoints() << " gridpoints, " << nSteps << " steps..." << std::endl;
 
 	//std::cout << "\n\tInitializing FFTW..." << std::endl;
 	//sm->runOS_U2TU(1);
@@ -573,8 +574,25 @@ void testIterationMethods(int stepType=-1){
 
 	if (stepType == -1 || stepType == 2){
 		omp_set_num_threads(omp_get_max_threads());
+
+		delete cnKin;
+		cnKin = new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, 
+			new FDBCs::UniformHDTransparentBC(10000, sm->getNElec(), dx, dt),
+			new FDBCs::UniformHDTransparentBC(10000, sm->getNElec(), dx, dt),
+			true);
+
 		sm->setKineticOperator(cnKin);
-		std::cout << "\n\tRunning FD_L..." << std::endl;
+		std::cout << "\tRunning FD_L GPU..." << std::endl;
+		t1 = std::chrono::high_resolution_clock::now();
+		sm->runFD_L(nSteps);
+		t2 = std::chrono::high_resolution_clock::now();
+		std::cout << "\t\tTook " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << " ms" << std::endl;
+	}
+
+	if (stepType == -1 || stepType == 3){
+		omp_set_num_threads(omp_get_max_threads());
+		sm->setKineticOperator(cnKin_cpu);
+		std::cout << "\tRunning FD_L CPU..." << std::endl;
 		t1 = std::chrono::high_resolution_clock::now();
 		sm->runFD_L(nSteps);
 		t2 = std::chrono::high_resolution_clock::now();
@@ -583,7 +601,7 @@ void testIterationMethods(int stepType=-1){
 
 	if (stepType == -1 || stepType == 0){
 		sm->setKineticOperator(osKin);
-		std::cout << "\n\tRunning OS_U2TU..." << std::endl;
+		std::cout << "\tRunning OS_U2TU..." << std::endl;
 		t1 = std::chrono::high_resolution_clock::now();
 		sm->runOS_U2TU(nSteps);
 		t2 = std::chrono::high_resolution_clock::now();
@@ -592,14 +610,19 @@ void testIterationMethods(int stepType=-1){
 
 	if (stepType == -1 || stepType == 1){
 		sm->setKineticOperator(osKin);
-		std::cout << "\n\tRunning OS_UW2TUW..." << std::endl;
+		std::cout << "\tRunning OS_UW2TUW..." << std::endl;
 		t1 = std::chrono::high_resolution_clock::now();
 		sm->runOS_UW2TUW(nSteps);
 		t2 = std::chrono::high_resolution_clock::now();
 		std::cout << "\t\tTook " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << " ms" << std::endl;
 	}
 
+	std::cout << "Done!" << std::endl;
+
 	delete sm;
+	delete cnKin;
+	delete cnKin_cpu;
+	delete osKin;
 	delete[] xs;
 }
 
@@ -719,6 +742,35 @@ void testCuTridiagSolver(){
 			if(std::abs(x[j*n+i] - b_c[j*n+i]) > 1e-10)
 				std::cout << "\t\tMismatch at " << i << ", " << j << " : CUDA != EXPCTD : " << b_c[j*n+i] << " != " << x[j*n+i] << std::endl;
 
+	// test finding the density
+	std::cout << "Testing calculating the density..." << std::endl;
+	double* rho = (double*)sq_malloc(sizeof(double)*n);
+	double* rho_c = (double*)sq_malloc(sizeof(double)*n);
+	double* weights = (double*)sq_malloc(sizeof(double)*nrhs);
+	std::fill_n(weights, nrhs, 1.0);
+
+	// cpu
+	t1 = std::chrono::high_resolution_clock::now();
+	for(int i = 0; i < n; i++){
+		rho[i] = 0;
+		for(int j = 0; j < nrhs; j++)
+			rho[i] += weights[j]*std::abs(x[j*n+i]*x[j*n+i]);
+	}
+	t2 = std::chrono::high_resolution_clock::now();
+	std::cout << "\tCPU density took " << std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() << " us" << std::endl;
+
+	// gpu
+	t1 = std::chrono::high_resolution_clock::now();
+	solver->calcRawRho(weights, rho_c, false);
+	t2 = std::chrono::high_resolution_clock::now();
+	std::cout << "\tCUDA density took " << std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() << " us" << std::endl;
+
+	// compare results
+	std::cout << "\tChecking for errors..." << std::endl;
+	for(int i = 0; i < n; i++)
+		if(std::abs(rho[i] - rho_c[i]) > 1e-10)
+			std::cout << "\t\tMismatch at " << i << " : CUDA != CPU : " << rho_c[i] << " != " << rho[i] << std::endl;
+
 	std::cout << "Done!" << std::endl;
 
 	delete solver;
@@ -729,7 +781,13 @@ void testCuTridiagSolver(){
 	sq_free(b_c);
 	sq_free(b_m);
 	sq_free(amat);
+	sq_free(ldt);
+	sq_free(udt);
+	sq_free(dt);
+	sq_free(rho);
+	sq_free(rho_c);
 }
+
 
 int main(int argc, char** argv){
 	testCuTridiagSolver();
