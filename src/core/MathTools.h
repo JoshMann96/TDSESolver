@@ -209,11 +209,12 @@ namespace vtls {
 	private:
 		int len;
 		fftw_plan fp, bp;
-		std::complex<double> *temp1, *temp2;
+		std::complex<double> *mask, *temp;
 	public:
 		MaskConvolver<T>(int len, T* constArr);
 		~MaskConvolver();
 		void compute(T* arr, T* targ);
+		void compute(T* arr);
 	};
 
 	// Multiplies triag*diag*triag, with triag being a Hermitian matrix (upper triangular rep, column major) and diag being diagonal

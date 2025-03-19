@@ -43,27 +43,27 @@ namespace vtls{
 
 	template<class T>
 	MaskConvolver<T>::MaskConvolver(int len, T* constArr) : len(len){
-		temp1 = reinterpret_cast<std::complex<double>*>(sq_malloc(sizeof(fftw_complex)*len));
-		temp2 = reinterpret_cast<std::complex<double>*>(sq_malloc(sizeof(fftw_complex)*len));
+		mask = reinterpret_cast<std::complex<double>*>(sq_malloc(sizeof(fftw_complex)*len));
+		temp = reinterpret_cast<std::complex<double>*>(sq_malloc(sizeof(fftw_complex)*len));
 
 		mtx.lock();
 
 		fftw_plan_with_nthreads(omp_get_max_threads());
 		//std::cout << "Assigned FFTW threads: " << fftw_planner_nthreads() << std:: endl;
 
-		fp = fftw_plan_dft(1, &len, reinterpret_cast<fftw_complex*>(temp1), reinterpret_cast<fftw_complex*>(temp1), FFTW_FORWARD, FFTW_PATIENT);
-		bp = fftw_plan_dft(1, &len, reinterpret_cast<fftw_complex*>(temp2), reinterpret_cast<fftw_complex*>(temp2), FFTW_BACKWARD, FFTW_PATIENT);
+		fp = fftw_plan_dft(1, &len, reinterpret_cast<fftw_complex*>(mask), reinterpret_cast<fftw_complex*>(mask), FFTW_FORWARD, FFTW_PATIENT);
+		bp = fftw_plan_dft(1, &len, reinterpret_cast<fftw_complex*>(temp), reinterpret_cast<fftw_complex*>(temp), FFTW_BACKWARD, FFTW_PATIENT);
 
 		mtx.unlock();
 
-		vtls::copyArray(len, constArr, temp1);
-		fftw_execute_dft(fp, reinterpret_cast<fftw_complex*>(temp1), reinterpret_cast<fftw_complex*>(temp1));
+		vtls::copyArray(len, constArr, mask);
+		fftw_execute_dft(fp, reinterpret_cast<fftw_complex*>(mask), reinterpret_cast<fftw_complex*>(mask));
 	}
 
 	template<class T>
 	MaskConvolver<T>::~MaskConvolver(){
-		sq_free(temp1);
-		sq_free(temp2);
+		sq_free(mask);
+		sq_free(temp);
 		mtx.lock();
 		fftw_destroy_plan(fp);
 		fftw_destroy_plan(bp);
@@ -72,14 +72,27 @@ namespace vtls{
 
 	template<class T>
 	void MaskConvolver<T>::compute(T* arr, T* targ){
-		vtls::copyArray(len, arr, temp2);
+		vtls::copyArray(len, arr, temp);
 
-		fftw_execute_dft(fp, reinterpret_cast<fftw_complex*>(temp2), reinterpret_cast<fftw_complex*>(temp2));
+		fftw_execute_dft(fp, reinterpret_cast<fftw_complex*>(temp), reinterpret_cast<fftw_complex*>(temp));
 
-		vtls::seqMulArrays(len, temp1, temp2);
+		vtls::seqMulArrays(len, mask, temp);
 
-		fftw_execute_dft(bp, reinterpret_cast<fftw_complex*>(temp2), reinterpret_cast<fftw_complex*>(temp2));
+		fftw_execute_dft(bp, reinterpret_cast<fftw_complex*>(temp), reinterpret_cast<fftw_complex*>(temp));
 
-		vtls::scaMulArrayRe(len, 1.0/len, temp2, targ);
+		vtls::scaMulArrayRe(len, 1.0/len, temp, targ);
+	}
+
+	template<class T>
+	void MaskConvolver<T>::compute(T* arr){
+		vtls::copyArray(len, arr, temp);
+
+		fftw_execute_dft(fp, reinterpret_cast<fftw_complex*>(temp), reinterpret_cast<fftw_complex*>(temp));
+
+		vtls::seqMulArrays(len, mask, temp);
+
+		fftw_execute_dft(bp, reinterpret_cast<fftw_complex*>(temp), reinterpret_cast<fftw_complex*>(temp));
+
+		vtls::scaMulArrayRe(len, 1.0/len, temp, arr);
 	}
 }
