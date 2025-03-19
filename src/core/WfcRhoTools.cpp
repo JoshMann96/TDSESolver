@@ -112,26 +112,18 @@ namespace WfcToRho {
 		sq_free(idx);
 	}
 
-	DirectDensity::~DirectDensity(){
-		if(psi2)
-			sq_free(psi2);
-	}
-
-	void DirectDensity::calcRho(int nPts, int nElec, double dx, double* weights, std::complex<double>* psi, double* rho) {
-		if (first) {
-			if(psi2)
-				sq_free(psi2);
-			psi2 = (double*) sq_malloc(sizeof(double)*nPts * nElec);
-			first = 0;
-		}
-
+	void Density::calcRawRho(int nPts, int nElec, const double* weights, const std::complex<double>* psi, double* psi2_work, double* rho){
 		std::fill_n(rho, nPts, 0);
-		vtls::normSqr(nPts * nElec, psi, psi2);
+		vtls::normSqr(nPts * nElec, psi, psi2_work);
 		for (int i = 0; i < nElec; i++) {
 			double pref = weights[i];
 			for (int j = 0; j < nPts; j++)
-				rho[j] += psi2[i * nPts + j] * pref;
+				rho[j] += psi2_work[i * nPts + j] * pref;
 		}
+	}
+
+	void DirectDensity::calcRho(int nPts, int nElec, double dx, double* rho) {
+		return;
 	}
 
 	CylindricalDensity::CylindricalDensity(double center, double radius, double minX) : center(center), radius(radius), minX(minX) {};
@@ -166,32 +158,25 @@ namespace WfcToRho {
 			thinning[i] = radius / (i * dx - center - minX);
 	}
 
-	void CylindricalDensity::calcRho(int nPts, int nElec, double dx, double* weights, std::complex<double>* psi, double* rho) {
+	void CylindricalDensity::calcRho(int nPts, int nElec, double dx, double* rho) {
 		if (first)
 			doFirst(nPts, dx);
-
-		baseDens->calcRho(nPts, nElec, dx, weights, psi, rho);
 
 		vtls::seqMulArrays(endIndex-startIndex, &thinning[startIndex], &rho[startIndex]);
 	}
 	
 	GaussianSmoothedDensity::~GaussianSmoothedDensity(){
-		if(psi2)
-			sq_free(psi2);
 		if(tempRho)
 			sq_free(tempRho);
 		if(conv)
 			delete conv;
 	}
 
-	void GaussianSmoothedDensity::calcRho(int nPts, int nElec, double dx, double* weights, std::complex<double>* psi, double* rho) {
+	void GaussianSmoothedDensity::calcRho(int nPts, int nElec, double dx, double* rho) {
 		if (first) {
 			//Initialize variables
-			if(psi2)
-				sq_free(psi2);
 			if(tempRho)
 				sq_free(tempRho);
-			psi2 = (double*)sq_malloc(sizeof(double)*nPts*nElec);
 			double* mask = (double*)sq_malloc(sizeof(double)*nPts);
 			tempRho = (double*)sq_malloc(sizeof(double)*nPts);
 			first = 0;
@@ -214,17 +199,6 @@ namespace WfcToRho {
 			sq_free(mask);
 		}
 
-		std::fill_n(tempRho, nPts, 0);
-		vtls::normSqr(nPts * nElec, psi, psi2);
-		for (int i = 0; i < nElec; i++) {
-			double pref = weights[i];
-			for (int j = 0; j < nPts; j++)
-				tempRho[j] += psi2[i * nPts + j] * pref;
-		}
-
-		conv->compute(tempRho, rho);
-
-		for (int i = 0; i < nPts; i++)
-			rho[i] = std::real(tempRho[i]);
+		conv->compute(rho);
 	}
 }

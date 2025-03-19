@@ -51,8 +51,17 @@ namespace WfcToRho {
 	};
 
 	class Density {
+	private:
+		double* psi2_work = nullptr;
 	public:
-		virtual void calcRho(int nPts, int nElec, double dx, double* weights, std::complex<double>* psi, double* rho) = 0;
+		~Density() { if (psi2_work) sq_free(psi2_work); }
+		static void calcRawRho(int nPts, int nElec, const double* weights, const std::complex<double>* psi, double* psi2_work, double* rho);
+		void calcRho(int nPts, int nElec, double dx, const double* weights, const std::complex<double>* psi, double* rho){
+			if (!psi2_work) psi2_work = (double*)sq_malloc(sizeof(double) * nPts * nElec);
+			calcRawRho(nPts, nElec, weights, psi, psi2_work, rho);
+			calcRho(nPts, nElec, dx, rho);
+		};
+		virtual void calcRho(int nPts, int nElec, double dx, double* rho) = 0; // rho is in/out (raw rho then processed rho)
 	};
 
 	class DirectDensity :
@@ -60,10 +69,8 @@ namespace WfcToRho {
 	{
 	private:
 		int first = 1;
-		double* psi2=nullptr;
 	public:
-		~DirectDensity();
-		void calcRho(int nPts, int nElec, double dx, double* weights, std::complex<double>* psi, double* rho);
+		void calcRho(int nPts, int nElec, double dx, double* rho);
 	};
 
 	class CylindricalDensity :
@@ -78,7 +85,7 @@ namespace WfcToRho {
 	public:
 		CylindricalDensity(double center, double radius, double minX);
 		~CylindricalDensity();
-		void calcRho(int nPts, int nElec, double dx, double* weights, std::complex<double>* psi, double* rho);
+		void calcRho(int nPts, int nElec, double dx, double* rho);
 		void doFirst(int nPts, double dx);
 
 		void setBaseDens(Density* baseDens) { this->baseDens = baseDens; first = 1; };
@@ -89,11 +96,11 @@ namespace WfcToRho {
 	{
 	private:
 		int first = 1;
-		double *psi2=nullptr, *tempRho=nullptr, sig;
+		double *tempRho=nullptr, sig;
 		vtls::MaskConvolver<double>* conv = nullptr;
 	public:
 		GaussianSmoothedDensity(double sig) : sig(sig) {}
 		~GaussianSmoothedDensity();
-		void calcRho(int nPts, int nElec, double dx, double* weights, std::complex<double>* psi, double* rho);
+		void calcRho(int nPts, int nElec, double dx, double* rho);
 	};
 }
