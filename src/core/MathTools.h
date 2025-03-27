@@ -1,14 +1,28 @@
+/**
+ * @file MathTools.h
+ * @brief Mathematical tools for numerical calculations, including integration, convolution, and array manipulation.
+ */
 #pragma once
 #include "CORECommonHeader.h"
 #include <omp.h>
 #include <mutex>
 
-
+/**
+ * @namespace vtlsInt
+ * @brief Numerical integration methods.
+ */
 namespace vtlsInt {
-	// Riemann integration.
 
+	/**
+	 * Riemannian integration of an array.
+	 * @tparam T The type of the array elements.
+	 * @tparam U The type of the increment (dx).
+	 * @param len The length of the array.
+	 * @param arr (in) The array to sum.
+	 * @param dx The increment (step size).
+	 */
 	template <typename T, typename U>
-	decltype(std::declval<T&>()* std::declval<U&>()) rSum(int len, T* __restrict arr, U dx) {
+	decltype(std::declval<T&>()* std::declval<U&>()) rSum(int len, const T* __restrict arr, U dx) {
 		if (len <= 1)
 			return 0;
 
@@ -19,8 +33,18 @@ namespace vtlsInt {
 		return sum * dx;
 	}
 
+	/**
+	 * Riemannian integration of the elementwise product of two arrays (scaled dot product).
+	 * @tparam T The type of the first array elements.
+	 * @tparam U The type of the second array elements.
+	 * @tparam V The type of the increment (dx).
+	 * @param len The length of the arrays.
+	 * @param arr1 (in) The first array to sum.
+	 * @param arr2 (in) The second array to sum.
+	 * @param dx The increment (step size).
+	 */
 	template <typename T, typename U, typename V>
-	decltype(std::declval<T&>()* std::declval<U&>()* std::declval<V&>()) rSumMul(int len, T* __restrict arr1, U* __restrict arr2, V dx) {
+	decltype(std::declval<T&>()* std::declval<U&>()* std::declval<V&>()) rSumMul(int len, const T* __restrict arr1, const U* __restrict arr2, V dx) {
 		if (len <= 1)
 			return 0;
 
@@ -30,8 +54,17 @@ namespace vtlsInt {
 		return sum * dx;
 	}
 
+	/**
+	 * Riemannian integration of the elementwise product of the conjugate of the first array and the second array (dot product).
+	 * @tparam T The type of the first array elements.
+	 * @tparam U The type of the second array elements.
+	 * @param len The length of the arrays.
+	 * @param arr1 (in) The first array to sum (to be conjugated).
+	 * @param arr2 (in) The second array to sum.
+	 * @param dx The increment (step size).
+	 */
 	template <typename T, typename U, typename V>
-	decltype(std::declval<T&>()* std::declval<U&>()* std::declval<V&>()) rSumMulConj(int len, T* __restrict arr1, U* __restrict arr2, V dx) {
+	decltype(std::declval<T&>()* std::declval<U&>()* std::declval<V&>()) rSumMulConj(int len, const T* __restrict arr1, const U* __restrict arr2, V dx) {
 		if (len <= 1)
 			return 0;
 
@@ -41,9 +74,16 @@ namespace vtlsInt {
 		return sum * dx;
 	}
 
-	// Trapezoidal integration.
+	/**
+	 * Trapezoidal integration of an array.
+	 * @tparam T The type of the array elements.
+	 * @tparam U The type of the increment (dx).
+	 * @param len The length of the array.
+	 * @param arr (in) The array to sum.
+	 * @param dx The increment (step size).
+	 */
 	template <typename T, typename U>
-	decltype(std::declval<T&>() * std::declval<U&>()) trapz(int len, T* __restrict arr, U dx) {
+	decltype(std::declval<T&>() * std::declval<U&>()) trapz(int len, const T* __restrict arr, U dx) {
 		if (len <= 1)
 			return 0;
 
@@ -55,8 +95,18 @@ namespace vtlsInt {
 	}
 
 	// Multiplies the elements of two arrays and then trapezoidally integrates the result.
+	/**
+	 * Trapezoidal integration of the elementwise product of two arrays.
+	 * @tparam T The type of the first array elements.
+	 * @tparam U The type of the second array elements.
+	 * @tparam V The type of the increment (dx).
+	 * @param len The length of the arrays.
+	 * @param arr1 (in) The first array to sum.
+	 * @param arr2 (in) The second array to sum.
+	 * @param dx The increment (step size).
+	 */
 	template <typename T, typename U, typename V>
-	decltype(std::declval<T&>()* std::declval<U&>()* std::declval<V&>()) trapzMul(int len, T* __restrict arr1, U* __restrict arr2, V dx) {
+	decltype(std::declval<T&>()* std::declval<U&>()* std::declval<V&>()) trapzMul(int len, const T* __restrict arr1, const U* __restrict arr2, V dx) {
 		if (len <= 1)
 			return 0;
 
@@ -66,9 +116,16 @@ namespace vtlsInt {
 		return sum * dx;
 	}
 
-	// Simpson rule integration.
+	/**
+	 * Simpson's rule integration of an array.
+	 * @tparam T The type of the array elements.
+	 * @tparam U The type of the increment (dx).
+	 * @param len The length of the array.
+	 * @param arr (in) The array to sum.
+	 * @param dx The increment (step size).
+	 */
 	template <typename T, typename U>
-	decltype(std::declval<T&>()* std::declval<U&>()) simps(int len, T* __restrict arr, U dx) {
+	decltype(std::declval<T&>()* std::declval<U&>()) simps(int len, const T* __restrict arr, U dx) {
 		if (len % 2) {
 			T sum = (arr[len - 1] + arr[0]) / 4.0;
 			for (int i = 1; i < len - 1; i += 2)
@@ -86,8 +143,18 @@ namespace vtlsInt {
 		}
 	}
 
+	/**
+	 * Simpson's rule integration of the elementwise product of two arrays.
+	 * @tparam T The type of the first array elements.
+	 * @tparam U The type of the second array elements.
+	 * @tparam V The type of the increment (dx).
+	 * @param len The length of the arrays.
+	 * @param arr1 (in) The first array to sum.
+	 * @param arr2 (in) The second array to sum.
+	 * @param dx The increment (step size).
+	 */
 	template <typename T, typename U, typename V>
-	decltype(std::declval<T&>()* std::declval<U&>()* std::declval<V&>()) simpsMul(int len, T* __restrict arr1, U* __restrict arr2, V dx) {
+	decltype(std::declval<T&>()* std::declval<U&>()* std::declval<V&>()) simpsMul(int len, const T* __restrict arr1, const U* __restrict arr2, V dx) {
 		if (len % 2) {
 			decltype(std::declval<T&>() * std::declval<U&>()) sum = (arr1[len - 1] * arr2[len - 1] + arr1[0] * arr2[0]) / 4.0;
 			for (int i = 1; i < len - 1; i += 2)
@@ -108,10 +175,19 @@ namespace vtlsInt {
 			return sum * dx;
 		}
 	}
-	
-	// Cumulative integration using left points as values.
+	/**
+	 * Cumulative Riemannian integration where the input array defines the value of the intervals to the left of each point (the first element of the result is arr[0]*dx).
+	 * 
+	 * \f$s_i = s_{i-1} + arr_i dx\f$
+	 * @tparam T The type of the input array elements.
+	 * @tparam U The type of the increment (dx).
+	 * @param len The length of the array.
+	 * @param arr (in) The array to integrate.
+	 * @param dx The increment (step size).
+	 * @param targ (out) The target array to store the result.
+	 */
 	template <typename T, typename U>
-	void cumIntRectLeft(int len, T* __restrict arr, U dx, decltype(std::declval<T&>()* std::declval<U&>())* __restrict targ) {
+	void cumIntRectLeft(int len, const T* __restrict arr, U dx, decltype(std::declval<T&>()* std::declval<U&>())* __restrict targ) {
 		decltype(std::declval<T&>() * std::declval<U&>()) sum = 0.0;
 		for (int i = 0; i < len; i++) {
 			sum += arr[i] * dx;
@@ -119,9 +195,19 @@ namespace vtlsInt {
 		}
 	}
 
-	// Cumulative integration using right points as values.
+	/**
+	 * Cumulative Riemannian integration where the input array defines the value of the intervals to the right of each point (the first element of the result is 0).
+	 * 
+	 * \f$s_i = s_{i-1} + arr_{i-1} dx\f$
+	 * @tparam T The type of the input array elements.
+	 * @tparam U The type of the increment (dx).
+	 * @param len The length of the array.
+	 * @param arr (in) The array to integrate.
+	 * @param dx The increment (step size).
+	 * @param targ (out) The target array to store the result.
+	 */
 	template <typename T, typename U>
-	void cumIntRectRight(int len, T* __restrict arr, U dx, decltype(std::declval<T&>()* std::declval<U&>())* __restrict targ) {
+	void cumIntRectRight(int len, const T* __restrict arr, U dx, decltype(std::declval<T&>()* std::declval<U&>())* __restrict targ) {
 		decltype(std::declval<T&>() * std::declval<U&>()) sum = 0.0;
 		for (int i = 0; i < len; i++) {
 			targ[i] = sum;
@@ -129,9 +215,19 @@ namespace vtlsInt {
 		}
 	}
 
-	// Cumulative integration using trapezoidal rule.
+	/**
+	 * Cumulative trapezoidal integration where the input array is on the same grid as the output. The first element of the result is 0.
+	 * 
+	 * \f$s_i = s_{i-1} + \frac{dx}{2} (arr_{i-1} + arr_i)\f$
+	 * @tparam T The type of the input array elements.
+	 * @tparam U The type of the increment (dx).
+	 * @param len The length of the array.
+	 * @param arr (in) The array to integrate.
+	 * @param dx The increment (step size).
+	 * @param targ (out) The target array to store the result.
+	 */
 	template <typename T, typename U>
-	void cumIntTrapz(int len, T* __restrict arr, U dx, decltype(std::declval<T&>()* std::declval<U&>())* __restrict targ) {
+	void cumIntTrapz(int len, const T* __restrict arr, U dx, decltype(std::declval<T&>()* std::declval<U&>())* __restrict targ) {
 		decltype(std::declval<T&>() * std::declval<U&>()) sum = 0.0;
 		for (int i = 0; i < len - 1; i++) {
 			targ[i] = sum;
@@ -140,11 +236,20 @@ namespace vtlsInt {
 		targ[len - 1] = sum;
 	}
 
-	//effectively interpret as result index i being between integrand index i and i+1, i.e. moved to the right by 1/2
-	// the integration region is still defined on the left according to the integrand arr, encompasing the whole len
-	// s_i = s_i-1 + dx/4*(arr_i-1 + 2*arr_i + arr_i+1)
+	/**
+	 * Cumulative trapezoidal integration where the output array is one half step to the right of the input array.
+	 * The first element of the result is \f$s_0 = \frac{dx}{4} (arr_0 + arr_1)\f$.
+	 * 
+	 * \f$s_i = s_{i-1} + \frac{dx}{4} (arr_{i-1} + 2 arr_{i} + arr_{i+1})\f$
+	 * @tparam T The type of the input array elements.
+	 * @tparam U The type of the increment (dx).
+	 * @param len The length of the array.
+	 * @param arr (in) The array to integrate.
+	 * @param dx The increment (step size).
+	 * @param targ (out) The target array to store the result.
+	 */
 	template <typename T, typename U>
-	void cumIntTrapzToRight(int len, T* __restrict arr, U dx, decltype(std::declval<T&>()* std::declval<U&>())* __restrict targ) {
+	void cumIntTrapzToRight(int len, const T* __restrict arr, U dx, decltype(std::declval<T&>()* std::declval<U&>())* __restrict targ) {
 		decltype(std::declval<T&>() * std::declval<U&>()) sum = (arr[0]+arr[1]) * dx / 4.0;
 		for (int i = 0; i < len - 2; i++) {
 			targ[i] = sum;
@@ -154,11 +259,20 @@ namespace vtlsInt {
 		targ[len - 1] = targ[len-2] + (arr[len-2] + arr[len-1]) * (dx / 4.0);
 	}
 
-	//effectively interpret as result index i being between integrand index i-1 and i, i.e. moved to the left by 1/2
-	// the first element is projected as constant to the previous element
-	// s_i = s_i-1 + dx/4*(arr_i-2 + 2*arr_i-1 + arr_i)
+	/**
+	 * Cumulative trapezoidal integration where the output array is one half step to the left of the input array.
+	 * The first element of the result is 0.
+	 * 
+	 * \f$s_i = s_{i-1} + \frac{dx}{4} (arr_{i-2} + 2 arr_{i-1} + arr_{i})\f$
+	 * @tparam T The type of the input array elements.
+	 * @tparam U The type of the increment (dx).
+	 * @param len The length of the array.
+	 * @param arr (in) The array to integrate.
+	 * @param dx The increment (step size).
+	 * @param targ (out) The target array to store the result.
+	 */
 	template <typename T, typename U>
-	void cumIntTrapzToLeft(int len, T* __restrict arr, U dx, decltype(std::declval<T&>()* std::declval<U&>())* __restrict targ) {
+	void cumIntTrapzToLeft(int len, const T* __restrict arr, U dx, decltype(std::declval<T&>()* std::declval<U&>())* __restrict targ) {
 		targ[0] = 0.0;
 		decltype(std::declval<T&>() * std::declval<U&>()) sum = (arr[0]+arr[1]) * dx / 4.0;
 		for (int i = 1; i < len - 1; i++) {
@@ -167,42 +281,52 @@ namespace vtlsInt {
 		}
 		targ[len - 1] = sum;
 	}
-
-	// Trapezoidal integration.
-	//double trapz(int len, double* __restrict arr, double dx);
-	//std::complex<double> trapz(int len, std::complex<double>* __restrict arr, double dx);
-	// Multiplies the elements of two arrays and then trapezoidally integrates the result.
-	//std::complex<double> trapzMul(int len, std::complex<double>* __restrict arr1, std::complex<double>* __restrict arr2, double dx);
-	//std::complex<double> trapzMul(int len, std::complex<double>* __restrict arr1, double* __restrict arr2, double dx);
-	// Simpson rule integration.
-	//double simps(int len, double* __restrict arr, double dx);
-	//std::complex<double> simps(int len, std::complex<double>* __restrict arr, double dx);
-	// Same as trapzMul, but for simps.
-	//std::complex<double> simpsMul(int len, std::complex<double>* __restrict arr1, std::complex<double>* __restrict arr2, double dx);
-	//double simpsMul(int len, double* __restrict arr1, double* __restrict arr2, double dx);
-	// Cumulative integration using left points as values.
-	//void cumIntRectLeft(int len, double* __restrict arr, double dx, double* __restrict targ);
-	// Cumulative integration using right points as values.
-	//void cumIntRectRight(int len, double* __restrict arr, double dx, double* __restrict targ);
-	// Cumulative integration using trapezoidal rule.
-	//void cumIntTrapz(int len, double* __restrict arr, double dx, double* __restrict targ);
-	//void cumIntTrapz(int len, std::complex<double>* __restrict arr, double dx, std::complex<double>* __restrict targ);
 };
 
+/**
+ * @namespace vtls
+ * @brief General mathematical tools for numerical calculations, including convolution, polynomial evaluation, and array manipulation.
+ */
 namespace vtls {
+
+	/**
+	 * @brief A class for performing convolution using FFTW.
+	 * @tparam T The type of the input arrays (e.g., double, std::complex<double>).
+	 * @details This class uses FFTW to perform the convolution between two arrays.
+	 */
 	template <class T>
 	class Convolver{
 	private:
-		int len;
+		int len = -1;
 		fftw_plan fp, bp;
 		std::complex<double> *temp1, *temp2;
 	public:
+		/// Default constructor for Convolver. Do not call this constructor directly.
 		Convolver<T>(){}
+
+		/**
+		 * Constructor for Convolver.
+		 * @param len The length of the arrays to be convolved.
+		 */
 		Convolver<T>(int len);
+
 		~Convolver();
-		void compute(T* arr1, T* arr2, T* targ);
+
+		/**
+		 * Performs the convolution of two arrays and stores the result in a target array.
+		 * @param arr1 (in) The first input array to convolve.
+		 * @param arr2 (in) The second input array to convolve.
+		 * @param targ (out) The target array to store the result.
+		 */
+		void compute(const T* arr1, const T* arr2, T* targ);
 	};
 
+	/**
+	 * @brief A class for efficiently performing convolutions of arrays with a constant mask using FFTW.
+	 * @tparam T The type of the input arrays (e.g., double, std::complex<double>).
+	 * @details This class uses FFTW to perform the convolution of an array with a constant mask, which is defined at construction.
+	 * The mask is only transformed into reciprocal space once at construction.
+	 */
 	template <class T>
 	class MaskConvolver :
 		public Convolver<T>{
@@ -211,34 +335,66 @@ namespace vtls {
 		fftw_plan fp, bp;
 		std::complex<double> *mask, *temp;
 	public:
-		MaskConvolver<T>(int len, T* constArr);
+		/**
+		 * Constructor for MaskConvolver.
+		 * @param len The length of the arrays to be convolved.
+		 * @param constArr (in) The constant mask to be used for the convolution.
+		 */
+		MaskConvolver<T>(int len, const T* maskIn);
+
 		~MaskConvolver();
-		void compute(T* arr, T* targ);
+
+		/**
+		 * Performs the out-of-place convolution of an array with the constant mask and stores the result in a target array.
+		 * @param arr (in) The input array to convolve.
+		 * @param targ (out) The target array to store the result of the convolution.
+		 */
+		void compute(const T* arr, T* targ);
+
+		/**
+		 * Performs the in-place convolution of an array with the constant mask, overwriting the input array with the result.
+		 * @param arr (in/out) The input array to convolve, which will be overwritten with the result.
+		 */
 		void compute(T* arr);
 	};
 
-	// Multiplies triag*diag*triag, with triag being a Hermitian matrix (upper triangular rep, column major) and diag being diagonal
+	/**
+	 * Performs the matrix product \f$H D H\f$, where \f$H\f$ is a Hermitian matrix represented in upper triangular form and \f$D\f$ is a diagonal matrix represented as a 1D array.
+	 * @tparam T The type of the elements in the Hermitian matrix.
+	 * @tparam U The type of the elements in the diagonal matrix.
+	 * @param len The length of the Hermitian matrix and diagonal matrix (number of rows or columns).
+	 * @param hermitTriag (in) The Hermitian matrix represented in upper triangular form (column-major order, len*(len-1)/2 elements.
+	 * @param diag (in) The diagonal matrix represented as a 1D array, len elements.
+	 * @param targ (out) The target array to store the result of the matrix product, which will be a Hermitian matrix in upper triangular form (len*(len+1)/2 elements).
+	 */
 	template <typename T, typename U>
-	void mulTriagDiagTriag(int len, T* triag, U* diag, decltype(std::declval<T&>()* std::declval<U&>())* targ) {
+	void mulHermitDiagHermit(int len, const T* hermitTriag, const U* diag, decltype(std::declval<T&>()* std::declval<U&>())* targ) {
 		decltype(std::declval<T&>() * std::declval<U&>()) csum = 0.0;
 		for (int i = 0; i < len; i++) {
 			for (int j = i; j < len; j++) {
 				//targ[i,j] = sum_k triag[i,k]diag[k]triag[k,l]
 				csum = 0.0;
 				for (int k = 0; k < i; k++)
-					csum += std::conj(triag[k + (i * (i + 1)) / 2]) * diag[k] * triag[k + (j * (j + 1)) / 2];
+					csum += std::conj(hermitTriag[k + (i * (i + 1)) / 2]) * diag[k] * hermitTriag[k + (j * (j + 1)) / 2];
 				for(int k = i; k < j; k++)
-					csum += triag[i + (k * (k + 1)) / 2] * diag[k] * triag[k + (j * (j + 1)) / 2];
+					csum += hermitTriag[i + (k * (k + 1)) / 2] * diag[k] * hermitTriag[k + (j * (j + 1)) / 2];
 				for (int k = j; k < len; k++)
-					csum += triag[i + (k * (k + 1)) / 2] * diag[k] * std::conj(triag[j + (k * (k + 1)) / 2]);
+					csum += hermitTriag[i + (k * (k + 1)) / 2] * diag[k] * std::conj(hermitTriag[j + (k * (k + 1)) / 2]);
 				targ[i + (j * (j + 1)) / 2] = csum;
 			}
 		}
 	}
 
 	// Adds two arrays, taking only the imaginary component of the first
-	void addArraysImag(int len, std::complex<double>* arr1, double* arr2targ);
+	/**
+	 * Adds the imaginary component of one array to the real component of the second array, storing the result in the second array.
+	 * @param len The length of the arrays.
+	 * @param arr1 (in) The first array, whose imaginary component will be added.
+	 * @param arr2targ (in/out) The second array, which will be modified to store the result of the addition.
+	 */
+	void addArraysImag(int len, const std::complex<double>* arr1, double* arr2targ);
 
+	/// @deprecated This function has been removed due to exprtk functionality being removed.
 	template <typename T, typename U>
 	void evalMathExpr(int len, const char* var, T* vals, std::string expr, U* res) {
 		throw std::runtime_error("exprtk functionality has been removed for 'vtls::evalMathExpr'. Future versions should implements lambdas from pybind11.");
@@ -263,104 +419,235 @@ namespace vtls {
 		}*/
 	}
 
+	/**
+	 * Evaluates a polynomial at each point in an array using the given polynomial coefficients.
+	 * @tparam T The type of the sample points.
+	 * @tparam U The type of the polynomial coefficients.
+	 * @param len The length of the array of sample points and the target array.
+	 * @param x (in) The array of sample points at which to evaluate the polynomial.
+	 * @param nPoly The number of polynomial coefficients (should be 2 for linear, 3 for quadratic, etc.).
+	 * @param polyCoeffs (in) The array of polynomial coefficients, of length nPoly.
+	 * @param y (out) The target array to store the results of the polynomial evaluation, which will be of length len.
+	 */
 	template <typename T, typename U>
-	void polyEval(int len, T* x, int nPoly, U* __restrict polyCoeffs, decltype(std::declval<T&>()* std::declval<U&>())* y) {
+	void polyEval(int len, const T* x, int nPoly, const U* __restrict polyCoeffs, decltype(std::declval<T&>()* std::declval<U&>())* y) {
 		for (int i = 0; i < len; i++)
 			y[i] = boost::math::tools::evaluate_polynomial(polyCoeffs, x[i], nPoly);
 	}
 
+	/**
+	 * Adds a scalar multiple of one array to a second array, storing the result in the second array.
+	 * @tparam T The type of the scalar.
+	 * @tparam U The type of the first array.
+	 * @tparam V The type of the second array.
+	 * @param len The length of the arrays.
+	 * @param scalar The scalar value to multiply the first array by.
+	 * @param arr1 (in) The first array, which will be multiplied by the scalar.
+	 * @param arr2targ (in/out) The second array, which will contain the result.
+	 */
 	template <typename T, typename U, typename V>
-	void scaMulAddArrays(int len, T scalar, U* __restrict arr1, V* __restrict arr2targ) {
+	void scaMulAddArrays(int len, T scalar, const U* __restrict arr1, V* __restrict arr2targ) {
 		for (int i = 0; i < len; i++)
 			arr2targ[i] += arr1[i] * scalar;
 	}
 
-	// Adds two arrays into a third array
+	/**
+	 * Adds two arrays together, storing the result in a third array.
+	 * @tparam T The type of the first array.
+	 * @tparam U The type of the second array.
+	 * @tparam V The type of the target array.
+	 * @param len The length of the arrays.
+	 * @param arr1 (in) The first array to add.
+	 * @param arr2 (in) The second array to add.
+	 * @param targ (out) The target array to store the result.
+	 */
 	template <typename T, typename U, typename V>
-	void addArrays(int len, T* __restrict arr1, U* __restrict arr2, V* __restrict targ) {
+	void addArrays(int len, const T* __restrict arr1, const U* __restrict arr2, V* __restrict targ) {
 		for (int i = 0; i < len; i++)
 			targ[i] = arr1[i] + arr2[i];
 	}
 
-	// Adds two arrays, storing the result in the second array
+	/**
+	 * Adds the elements of one array to another, storing the result in the second array.
+	 * @tparam T The type of the first array.
+	 * @tparam U The type of the second array.
+	 * @param len The length of the arrays.
+	 * @param arr1 (in) The first array to add.
+	 * @param arr2targ (in/out) The second array, which will contain the result of the addition.
+	 */
 	template <typename T, typename U>
-	void addArrays(int len, T* __restrict arr1, U* __restrict arr2targ) {
+	void addArrays(int len, const T* __restrict arr1, U* __restrict arr2targ) {
 		for (int i = 0; i < len; i++)
 			arr2targ[i] += arr1[i];
 	}
 
-	// Sequentially multiplies two arrays into a third array
+	/**
+	 * Multiplies the elements of two arrays together, storing the result in a third array.
+	 * @tparam T The type of the first array.
+	 * @tparam U The type of the second array.
+	 * @tparam V The type of the target array.
+	 * @param len The length of the arrays.
+	 * @param arr1 (in) The first array to multiply.
+	 * @param arr2 (in) The second array to multiply.
+	 * @param targ (out) The target array to store the result.
+	 */
 	template <typename T, typename U, typename V>
 	void seqMulArrays(int len, const T* __restrict arr1, const U* __restrict arr2, V* __restrict targ) {
 		for (int i = 0; i < len; i++)
 			targ[i] = arr1[i] * arr2[i];
 	}
-	// Sequentially multiplies two arrays, storing the result in the second array
+	
+	/**
+	 * Multiplies the elements of two arryas together, storing the result in the second array.
+	 * @tparam T The type of the first array.
+	 * @tparam U The type of the second array.
+	 * @param len The length of the arrays.
+	 * @param arr1 (in) The first array to multiply.
+	 * @param arr2targ (in/out) The second array, which will contain the result of the multiplication.
+	 */
 	template <typename T, typename U>
-	void seqMulArrays(int len, T* __restrict arr1, U* __restrict arr2targ) {
+	void seqMulArrays(int len, const T* __restrict arr1, U* __restrict arr2targ) {
 		for (int i = 0; i < len; i++)
 			arr2targ[i] *= arr1[i];
 	}
 
-	// Multiplies an array by a scalar multiple into a second array
+	/**
+	 * Multiplies an array by a scalar multiple and stores the result in a target array.
+	 * @tparam T The type of the scalar.
+	 * @tparam U The type of the input array.
+	 * @tparam V The type of the target array.
+	 * @param len The length of the arrays.
+	 * @param scalar The scalar value to multiply the input array by.
+	 * @param arr (in) The input array to multiply.
+	 * @param targ (out) The target array to store the result of the multiplication.
+	 * @note There are type-specific in-place overloads which, in implementation, use cblas for further optimization.
+	 */
 	template <typename T, typename U, typename V>
-	void scaMulArray(int len, T scalar, U* __restrict arr, V* __restrict targ) {
+	void scaMulArray(int len, T scalar, const U* __restrict arr, V* __restrict targ) {
 		for (int i = 0; i < len; i++)
 			targ[i] = arr[i] * scalar;
 	}
-	// Multiplies an array by a scalar multiple
+
+	/**
+	 * Multiplies an array by a scalar multiple and stores the result in the same array.
+	 * @param len The length of the array.
+	 * @param scalar The scalar value to multiply the array by.
+	 * @param arr (in/out) The array to multiply, which will be modified to store the result of the multiplication.
+	 */
 	void scaMulArray(int len, std::complex<double> scalar, std::complex<double>* __restrict arr);
+
+	/// @copydoc scaMulArray(int, std::complex<double>, std::complex<double>*)
 	void scaMulArray(int len, double scalar, std::complex<double>* __restrict arr);
+
+	/// @copydoc scaMulArray(int, std::complex<double>, std::complex<double>*)
 	void scaMulArray(int len, double scalar, double* __restrict arr);
 
-	// Multiplies an array by a scalar multiple and stores the real component of the result in the second array 
+	/**
+	 * Multiplies an array by a scalar multiple and stores the real part of the result in a target array.
+	 * @tparam T The type of the scalar.
+	 * @tparam U The type of the input array.
+	 * @tparam V The type of the target array.
+	 * @param len The length of the arrays.
+	 * @param scalar The scalar value to multiply the input array by.
+	 * @param arr (in) The input array to multiply.
+	 * @param targ (out) The target array to store the result.
+	 */
 	template <typename T, typename U, typename V>
-	void scaMulArrayRe(int len, T scalar, U* __restrict arr, V* __restrict targ) {
+	void scaMulArrayRe(int len, T scalar, const U* __restrict arr, V* __restrict targ) {
 		for (int i = 0; i < len; i++)
 			targ[i] = std::real(arr[i] * scalar);
 	}
 
-	// Gets the norm squared of an array point-by-point
+	/**
+	 * Calculates the square norm of each element in an array and stores the result in a target array.
+	 * 
+	 * \f$ \text{normSqr}(arr_i) = |arr_i|^2 \f$
+	 * @tparam T The type of the input array elements.
+	 * @param len The length of the array.
+	 * @param arr (in) The input array to be processed.
+	 * @param targ (out) The target array to store the result.
+	 */
 	template <typename T>
-	void normSqr(int len, T* __restrict arr, double* __restrict targ) {
+	void normSqr(int len, const T* __restrict arr, double* __restrict targ) {
 		for (int i = 0; i < len; i++)
 			targ[i] = std::norm(arr[i]);
 	}
 
-	// Gets the absolute value of an array
+	/**
+	 * Calculates the absolute value of each element in an array and stores the result in a target array.
+	 * 
+	 * \f$ \text{abs}(arr_i) = |arr_i| \f$
+	 * @tparam T The type of the input array elements.
+	 * @param len The length of the array.
+	 * @param arr (in) The input array to be processed.
+	 * @param targ (out) The target array to store the result.
+	 */
 	template <typename T>
-	void abs(int len, T* __restrict arr, double* __restrict targ) {
+	void abs(int len, const T* __restrict arr, double* __restrict targ) {
 		for (int i = 0; i < len; i++)
 			targ[i] = std::abs(arr[i]);
 	}
 
-	// Normalizes an array such that its total norm is 1
+	/**
+	 * Normalizes an array by dividing each element by the the L2 norm of the array assuming uniform grid spacing \f$dx\f$.
+	 * 
+	 * \f$ arr_i = \frac{arr_i}{\sqrt{\sum_j |arr_j|^2 \cdot dx}} \f$
+	 * @tparam T The type of the input array elements.
+	 * @param len The length of the array.
+	 * @param arr (in/out) The input array to be normalized, which will be modified to store the normalized values.
+	 * @param dx The grid spacing.
+	 * @note This function allocates and subsequently frees a temporary array to store the squared norms. Consider implementing a version which accepts a user-allocated workspace if this will be used often.
+	 */
 	template <typename T>
 	void normalizeSqrNorm(int len, T* __restrict arr, double dx) {
-		double* tarr = (double*) sq_malloc(sizeof(double)*len);
-		normSqr(len, arr, tarr);
-		scaMulArray(len, 1.0 / std::sqrt(vtlsInt::simps(len, tarr, dx)), arr);
-		sq_free(tarr);
+		double* temp = (double*) sq_malloc(sizeof(double)*len);
+		normSqr(len, arr, temp);
+		scaMulArray(len, 1.0 / std::sqrt(vtlsInt::simps(len, temp, dx)), arr);
+		sq_free(temp);
 	}
 
-	// Gets square norm of an array
+	/**
+	 * Calculates the L2 norm squared of an array assuming uniform grid spacing \f$dx\f$.
+	 * 
+	 * \f$ \text{norm} = \sum_j |arr_j|^2 \cdot dx \f$
+	 * @tparam T The type of the input array elements.
+	 * @param len The length of the array.
+	 * @param arr (in) The input array to be processed.
+	 * @param dx The grid spacing.
+	 * @return The L2 norm of the array.
+	 */
 	template <typename T>
-	double getNorm(int len, T* __restrict arr, double dx) {
+	double getNorm(int len, const T* __restrict arr, double dx) {
 		double sm = 0.0;
 		for (int i = 0; i < len; i++)
 			sm += std::pow(std::abs(arr[i]), 2);
 		return sm *= dx;
 	}
-
-	// Sets square norm of an array
+	
+	/**
+	 * Sets the L2 norm of an array to a specified value assuming uniform grid spacing \f$dx\f$.
+	 * 
+	 * @tparam T The type of the input array elements.
+	 * @param len The length of the array.
+	 * @param arr (in/out) The input array to be normalized, which will be modified to store the normalized values.
+	 * @param dx The grid spacing.
+	 * @param norm The target L2 norm.
+	 */
 	template <typename T>
 	void setNorm(int len, T* __restrict arr, double dx, double norm) {
 		scaMulArray(len, std::sqrt(norm / getNorm(len, arr, dx)), arr);
 	}
 
-	// Linear interpolation
+	/**
+	 * Linearly interpolates an array to a new length, including the edge points. The first and last points are the same.
+	 * @tparam T The type of the array elements.
+	 * @param len The length of the input array.
+	 * @param arr (in) The input array to be interpolated.
+	 * @param newLen The length of the target array.
+	 * @param targ (out) The target array to store the result of the interpolation.
+	 */
 	template <typename T>
-	void downSampleLinearInterpolateEdge(int len, T* __restrict arr, int newLen, T* __restrict targ) {
+	void linearInterpolateEdge(int len, const T* __restrict arr, int newLen, T* __restrict targ) {
 		double step = (double)(len - 1) / (newLen - 1);
 		double curPos = 0.0;
 		for (int i = 0; i < newLen; i++) {
@@ -369,8 +656,16 @@ namespace vtls {
 		}
 	}
 
+	/**
+	 * Linearly interpolates an array to a new length, excluding the edge points. The first and last points are half a (new) step away from the edge.
+	 * @tparam T The type of the array elements.
+	 * @param len The length of the input array.
+	 * @param arr (in) The input array to be interpolated.
+	 * @param newLen The length of the target array.
+	 * @param targ (out) The target array to store the result of the interpolation.
+	 */
 	template <typename T>
-	void downSampleLinearInterpolateNoEdge(int len, T* __restrict arr, int newLen, T* __restrict targ) {
+	void linearInterpolateNoEdge(int len, const T* __restrict arr, int newLen, T* __restrict targ) {
 		double step = (double)(len - 1) / newLen;
 		double curPos = step / 2.0;
 		for (int i = 0; i < newLen; i++) {
@@ -379,8 +674,18 @@ namespace vtls {
 		}
 	}
 
+	/**
+	 * Linearly interpolates an array \f$y_1(x_1)\f$ to a new array \f$y_2(x_2)\f$.
+	 * @tparam T The type of the array elements.
+	 * @param l1 The length of the first array.
+	 * @param x1 (in) The x-values of the first array.
+	 * @param y1 (in) The y-values of the first array.
+	 * @param l2 The length of the second array.
+	 * @param x2 (in) The x-values of the second array.
+	 * @param y2 (out) The target array to store the result of the interpolation.
+	 */
 	template <typename T>
-	void linearInterpolate(int l1, double* __restrict x1, T* __restrict y1, int l2, double* __restrict x2, T* __restrict y2) {
+	void linearInterpolate(int l1, const double* __restrict x1, const T* __restrict y1, int l2, const double* __restrict x2, T* __restrict y2) {
 		int curPos = 0;
 		for (int i = 0; i < l2; i++) {
 			while (x2[i] > x1[curPos] && curPos < l1)
@@ -394,8 +699,19 @@ namespace vtls {
 		}
 	}
 
+	/**
+	 * Interpolates a single point from an array using linear interpolation.
+	 * @tparam T The type of sample points.
+	 * @tparam U The type of the array elements.
+	 * @param len The length of the array.
+	 * @param arr (in) The array to interpolate.
+	 * @param xStart The starting x-value of the array.
+	 * @param dx The increment (step size).
+	 * @param samp The sample point at which to interpolate.
+	 * @return The interpolated value at the sample point.
+	 */
 	template <typename T, typename U>
-	U linearInterpolate(int len, U* __restrict arr, T xStart, T dx, T samp) {
+	U linearInterpolate(int len, const U* __restrict arr, T xStart, T dx, T samp) {
 		int ix = (int)((samp - xStart) / dx);
 		T t = (samp - xStart) / dx - ix;
 		if (ix < 0) {
@@ -409,12 +725,28 @@ namespace vtls {
 		return arr[ix] + t * (arr[ix + 1] - arr[ix]);
 	}
 
+	/**
+	 * Generates a linearly spaced array. The edge points are included.
+	 * @tparam T The type of the array elements.
+	 * @param len The length of the array.
+	 * @param min The minimum (first) value of the array.
+	 * @param max The maximum (last) value of the array.
+	 * @param targ (out) The target array to store the result.
+	 */
 	template <typename T>
 	void linspace(int len, T min, T max, T* __restrict targ) {
 		for (int i = 0; i < len; i++)
 			targ[i] = (max - min) * i / (T)(len - 1) + min;
 	}
 
+	/**
+	 * Generates a linearly spaced array. The edge points are included.
+	 * @tparam T The type of the array elements.
+	 * @param len The length of the array.
+	 * @param min The minimum (first) value of the array.
+	 * @param max The maximum (last) value of the array.
+	 * @return The generated array.
+	 */
 	template <typename T>
 	std::vector<T> linspace(int len, T min, T max) {
 		std::vector<T> ret = std::vector<T>(len);
@@ -423,24 +755,55 @@ namespace vtls {
 		return ret;
 	}
 
-	// Adds a scalar value to each component of the array
+	/**
+	 * Adds a scalar to each element of an array.
+	 * @tparam T The type of the scalar.
+	 * @tparam U The type of the array elements.
+	 * @param len The length of the array.
+	 * @param scalar The scalar value to add to each element.
+	 * @param arr (in/out) The array to which the scalar will be added.
+	 */
 	template <typename T, typename U>
 	void scaAddArray(int len, T scalar, U* __restrict arr) {
 		for (int i = 0; i < len; i++)
 			arr[i] += scalar;
 	}
 
-	// Copies the array
-	void copyArray(int len, double* __restrict arr1, double* __restrict arr2);
-	void copyArray(int len, std::complex<double>* __restrict arr1, std::complex<double>* __restrict arr2);
-	void copyArray(int len, double* __restrict arr1, std::complex<double>* __restrict arr2);
+	/**
+	 * Copies the elements of one array to another.
+	 * @param len The length of the arrays.
+	 * @param arr1 (in) The source array to copy from.
+	 * @param arr2 (out) The target array to copy to.
+	 */
+	void copyArray(int len, const double* __restrict arr1, double* __restrict arr2);
 
-	template <typename T>
-	void copyArrayRe(int len, T* __restrict arr1, double* __restrict arr2);
+	/// @copydoc copyArray(int len, const double* __restrict arr1, double* __restrict arr2)
+	void copyArray(int len, const std::complex<double>* __restrict arr1, std::complex<double>* __restrict arr2);
 
-	// Takes first derivative at one point
+	/// @copydoc copyArray(int len, const double* __restrict arr1, double* __restrict arr2)
+	void copyArray(int len, const double* __restrict arr1, std::complex<double>* __restrict arr2);
+
+	/**
+	 * Copies the elements of one array to another, taking the real part of the source array.
+	 * @tparam T The type of the source array elements.
+	 * @param len The length of the arrays.
+	 * @param arr1 (in) The source array to copy from.
+	 * @param arr2 (out) The target array to copy to.
+	 */
 	template <typename T>
-	T firstDerivative(int len, T* __restrict arr, int pos, double dx) {
+	void copyArrayRe(int len, const T* __restrict arr1, double* __restrict arr2);
+
+	/**
+	 * Evaluates the first derivative of an array at a specified position.
+	 * @tparam T The type of the array elements.
+	 * @param len The length of the array.
+	 * @param arr (in) The array to differentiate.
+	 * @param pos The position at which to evaluate the derivative.
+	 * @param dx The increment (step size).
+	 * @return The value of the first derivative at the specified position.
+	 */
+	template <typename T>
+	T firstDerivative(int len, const T* __restrict arr, int pos, double dx) {
 		if (pos == 0)
 			return (arr[1] - arr[0]) / dx;
 		else if (pos == len - 1)
@@ -449,18 +812,34 @@ namespace vtls {
 			return (arr[pos + 1] - arr[pos - 1]) / (2.0 * dx);
 	}
 
-	// Takes first derivative across entire array
+	/**
+	 * Evaluates the first derivative of an array at each point.
+	 * On the edges, the forward or backward difference is used. Otherwise a central difference is used.
+	 * @tparam T The type of the array elements.
+	 * @param len The length of the array.
+	 * @param arr (in) The array to differentiate.
+	 * @param targ (out) The target array to store the result.
+	 * @param dx The increment (step size).
+	 */
 	template <typename T>
-	void firstDerivative(int len, T* __restrict arr, T* __restrict targ, double dx) {
+	void firstDerivative(int len, const T* __restrict arr, T* __restrict targ, double dx) {
 		targ[0] = (arr[1] - arr[0]) / dx;
 		for (int i = 1; i < len - 1; i++)
 			targ[i] = (arr[i + 1] - arr[i - 1]) / (2.0 * dx);
 		targ[len - 1] = (arr[len - 1] - arr[len - 2]) / dx;
 	}
 
-	// Takes second derivative across entire array
+	/**
+	 * Evaluates the second derivative of an array at each point.
+	 * On the edges, the forward or backward difference is used. Otherwise a central difference is used.
+	 * @tparam T The type of the array elements.
+	 * @param len The length of the array.
+	 * @param arr (in) The array to differentiate.
+	 * @param targ (out) The target array to store the result.
+	 * @param dx The increment (step size).
+	 */
 	template <typename T>
-	void secondDerivative(int len, T* __restrict arr, T* __restrict targ, double dx) {
+	void secondDerivative(int len, const T* __restrict arr, T* __restrict targ, double dx) {
 		double dx2 = dx * dx;
 		targ[0] = (arr[1] - arr[0]) * 2.0 / dx2;
 		for (int i = 1; i < len - 1; i++)
@@ -468,13 +847,34 @@ namespace vtls {
 		targ[len - 1] = (arr[len - 2] - arr[len - 1]) * 2.0 / dx2;
 	}
 
-	// Finds the location of a value
-	int findValue(int len, double* __restrict arr, double val);
+	/**
+	 * Finds the index of the first element in an array that is equal to a specified value.
+	 * The array must be sorted in ascending order.
+	 * @tparam T The type of the array elements.
+	 * @param len The length of the array.
+	 * @param arr (in) The array to search.
+	 * @param val The value to search for.
+	 * @return The index of the first element greater than or equal to the specified value, len-1 if the value is greater than all elements, or -1 if the value is less than all elements.
+	 */
+	int findValue(int len, const double* __restrict arr, double val);
 
+	/**
+	 * Sorts the input array in ascending order using insertion sort.
+	 * @param len The length of the array.
+	 * @param arr (in/out) The array to sort, which will be modified to store the sorted values.
+	 * @param idxs (out) The target array to store the indices of the sorted values.
+	 */
 	void insertSort_idxs(int len, double* __restrict arr, int* __restrict idxs);
 
+	/**
+	 * Finds the maximum value in an array.
+	 * @tparam T The type of the array elements.
+	 * @param len The length of the array.
+	 * @param arr (in) The array to search.
+	 * @return The maximum value in the array.
+	 */
 	template <typename T>
-	T max(int len, T* __restrict arr) {
+	T max(int len, const T* __restrict arr) {
 		T mx = arr[0];
 		for (int i = 1; i < len; i++)
 			if (arr[i] > mx)
@@ -482,67 +882,36 @@ namespace vtls {
 		return mx;
 	}
 
+	/**
+	 * Finds the minimum value in an array.
+	 * @tparam T The type of the array elements.
+	 * @param len The length of the array.
+	 * @param arr (in) The array to search.
+	 * @return The minimum value in the array.
+	 */
 	template <typename T>
-	T min(int len, T* __restrict arr) {
+	T min(int len, const T* __restrict arr) {
 		T mn = arr[0];
 		for (int i = 1; i < len; i++)
 			if (arr[i] < mn)
 				mn = arr[i];
 		return mn;
 	}
-
-	//void addArrays(int len, std::complex<double> *__restrict arr1, std::complex<double> *__restrict arr2, std::complex<double> *__restrict targ);
-	//void addArrays(int len, std::complex<double> *__restrict arr1, std::complex<double> *__restrict arr2targ);
-	//void addArrays(int len, double *__restrict arr1, double *__restrict arr2targ);
-	// Multiplies two arrays together sequentially.
-	//void seqMulArrays(int len, std::complex<double> *__restrict arr1, std::complex<double> *__restrict arr2, std::complex<double> *__restrict targ);
-	//void seqMulArrays(int len, double *__restrict arr1, std::complex<double> *__restrict arr2, std::complex<double> *__restrict targ);
-	//void seqMulArrays(int len, std::complex<double> *__restrict arr1, std::complex<double> *__restrict arr2targ);
-	//void seqMulArrays(int len, double *__restrict arr1, double *__restrict arr2targ);
-	//void seqMulArrays(int len, double* __restrict arr1, double* __restrict arr2, double *__restrict targ);
-	// Multiplies an array with a scalar.
-	//void scaMulArray(int len, std::complex<double> scalar, std::complex<double> *__restrict arr, std::complex<double> *__restrict targ);
-	//void scaMulArray(int len, double scalar, std::complex<double> *__restrict arr, std::complex<double> *__restrict targ);
-	//void scaMulArray(int len, double scalar, double *__restrict arr, double *__restrict targ);
-	//void scaMulArrayRe(int len, std::complex<double> scalar, std::complex<double> *__restrict arr, double *__restrict targ);
-	// Gets the magnitude squared of each element of an array.
-	//void normSqr(int len, std::complex<double> *__restrict arr, double *__restrict targ);
-	// Gets the absolute value of each element in an array.
-	//void abs(int len, std::complex<double> *__restrict arr, double *__restrict targ);
-	// Normalizes array (wave function).
-	//void normalizeSqrNorm(int len, std::complex<double> *__restrict arr, double dx);
-	// Linear interpolation.
-	//void downSampleLinearInterpolateEdge(int len, double *__restrict arr, int newLen, double *__restrict targ);
-	//void downSampleLinearInterpolateEdge(int len, std::complex<double> *__restrict arr, int newLen, std::complex<double> *__restrict targ);
-	//void downSampleLinearInterpolateNoEdge(int len, double *__restrict arr, int newLen, double *__restrict targ);
-	// Linear interpolation using new grid (y1,x1 sampled at x2 written to y2). Assumes ordered in increasing order in x1, x2
-	//void linearInterpolate(int l1, double *__restrict x1, double *__restrict y1, int l2, double *__restrict x2, double * y2);
-	// Linspace
-	//void linspace(int len, double min, double max, double *__restrict targ);
-	//double* linspace(int len, double min, double max);
-	// Adds a scalar to each element of an array.
-	//void scaAddArray(int len, double scalar, double *__restrict arr);
-	//void scaAddArray(int len, std::complex<double> scalar, std::complex<double> *__restrict arr);
-	// Copies the elements of two arrays.
-	//void copyArray(int len, double *__restrict arr1, double *__restrict arr2);
-	//void copyArray(int len, std::complex<double> *__restrict arr1, std::complex<double> *__restrict arr2);
-	//void copyArray(int len, double* __restrict arr1, std::complex<double>* __restrict arr2);
-	// Calculates first derivative (midpoint method except at edges).
-	//std::complex<double> firstDerivative(int len, std::complex<double> *__restrict arr, int pos, double dx);
-	//void firstDerivative(int len, std::complex<double> *__restrict arr, std::complex<double> *__restrict targ, double dx);
-	//void firstDerivative(int len, double *__restrict arr, double *__restrict targ, double dx);
-	// Calculates second derivative.
-	//void secondDerivative(int len, std::complex<double> *__restrict arr, std::complex<double> *__restrict targ, double dx);
-	//int findValue(int len, double *__restrict arr, double val);
-	// Performs convolution. Recommended to use the contents of this function as a template, as many optimizations can potentially be done for special cases.
-	//void mkl_ddcon(double h[], int inch, double x[], int incx, double y[], int incy, int nh, int nx, int iy0, int ny, int id);
-	//void insertSort_idxs(int len, double* __restrict arr, int* __restrict idxs);
 };
 
+/**
+ * @namespace vtlsPrnt
+ * @brief A namespace for printing data to the console.
+ */
 namespace vtlsPrnt {
-	// Prints contents of array.
+	/**
+	 * Prints the contents of an array to stdout.
+	 * @tparam T The type of the array elements.
+	 * @param n The length of the array.
+	 * @param arr (in) The array to print.
+	 */
 	template <typename T>
-	void printArray(int n, T* __restrict arr) {
+	void printArray(int n, const T* __restrict arr) {
 		std::cout << "[";
 		for (int i = 0; i < n; i++) {
 			std::cout << arr[i];
@@ -553,19 +922,25 @@ namespace vtlsPrnt {
 		std::cout << "]" << std::endl;
 	}
 
-	// Uses text to graph an array.
-	void printGraph(int n, double* __restrict arr);
-	void printGraph(int n, std::complex<double>* __restrict arr);
+	/**
+	 * Plots the contents of an array in the console using text.
+	 * @param n The length of the array.
+	 * @param arr (in) The array to plot.
+	 */
+	void printGraph(int n, const double* __restrict arr);
 
-	// Prints contents of array.
-	/*void printArray(int n, double *__restrict arr);
-	void printArray(int n, int *__restrict arr);
-	void printArray(int n, std::complex<double> *__restrict arr);*/
-	// Uses text to graph an array.
-	//void printGraph(int n, double *__restrict arr);
+	/// @copydoc printGraph(int n, const double* __restrict arr)
+	void printGraph(int n, const std::complex<double>* __restrict arr);
 
+	/**
+	 * Saves an array to a binary file.
+	 * @tparam T The type of the array elements.
+	 * @param n The length of the array.
+	 * @param fil The filename to save the array to.
+	 * @param data (in) The array to save.
+	 */
 	template <typename T>
-	void saveArray(int n, const char* fil, T* data) {
+	void saveArray(int n, const char* fil, const T* data) {
 		std::fstream fid(fil, std::ios::out | std::ios::binary);
 		fid.write(reinterpret_cast<char*>(n), sizeof(int));
 		fid.write(reinterpret_cast<char*>(data), sizeof(T) * n);
@@ -575,18 +950,78 @@ namespace vtlsPrnt {
 
 #include "gnuplot-iostream.h"
 
+/**
+ * @namespace plotting
+ * @brief A namespace for plotting data using GNUPlot.
+ */
 namespace plotting{
+	/**
+	 * A class for plotting data using GNUPlot.
+	 * @details This class uses the gnuplot-iostream library to plot data using GNUPlot.
+	 */
 	class GNUPlotter {
 	private:
 		Gnuplot gp;
 	public:
+		/// Default constructor for initializing a GNUPlotter.
 		GNUPlotter(){};
-		GNUPlotter(int nPts, int nLines, double* x, double* y){update(nPts, nLines, x, y);};
-		GNUPlotter(int nPts, int nLines, double* y){update(nPts, nLines, y);};
-		void update(int nPts, int nLines, double* x, double* y, double xmin, double xmax, double ymin, double ymax);
-		void update(int nPts, int nLines, double* x, double* y);
-		void update(int nPts, int nLines, double* y, double ymin, double ymax);
-		void update(int nPts, int nLines, double* y);
+
+		/**
+		 * Constructor for initializing a GNUPlotter with data.
+		 * @param nPts The number of points in the data.
+		 * @param nLines The number of lines in the data.
+		 * @param x (in) The x-values of the data.
+		 * @param y (in) The y-values of the data.
+		 */
+		GNUPlotter(int nPts, int nLines, const double* x, const double* y){update(nPts, nLines, x, y);};
+
+		/**
+		 * Constructor for initializing a GNUPlotter with data. The x-values are assumed to be the index of the data.
+		 * @param nPts The number of points in the data.
+		 * @param nLines The number of lines in the data.
+		 * @param y (in) The y-values of the data.
+		 */
+		GNUPlotter(int nPts, int nLines, const double* y){update(nPts, nLines, y);};
+
+		/**
+		 * Updates the plot with new data.
+		 * @param nPts The number of points in the data.
+		 * @param nLines The number of lines in the data.
+		 * @param x (in) The x-values of the data.
+		 * @param y (in) The y-values of the data.
+		 * @param xmin The minimum value of the x-axis to display.
+		 * @param xmax The maximum value of the x-axis to display.
+		 * @param ymin The minimum value of the y-axis to display.
+		 * @param ymax The maximum value of the y-axis to display.
+		 */
+		void update(int nPts, int nLines, const double* x, const double* y, double xmin, double xmax, double ymin, double ymax);
+
+		/**
+		 * Updates the plot with new data.
+		 * @param nPts The number of points in the data.
+		 * @param nLines The number of lines in the data.
+		 * @param x (in) The x-values of the data.
+		 * @param y (in) The y-values of the data.
+		 */
+		void update(int nPts, int nLines, const double* x, const double* y);
+
+		/**
+		 * Updates the plot with new data. The x-values are assumed to be the index of the data.
+		 * @param nPts The number of points in the data.
+		 * @param nLines The number of lines in the data.
+		 * @param y (in) The y-values of the data.
+		 * @param ymin The minimum value of the y-axis to display.
+		 * @param ymax The maximum value of the y-axis to display.
+		 */
+		void update(int nPts, int nLines, const double* y, double ymin, double ymax);
+
+		/**
+		 * Updates the plot with new data. The x-values are assumed to be the index of the data.
+		 * @param nPts The number of points in the data.
+		 * @param nLines The number of lines in the data.
+		 * @param y (in) The y-values of the data.
+		 */
+		void update(int nPts, int nLines, const double* y);
 	};
 };
 

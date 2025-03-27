@@ -26,7 +26,10 @@ namespace vtls{
 	}
 
 	template<class T>
-	void Convolver<T>::compute(T* arr1, T* arr2, T* targ){
+	void Convolver<T>::compute(const T* arr1, const T* arr2, T* targ){
+		if (len < 1)
+			throw std::runtime_error("Convolver: length not set.");
+
 		vtls::copyArray(len, arr1, temp1);
 		vtls::copyArray(len, arr2, temp2);
 
@@ -42,7 +45,7 @@ namespace vtls{
 
 
 	template<class T>
-	MaskConvolver<T>::MaskConvolver(int len, T* constArr) : len(len){
+	MaskConvolver<T>::MaskConvolver(int len, const T* maskIn) : len(len){
 		mask = reinterpret_cast<std::complex<double>*>(sq_malloc(sizeof(fftw_complex)*len));
 		temp = reinterpret_cast<std::complex<double>*>(sq_malloc(sizeof(fftw_complex)*len));
 
@@ -56,7 +59,7 @@ namespace vtls{
 
 		mtx.unlock();
 
-		vtls::copyArray(len, constArr, mask);
+		vtls::copyArray(len, maskIn, mask);
 		fftw_execute_dft(fp, reinterpret_cast<fftw_complex*>(mask), reinterpret_cast<fftw_complex*>(mask));
 	}
 
@@ -71,7 +74,7 @@ namespace vtls{
 	}
 
 	template<class T>
-	void MaskConvolver<T>::compute(T* arr, T* targ){
+	void MaskConvolver<T>::compute(const T* arr, T* targ){
 		vtls::copyArray(len, arr, temp);
 
 		fftw_execute_dft(fp, reinterpret_cast<fftw_complex*>(temp), reinterpret_cast<fftw_complex*>(temp));

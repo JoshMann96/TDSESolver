@@ -1,3 +1,10 @@
+/**
+ * @file CuTridiagSolver.h
+ * @brief CUDA tridiagonal solver system
+ * @details This file contains the definition of the cudaTridiagonalSolverSystem class, which is used to solve tridiagonal systems of the form \f$A X = B X_0\f$ on the GPU.
+ * The class minimizes communication between the CPU and GPU, allowing for efficient solving of tridiagonal systems.
+ * It supports virtual states which preserve the original system, useful for accurate iterations for nonlinear systems.
+ */
 #pragma once
 
 #include <cusparse.h>
@@ -6,8 +13,13 @@
 #include <iostream>
 #include <complex>
 
-// manages the solution of a tridiagonal system of equations on the GPU
-// aims to minimize communication between CPU and GPU
+/**
+ * CUDA tridiagonal solver system
+ * 
+ * This class is used to solve tridiagonal systems of the form \f$A X = B X_0\f$ on the GPU while minimizing communcation between the CPU and GPU.
+ * The present state is stored on the device and its status may be EMPTY (uninitialized), BARE (initialized), or OPERATED (operated on by a matrix).
+ * Supports virtual states which preserve the original system, useful for accurate iterations for nonlinear systems.
+*/
 class cudaTridiagonalSolverSystem {
 public:
     enum VectorState {EMPTY, BARE, OPERATED}; // EMPTY: vector not initialized, BARE: state is set (it stores a wavefunction), OPERATED: state has been operated on (it stores the RHS of the linear equation)
@@ -46,22 +58,116 @@ private:
 public:
     enum Side {LHS, RHS};
 
+    /**
+     * Initializes a new cudaTridiagonalSolverSystem.
+     * @param n number of gridpoints in the system.
+     * @param nrhs number of right hand sides (Kohn-Sham orbitals).
+    */
     cudaTridiagonalSolverSystem(int n, int nrhs);
-    ~cudaTridiagonalSolverSystem();
-    
-    // descriptions assume system is A X = B X0
-    // virtual states which preserve the original system are also supported
 
-    void solve(const std::complex<double> *DL, const std::complex<double> *D, const std::complex<double> *DU, std::complex<double> *x); // solve a tridiagonal system, x contains X0 and is overwritten with X
-    void setOffDiag(const std::complex<double>* DL, const std::complex<double>* DU, Side side); // sets the internal off-diagonal elements of the tridiagonal system, side determines whether it is A or B being set
-    void solve(const std::complex<double> *D, std::complex<double> *x); // solve a tridiagonal system with the LHS diagonals already set, x contains X0 and is overwritten with X
-    void setX(const std::complex<double>* x, bool virt = false, VectorState state = BARE); // sets the solution vector on the GPU, virt = true sets the virtual solution
-    void gatherX(std::complex<double>* x, bool virt = false); // gathers the solution vector from the GPU to the CPU, virt = true returns the virtual solution
-    void gatherRHS(std::complex<double>* x, bool virt = false); // gathers the RHS vector from the GPU to the CPU, virt = true returns the virtual RHS
+    ~cudaTridiagonalSolverSystem();
+
+    /**
+     * Solves a tridiagonal system of the form \f$A X = X_0\f$. This is intended for solving without maintaining the system on the GPU.
+     * The resulting state is stored in the regular state.
+     * @param DL (in) lower diagonal of \f$A\f$, n-1 elements.
+     * @param D (in) main diagonal of \f$A\f$, n elements.
+     * @param DU (in) upper diagonal of \f$A\f$, n elements.
+     * @param x (in/out) solution vector, contains \f$X_0\f$ and is overwritten with \f$X\f$, n*nrhs elements.
+     */
+    void solve(const std::complex<double> *DL, const std::complex<double> *D, const std::complex<double> *DU, std::complex<double> *x);
+    
+    /**
+     * Sets the internal off-diagonal elements of the tridiagonal system. Side determines whether it is \f$A\f$ or \f$B\f$ being set.
+     * @param DL (in) lower diagonal of \f$A\f$ or \f$B\f$, n-1 elements.
+     * @param DU (in) upper diagonal of \f$A\f$ or \f$B\f$, n-1 elements.
+     * @param side whether to set the system's LHS (\f$A\f$) or RHS (\f$B\f$).
+     */
+    void setOffDiag(const std::complex<double>* DL, const std::complex<double>* DU, Side side);
+    
+    /**
+     * Solves a tridiagonal system of the form \f$A X = X_0\f$. This is intended for solving with the off-diagonal components of A already set on the GPU.
+     * The resulting state is stored in the regular state.
+     * @param D (in) main diagonal of \f$A\f$, n elements.
+     * @param x (in/out) solution vector, contains \f$X_0\f$ and is overwritten with \f$X\f$, n*nrhs elements.
+     * @throws std::runtime_error if the off-diagonal elements of \f$A\f$ have not been set.
+     */
+    void solve(const std::complex<double> *D, std::complex<double> *x);
+    
+    /**
+     * Sets the state vector on the GPU.
+     * @param x (in) state vector, n*nrhs elements.
+     * @param virt true sets the virtual state, false sets the regular state.
+     * @param state vector state to set, BARE, or OPERATED.
+     * @throws std::runtime_error if the vector state is not BARE or OPERATED.
+     */
+    void setX(const std::complex<double>* x, bool virt = false, VectorState state = BARE);
+    
+    /**
+     * Gathers the state vector from the GPU to the CPU.
+     * @param x (out) state vector, n*nrhs elements.
+     * @param virt true gathers the virtual state, false gathers the regular state.
+     * @throws std::runtime_error if the vector state is not BARE.
+     */
+    void gatherX(std::complex<double>* x, bool virt = false);
+    
+    /**
+     * Gathers the RHS vector from the GPU to the CPU.
+     * @param x (out) RHS vector, n*nrhs elements.
+     * @param virt true gathers the virtual RHS, false gathers the regular RHS.
+     * @throws std::runtime_error if the vector state is not OPERATED.
+     */
+    void gatherRHS(std::complex<double>* x, bool virt = false);
+    
+    /**
+     * Computes the product \f$B X_0\f$.
+     * @param D (in) main diagonal of \f$B\f$, n elements.
+     * @param destVirt true stores the result in the virtual state, false stores the result in the regular state.
+     * @param sourceVirt true uses the virtual state as \f$X_0\f$, false uses the regular state as \f$X_0\f$.
+     * @throws std::runtime_error if the source vector state is not BARE.
+     * @throws std::runtime_error if the off-diagonal elements of \f$B\f$ have not been set.
+     */
     void rhsProduct(const std::complex<double>* D, bool destVirt = false, bool sourceVirt = false); // computes the product B X0 and stores it in the RHS, destVirt determines whether the result (B X0) is stored in the regular or virtual state, and sourceVirt determines whether the source (X0) is taken from the regular or virtual state
+    
+    /**
+     * Sets the boundary conditions for the left or right side of the \a physical system.
+     * The diagonal component of the boundary condition must be passed by the call to solve.
+     * @param DOv off-diagonal element of \f$A\f$.
+     * @param RHSv the right-hand side value of the operated vector.
+     * @param side whether to set the LHS or RHS boundary conditions.
+     */
     void setBdyCond(std::complex<double> DOv, const std::complex<double>* RHSv, Side side); // sets the boundary conditions for the LHS or RHS of the physical system
+    
+    /**
+     * Resets the boundary conditions for the left or right side of the \a physical system.
+     * This is necessary to remove boundary conditions that are no longer needed.
+     * @param side whether to reset the LHS or RHS boundary conditions.
+     */
     void resetBdyCond(Side side); // resets the boundary conditions for the LHS or RHS of the physical system
 
-    void solve(const std::complex<double> *D, bool destVirt = false, bool sourceVirt = false); // solves a tridiagonal system with the LHS diagonals already set, destVirt determines whether the solution X is stored in the regular or virtual state, and sourceVirt determines whether the source (B X0) is taken from the regular or virtual state
-    void calcRawRho(const double* weights, double* rho, bool virt = false); // calculates the density of the state on the GPU and returns it to the CPU, virt determines whether the density is calculated from the regular or virtual state
+    /**
+     * Solves a tridiagonal system of the form \f$A X = B X_0\f$. 
+     * The off-diagonal elements of \f$A\f$ must have been set previously, and rhsProduct must have been called to compute \f$B X_0\f$.
+     * @param D (in) main diagonal of \f$A\f$, n elements.
+     * @param destVirt true stores the result in the virtual state, false stores the result in the regular state.
+     * @param sourceVirt true uses the virtual state as \f$X_0\f$, false uses the regular state as \f$X_0\f$.
+     * @throws std::runtime_error if the source vector state is not OPERATED (did yuo call rhsProduct?).
+     * @throws std::runtime_error if the off-diagonal elements of \f$A\f$ have not been set.
+     */
+    void solve(const std::complex<double> *D, bool destVirt = false, bool sourceVirt = false);
+    
+    /**
+     * Calculates the particle density according to weights on the GPU and returns it to the CPU.
+     * This reduces the amount of communication overhead between the CPU and GPU.
+     * @param weights (in) weights of the states, nrhs elements.
+     * @param rho (out) density, n elements.
+     * @param virt true calculates the density from the virtual state, false calculates the density from the regular state.
+     */
+    void calcRawRho(const double* weights, double* rho, bool virt = false);
+
+    // TODO:
+    // Permit gathering only part of the state to minimize communication further
+    // This will need some modification of the Measuruers classes
+    // Add method to Measurer requiring each to declare which points are needed.
+    // Allow measurers to return some sort of Kernel, so that whatever they need to calculate can be done efficiently on the GPU.
 };

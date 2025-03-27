@@ -56,7 +56,7 @@ namespace WfcToRho {
 	public:
 		~Density() { if (psi2_work) sq_free(psi2_work); }
 		static void calcRawRho(int nPts, int nElec, const double* weights, const std::complex<double>* psi, double* psi2_work, double* rho);
-		void calcRho(int nPts, int nElec, double dx, const double* weights, const std::complex<double>* psi, double* rho){
+		void calcRho(int nPts, int nElec, double dx, const double* weights, const std::complex<double>* psi, double* rho) {
 			if (!psi2_work) psi2_work = (double*)sq_malloc(sizeof(double) * nPts * nElec);
 			calcRawRho(nPts, nElec, weights, psi, psi2_work, rho);
 			calcRho(nPts, nElec, dx, rho);

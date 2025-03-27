@@ -13,3 +13,4 @@ data*
 *.wisdom
 logs*
 runTest*
+doc/doxygen

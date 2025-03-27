@@ -240,7 +240,7 @@ namespace KineticOperators {
 		}
 	}
 
-	void GenDisp_PSM::findEigenStates(double* v, double emin, double emax, std::complex<double>** states, int* nEigs) {
+	void GenDisp_PSM::findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, int* nEigs) {
 		if (nPts > 46340)
 			throw std::runtime_error("Long datatype is required for grids of size nPts>46340. Rewrite this code (GenDisp_PSM::findEigenStates)");
 			
@@ -274,7 +274,7 @@ namespace KineticOperators {
 		sq_free(ifail);
 	}
 
-	double GenDisp_PSM::evaluateKineticEnergy(std::complex<double>* psi) {
+	double GenDisp_PSM::evaluateKineticEnergy(const std::complex<double>* psi) {
 		initializeOneFFT();
 
 		std::complex<double>* temp1 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nPts);
@@ -654,7 +654,7 @@ namespace KineticOperators {
 						kinMat[(i * i + (2 * dk + 3) * i + dk * (dk + 1)) / 2] = cv;
 				}
 
-				vtls::mulTriagDiagTriag(nPts, kinMat, &osKineticMask[d * nPts], temp);
+				vtls::mulHermitDiagHermit(nPts, kinMat, &osKineticMask[d * nPts], temp);
 				vtls::addArrays((nPts * (nPts + 1)) / 2, temp, opMat);
 			}
 
@@ -668,7 +668,7 @@ namespace KineticOperators {
 		}
 	}
 
-	void NonUnifGenDisp_PSM::findEigenStates(double* v, double emin, double emax, std::complex<double>** states, int* nEigs) {
+	void NonUnifGenDisp_PSM::findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, int* nEigs) {
 		*states = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nPts);
 		calcOpMat();
 		for (int i = 0; i < nPts; i++)
@@ -703,7 +703,7 @@ namespace KineticOperators {
 			sq_free(ifail); ifail = nullptr;
 	}
 
-	double NonUnifGenDisp_PSM::evaluateKineticEnergy(std::complex<double>* psi) {
+	double NonUnifGenDisp_PSM::evaluateKineticEnergy(const std::complex<double>* psi) {
 		initializeOneFFT();
 
 		std::complex<double>* temp1 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nPts);
@@ -944,7 +944,7 @@ namespace KineticOperators {
 			vtls::seqMulArrays(nPts, spatialDamp, &targ[i*nPts]);
 	}
 
-	void CrankNicolson::findEigenStates(double* v, double emin, double emax, std::complex<double>** states, int* nEigs){
+	void CrankNicolson::findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, int* nEigs){
 		double* hd = (double*)sq_malloc(sizeof(double)*nPts);
 		double* hod= (double*)sq_malloc(sizeof(double)*(nPts-1));
 		int  nSplit;
@@ -1051,7 +1051,7 @@ namespace KineticOperators {
 		sq_free(phaseAdvancement);
 	}
 
-	double CrankNicolson::evaluateKineticEnergy(std::complex<double>* psi){
+	double CrankNicolson::evaluateKineticEnergy(const std::complex<double>* psi){
 		std::complex<double>* temp = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*(nPts-2));
 		vtls::scaMulArray(nPts-2, PhysCon::hbar*PhysCon::hbar/(PhysCon::me*m_eff*dx*dx), &psi[1], temp);
 		vtls::scaMulAddArrays(nPts-3, -0.5*PhysCon::hbar*PhysCon::hbar/(PhysCon::me*m_eff*dx*dx), &psi[2], &temp[0]);

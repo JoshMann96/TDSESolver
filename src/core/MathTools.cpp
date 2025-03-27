@@ -3,7 +3,7 @@
 
 namespace vtls {
 
-	void addArraysImag(int len, std::complex<double>* arr1, double* arr2targ) {
+	void addArraysImag(int len, const std::complex<double>* arr1, double* arr2targ) {
 		for (int i = 0; i < len; i++)
 			arr2targ[i] += std::imag(arr1[i]);
 	}
@@ -24,30 +24,30 @@ namespace vtls {
 		cblas_zdscal(len, scalar, arr, 1);
 	}
 
-	void copyArray(int len, double *__restrict arr1, double *__restrict arr2) {
+	void copyArray(int len, const double *__restrict arr1, double *__restrict arr2) {
 		/*for (int i = 0; i < len; i++)
 			arr2[i] = arr1[i];*/
 		cblas_dcopy(len, arr1, 1, arr2, 1);
 	}
 
-	void copyArray(int len, std::complex<double> *__restrict arr1, std::complex<double> *__restrict arr2) {
+	void copyArray(int len, const std::complex<double> *__restrict arr1, std::complex<double> *__restrict arr2) {
 		/*for (int i = 0; i < len; i++)
 			arr2[i] = arr1[i];*/
 		cblas_zcopy(len, arr1, 1, arr2, 1);
 	}
 
-	void copyArray(int len, double* __restrict arr1, std::complex<double>* __restrict arr2) {
+	void copyArray(int len, const double* __restrict arr1, std::complex<double>* __restrict arr2) {
 		for (int i = 0; i < len; i++)
 			arr2[i] = arr1[i];
 	}
 
 	template <typename T>
-	void copyArrayRe(int len, T* __restrict arr1, double* __restrict arr2){
+	void copyArrayRe(int len, const T* __restrict arr1, double* __restrict arr2){
 		for (int i = 0; i < len; i++)
 			arr2[i] = std::real(arr1[i]);
 	}
 
-	int findValue(int len, double *__restrict arr, double val) {
+	int findValue(int len, const double *__restrict arr, double val) {
 		for (int i = 0; i < len; i++)
 			if (arr[i] >= val)
 				return i;
@@ -89,7 +89,7 @@ namespace vtls {
 }
 
 namespace vtlsPrnt {
-	void printGraph(int n, double *__restrict arr) {
+	void printGraph(int n, const double *__restrict arr) {
 		double minVal = *std::min_element(arr, arr + n);
 		double maxVal = *std::max_element(arr, arr + n);
 		int * nArr = (int*) sq_malloc(n * sizeof(int));
@@ -105,7 +105,7 @@ namespace vtlsPrnt {
 		sq_free(nArr);
 	}
 
-	void printGraph(int n, std::complex<double>* __restrict arr0) {
+	void printGraph(int n, const std::complex<double>* __restrict arr0) {
 		double* arr = (double*) sq_malloc(n * sizeof(double));
 		for (int i = 0; i < n; i++)
 			arr[i] = std::real(arr0[i]);
@@ -128,11 +128,11 @@ namespace vtlsPrnt {
 
 namespace plotting {
 
-	void GNUPlotter::update(int nPts, int nLines, double* x, double* y) {
+	void GNUPlotter::update(int nPts, int nLines, const double* x, const double* y) {
 		update(nPts, nLines, x, y, x[0], x[nPts - 1], vtls::min(nPts*nLines, y), vtls::max(nPts*nLines, y));
 	}
 
-	void GNUPlotter::update(int nPts, int nLines, double* y){
+	void GNUPlotter::update(int nPts, int nLines, const double* y){
 		double* x = (double*)sq_malloc(nPts * sizeof(double));
 		for(int i = 0; i < nPts; i++)
 			x[i] = i;
@@ -142,7 +142,7 @@ namespace plotting {
 		sq_free(x);
 	}
 
-	void GNUPlotter::update(int nPts, int nLines, double* y, double ymin, double ymax){
+	void GNUPlotter::update(int nPts, int nLines, const double* y, double ymin, double ymax){
 		double* x = (double*)sq_malloc(nPts * sizeof(double));
 		for(int i = 0; i < nPts; i++)
 			x[i] = i;
@@ -152,7 +152,7 @@ namespace plotting {
 		sq_free(x);
 	}
 
-	void GNUPlotter::update(int nPts, int nLines, double* x, double* y, double xmin, double xmax, double ymin, double ymax){
+	void GNUPlotter::update(int nPts, int nLines, const double* x, const double* y, double xmin, double xmax, double ymin, double ymax){
 		std::vector<double> xv(x, x+nPts), yv;
 
 		gp << "set xrange [" << xmin << ":" << xmax << "]\n";
