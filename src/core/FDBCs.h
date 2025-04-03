@@ -7,6 +7,10 @@
 #include "PhysCon.h"
 #include "blas.h"
 
+/**
+ * @namespace FDBCs
+ * @brief Contains classes for finite-difference boundary conditions used in the time-dependent Schrödinger equation (TDSE) solution.
+ */
 namespace FDBCs
 {
 	/**
@@ -22,7 +26,11 @@ namespace FDBCs
     private:
         int size, idx;
         T* arr;
-		// returns the local index of the i-th element in the array
+		/**
+		 * Returns the local index of the i-th element in the CyclicArray.
+		 * @param i The index to access, can be negative or larger than size.
+		 * @return The local index in the cyclic array, wrapping around if necessary.
+		 */ 
 		int localIdx(int i) { return (idx + i) % size; };
     public:
 		/**
@@ -180,7 +188,7 @@ namespace FDBCs
 		 * @param res (out) The RHS value for the boundary condition, nElec elements
 		 * @param nElec The number of electrons
 		 */
-		virtual void getRHS(std::complex<double>* psibd, std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec) = 0; // RHS value for the condition
+		virtual void getRHS(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec) = 0; // RHS value for the condition
 		
 		/**
 		 * Finish the present step. This \a must \a be called after the RHS has been calculated and before proceeding with the next time step.
@@ -188,7 +196,7 @@ namespace FDBCs
 		 * @param psiad (in) The wavefunction adjacent to the boundary, nElec elements
 		 * @param vb The potential at the boundary
 		 */
-		virtual void finishStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb) = 0;
+		virtual void finishStep(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb) = 0;
 		
 		/**
 		 * Prepare the next step. This \a must \a be called before the RHS is calculated.
@@ -196,7 +204,7 @@ namespace FDBCs
 		 * @param psiad (in) The wavefunction adjacent to the boundary, nElec elements
 		 * @param vb The potential at the boundary
 		 */
-		virtual void prepareStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb) = 0;
+		virtual void prepareStep(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb) = 0;
 		
 		/** 
 		 * Fill the history of the boundary wavefunction assuming the phase change over time provided in historialPhaseAdvance
@@ -204,7 +212,7 @@ namespace FDBCs
 		 * @param historialPhaseAdvance (in) The phase advance of the wavefunction at the boundary over each time step (according to the total energy), nElec elements
 		 * @param vb The potential at the boundary
 		 */
-		virtual void fillHistory(std::complex<double>* psibd, std::complex<double>* historialPhaseAdvance, double vb) = 0;
+		virtual void fillHistory(const std::complex<double>* psibd, const std::complex<double>* historialPhaseAdvance, double vb) = 0;
 
 		/**
 		 * Get the steady-state right-hand-side value for the boundary condition. For finding the open system eigenstate.
@@ -240,19 +248,19 @@ namespace FDBCs
 	{
 	public:
 		/// @copydoc BoundaryCondition::getLHSEle
-		void getRHS(std::complex<double>* psibd, std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec) {
+		void getRHS(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec) {
 			for (int i = 0; i < nElec; i++)
 				res[i] = getRHS(vb);
 		}
 
 		/// @copydoc BoundaryCondition::fillHistory
-		void fillHistory(std::complex<double>* psibd, std::complex<double>* historialPhaseAdvance, double vb) { return; };
+		void fillHistory(const std::complex<double>* psibd, const std::complex<double>* historialPhaseAdvance, double vb) { return; };
 		
 		/// @copydoc BoundaryCondition::prepareStep
-		void prepareStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb) {};
+		void prepareStep(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb) {};
 		
 		/// @copydoc BoundaryCondition::finishStep
-		void finishStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb) {};
+		void finishStep(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb) {};
 
 		/// @copydoc BoundaryCondition::getRHS
 		virtual std::complex<double> getRHS(double vb) = 0; // RHS value for the condition
@@ -372,19 +380,19 @@ namespace FDBCs
 		std::complex<double> getLHSAdjEle() { return 1.0; };
 		
 		/// @copydoc BoundaryCondition::getRHS
-		void getRHS(std::complex<double>* psibd, std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec);
+		void getRHS(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec);
         
 		/// @copydoc BoundaryCondition::finishStep
-		void finishStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb);
+		void finishStep(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb);
 		
 		/// @copydoc BoundaryCondition::prepareStep
-		void prepareStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb);
+		void prepareStep(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb);
 		
 		/// @copydoc BoundaryCondition::getRHS
 		void printKernel() { for (int i = 0; i < order; i++) std::cout << kernel[i] << " "; std::cout << std::endl; };
 		
 		/// @copydoc BoundaryCondition::fillHistory
-		void fillHistory(std::complex<double>* psibd, std::complex<double>* historialPhaseAdvance, double vb);
+		void fillHistory(const std::complex<double>* psibd, const std::complex<double>* historialPhaseAdvance, double vb);
 		
 		/// @copydoc BoundaryCondition::getSteadyRHS
 		std::complex<double> getSteadyRHS(std::complex<double> phaseAdvance, double k0, double vb);
@@ -424,16 +432,16 @@ namespace FDBCs
 		~UniformIDTransparentBC() { sq_free(phaseAdvance); sq_free(phs); sq_free(adjphs); sq_free(ihpsi); sq_free(hompsi); };
 		
 		/// @copydoc BoundaryCondition::prepareStep
-		void prepareStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb);
+		void prepareStep(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb);
 		
 		/// @copydoc BoundaryCondition::getRHS
-		void getRHS(std::complex<double>* psibd, std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec);
+		void getRHS(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec);
 		
 		/// @copydoc BoundaryCondition::finishStep
-		void finishStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb);
+		void finishStep(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb);
 		
 		/// @copydoc BoundaryCondition::fillHistory
-		void fillHistory(std::complex<double>* psibd, std::complex<double>* historialPhaseAdvance, double vb);
+		void fillHistory(const std::complex<double>* psibd, const std::complex<double>* historialPhaseAdvance, double vb);
 
 		/// @copydoc BoundaryCondition::getSteadyRHS
 		std::complex<double> getSteadyRHS(std::complex<double> phaseAdvance, double k0, double vb);

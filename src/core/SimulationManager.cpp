@@ -73,7 +73,7 @@ void SimulationManager::addPotential(Potentials::Potential* p) {
 		calcDensity = 1;
 }
 
-void SimulationManager::addSpatialDamp(double* arr) {
+void SimulationManager::addSpatialDamp(const double* arr) {
 	vtls::seqMulArrays(nPts, arr, spatialDamp);
 }
 
@@ -143,57 +143,7 @@ void SimulationManager::findEigenStates(double emin, double emax) {
 		dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
 }
 
-// DEPRECATED
-void SimulationManager::findInhomogeneousSteadyStates_OBSOLETE(double threshold, int nElec, double* kl, double* kr, bool verbose){
-	this->nElec = nElec;
-
-	KineticOperators::KineticOperator_FDM* kin_fdm = dynamic_cast<KineticOperators::KineticOperator_FDM*>(kin);
-	if(kin_fdm == nullptr)
-		throw std::runtime_error("SimulationManager::findInhomogeneousSteadyStates_OBSOLETE: Kinetic operator is not a finite difference method!");
-
-	freePsis();
-	for(int i = 0; i < HISTORY_LENGTH; i++){
-		psis[i] = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nElec);
-		std::fill_n(psis[i], nPts*nElec, 0.0);
-		pot->getVBare(0.0, vs[i]);
-	}
-
-	double err;
-	double* temp1 = (double*) sq_malloc(sizeof(double) * nPts * nElec);
-	double* temp2 = (double*) sq_malloc(sizeof(double) * nPts * nElec);
-	bool converged = false;
-	int i = 0;
-	while(!converged){
-		//kin_fdm->projectHistory(psis[prevIndex()], kl, kr, vs[index], nElec); // THIS MUST BE FIXED TO USE THIS FUNCTION AGAIN
-		kin_fdm->step(psis[index - 1], vs[index], spatialDamp, psis[index], nElec);
-
-		vtls::normSqr(nPts*nElec, psis[index], temp1);
-		vtls::normSqr(nPts*nElec, psis[index - 1], temp2);
-		vtls::scaMulAddArrays(nPts*nElec, -1.0, temp1, temp2); // temp2 = old - new
-		vtls::abs(nPts*nElec, temp2, temp2); // temp2 = |old - new|
-		// ? (sum of |old - new|) / (sum of |new|) < threshold
-		err = vtlsInt::rSum(nPts*nElec, temp2, 1.0) / vtlsInt::rSum(nPts*nElec, temp1, 1.0);
-		if(verbose && i % 10 == 0)
-			std::cout << "Error: " << err << std::endl;
-		converged = vtlsInt::rSum(nPts*nElec, temp2, 1.0) / vtlsInt::rSum(nPts*nElec, temp1, 1.0) < threshold;
-
-		vtls::copyArray(nPts*nElec, psis[index], psis[index - 1]);
-		i++;
-	}
-
-	for(int i = 0; i < HISTORY_LENGTH; i++)
-		vtls::copyArray(nPts*nElec, psis[index], psis[i]);
-
-	sq_free(temp1);
-	sq_free(temp2);
-	calcWeights();
-	if(calcDensity)
-		dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
-	for(int i = 0; i < HISTORY_LENGTH; i++)
-		vtls::copyArray(nPts, rhos[index], rhos[i]);
-}
-
-void SimulationManager::findInhomogeneousEigenStates(int nElec, double* energies){
+void SimulationManager::findInhomogeneousEigenStates(int nElec, const double* energies){
 	KineticOperators::KineticOperator_FDM* kin_fdm = dynamic_cast<KineticOperators::KineticOperator_FDM*>(kin);
 	if(kin_fdm == nullptr)
 		throw std::runtime_error("SimulationManager::findInhomogeneousEigenStates: Kinetic operator is not a finite difference method!");
@@ -255,10 +205,10 @@ int SimulationManager::measure(int idx) {
 }
 
 //Run simulation using operator splitting Fourier method (applies potential as linear)
-void SimulationManager::runOS_U2TU(int nSteps) {
+void SimulationManager::runEPS_U2TU(int nSteps) {
 	KineticOperators::KineticOperator_PSM* kin_psm = dynamic_cast<KineticOperators::KineticOperator_PSM*>(kin);
 	if(kin_psm == nullptr)
-		throw std::runtime_error("SimulationManager::runOS_U2TU: Kinetic operator is not a pseudospectral method!");
+		throw std::runtime_error("SimulationManager::runEPS_U2TU: Kinetic operator is not a pseudospectral method!");
 
 	auto rMeasure = &SimulationManager::measure;
 	auto rUpdatePotential = &SimulationManager::updatePotential;
@@ -269,7 +219,7 @@ void SimulationManager::runOS_U2TU(int nSteps) {
 
 	bool asyncCalc = canAsyncCalcPot();
 	if(!asyncCalc)
-		std::cout << "Warning: Potential is not wavefunction independent! It is recommended to use runOS_UW2TUW to more accurately account for the nonlinearity." << std::endl;
+		std::cout << "Warning: Potential is not wavefunction independent! It is recommended to use runEPS_UW2TUW to more accurately account for the nonlinearity." << std::endl;
 
 	for(int i = 0; i < nSteps; i++){
 		if(asyncCalc){
@@ -307,10 +257,10 @@ void SimulationManager::runOS_U2TU(int nSteps) {
 }
 
 //Run simulation using operator splitting Fourier method (applies potential as nonlinear, second potential phase is recalculated after propagation phase)
-void SimulationManager::runOS_UW2TUW(int nSteps) {
+void SimulationManager::runEPS_UW2TUW(int nSteps) {
 	KineticOperators::KineticOperator_PSM* kin_psm = dynamic_cast<KineticOperators::KineticOperator_PSM*>(kin);
 	if(kin_psm == nullptr)
-		throw std::runtime_error("SimulationManager::runOS_UW2TUW: Kinetic operator is not a pseudospectral method!");
+		throw std::runtime_error("SimulationManager::runEPS_UW2TUW: Kinetic operator is not a pseudospectral method!");
 
 	// variables for the midpoint of step
 	std::complex<double>* tpsi = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nElec);
@@ -350,10 +300,10 @@ void SimulationManager::runOS_UW2TUW(int nSteps) {
 	sq_free(tv);
 }
 
-void SimulationManager::runFD_L(int nSteps){
+void SimulationManager::runCN_L(int nSteps){
 	KineticOperators::KineticOperator_FDM* kin_fdm = dynamic_cast<KineticOperators::KineticOperator_FDM*>(kin);
 	if(kin_fdm == nullptr)
-		throw std::runtime_error("SimulationManager::runFD_L: Kinetic operator is not a finite difference method!");
+		throw std::runtime_error("SimulationManager::runCN_L: Kinetic operator is not a finite difference method!");
 
 	double* tv = (double*) sq_malloc(sizeof(double) * nPts);
 	auto rMeasure = &SimulationManager::measure;
@@ -365,7 +315,7 @@ void SimulationManager::runFD_L(int nSteps){
 
 	bool asyncCalc = canAsyncCalcPot();
 	if(!asyncCalc)
-		std::cout << "Warning: Potential is not wavefunction independent! It is recommended to use runFD_NL to more accurately account for the nonlinearity." << std::endl;
+		std::cout << "Warning: Potential is not wavefunction independent! It is recommended to use runCN_NL to more accurately account for the nonlinearity." << std::endl;
 
 	for(int i = 0; i < nSteps; i++){
 		if(asyncCalc){

@@ -31,7 +31,7 @@ namespace KineticOperators {
 		mtx.unlock();
 	}
 
-	void GenDisp_PSM::stepOS_U2TU(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec) {
+	void GenDisp_PSM::stepOS_U2TU(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, int nElec) {
 		initializeAllFFT(nElec);
 
 		std::complex<double> vcnst = -PhysCon::im * dt / PhysCon::hbar / 2.0;
@@ -70,7 +70,7 @@ namespace KineticOperators {
 
 	}
 
-	void GenDisp_PSM::stepOS_UW2T(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec) {
+	void GenDisp_PSM::stepOS_UW2T(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, int nElec) {
 		initializeAllFFT(nElec);
 
 		std::complex<double> vcnst = -PhysCon::im * dt / PhysCon::hbar / 2.0;
@@ -100,7 +100,7 @@ namespace KineticOperators {
 		executeAllFFTBackward(targ);
 	}
 
-	void GenDisp_PSM::stepOS_UW(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec) {
+	void GenDisp_PSM::stepOS_UW(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, int nElec) {
 		std::complex<double> vcnst = -PhysCon::im * dt / PhysCon::hbar / 2.0;
 #pragma omp parallel for
 		for (int i = 0; i < nPts; i++)
@@ -311,7 +311,7 @@ namespace KineticOperators {
 			sq_free(osKineticEnergy); osKineticEnergy = nullptr;
 	}
 
-	GenDisp_PSM_Series::GenDisp_PSM_Series(int nPts, double dx, double dt, int nPoly, double* polyCoeffs, uint fftwPlanPolicy) : GenDisp_PSM(nPts, dx, dt, fftwPlanPolicy) {
+	GenDisp_PSM_Series::GenDisp_PSM_Series(int nPts, double dx, double dt, int nPoly, const double* polyCoeffs, uint fftwPlanPolicy) : GenDisp_PSM(nPts, dx, dt, fftwPlanPolicy) {
 		std::complex<double>* osKineticEnergy = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts);
 
 		double dk = 2.0 * PhysCon::pi / (nPts * dx);
@@ -374,7 +374,7 @@ namespace KineticOperators {
 		mtx.unlock();
 	}
 
-	void NonUnifGenDisp_PSM::stepOS_U2TU(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec) {
+	void NonUnifGenDisp_PSM::stepOS_U2TU(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, int nElec) {
 		initializeAllFFT(nElec);
 
 		std::complex<double> vcnst = -PhysCon::im * dt / PhysCon::hbar / 2.0;
@@ -454,7 +454,7 @@ namespace KineticOperators {
 		}
 	}
 
-	void NonUnifGenDisp_PSM::stepOS_UW2T(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec) {
+	void NonUnifGenDisp_PSM::stepOS_UW2T(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, int nElec) {
 		initializeAllFFT(nElec);
 
 		std::complex<double> vcnst = -PhysCon::im * dt / PhysCon::hbar / 2.0;
@@ -518,7 +518,7 @@ namespace KineticOperators {
 				vtls::setNorm(nPts, &targ[i * nPts], dx, norms[i]);
 	}
 
-	void NonUnifGenDisp_PSM::stepOS_UW(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec) {
+	void NonUnifGenDisp_PSM::stepOS_UW(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, int nElec) {
 		std::complex<double> vcnst = -PhysCon::im * dt / PhysCon::hbar / 2.0;
 #pragma omp parallel for
 		for (int i = 0; i < nPts; i++)
@@ -813,7 +813,7 @@ namespace KineticOperators {
 	}
 
 
-	void KineticOperator_FDM::projectHistory(std::complex<double>* psi, std::complex<double>* phsL, std::complex<double>* phsR, double* v, int nElec) {
+	void KineticOperator_FDM::projectHistory(const std::complex<double>* psi, const std::complex<double>* phsL, const std::complex<double>* phsR, const double* v, int nElec) {
 		std::complex<double>* bcwfs = ( std::complex<double>* )sq_malloc(sizeof(std::complex<double>) * nElec);
 
 		cblas_zcopy(nElec, &psi[0], nPts, bcwfs, 1);
@@ -845,7 +845,7 @@ namespace KineticOperators {
 			potmul = 0.5*PhysCon::im*dt/PhysCon::hbar;
 	}
 
-	void CrankNicolson::_step(std::complex<double>* psi0, double* v, double* spatialDamp, std::complex<double>* targ, int nElec, bool isVirtual) {
+	void CrankNicolson::_step(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, int nElec, bool isVirtual) {
 		if(bct1 == nullptr)
 			bct1 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nElec);
 		if(bct2 == nullptr)
@@ -988,7 +988,7 @@ namespace KineticOperators {
 		sq_free(ifail);
 	}
 
-	void CrankNicolson::findInhomogeneousEigenStates(double* v, double* es, std::complex<double>* states, int nElec){
+	void CrankNicolson::findInhomogeneousEigenStates(const double* v, const double* es, std::complex<double>* states, int nElec){
 		std::complex<double>* lhs_d = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts);
 		std::complex<double>* lhs_ld= (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*(nPts-1));
 		std::complex<double>* lhs_ud= (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*(nPts-1));

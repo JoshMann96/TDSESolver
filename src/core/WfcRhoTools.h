@@ -1,44 +1,106 @@
+/**
+ * @file WfcRhoTools.h
+ * @brief Tools for calculating the electron density from the single-particle wavefunctions.
+ */
 #pragma once
 #include "CORECommonHeader.h"
 #include "MathTools.h"
 #include "KineticOperator.h"
 
+/**
+ * @namespace WfcToRho
+ * @brief Contains classes and functions for calculating electron density from wavefunctions.
+ */
 namespace WfcToRho {
 
+	/// Normalization schemes -- whether the wavefunction is normalized or if the wavefunction's absolute magnitude holds physical significance.
 	enum NormalizationScheme{
+		/// The wavefunction is unnormalized, typically for inhomogeneous/open systems.
 		UNNORMALIZED,
+		/// The wavefunction is normalized such that the integral of |psi|^2 over the entire simulation space equals 1.
 		NORMALIZED
 	};
 
-	// Template function for Weight (will result in error if weight is needed and this is used).
+	/**
+	 * Base class for weight calculation.
+	 * Instances of Weight are responsible for calculating the weights for each electron based on their energies and the corresponding physical model.
+	 * The weights calculated may be used to find the density: \f$ \rho = \sum_{i=1}^{n} w_i |\psi_i|^2 \f$ , where \f$ w_i \f$ are the weights and \f$ |\psi_i|^2 \f$ is the squared magnitude of the wavefunction for electron \a i.
+	 */
 	class Weight {
 	public:
-		virtual void calcWeights(int nElec, double* energies, double* weights, NormalizationScheme norm) = 0;
+		/**
+		 * Calculate the weights for the provided set of energies.
+		 * @param nElec Number of electrons.
+		 * @param energies (in) Array of energies for each electron, size nElec.
+		 * @param weights (out) Array to store the calculated weights for each electron, size nElec.
+		 * @param norm Normalization scheme to use (UNNORMALIZED or NORMALIZED).
+		 * @details The weights calculated may be used to find the density: \f$ \rho = \sum_{i=1}^{n} w_i |\psi_i|^2 \f$, where \f$ w_i \f$ are the weights and \f$ |\psi_i|^2 \f$ is the squared magnitude of the wavefunction for electron \a i.
+		 */
+		virtual void calcWeights(int nElec, const double* energies, double* weights, NormalizationScheme norm) = 0;
 	};
 
-	// Fermi gas in slab system
+	/**
+	 * Produces weights for a bound Fermi gas, where the wavefunctions are \a initially normalized and the system is homogeneous (aside from absorptive BCs).
+	 * @details 
+	 * This class calculates the weights for each electron based on the Fermi energy level and the energies of the electrons in a bound system.
+	 * The bottom of the well is taken to be the midpoint of the maximum and minimum energies provided, minus half of the Fermi energy.
+	 * The weight of each state is then caclulated as: 
+	 * \f$ w_\nu = \frac{2}{3\pi} \frac{m_e E_f}{\hbar^2} \frac{N_e}{\sum_j E_f-E_j} (E_f-E_\nu) \f$ with \f$N_e\f$ the number of states and energies are relative to the bottom of the well.
+	 * For a set of wavefunctions corresponding to the eigenstates of a finite well, this results in a nearly flat-top density.
+	 */
 	class BoundFermiGas :
 		public Weight
 	{
 	private:
 		double ef;
 	public:
+		/**
+		 * Constructor for BoundFermiGas.
+		 * @param ef The Fermi energy.
+		 */
 		BoundFermiGas(double ef) : ef(ef) {}
-		void calcWeights(int nElec, double* energies, double* weights, NormalizationScheme norm);
+		/**
+		 * @copydoc Weight::calcWeights(int, const double*, double*, NormalizationScheme)
+		 * @throw std::runtime_error if the normalization scheme is UNNORMALIZED
+		 */
+		void calcWeights(int nElec, const double* energies, double* weights, NormalizationScheme norm);
 	};
 
-	// Fermi gas in semi-infinite system
-	// Assumes incoming wavefunctions are normalized like 1.0*e^ikx-iwt
+	/**
+	 * Produces weights for a semi-infinite Fermi gas, where the wavefunctions correspond to eigenstates of the open system as defined by inhomogeneous boundary conditions.
+	 * @details
+	 * This class performs the same calculation as BoundFermiGas, but assumes that the wavefunctions have an incoming component of magnitude 1 according to an inhomogeneous boundary condition.
+	 * @warning This class expects the boundary conditions to impose incoming planewaves with a form \f$e^{ikx}\f$. It does not check if the boundary condition actually has unity magnitude.
+	 */
 	class SemiInfiniteFermiGas :
 		public Weight
 	{
 	private:
 		double ef;
 	public:
+		/**
+		 * Constructor for SemiInfiniteFermiGas.
+		 * @param ef The Fermi energy.
+		 */
 		SemiInfiniteFermiGas(double ef) : ef(ef) {}
-		void calcWeights(int nElec, double* energies, double* weights, NormalizationScheme norm);
+
+		/**
+		 * @copydoc Weight::calcWeights(int, const double*, double*, NormalizationScheme)
+		 * @throw std::runtime_error if the normalization scheme is NORMALIZED
+		 */
+		void calcWeights(int nElec, const double* energies, double* weights, NormalizationScheme norm);
 	};
 
+	/**
+	 * Produces weights for a system based on the density of states (DOS) from a file.
+	 * @details
+	 * This class reads a file containing the density of states (DOS) data and uses it to calculate the weights for each electron based on their energies.
+	 * The DOS is interpolated using a cardinal cubic B-spline to provide smooth weights.
+	 * The file is a binary format with contents:
+	 *  - (int)\f$\times 1\f$ : number of samples in the DOS data, \a n
+	 *  - (double)\f$\times n\f$ : The energy samples IN ELECTRONVOLTS relative to the Fermi level.
+	 *  - (double)\f$\times n\f$ : The corresponding DOS values at those energies in \f$\mathrm{\#/m}^3\mathrm{eV}\f$.
+	 */
 	class FromDOS :
 		public Weight
 	{
@@ -46,24 +108,68 @@ namespace WfcToRho {
 		double ef, leff;
 		boost::math::interpolators::cardinal_cubic_b_spline<double> dosISpline;
 	public:
+		/**
+		 * Constructor for FromDOS.
+		 * @param fl The Fermi level (relative to vacuum) for the model system, typically \f$-W\f$.
+		 * @param ef The Fermi energy.
+		 * @param leff The effective well size (in the same units as the DOS).
+		 * @param fil The filename containing the DOS data in binary format.
+		 */
 		FromDOS(double fl, double ef, double leff, const char* fil);
-		void calcWeights(int nElec, double* energies, double* weights, NormalizationScheme norm);
+
+		/**
+		 * @copydoc Weight::calcWeights(int, const double*, double*, NormalizationScheme)
+		 * @warning This is intended for use with normalized wavefunctions only. Though, it is possible to use it with unnormalized wavefunctions if you know what you're doing.
+		 */
+		void calcWeights(int nElec, const double* energies, double* weights, NormalizationScheme norm);
 	};
 
+	/**
+	 * Base class for calculating the electron density from wavefunctions and weights calculated from a child of Weight .
+	 */
 	class Density {
 	private:
 		double* psi2_work = nullptr;
 	public:
 		~Density() { if (psi2_work) sq_free(psi2_work); }
+
+		/**
+		 * Calculate the raw electron density, without any post-processing for geometry considerations.
+		 * @param nPts Number of grid points in the spatial domain.
+		 * @param nElec Number of electrons (wavefunctions).
+		 * @param weights (in) Array of weights for each electron, size nElec.
+		 * @param psi (in) Array of wavefunctions, size nPts * nElec.
+		 * @param psi2_work (in/out) Workspace for squared magnitudes of wavefunctions, size nPts * nElec.
+		 * @param rho (out) Array to store the calculated raw density, size nPts.
+		 */
 		static void calcRawRho(int nPts, int nElec, const double* weights, const std::complex<double>* psi, double* psi2_work, double* rho);
+
+		/**
+		 * Calculate the electron density from wavefunctions and weights, applying any necessary post-processing (e.g., geometry considerations).
+		 * @param nPts Number of grid points in the spatial domain.
+		 * @param nElec Number of electrons (wavefunctions).
+		 * @param dx The grid spacing in the spatial domain.
+		 * @param weights (in) Array of weights for each electron, size nElec.
+		 * @param psi (in) Array of wavefunctions, size nPts * nElec.
+		 * @param rho (out) Array to store the calculated processed density, size nPts.
+		 */
 		void calcRho(int nPts, int nElec, double dx, const double* weights, const std::complex<double>* psi, double* rho) {
 			if (!psi2_work) psi2_work = (double*)sq_malloc(sizeof(double) * nPts * nElec);
 			calcRawRho(nPts, nElec, weights, psi, psi2_work, rho);
 			calcRho(nPts, nElec, dx, rho);
 		};
-		virtual void calcRho(int nPts, int nElec, double dx, double* rho) = 0; // rho is in/out (raw rho then processed rho)
+
+		/**
+		 * Takes the raw density and processes it to obtain the final electron density with any further geometric considerations.
+		 * @param nPts Number of grid points in the spatial domain.
+		 * @param nElec Number of electrons (wavefunctions).
+		 * @param dx The grid spacing in the spatial domain.
+		 * @param rho (in/out) Array of raw density values, size nPts. This will be modified to contain the processed density.
+		 */
+		virtual void calcRho(int nPts, int nElec, double dx, double* rho) = 0;
 	};
 
+	/// Performs no post-processing on the raw density, simply returning it as is.
 	class DirectDensity :
 		public Density
 	{
@@ -73,24 +179,37 @@ namespace WfcToRho {
 		void calcRho(int nPts, int nElec, double dx, double* rho);
 	};
 
+	/// A density calculator which models a region of cylindrical geometry such that the density decreases further away from the cylinder.
 	class CylindricalDensity :
 		public Density
 	{
 	private:
-		Density* baseDens = nullptr;
 		double center, radius, minX;
 		int startIndex, endIndex;
 		double* thinning=nullptr;
 		int first = 1;
+		/**
+		 * Initializes the calculation.
+		 * @param nPts The number of grid points in the spatial domain.
+		 * @param dx The grid spacing in the spatial domain.
+		 */
+		void doFirst(int nPts, double dx);
 	public:
+		/**
+		 * Constructor for CylindricalDensity.
+		 * @param center The center of the cylindrical region along the x-axis.
+		 * @param radius The radius of the cylindrical region.
+		 * @param minX The minimum x-coordinate of the grid, used to determine the start and end indices for thinning.
+		 */
 		CylindricalDensity(double center, double radius, double minX);
+
 		~CylindricalDensity();
 		void calcRho(int nPts, int nElec, double dx, double* rho);
-		void doFirst(int nPts, double dx);
-
-		void setBaseDens(Density* baseDens) { this->baseDens = baseDens; first = 1; };
 	};
 
+	/**
+	 * Smooths the density by convolution against a Gaussian.
+	 */
 	class GaussianSmoothedDensity :
 		public Density
 	{
@@ -99,7 +218,12 @@ namespace WfcToRho {
 		double *tempRho=nullptr, sig;
 		vtls::MaskConvolver<double>* conv = nullptr;
 	public:
+		/**
+		 * Constructor for GaussianSmoothedDensity.
+		 * @param sig The standard deviation of the Gaussian used for smoothing.
+		 */
 		GaussianSmoothedDensity(double sig) : sig(sig) {}
+
 		~GaussianSmoothedDensity();
 		void calcRho(int nPts, int nElec, double dx, double* rho);
 	};

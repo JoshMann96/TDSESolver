@@ -22,7 +22,15 @@
 */
 class cudaTridiagonalSolverSystem {
 public:
-    enum VectorState {EMPTY, BARE, OPERATED}; // EMPTY: vector not initialized, BARE: state is set (it stores a wavefunction), OPERATED: state has been operated on (it stores the RHS of the linear equation)
+    /// The state of a wavefunction vector stored on the GPU.
+    enum VectorState {
+        /// The vector is not initialized or has been reset.
+        EMPTY, 
+        /// The vector is initialized and contains a valid wavefunction.
+        BARE, 
+        /// The vector has been operated on and contains the result of a linear product (RHS of the equation).
+        OPERATED
+    };
 private:
     struct CudaVector {
         cuDoubleComplex *data = nullptr;

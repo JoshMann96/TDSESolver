@@ -60,7 +60,7 @@ namespace FDBCs{
         }
     }*/
 
-    void UniformHDTransparentBC::getRHS(std::complex<double>* psibd, std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec){
+    void UniformHDTransparentBC::getRHS(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec){
         if (this->nElec != nElec)
             throw std::invalid_argument("Number of electrons in HDTransparentBC does not match the number of electrons in the system.");
 
@@ -68,20 +68,20 @@ namespace FDBCs{
             res[i] = psis[i]->inner(kernel) - psiad[i];
     }
 
-    void UniformHDTransparentBC::prepareStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb){
+    void UniformHDTransparentBC::prepareStep(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb){
         for (int i = 0; i < nElec; i++)
             psis[i]->set(0, psibd[i]);
 
         calcKernel(vb);
     }
 
-    void UniformHDTransparentBC::finishStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb){
+    void UniformHDTransparentBC::finishStep(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb){
         //std::complex<double> phs = 1.0/phasePerStep(vb);
         for (int i = 0; i < nElec; i++)
             psis[i]->stepBack();
 	}
 
-    void UniformHDTransparentBC::fillHistory(std::complex<double>* psibd, std::complex<double>* historicalPhaseAdvance, double vb) {
+    void UniformHDTransparentBC::fillHistory(const std::complex<double>* psibd, const std::complex<double>* historicalPhaseAdvance, double vb) {
         std::complex<double> phs;
         for (int i = 0; i < nElec; i++){
             phs = 1.0;
@@ -132,7 +132,7 @@ namespace FDBCs{
         std::fill_n(phs, nElec, 1.0);
     }
 
-    void UniformIDTransparentBC::prepareStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb){
+    void UniformIDTransparentBC::prepareStep(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb){
         for (int i = 0; i < nElec; i++)
             psis[i]->set(0, psibd[i] - ihpsi[i]*phs[i]); // subtract off inhomogeneous component
 
@@ -147,7 +147,7 @@ namespace FDBCs{
         
     }
 
-    void UniformIDTransparentBC::getRHS(std::complex<double>* psibd, std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec){
+    void UniformIDTransparentBC::getRHS(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec){
         if (this->nElec != nElec)
             throw std::invalid_argument("Number of electrons in IDTransparentBC does not match the number of electrons in the system.");
 
@@ -155,14 +155,14 @@ namespace FDBCs{
             res[i] = psis[i]->inner(kernel) - psiad[i] + ihpsi[i]*phs[i]*(adjphs[i]+phaseAdvance[i]*(adjphs[i] - kernel0)); // add inhomogeneous component of present step
     }
 
-    void UniformIDTransparentBC::finishStep(std::complex<double>* psibd, std::complex<double>* psiad, double vb) {
+    void UniformIDTransparentBC::finishStep(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb) {
         UniformHDTransparentBC::finishStep(psibd, psiad, vb);
 
         for (int i = 0; i < nElec; i++)
             phs[i] *= phaseAdvance[i];
     }
 
-    void UniformIDTransparentBC::fillHistory(std::complex<double>* psibd, std::complex<double>* historicalPhaseAdvance, double vb) {
+    void UniformIDTransparentBC::fillHistory(const std::complex<double>* psibd, const std::complex<double>* historicalPhaseAdvance, double vb) {
         std::complex<double>* dpsibd = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nElec);
         for (int i = 0; i < nElec; i++)
             dpsibd[i] = psibd[i] - ihpsi[i];

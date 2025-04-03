@@ -15,9 +15,13 @@
  */
 namespace Measurers {
 
+	/// Status of a Measurer::measure operation.
 	enum MeasurerStatus {
+		/// The measurement was successful.
 		SUCCESS,
+		/// The measurement failed (error).
 		FAIL,
+		/// The Measurer::measure call was the last and the Measurer is ready to be destructed.
 		ALL_DONE
 	};
 
@@ -719,7 +723,7 @@ namespace Measurers {
 		const char* fname = "wghts.dat";
 		const int *nElec;
 		int first = 1;
-		const double ** weights;
+		double * const * weights;
 	public:
 		int getIndex() { return index; };
 
@@ -729,7 +733,7 @@ namespace Measurers {
 		 * @param weights (in) Pointer to the weights of the wave functions.
 		 * @param fol The folder to write to.
 		 */
-		WfcRhoWeights(const int* nElec, const double ** weights, const char* fol);
+		WfcRhoWeights(const int* nElec, double * const * weights, const char* fol);
 		~WfcRhoWeights();
 		MeasurerStatus measure(int step, const std::complex<double> * psi, const double* v, double t);
 	};
@@ -742,7 +746,8 @@ namespace Measurers {
 		int nPts, stepsPerPlot;
 		const int* nElec;
 		WfcToRho::Density *const dens;
-		const double** wght, *xs;
+		double *const*wght;
+		const double *xs;
 		double dx, *rho=nullptr;
 		bool pause;
 	public:
@@ -759,7 +764,7 @@ namespace Measurers {
 		 * @param stepsPerPlot The number of time steps to wait before updating the plot. Default is 1.
 		 * @param pause Whether to pause and wait for user input after each plot. Default is true.
 		 */
-		DensityPlotter(int nPts, const int* nElec, double dx, const double* xs, WfcToRho::Density *const dens, const double** wght, int stepsPerPlot=1, bool pause=true);
+		DensityPlotter(int nPts, const int* nElec, double dx, const double* xs, WfcToRho::Density *const dens, double * const * wght, int stepsPerPlot=1, bool pause=true);
 		
 		~DensityPlotter();
 		MeasurerStatus measure(int step, const std::complex<double> * psi, const double* v, double t);

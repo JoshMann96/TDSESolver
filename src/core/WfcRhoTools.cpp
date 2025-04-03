@@ -3,7 +3,7 @@
 #include <stdexcept>
 
 namespace WfcToRho {
-	void BoundFermiGas::calcWeights(int nElec, double* energies, double* weights, NormalizationScheme norm) {
+	void BoundFermiGas::calcWeights(int nElec, const double* energies, double* weights, NormalizationScheme norm) {
 		if(norm == NormalizationScheme::UNNORMALIZED)
 			throw std::runtime_error("WfcToRho::BoundFermiGas Cannot use UNNORMALIZED scheme with BoundFermiGas");
 
@@ -23,7 +23,7 @@ namespace WfcToRho {
 			weights[i] *= fact;
 	}
 
-	void SemiInfiniteFermiGas::calcWeights(int nElec, double* energies, double* weights, NormalizationScheme norm) {
+	void SemiInfiniteFermiGas::calcWeights(int nElec, const double* energies, double* weights, NormalizationScheme norm) {
 		if(norm == NormalizationScheme::NORMALIZED)
 			throw std::runtime_error("WfcToRho::SemiInfiniteFermiGas expects a wavefunction which has a normalization dicated by boundary conditions, not the total norm.");
 
@@ -76,13 +76,13 @@ namespace WfcToRho {
 		sq_free(fE);
 	}
 
-	void FromDOS::calcWeights(int nElec, double* energies, double* weights, NormalizationScheme norm) {
+	void FromDOS::calcWeights(int nElec, const double* energies, double* weights, NormalizationScheme norm) {
 		//approximate effective width of well... will need to be reconsidered if using non square-ish wells
 		//corrects for lost normalized density for larger wells (densities should be O(1))
 		//double leff = PhysCon::hbar * 2.0 * PhysCon::pi * nElec / (2.0 * std::sqrt(2.0 * ef * PhysCon::me));
 
 		if(norm == NormalizationScheme::UNNORMALIZED)
-			std::cout << "Warning: FromDOS: UNNORMALIZED scheme is not recommended with FromDOS, but could work if you know what you're doing." << std::endl;
+			std::cerr << "Warning: FromDOS: UNNORMALIZED scheme is not recommended with FromDOS, but could work if you know what you're doing." << std::endl;
 
 		if (nElec == 1) {
 			std::cout << "FromDOS: Only single electron provided, weight set to total DOS from energies[0]-ef to energies[0]" << std::endl;
@@ -92,24 +92,28 @@ namespace WfcToRho {
 
 		//sort energy
 		int* idx = (int*) sq_malloc(sizeof(int)*nElec);
+		double* sortedEnergies = (double*) sq_malloc(sizeof(double) * nElec);
+		vtls::copyArray( nElec, energies, sortedEnergies);
+
 		for (int i = 0; i < nElec; i++)
 			idx[i] = i;
-		vtls::insertSort_idxs(nElec, energies, idx);
+		vtls::insertSort_idxs(nElec, sortedEnergies, idx);
 
 		//represented energies are half-way between adjacent energies
 		//eg, if we have energy states E = 0, 1, 3, then the state of energy 1 represents energies 2 <- 0.5
 		for (int i = 1; i < nElec - 1; i++) {
-			weights[idx[i]] = leff * (dosISpline((energies[i] + energies[i + 1]) / 2.0) - dosISpline((energies[i] + energies[i - 1]) / 2.0));
+			weights[idx[i]] = leff * (dosISpline((sortedEnergies[i] + sortedEnergies[i + 1]) / 2.0) - dosISpline((sortedEnergies[i] + sortedEnergies[i - 1]) / 2.0));
 		}
 
 		//the bottom state represents halfway above and the same amount below
 		//eg, if we have energy states E = 0, 1 then state with energy 0 represents energies 0.5 <- -0.5
-		weights[idx[0]] = leff * (dosISpline((energies[0] + energies[1]) / 2.0) - dosISpline((3.0 * energies[0] - energies[1]) / 2.0));
+		weights[idx[0]] = leff * (dosISpline((sortedEnergies[0] + sortedEnergies[1]) / 2.0) - dosISpline((3.0 * sortedEnergies[0] - sortedEnergies[1]) / 2.0));
 
 		//the top state is similar to the bottom state
-		weights[idx[nElec - 1]] = leff * (dosISpline((3.0 * energies[nElec - 1] - energies[nElec - 2]) / 2.0) - dosISpline((energies[nElec - 1] + energies[nElec - 2]) / 2.0));
+		weights[idx[nElec - 1]] = leff * (dosISpline((3.0 * sortedEnergies[nElec - 1] - sortedEnergies[nElec - 2]) / 2.0) - dosISpline((sortedEnergies[nElec - 1] + sortedEnergies[nElec - 2]) / 2.0));
 
 		sq_free(idx);
+		sq_free(sortedEnergies);
 	}
 
 	void Density::calcRawRho(int nPts, int nElec, const double* weights, const std::complex<double>* psi, double* psi2_work, double* rho){
@@ -135,8 +139,6 @@ namespace WfcToRho {
 
 	void CylindricalDensity::doFirst(int nPts, double dx) {
 		first = 0;
-		if(baseDens == nullptr)
-			throw std::runtime_error("CylindricalDensity: Base density calculator must be set with setBaseDens before use.");
 		if(thinning)
 			sq_free(thinning);
 		thinning = (double*) sq_malloc(sizeof(double)*nPts);

@@ -232,9 +232,9 @@ void init_Simulation(py::module &m) {
             maxE : float
                 Eigenvalue upper bound)V0G0N",
             "minE"_a, "maxE"_a)
-        .def("runOS_U2TU", &PySimulation::runOS_U2TU, R"V0G0N(
+        .def("runEPS_U2TU", &PySimulation::runEPS_U2TU, R"V0G0N(
             Runs simulation using operator splitting method. Potential is not updated between kinetic operator propagation steps.)V0G0N")
-        .def("runOS_UW2TUW", &PySimulation::runOS_UW2TUW, R"V0G0N(
+        .def("runEPS_UW2TUW", &PySimulation::runEPS_UW2TUW, R"V0G0N(
             Runs simulation using operator splitting method. Potential is updated between kinetic operator propagation steps.)V0G0N")
         .def("getElectricalCentroidSurface", &PySimulation::findElectricalSurfaceCentroidRule, R"V0G0N(
             Finds the index of the electrical surface using the centroid rule.

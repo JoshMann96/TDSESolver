@@ -6,7 +6,7 @@
 #include "blas.h"
 
 namespace Potentials {
-	FilePotential::FilePotential(int nPts, double * x, double offset, const char * fil, int refPoint) {
+	FilePotential::FilePotential(int nPts, const double * x, double offset, const char * fil, int refPoint) {
 		FilePotential::nPts = nPts;
 		v = (double*) sq_malloc(sizeof(double)*nPts);
 		std::fstream ifil = std::fstream(fil, std::ios::in | std::ios::binary);
@@ -34,11 +34,11 @@ namespace Potentials {
 		vtls::copyArray(nPts, v, targ);
 	}
 
-	void FilePotential::getV(double* rho, std::complex<double> * psi, double t, double * targ) {
+	void FilePotential::getV(const double* rho, const std::complex<double> * psi, double t, double * targ) {
 		vtls::copyArray(nPts, v, targ);
 	}
 
-	BiasFieldPotential::BiasFieldPotential(int nPts, double * x, double tstart, double tbuf, double xmin, double xmax, double xmin_buf, double xmax_buf, double fieldStrength, int refPoint) {
+	BiasFieldPotential::BiasFieldPotential(int nPts, const double * x, double tstart, double tbuf, double xmin, double xmax, double xmin_buf, double xmax_buf, double fieldStrength, int refPoint) {
 		BiasFieldPotential::nPts = nPts;
 		BiasFieldPotential::tstart = tstart;
 		BiasFieldPotential::tbuf = tbuf;
@@ -109,11 +109,11 @@ namespace Potentials {
 			std::fill_n(targ, nPts, 0.0);
 	}
 
-	void BiasFieldPotential::getV(double* rho, std::complex<double> * psi, double t, double * targ) {
+	void BiasFieldPotential::getV(const double* rho, const std::complex<double> * psi, double t, double * targ) {
 		getVBare(t, targ);
 	}
 
-	CoulombPotential::CoulombPotential(int nPts, double * x, double ne, double chargePos, double minX, double maxX, int refPoint) {
+	CoulombPotential::CoulombPotential(int nPts, const double * x, double ne, double chargePos, double minX, double maxX, int refPoint) {
 		v = (double*) sq_malloc(sizeof(double)*nPts);
 		double k = PhysCon::qe*PhysCon::qe / (4.0*PhysCon::pi*PhysCon::e0);
 		double dx = (x[nPts - 1] - x[0]) / nPts;
@@ -138,11 +138,11 @@ namespace Potentials {
 		vtls::copyArray(nPts, v, targ);
 	}
 
-	void CoulombPotential::getV(double* rho, std::complex<double> * psi, double t, double * targ) {
+	void CoulombPotential::getV(const double* rho, const std::complex<double> * psi, double t, double * targ) {
 		vtls::copyArray(nPts, v, targ);
 	}
 
-	FiniteBox::FiniteBox(int nPts, double * x, double left, double right, double vin, int refPoint) {
+	FiniteBox::FiniteBox(int nPts, const double* x, double left, double right, double vin, int refPoint) {
 		FiniteBox::nPts = nPts;
 		v = (double*) sq_malloc(sizeof(double)*nPts);
 		for (int i = 0; i < nPts; i++) {
@@ -162,12 +162,12 @@ namespace Potentials {
 		vtls::copyArray(nPts, v, targ);
 	}
 
-	void FiniteBox::getV(double* rho, std::complex<double> * psi, double t, double * targ) {
+	void FiniteBox::getV(const double* rho, const std::complex<double> * psi, double t, double * targ) {
 		getVBare(t, targ);
 	}
 
 
-	JelliumPotential::JelliumPotential(int nPts, double * x, double center, double ef, double w, int refPoint) {
+	JelliumPotential::JelliumPotential(int nPts, const double* x, double center, double ef, double w, int refPoint) {
 		JelliumPotential::nPts = nPts;
 		v = (double*) sq_malloc(sizeof(double)*nPts);
 		double nEf = ef / PhysCon::auE_ry;
@@ -214,11 +214,11 @@ namespace Potentials {
 		vtls::copyArray(nPts, v, targ);
 	}
 
-	void JelliumPotential::getV(double* rho, std::complex<double> * psi, double t, double * targ) {
+	void JelliumPotential::getV(const double* rho, const std::complex<double> * psi, double t, double * targ) {
 		getVBare(t, targ);
 	}
 
-	JelliumPotentialBacked::JelliumPotentialBacked(int nPts, double * x, double center, double ef, double w, double backStart, double backWidth, int refPoint) {
+	JelliumPotentialBacked::JelliumPotentialBacked(int nPts, const double* x, double center, double ef, double w, double backStart, double backWidth, int refPoint) {
 		JelliumPotentialBacked::nPts = nPts;
 		v = (double*) sq_malloc(sizeof(double)*nPts);
 		double nEf = ef / PhysCon::auE_ry;
@@ -282,7 +282,7 @@ namespace Potentials {
 		vtls::copyArray(nPts, v, targ);
 	}
 
-	void JelliumPotentialBacked::getV(double* rho, std::complex<double> * psi, double t, double * targ) {
+	void JelliumPotentialBacked::getV(const double* rho, const std::complex<double> * psi, double t, double * targ) {
 		getVBare(t, targ);
 	}
 
@@ -306,11 +306,11 @@ namespace Potentials {
 		vtls::scaMulArrayRe(nPts, std::exp(PhysCon::im*(w*(t-tmax)+phase))*env->getValue(t), potMask, targ);
 	}
 
-	void ElectricFieldProfileToPotential::getV(double* rho, std::complex<double> * psi, double t, double * targ) {
+	void ElectricFieldProfileToPotential::getV(const double* rho, const std::complex<double> * psi, double t, double * targ) {
 		getVBare(t, targ);
 	}
 
-	ShieldedAtomicPotential::ShieldedAtomicPotential(int nPts, double * x, double center, double latticeSpacing, double zProtons, double decayLength) {
+	ShieldedAtomicPotential::ShieldedAtomicPotential(int nPts, const double* x, double center, double latticeSpacing, double zProtons, double decayLength) {
 		ShieldedAtomicPotential::nPts = nPts;
 		v = (double*) sq_malloc(sizeof(double)*nPts);
 		using namespace PhysCon;
@@ -326,14 +326,14 @@ namespace Potentials {
 		vtls::copyArray(nPts, v, targ);
 	}
 
-	void ShieldedAtomicPotential::getV(double* rho, std::complex<double> * psi, double t, double * targ) {
+	void ShieldedAtomicPotential::getV(const double* rho, const std::complex<double> * psi, double t, double * targ) {
 		getVBare(t, targ);
 	}
 
-	CurrentIntegrator::CurrentIntegrator(int nPts, double dx, int evalPoint, int side, int* nElec, double** weights) :
+	CurrentIntegrator::CurrentIntegrator(int nPts, double dx, int evalPoint, int side, const int* nElec, double * const * weights) :
 		nPts(nPts), dx(dx), evalPoint(evalPoint), nElec(nElec), weights(weights), integratedFlux(0.0), tPrev(0.0), side(side) {};
 	
-	void CurrentIntegrator::integrate(std::complex<double>* psi, double t) {
+	void CurrentIntegrator::integrate(const std::complex<double>* psi, double t) {
 		int pt0;
 		switch(side) {
 		case 0: // central derivative
@@ -364,8 +364,8 @@ namespace Potentials {
 		tPrev = t;
 	}
 
-	CylindricalImageCharge::CylindricalImageCharge(int nPts, double* x, double dx, double ef, double w, double rad, int* nElec,
-	 double** weights, int posMin, int posMax, int refPoint) :
+	CylindricalImageCharge::CylindricalImageCharge(int nPts, const double* x, double dx, double ef, double w, double rad, const int* nElec,
+		double * const * weights, int posMin, int posMax, int refPoint) :
 	 	nPts(nPts), dx(dx), ef(ef), w(w), rad(rad), refPoint(refPoint), x(x),
 		posMin(posMin < 0 ? 0 : posMin),
 		posMax(posMax > nPts - 1 ? nPts - 1 : posMax)
@@ -393,7 +393,7 @@ namespace Potentials {
 		delete curInt;
 	}
 	
-	void CylindricalImageCharge::_assemble(double* rho, std::complex<double>* psi, va_list args) {
+	void CylindricalImageCharge::_assemble(const double* rho, const std::complex<double>* psi, va_list args) {
 		// Extract additional arguments from va_list
         int sp = va_arg(args, int);
 		surfPos = sp > nPts - 1 ? nPts - 1 : sp;
@@ -420,7 +420,7 @@ namespace Potentials {
 			targ[i] = 0.0;
 	}
 
-	void CylindricalImageCharge::getV_(double* rho, std::complex<double>* psi, double t, double* targ) {
+	void CylindricalImageCharge::getV_(const double* rho, const std::complex<double>* psi, double t, double* targ) {
 		calcPot(rho, psi, t, targ);
 		double ref = targ[refPoint] - origPot[refPoint];
 		for (int i = 0; i < nPts; i++)
@@ -429,7 +429,7 @@ namespace Potentials {
 		curInt->integrate(psi, t);
 	}
 
-	void CylindricalImageCharge::calcPot(double* rho, std::complex<double>* psi, double cur_t, double* targ) {
+	void CylindricalImageCharge::calcPot(const double* rho, const std::complex<double>* psi, double cur_t, double* targ) {
 		std::fill_n(targ, nPts, 0);
 
 		vtls::seqMulArrays(nPts, dethin, rho, myRho);
@@ -452,7 +452,7 @@ namespace Potentials {
 		vtls::scaMulArray(nPts, -PhysCon::qe * PhysCon::qe / PhysCon::e0, targ);
 	}
 
-	PlanarToCylindricalHartree::PlanarToCylindricalHartree(int nPts, double* x, double dx, double rad, int* nElec, double** weights, int posMin, int posMax, int refPoint) : 
+	PlanarToCylindricalHartree::PlanarToCylindricalHartree(int nPts, const double* x, double dx, double rad, const int* nElec, double * const * weights, int posMin, int posMax, int refPoint) : 
 		nPts(nPts), dx(dx), rad(rad), refPoint(refPoint),
 		posMin(posMin < 0 ? 0 : posMin),
 		posMax(posMax > nPts - 1 ? nPts - 1 : posMax),
@@ -481,7 +481,7 @@ namespace Potentials {
 		delete curInt;
 	}
 
-	void PlanarToCylindricalHartree::_assemble(double* rho, std::complex<double>* psi, va_list args){
+	void PlanarToCylindricalHartree::_assemble(const double* rho, const std::complex<double>* psi, va_list args){
 		// Extract additional arguments from va_list
         int sp = va_arg(args, int);
 		surfPos = sp > nPts - 1 ? nPts - 1 : sp;
@@ -503,7 +503,7 @@ namespace Potentials {
 		std::fill_n(targ, nPts, 0.0);
 	}
 
-	void PlanarToCylindricalHartree::getV_(double* rho, std::complex<double>* psi, double t, double* targ) {
+	void PlanarToCylindricalHartree::getV_(const double* rho, const std::complex<double>* psi, double t, double* targ) {
 		calcPot(rho, psi, t, targ);
 		double lossFraction = -(originalCharge - totalCharge - curInt->getIntegratedFlux()) / originalCharge + 1.0; // charge that moved to left is lost, scale origPot by appropriate amount
 		double ref = targ[refPoint] - lossFraction * origPot[refPoint];
@@ -513,7 +513,7 @@ namespace Potentials {
 		curInt->integrate(psi, t);
 	}
 
-	void PlanarToCylindricalHartree::calcPot(double* rho, std::complex<double>* psi, double t, double* targ) {
+	void PlanarToCylindricalHartree::calcPot(const double* rho, const std::complex<double>* psi, double t, double* targ) {
 		std::fill_n(targ, posMin, 0);
 
 		vtls::seqMulArrays(posMax-posMin, &dethin[posMin], &rho[posMin], &myRho[posMin]);
@@ -536,7 +536,7 @@ namespace Potentials {
 		sq_free(rho);
 	};
 
-	void LDAFunctional::_assemble(double* rho, std::complex<double>* psi, va_list args){
+	void LDAFunctional::_assemble(const double* rho, const std::complex<double>* psi, va_list args){
 		calcPot(rho, origPot);
 	}
 
@@ -544,14 +544,14 @@ namespace Potentials {
 		std::fill_n(targ, nPts, 0.0);
 	}
 
-	void LDAFunctional::getV_(double* rho, std::complex<double>* psi, double t, double* targ) {
+	void LDAFunctional::getV_(const double* rho, const std::complex<double>* psi, double t, double* targ) {
 		calcPot(rho, targ);
 		double ref = targ[refPoint] - origPot[refPoint];
 		for (int i = 0; i < nPts; i++)
 			targ[i] -= origPot[i] + ref;
 	}
 
-	void LDAFunctional::calcPot(double* rho, double* targ) {
+	void LDAFunctional::calcPot(const double* rho, double* targ) {
 		switch (typ) {
 		case LDAFunctionalType::X_SLATER: // slater exchange
 		{
@@ -614,7 +614,7 @@ namespace Potentials {
 		}
 	}
 
-	void CompositePotential::getV(double* rho, std::complex<double> * psi, double t, double * targ) {
+	void CompositePotential::getV(const double* rho, const std::complex<double> * psi, double t, double * targ) {
 		vtls::copyArray(nPts, v0, targ);
 		for (int i = 0; i < numDPots; i++) {
 			dynamicPots[i]->getV(rho, psi, t, nv);
@@ -697,14 +697,14 @@ namespace Potentials {
 		pot->getVBare(t, targ);
 	}
 
-	void PotentialManager::getV(double* rho, std::complex<double> * psi, double t, double * targ) {
+	void PotentialManager::getV(const double* rho, const std::complex<double> * psi, double t, double * targ) {
 		if(!compositeRefreshed)
 			refreshCompositePotential();
 		pot->getV(rho, psi, t, targ);
 	}
 
 	namespace ElectricFieldProfiles {
-		ConstantFieldProfile::ConstantFieldProfile(int nPts, double * x, double eMax, double minX, double maxX) : ElectricFieldProfile(nPts) {
+		ConstantFieldProfile::ConstantFieldProfile(int nPts, const double * x, double eMax, double minX, double maxX) : ElectricFieldProfile(nPts) {
 			for (int i = 0; i < nPts; i++) {
 				if (x[i] > minX && x[i] < maxX)
 					fs[i] = eMax;
@@ -713,7 +713,7 @@ namespace Potentials {
 			}
 		}
 
-		CylindricalToLinearProfile::CylindricalToLinearProfile(int nPts, double * x, double minX, double maxX, double r, double eMax, double enhFact) : ElectricFieldProfile(nPts) {
+		CylindricalToLinearProfile::CylindricalToLinearProfile(int nPts, const double * x, double minX, double maxX, double r, double eMax, double enhFact) : ElectricFieldProfile(nPts) {
 			double xc = -enhFact * r + minX + std::sqrt((enhFact - 1.0)*r*(enhFact*r + maxX - minX));
 			double xn;
 			for (int i = 0; i < nPts; i++) {
@@ -727,7 +727,7 @@ namespace Potentials {
 			}
 		}
 
-		CylindricalToCutoffProfile::CylindricalToCutoffProfile(int nPts, double * x, double minX, double maxX, double r, double eMax, double enhFact, double decayLength) : ElectricFieldProfile(nPts) {
+		CylindricalToCutoffProfile::CylindricalToCutoffProfile(int nPts, const double * x, double minX, double maxX, double r, double eMax, double enhFact, double decayLength) : ElectricFieldProfile(nPts) {
 			double xn, k;
 			for (int i = 0; i < nPts; i++) {
 				xn = x[i];
@@ -749,7 +749,7 @@ namespace Potentials {
 			}
 		}
 
-		InMetalFieldProfile::InMetalFieldProfile(int nPts, double * x, double minX, double maxX, double eMax, double lam, std::complex<double> er, double cond) : ElectricFieldProfile(nPts) {
+		InternalPlasmonicFieldProfile::InternalPlasmonicFieldProfile(int nPts, const double * x, double minX, double maxX, double eMax, double lam, std::complex<double> er, double cond) : ElectricFieldProfile(nPts) {
 			double xn;
 			//double w = PhysCon::c / lam * PhysCon::pi*2.0;
 			std::complex<double> k, kx, kz;
@@ -774,7 +774,7 @@ namespace Potentials {
 			}
 		}
 
-		FileFieldProfile::FileFieldProfile(int nPts, double * x, double offset, double rightDecayPos, double leftDecayPos, double decayLength, double emax, const char * fil) : ElectricFieldProfile(nPts) {
+		FileFieldProfile::FileFieldProfile(int nPts, const double * x, double offset, double rightDecayPos, double leftDecayPos, double decayLength, double emax, const char * fil) : ElectricFieldProfile(nPts) {
 			double * tre = (double*) sq_malloc(sizeof(double)*nPts);
 			double * tim = (double*) sq_malloc(sizeof(double)*nPts);
 			std::fstream ifil = std::fstream(fil, std::ios::in | std::ios::binary);
@@ -827,7 +827,7 @@ namespace Potentials {
 			sq_free(fim);
 		}
 
-		ExponentialToLinearProfile::ExponentialToLinearProfile(int nPts, double* x, double minX, double maxX, double r, double eMax) : ElectricFieldProfile(nPts) {
+		ExponentialToLinearProfile::ExponentialToLinearProfile(int nPts, const double* x, double minX, double maxX, double r, double eMax) : ElectricFieldProfile(nPts) {
 			double xn;
 			for (int i = 0; i < nPts; i++) {
 				xn = x[i];

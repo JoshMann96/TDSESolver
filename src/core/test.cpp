@@ -362,39 +362,6 @@ void testCrankNicolson(){
 	}
 }
 
-void testInhomogeneousSteadyState(){
-	int nPts = 1000;
-	double dx = 1e-11;
-	double dt = 1e-18;
-
-	double* xs = new double[nPts];
-	for(int i = 0; i < nPts; i++)
-		xs[i] = dx*(i-nPts/2);
-
-	SimulationManager* sm = new SimulationManager(nPts, dx, dt);
-	sm->addPotential(new Potentials::JelliumPotential(nPts, xs, 0.0, 5*PhysCon::eV, 5*PhysCon::eV, 0));
-
-	// define incoming wavefunctions
-	int nElec = 5;
-	std::complex<double>* psibd = new std::complex<double>[nElec];
-	double* k0 = new double[nElec];
-	for (int i = 0; i < nElec; i++){
-		psibd[i] = 1.0;
-		k0[i] = std::sqrt(5.0*i*2.0*PhysCon::eV*PhysCon::me/(nElec-1))/PhysCon::hbar; // 0-5 eV
-	}
-
-	FDBCs::BoundaryCondition* rbc = new FDBCs::UniformHDTransparentBC(1000, nElec, dx, dt);
-	FDBCs::BoundaryCondition* lbc = new FDBCs::UniformIDTransparentBC(1000, nElec, dx, dt, psibd, k0, 0.0);
-	KineticOperators::CrankNicolson* cn = new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, lbc, rbc);
-	sm->setKineticOperator(cn);
-
-	sm->findInhomogeneousSteadyStates_OBSOLETE(1e-10, nElec, k0, k0, true);
-
-	delete[] psibd;
-	delete[] k0;
-	delete[] xs;
-}
-
 void testInhomogeneousEigenState(){
 	int nPts = 5000;
 	double dx = 0.02*PhysCon::a0;
@@ -499,7 +466,7 @@ void testInhomogeneousEigenState(){
 	delete sm;
 }
 
-void testIterationMethods(int stepType=-1){
+void testIterationMethods(int stepType=-1, int nPts=8192){
 	/* FOR RUNNING WITH WISDOM DO THIS IN MAIN
 	char* wisdomFile = new char[64];
 	std::snprintf(wisdomFile, 64, "fftw_nt_%04d.wisdom", omp_get_max_threads());
@@ -515,8 +482,7 @@ void testIterationMethods(int stepType=-1){
 	delete[] wisdomFile;
 	*/
 
-	int nPts = 8192;
-	int nSteps = 100000;
+	int nSteps = 1000;
 	double dx = 0.16*PhysCon::a0;
 	double dt = 0.1*PhysCon::hbar/PhysCon::auE_ha;
 
@@ -527,7 +493,7 @@ void testIterationMethods(int stepType=-1){
 	SimulationManager* sm = new SimulationManager(nPts, dx, dt);
 	KineticOperators::KineticOperator* cnKin = new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, new FDBCs::DirichletBC(0.0), new FDBCs::DirichletBC(0.0), true);
 	KineticOperators::KineticOperator* cnKin_cpu = new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, new FDBCs::DirichletBC(0.0), new FDBCs::DirichletBC(0.0), false);
-	KineticOperators::KineticOperator* osKin = new KineticOperators::GenDisp_PSM_FreeElec(nPts, dx, dt, 1.0, FFTW_ESTIMATE);
+	KineticOperators::KineticOperator* osKin = new KineticOperators::GenDisp_PSM_FreeElec(nPts, dx, dt, 1.0, FFTW_PATIENT);
 	sm->setKineticOperator(cnKin);
 	sm->setWeight(new WfcToRho::BoundFermiGas(5.0*PhysCon::eV));
 	sm->setDensity(new WfcToRho::DirectDensity());
@@ -547,7 +513,7 @@ void testIterationMethods(int stepType=-1){
 		delete plotter;
 	}
 
-	sm->addMeasurer(new Measurers::DensityPlotter(nPts, sm->getNElecPtr(), dx, xs, sm->getDensity(), sm->getWeightsPtr(), 1000, false));
+	sm->addMeasurer(new Measurers::DensityPlotter(nPts, sm->getNElecPtr(), dx, xs, sm->getDensity(), sm->getWeightsPtr(), 100, false));
 	//sm->addMeasurer(new Measurers::PotentialPlotter(nPts, xs, 50, false));
 
 	std::cout << "Testing the implemented iteration methods..." << std::endl;
@@ -566,7 +532,7 @@ void testIterationMethods(int stepType=-1){
 	std::cout << "\tTime iterating with "  << sm->getNElec() << " wavefunctions, " << sm->getNumPoints() << " gridpoints, " << nSteps << " steps..." << std::endl;
 
 	//std::cout << "\n\tInitializing FFTW..." << std::endl;
-	//sm->runOS_U2TU(1);
+	//sm->runEPS_U2TU(1);
 
 	auto t1 = std::chrono::high_resolution_clock::now();
 	auto t2 = std::chrono::high_resolution_clock::now();
@@ -584,7 +550,7 @@ void testIterationMethods(int stepType=-1){
 		sm->setKineticOperator(cnKin);
 		std::cout << "\tRunning FD_L GPU..." << std::endl;
 		t1 = std::chrono::high_resolution_clock::now();
-		sm->runFD_L(nSteps);
+		sm->run(nSteps);
 		t2 = std::chrono::high_resolution_clock::now();
 		std::cout << "\t\tTook " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << " ms" << std::endl;
 	}
@@ -594,7 +560,7 @@ void testIterationMethods(int stepType=-1){
 		sm->setKineticOperator(cnKin_cpu);
 		std::cout << "\tRunning FD_L CPU..." << std::endl;
 		t1 = std::chrono::high_resolution_clock::now();
-		sm->runFD_L(nSteps);
+		sm->run(nSteps);
 		t2 = std::chrono::high_resolution_clock::now();
 		std::cout << "\t\tTook " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << " ms" << std::endl;
 	}
@@ -602,8 +568,11 @@ void testIterationMethods(int stepType=-1){
 	if (stepType == -1 || stepType == 0){
 		sm->setKineticOperator(osKin);
 		std::cout << "\tRunning OS_U2TU..." << std::endl;
+		std::cout << "\t\tInitializing FFTW..." << std::endl;
+		sm->run(2); // initialize FFTW
+		std::cout << "\t\tMain run..." << std::endl;
 		t1 = std::chrono::high_resolution_clock::now();
-		sm->runOS_U2TU(nSteps);
+		sm->run(nSteps);
 		t2 = std::chrono::high_resolution_clock::now();
 		std::cout << "\t\tTook " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << " ms" << std::endl;
 	}
@@ -611,8 +580,11 @@ void testIterationMethods(int stepType=-1){
 	if (stepType == -1 || stepType == 1){
 		sm->setKineticOperator(osKin);
 		std::cout << "\tRunning OS_UW2TUW..." << std::endl;
+		std::cout << "\t\tInitializing FFTW..." << std::endl;
+		sm->run(2); // initialize FFTW
+		std::cout << "\t\tMain run..." << std::endl;
 		t1 = std::chrono::high_resolution_clock::now();
-		sm->runOS_UW2TUW(nSteps);
+		sm->run(nSteps);
 		t2 = std::chrono::high_resolution_clock::now();
 		std::cout << "\t\tTook " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << " ms" << std::endl;
 	}
@@ -751,6 +723,7 @@ void testCuTridiagSolver(){
 
 	// cpu
 	t1 = std::chrono::high_resolution_clock::now();
+	#pragma omp parallel for
 	for(int i = 0; i < n; i++){
 		rho[i] = 0;
 		for(int j = 0; j < nrhs; j++)
@@ -790,8 +763,23 @@ void testCuTridiagSolver(){
 
 
 int main(int argc, char** argv){
-	testCuTridiagSolver();
-	//testIterationMethods(2);
+	// char* wisdomFile = new char[64];
+	// std::snprintf(wisdomFile, 64, "fftw_nt_%04d.wisdom", omp_get_max_threads());
+	// fftw_init_threads();
+	// fftw_import_wisdom_from_filename(wisdomFile);
+
+	// testIterationMethods(-1, 2048);
+	// testIterationMethods(-1, 4096);
+	// testIterationMethods(-1, 8192);
+	// testIterationMethods(-1, 16384);
+	// testIterationMethods(-1, 32768);
+
+	// fftw_export_wisdom_to_filename(wisdomFile);
+	// delete[] wisdomFile;
+
+	// std::cout << "Done" << std::endl;
+
+	testIterationMethods(2, 2048);
 
     return 0;
 }

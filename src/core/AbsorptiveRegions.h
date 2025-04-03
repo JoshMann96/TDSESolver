@@ -2,11 +2,15 @@
  * \file AbsorptiveRegions.h
  * \brief Absorptive regions for wavefunction decay
  * \details This file contains the definitions for absorptive regions used to decay the wavefunction in a simulation.
- * The decay is done by hadamrd-multiplying the wavefunction by a vector with elements of magnitude less than 1.
+ * The decay is done by hadamard-multiplying the wavefunction by a vector with elements of magnitude less than 1.
  */
 #pragma once
 #include "CORECommonHeader.h"
-// OBSOLETE
+
+/**
+ * @namespace AbsorptiveRegions
+ * @brief Contains classes for absorptive regions used in the time-dependent Schrödinger equation (TDSE) solution.
+ */
 namespace AbsorptiveRegions {
 	/**
 	 * \brief Absorptive region base class. THIS IS NO LONGER USED
@@ -57,7 +61,7 @@ namespace AbsorptiveRegions {
 		void decay(std::complex<double> * psi);
 	};
 
-	// UNUSED
+	/// @warning UNUSED
 	std::complex<double>* getSmoothedTimePhaseDecay(int len, int inner, int outer, double rate);
 
 	/**

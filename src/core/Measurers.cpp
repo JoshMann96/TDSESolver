@@ -624,7 +624,7 @@ namespace Measurers {
 	}
 
 
-	WfcRhoWeights::WfcRhoWeights(const int* nElec, const double** weights, const char* fol) : 
+	WfcRhoWeights::WfcRhoWeights(const int* nElec, double * const * weights, const char* fol) : 
 		nElec(nElec), weights(weights)
 	{
 		needsDens = true;
@@ -680,7 +680,7 @@ namespace Measurers {
 	}
 
 
-	DensityPlotter::DensityPlotter(int nPts, const int *nElec, double dx, const double *xs, WfcToRho::Density *const dens, const double** wght, int stepsPerPlot, bool pause):
+	DensityPlotter::DensityPlotter(int nPts, const int *nElec, double dx, const double *xs, WfcToRho::Density *const dens, double * const * wght, int stepsPerPlot, bool pause):
 		nPts(nPts), nElec(nElec), dens(dens), wght(wght), dx(dx), xs(xs), pause(pause), stepsPerPlot(stepsPerPlot)
 	{
 		needsDens = true;

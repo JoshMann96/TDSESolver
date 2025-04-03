@@ -338,7 +338,7 @@ namespace vtls {
 		/**
 		 * Constructor for MaskConvolver.
 		 * @param len The length of the arrays to be convolved.
-		 * @param constArr (in) The constant mask to be used for the convolution.
+		 * @param maskIn (in) The mask to be used for the convolution.
 		 */
 		MaskConvolver<T>(int len, const T* maskIn);
 
@@ -534,13 +534,13 @@ namespace vtls {
 	 * @param scalar The scalar value to multiply the array by.
 	 * @param arr (in/out) The array to multiply, which will be modified to store the result of the multiplication.
 	 */
-	void scaMulArray(int len, std::complex<double> scalar, std::complex<double>* __restrict arr);
+	void scaMulArray(int len, double scalar, double* __restrict arr);
 
-	/// @copydoc scaMulArray(int, std::complex<double>, std::complex<double>*)
+	/// @copydoc vtls::scaMulArray(int,double,double*)
 	void scaMulArray(int len, double scalar, std::complex<double>* __restrict arr);
 
-	/// @copydoc scaMulArray(int, std::complex<double>, std::complex<double>*)
-	void scaMulArray(int len, double scalar, double* __restrict arr);
+	/// @copydoc vtls::scaMulArray(int,double,double*)
+	void scaMulArray(int len, std::complex<double> scalar, std::complex<double>* __restrict arr);
 
 	/**
 	 * Multiplies an array by a scalar multiple and stores the real part of the result in a target array.
@@ -561,7 +561,7 @@ namespace vtls {
 	/**
 	 * Calculates the square norm of each element in an array and stores the result in a target array.
 	 * 
-	 * \f$ \text{normSqr}(arr_i) = |arr_i|^2 \f$
+	 * \f$ \mathrm{normSqr}(arr_i) = |arr_i|^2 \f$
 	 * @tparam T The type of the input array elements.
 	 * @param len The length of the array.
 	 * @param arr (in) The input array to be processed.
@@ -576,7 +576,7 @@ namespace vtls {
 	/**
 	 * Calculates the absolute value of each element in an array and stores the result in a target array.
 	 * 
-	 * \f$ \text{abs}(arr_i) = |arr_i| \f$
+	 * \f$ \mathrm{abs}(arr_i) = |arr_i| \f$
 	 * @tparam T The type of the input array elements.
 	 * @param len The length of the array.
 	 * @param arr (in) The input array to be processed.
@@ -609,7 +609,7 @@ namespace vtls {
 	/**
 	 * Calculates the L2 norm squared of an array assuming uniform grid spacing \f$dx\f$.
 	 * 
-	 * \f$ \text{norm} = \sum_j |arr_j|^2 \cdot dx \f$
+	 * \f$ \mathrm{norm} = \sum_j |arr_j|^2 \cdot dx \f$
 	 * @tparam T The type of the input array elements.
 	 * @param len The length of the array.
 	 * @param arr (in) The input array to be processed.
