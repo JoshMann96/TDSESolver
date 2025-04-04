@@ -415,7 +415,7 @@ namespace KineticOperators {
 		 * @param targ (out) The target wavefunction after the time step, nPts*nElec elements
 		 * @param nElec The number of electrons in the system
 		 * @note This function is useful for systems where the potential is nonlinear and an approximation of the wavefunction at the next step is desired.
-		 * @note If using the GPU, this function will also not gather the full wavefunction nor override the present state on the GPU.
+		 * @note If using the GPU, this function will also neither gather the full wavefunction nor override the present state on the GPU.
 		 */
 		virtual void stepVirtual(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, int nElec) = 0; // timestep without iterating BCs
 		

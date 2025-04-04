@@ -118,7 +118,17 @@ private:
 	 * @param v The output array to store the calculated potential.
 	 * @return Time in microseconds taken to calculate the potential.
 	 */
-	int calculatePotential(double* rho, std::complex<double>* psi, double t, double* v);
+	int calculatePotential(double* rho, const std::complex<double>* psi, double t, double* v);
+
+	/**
+	 * Calculate the potential from the raw density array.
+	 * @param rho The raw density array to be used for potential calculation. It should be of size nPts.
+	 * @param psi The wavefunction array to be used for potential calculation. It should be of size nPts * nElec.
+	 * @param t The current time in the simulation.
+	 * @param v The output array to store the calculated potential.
+	 * @return Time in microseconds taken to calculate the potential.
+	 */
+	int calculatePotentialFromRawRho(double* rho, const std::complex<double>* psi, double t, double* v);
 
 	/**
 	 * Updates the potential for the given index.
@@ -320,7 +330,7 @@ public:
 	 * Only measurements are done with task parallelism.
 	 * @param nSteps The number of steps to run the simulation for.
 	 */
-	void runCN_NL(int nSteps){std::cerr << "runCN_NL not implemented, falling back to runCN_L" << std::endl; runCN_L(nSteps);}; // TODO: Appropriate for nonlinear potential
+	void runCN_NL(int nSteps);
 
 	/**
 	 * Finds the eigenstates of the system using the given energy range.

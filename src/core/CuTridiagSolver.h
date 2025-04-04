@@ -42,7 +42,7 @@ private:
     cublasHandle_t cbHandle;
     cuDoubleComplex *cDL, *cD, *cDU; // LHS matrix definition
     cuDoubleComplex *_cX, *_cXV, *cPBuf, *tempState = nullptr; // solution vector (data) and workspace
-    double *cRho, *cWeights; // density
+    double *cRho, *cWeights, *cVec=nullptr; // density
 
     cuDoubleComplex *cRHSMat, *rhsTemp; // RHS matrix values
 
@@ -173,9 +173,17 @@ public:
      */
     void calcRawRho(const double* weights, double* rho, bool virt = false);
 
+    /**
+     * Calculates the Hadamard product of the current state vector with a given vector.
+     * This is an element-wise multiplication of the two vectors, repeating for each substate vector.
+     * @param vec (in) The vector to multiply with, must be of size n.
+     * @param virt If true, performs the operation and stores the result on the virtual state; otherwise, operates and stores on the regular state.
+     */
+    void vectorHadamardProduct(const double* vec, bool virt = false);
+
     // TODO:
     // Permit gathering only part of the state to minimize communication further
-    // This will need some modification of the Measuruers classes
+    // This will need some modification of the Measurers classes
     // Add method to Measurer requiring each to declare which points are needed.
     // Allow measurers to return some sort of Kernel, so that whatever they need to calculate can be done efficiently on the GPU.
 };

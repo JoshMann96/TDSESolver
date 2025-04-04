@@ -502,6 +502,16 @@ void testIterationMethods(int stepType=-1, int nPts=8192){
 	sm->addMeasurer(new Measurers::TotProb(nPts, dx, sm->getNElecPtr(), "data/test/"));
 	sm->addMeasurer(new Measurers::VDProbCurrent(nPts, dx, sm->getNElecPtr(), 0, 0, "surf", "data/test/"));
 
+	Potentials::LDAFunctional* lda_c = new Potentials::LDAFunctional(
+		Potentials::LDAFunctionalType::C_PW,
+		nPts, dx, 0);
+	sm->addPotential(lda_c);
+	Potentials::LDAFunctional* lda_x = new Potentials::LDAFunctional(
+		Potentials::LDAFunctionalType::X_SLATER,
+		nPts, dx, 0);
+	sm->addPotential(lda_x);
+
+
 	if(false){
 		plotting::GNUPlotter* plotter = new plotting::GNUPlotter();
 		double* temp = new double[nPts];
@@ -514,11 +524,14 @@ void testIterationMethods(int stepType=-1, int nPts=8192){
 	}
 
 	sm->addMeasurer(new Measurers::DensityPlotter(nPts, sm->getNElecPtr(), dx, xs, sm->getDensity(), sm->getWeightsPtr(), 100, false));
-	//sm->addMeasurer(new Measurers::PotentialPlotter(nPts, xs, 50, false));
+	sm->addMeasurer(new Measurers::PotentialPlotter(nPts, xs, 100, false));
 
 	std::cout << "Testing the implemented iteration methods..." << std::endl;
 	std::cout << "\tFinding Eigenstates..." << std::endl;
 	sm->findEigenStates(-10.0*PhysCon::eV, -5.0*PhysCon::eV);
+
+	lda_c->assemble(sm->getRho(), sm->getPsi());
+	lda_x->assemble(sm->getRho(), sm->getPsi());
 
 	// remove finite well
 	sm->addPotential(new Potentials::FiniteBox(nPts, xs, xs[nPts/4], xs[nPts/4*3], 10.0*PhysCon::eV, 0));
@@ -550,17 +563,58 @@ void testIterationMethods(int stepType=-1, int nPts=8192){
 		sm->setKineticOperator(cnKin);
 		std::cout << "\tRunning FD_L GPU..." << std::endl;
 		t1 = std::chrono::high_resolution_clock::now();
-		sm->run(nSteps);
+		sm->runCN_L(nSteps);
 		t2 = std::chrono::high_resolution_clock::now();
 		std::cout << "\t\tTook " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << " ms" << std::endl;
 	}
 
 	if (stepType == -1 || stepType == 3){
 		omp_set_num_threads(omp_get_max_threads());
+
+		delete cnKin_cpu;
+		cnKin_cpu = new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, 
+			new FDBCs::UniformHDTransparentBC(10000, sm->getNElec(), dx, dt),
+			new FDBCs::UniformHDTransparentBC(10000, sm->getNElec(), dx, dt),
+			false);
+
 		sm->setKineticOperator(cnKin_cpu);
 		std::cout << "\tRunning FD_L CPU..." << std::endl;
 		t1 = std::chrono::high_resolution_clock::now();
-		sm->run(nSteps);
+		sm->runCN_L(nSteps);
+		t2 = std::chrono::high_resolution_clock::now();
+		std::cout << "\t\tTook " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << " ms" << std::endl;
+	}
+
+	if (stepType == -1 || stepType == 4){
+		omp_set_num_threads(omp_get_max_threads());
+
+		delete cnKin;
+		cnKin = new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, 
+			new FDBCs::UniformHDTransparentBC(10000, sm->getNElec(), dx, dt),
+			new FDBCs::UniformHDTransparentBC(10000, sm->getNElec(), dx, dt),
+			true);
+
+		sm->setKineticOperator(cnKin);
+		std::cout << "\tRunning FD_NL GPU..." << std::endl;
+		t1 = std::chrono::high_resolution_clock::now();
+		sm->runCN_NL(nSteps);
+		t2 = std::chrono::high_resolution_clock::now();
+		std::cout << "\t\tTook " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << " ms" << std::endl;
+	}
+
+	if (stepType == -1 || stepType == 5){
+		omp_set_num_threads(omp_get_max_threads());
+
+		delete cnKin_cpu;
+		cnKin_cpu = new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, 
+			new FDBCs::UniformHDTransparentBC(10000, sm->getNElec(), dx, dt),
+			new FDBCs::UniformHDTransparentBC(10000, sm->getNElec(), dx, dt),
+			false);
+
+		sm->setKineticOperator(cnKin_cpu);
+		std::cout << "\tRunning FD_NL CPU..." << std::endl;
+		t1 = std::chrono::high_resolution_clock::now();
+		sm->runCN_NL(nSteps);
 		t2 = std::chrono::high_resolution_clock::now();
 		std::cout << "\t\tTook " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << " ms" << std::endl;
 	}
@@ -780,6 +834,9 @@ int main(int argc, char** argv){
 	// std::cout << "Done" << std::endl;
 
 	testIterationMethods(2, 2048);
+	testIterationMethods(3, 2048);
+	testIterationMethods(4, 2048);
+	testIterationMethods(5, 2048);
 
     return 0;
 }

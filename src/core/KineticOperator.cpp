@@ -904,16 +904,18 @@ namespace KineticOperators {
 			// evaluate RHS
 			std::fill_n(r_d, nPts, rhsDiag0);
 			vtls::scaMulAddArrays(nPts, -potmul, v, r_d); // r_d += potmul*v
-			cuSolver->rhsProduct(r_d, false, isVirtual);
+			cuSolver->rhsProduct(r_d, isVirtual, false);
 		}
 		else{
 			std::fill_n(ud, nPts-1, lhsOffDiag0);
 			std::fill_n(ld, nPts-1, lhsOffDiag0);
+			ud[0] = lbc->getLHSAdjEle();
+			ld[nPts-2] = rbc->getLHSAdjEle();
 
 			// evaluate RHS
 			#pragma omp parallel for collapse(2)
 			for(int j = 0; j < nElec; j++)
-				for(int k = 0; k < nPts-1; k++)
+				for(int k = 1; k < nPts-1; k++)
 					targ[j*nPts+k] = (-potmul*v[k]+rhsDiag0)*psi0[j*nPts+k] +
 						(rhsOffDiag*psi0[j*nPts+k-1] + rhsOffDiag*psi0[j*nPts+k+1]);
 
@@ -925,12 +927,15 @@ namespace KineticOperators {
 		//SOLVE
 		if(useCuda){
 			cuSolver->solve(d, isVirtual, isVirtual);
+			cuSolver->vectorHadamardProduct(spatialDamp, isVirtual); // apply spatial damping
 			if(!isVirtual)
 				cuSolver->gatherX(targ, false);
 		}
 		else{
 			int info;
 			LAPACK_zgtsv(&nPts, &nElec, reinterpret_cast<dcomplex*>(ld), reinterpret_cast<dcomplex*>(d), reinterpret_cast<dcomplex*>(ud), reinterpret_cast<dcomplex*>(targ), &nPts, &info);
+			for(int i = 0; i < nElec; i++) // apply spatial damping
+				vtls::seqMulArrays(nPts, spatialDamp, &targ[i*nPts]);
 		}
 
 		// Using "expert" LAPACK driver (WORKSPACE MUST BE ALLOCATED, NOT A SIMPLE UNCOMMENT)
@@ -939,9 +944,6 @@ namespace KineticOperators {
 		//LAPACK_zgtsvx("N", "N", &nPts, &nElec,  reinterpret_cast<dcomplex*>(ld), reinterpret_cast<dcomplex*>(d), reinterpret_cast<dcomplex*>(ud), templ, tempd, tempu, tempu2, ipiv, reinterpret_cast<dcomplex*>(rhs), &nPts, reinterpret_cast<dcomplex*>(targ), &nPts, &rcond, ferr, berr, work, rwork, &info);
 		//auto t2 = std::chrono::high_resolution_clock::now();
 		//std::cout << "Time taken for LAPACK_zgtsvx: " << std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() << " us" << std::endl;
-
-		for(int i = 0; i < nElec; i++)
-			vtls::seqMulArrays(nPts, spatialDamp, &targ[i*nPts]);
 	}
 
 	void CrankNicolson::findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, int* nEigs){
@@ -1063,7 +1065,7 @@ namespace KineticOperators {
 	}
 
 	bool CrankNicolson::calcRawRhoByDevice(const double* weights, double* rho, bool virt){
-		if(useCuda)
+		if(!useCuda)
 			return false;
 
 		cuSolver->calcRawRho(weights, rho, virt);

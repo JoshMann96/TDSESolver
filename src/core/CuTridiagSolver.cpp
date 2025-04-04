@@ -49,6 +49,8 @@ cudaTridiagonalSolverSystem::~cudaTridiagonalSolverSystem() {
 
     cudaStatCheck(  cudaFree(cRho));
     cudaStatCheck(  cudaFree(cWeights));
+    if(cVec != nullptr)
+        cudaStatCheck(  cudaFree(cVec));
 
     cudaStatCheck(  cudaFree(cPBuf));
 }
@@ -205,5 +207,17 @@ void cudaTridiagonalSolverSystem::calcRawRho(const double* weights, double* rho,
     
     cudaStatCheck(  cudaMemcpy(cWeights, weights, nrhs * sizeof(double), cudaMemcpyHostToDevice));
     cudaStatCheck(  cudaDensity(cWeights, myX.data, cRho, n, nrhs));
-    cudaStatCheck(  cudaMemcpy(rho, cRho, n * sizeof(double), cudaMemcpyDeviceToHost)); // TEMPORARY FOR TESTING
+    cudaStatCheck(  cudaMemcpy(rho, cRho, n * sizeof(double), cudaMemcpyDeviceToHost));
+}
+
+void cudaTridiagonalSolverSystem::vectorHadamardProduct(const double* vec, bool virt){
+    if(!cVec)
+        cudaStatCheck(  cudaMalloc((void**)&cVec, n * sizeof(double)));
+    
+    CudaVector& myX = virt ? cXV : cX;
+    if (myX.status != BARE)
+        throw std::runtime_error("cudaTridiagonalSolverSystem::vectorHadamardProduct : Stored state is not BARE.");
+    
+    cudaStatCheck(  cudaMemcpy(cVec, vec, n * sizeof(double), cudaMemcpyHostToDevice));
+    cudaStatCheck(  cudaHadamard(cVec, myX.data, n, nrhs));
 }
