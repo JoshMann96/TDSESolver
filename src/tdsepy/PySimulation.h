@@ -8,44 +8,40 @@
 #include "WfcRhoTools.h"
 #include "AbsorptiveRegions.h"
 
-// couple particular grid with SimulationManager for ease of use
 class PySimulation 
     : public SimulationManager {
     private:
-        double* x;
-        int nPts;
-        WfcToRho::Weight* wght = nullptr;
-        WfcToRho::Density* dens = nullptr;
         char* wisdomFile = new char[50];
     public:
         PySimulation(double xmin, double xmax, double dx, double dt, const std::function<void(int)> &callback)
-            : SimulationManager((int)((xmax-xmin)/dx) + 1, dx, dt, callback){
-                nPts = getNumPoints();
-                x = new double[nPts];
-                for(int i = 0; i < nPts; i++)
-                    x[i] = i*dx + xmin;
-                
+            : SimulationManager(xmin, xmax, dx, dt, callback){
 			    std::snprintf(wisdomFile, 50, "fftw_nt_%04d.wisdom", omp_get_max_threads());
                 fftw_init_threads();
 				fftw_import_wisdom_from_filename(wisdomFile);
         }
 
-        ~PySimulation(){fftw_export_wisdom_to_filename(wisdomFile); delete[] x;}
+        ~PySimulation(){
+            fftw_export_wisdom_to_filename(wisdomFile);
+            fftw_cleanup_threads();
+            delete[] wisdomFile;
+        }
 
         void addPotential(Potentials::Potential * pot){
             SimulationManager::addPotential(pot);
         }
 
-        double* getXPtr(){return x;}
-        void addLeftAbsBdy(double rate, double width){addSpatialDamp(AbsorptiveRegions::getSmoothedSpatialDampDecay(nPts, findXIdx(x[0]+width), 0, rate*getDT()));}
-        void addRightAbsBdy(double rate, double width){addSpatialDamp(AbsorptiveRegions::getSmoothedSpatialDampDecay(nPts, findXIdx(x[nPts-1]-width), nPts-1, rate*getDT()));}
+        void addLeftAbsBdy(double rate, double width){addSpatialDamp(AbsorptiveRegions::getSmoothedSpatialDampDecay(getNumPoints(), findXIdx(getX()[0]+width), 0, rate*getDT()));}
+        void addRightAbsBdy(double rate, double width){addSpatialDamp(AbsorptiveRegions::getSmoothedSpatialDampDecay(getNumPoints(), findXIdx(getX()[getNumPoints()-1]-width), getNumPoints()-1, rate*getDT()));}
 
         void findEigenStates(double minE, double maxE){
             SimulationManager::findEigenStates(minE, maxE);
         }
 
-        std::vector<double> getX(){return std::vector<double>(x, x + nPts);}
-        int findXIdx(double xp){return vtls::findValue(nPts, x, xp);}
+        void findInhomogeneousEigenStates(int nElec, const std::vector<double> &energies){
+            SimulationManager::findInhomogeneousEigenStates(nElec, energies.data());
+        }
+
+        std::vector<double> getXVec(){return std::vector<double>(SimulationManager::getX(), SimulationManager::getX() + getNumPoints());}
 
         int findElectricalSurfaceCentroidRule(double minPos, double maxPos){
             return SimulationManager::findElectricalSurfaceCentroidRule(findXIdx(minPos), findXIdx(maxPos));

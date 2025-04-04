@@ -28,7 +28,6 @@ void init_Measurers(py::module &m) {
             Records basic simulation parameters.
             Grid size and step size in space and time:
              - NPts     - Number of points in grid
-             - NSteps   - Number of time steps
              - DX       - Spatial step size
              - DT       - Temporal step size
 
@@ -123,7 +122,7 @@ void init_Measurers(py::module &m) {
             "sim"_a, "fol"_a);
 
     py::class_<PyPsi2t, Measurer>(m, "Psi2t")
-        .def(py::init<PySimulation*, int, int, std::string>(), R"V0G0N(
+        .def(py::init<PySimulation*, int, int, int, std::string>(), R"V0G0N(
             Records wavefunction probability densities, downsampling to nx spatial points and nt temporal points.
 
             Parameters
@@ -134,16 +133,18 @@ void init_Measurers(py::module &m) {
                 Number of spatial points to sample.
             nt : int
                 Number of temporal points to sample.
+            numSteps : int
+                Number of time steps in the full calculation.
             fol : str
                 Directory to contain file.
 
             Returns
             -------
             Psi2t)V0G0N",
-            "sim"_a, "nx"_a, "nt"_a, "fol"_a);
+            "sim"_a, "nx"_a, "nt"_a, "numSteps"_a, "fol"_a);
 
     py::class_<PyVfunct, Measurer>(m, "Vfunct")
-        .def(py::init<PySimulation*, int, int, int, std::string>(), R"V0G0N(
+        .def(py::init<PySimulation*, int, int, int, int, std::string>(), R"V0G0N(
             Records potential, downsampling to nx spatial points and nt temporal points.
 
             Parameters
@@ -154,6 +155,8 @@ void init_Measurers(py::module &m) {
                 Number of spatial points to sample.
             nt : int
                 Number of temporal points to sample.
+            numSteps : int
+                Number of time steps in the full calculation.
             idx: int
                 Index of record, to prepend the output file. < 0 for no index, >= 0 for listed index.
             fol : str
@@ -162,7 +165,7 @@ void init_Measurers(py::module &m) {
             Returns
             -------
             Vfunct)V0G0N",
-            "sim"_a, "nx"_a, "nt"_a, "idx"_a, "fol"_a);
+            "sim"_a, "nx"_a, "nt"_a, "numSteps"_a, "idx"_a, "fol"_a);
 
     py::class_<PyExpectE, Measurer>(m, "ExpectE")
         .def(py::init<PySimulation*, std::string>(), R"V0G0N(
@@ -328,7 +331,7 @@ void init_Measurers(py::module &m) {
             "sim"_a, "vdPos"_a, "vdNum"_a, "name"_a, "fol"_a);
 
     py::class_<PyVDFluxSpec, Measurer>(m, "VDFluxSpec")
-        .def(py::init<PySimulation*, double, int, int, double, std::string, std::string>(), R"V0G0N(
+        .def(py::init<PySimulation*, double, int, int, double, double, std::string, std::string>(), R"V0G0N(
             Virtual detector which measures the bidirectional flux spectrum of the state passing through a point for each state.
             Useful for obtaining electron emission spectra without saving the entire wavefunction history.
 
@@ -344,6 +347,8 @@ void init_Measurers(py::module &m) {
                 Number of energy samples.
             emax : float
                 Maximum energy of spectrum.
+            maxT : float
+                Maximum time of simulation.
             name : str
                 Name of virtual detector (4 characters)
             fol : str
@@ -352,7 +357,7 @@ void init_Measurers(py::module &m) {
             Returns
             -------
             VDFluxSpec)V0G0N",
-            "sim"_a, "vdPos"_a, "vdNum"_a, "nSamp"_a, "emax"_a, "name"_a, "fol"_a);
+            "sim"_a, "vdPos"_a, "vdNum"_a, "nSamp"_a, "emax"_a, "maxT"_a, "name"_a, "fol"_a);
 
     py::class_<PyPsiT, Measurer>(m, "PsiT")
         .def(py::init<PySimulation*, double, int, std::string, std::string>(), R"V0G0N(

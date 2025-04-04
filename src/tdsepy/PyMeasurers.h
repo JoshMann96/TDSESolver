@@ -18,14 +18,14 @@ class PyBasic
     : public BasicMeasurers{
         public:
         PyBasic(PySimulation* sim, std::string fol)
-            : BasicMeasurers(sim->getNumPoints(), sim->getNumSteps(), sim->getDX(), sim->getDT(), sim->getXPtr(), fol.c_str()){}
+            : BasicMeasurers(sim->getNumPoints(), sim->getDX(), sim->getDT(), fol.c_str()){}
     };
 
 class PyXS
     : public XS{
         public:
         PyXS(PySimulation* sim, std::string fol)
-            : XS(sim->getNumPoints(), sim->getXPtr(), fol.c_str()){}
+            : XS(sim->getNumPoints(), sim->getX(), fol.c_str()){}
     };
 
 class PyTS
@@ -45,15 +45,15 @@ class PyOrigPot
 class PyPsi2t
     : public Psi2t{
         public:
-        PyPsi2t(PySimulation* sim, int nx, int nt, std::string fol)
-            : Psi2t(sim->getNumPoints(), nx, nt, sim->getNumSteps(), sim->getMaxT(), sim->getXPtr(), sim->getNElecPtr(), fol.c_str()){}
+        PyPsi2t(PySimulation* sim, int nx, int nt, int numSteps, std::string fol)
+            : Psi2t(sim->getNumPoints(), nx, nt, numSteps, numSteps*sim->getDT(), sim->getX(), sim->getNElecPtr(), fol.c_str()){}
     };
 
 class PyVfunct
     : public Vfunct{
         public:
-        PyVfunct(PySimulation* sim, int nx, int nt, int index, std::string fol)
-            : Vfunct(index, sim->getNumPoints(), nx, nt, sim->getNumSteps(), sim->getMaxT(), sim->getXPtr(), fol.c_str()){}
+        PyVfunct(PySimulation* sim, int nx, int nt, int numSteps, int index, std::string fol)
+            : Vfunct(index, sim->getNumPoints(), nx, nt, numSteps, numSteps*sim->getDT(), sim->getX(), fol.c_str()){}
     };
 
 class PyExpectE
@@ -74,7 +74,7 @@ class PyExpectX
     : public ExpectX{
         public:
         PyExpectX(PySimulation* sim, std::string fol)
-            : ExpectX(sim->getNumPoints(), sim->getXPtr(), sim->getDX(), sim->getNElecPtr(), fol.c_str()){}
+            : ExpectX(sim->getNumPoints(), sim->getX(), sim->getDX(), sim->getNElecPtr(), fol.c_str()){}
     };
 
 //Computationally expensive
@@ -124,8 +124,8 @@ class PyVDPot
 class PyVDFluxSpec
     : public VDFluxSpec{
         public:
-        PyVDFluxSpec(PySimulation* sim, double vdPos, int vdNum, int nSamp, double emax, std::string name, std::string fol)
-            : VDFluxSpec(sim->getNumPoints(), sim->findXIdx(vdPos), vdNum, sim->getNElecPtr(), nSamp, emax, sim->getMaxT(), name.c_str(),fol.c_str()){}
+        PyVDFluxSpec(PySimulation* sim, double vdPos, int vdNum, int nSamp, double emax, double maxT, std::string name, std::string fol)
+            : VDFluxSpec(sim->getNumPoints(), sim->findXIdx(vdPos), vdNum, sim->getNElecPtr(), nSamp, emax, maxT, name.c_str(),fol.c_str()){}
     };
 
 class PyPsiT

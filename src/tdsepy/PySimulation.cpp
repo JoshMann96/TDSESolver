@@ -73,16 +73,48 @@ void init_Simulation(py::module &m) {
             Returns
             -------
             CylindricalDensity)V0G0N",
-            "center"_a, "radius"_a, "minX"_a)
-        .def("setBaseDensity", &WfcToRho::CylindricalDensity::setBaseDens, py::keep_alive<1,2>(), R"V0G0N(
-            Sets base density calculator which is then modified according to a cylindrical geometry.
+            "center"_a, "radius"_a, "minX"_a);
+            
+// FDBCs
+
+    py::class_<FDBCs::BoundaryCondition>(m, "BoundaryCondition");
+
+    py::class_<FDBCs::CommonBC, FDBCs::BoundaryCondition>(m, "CommonBC");
+
+    py::class_<FDBCs::TimeIndependentBC, FDBCs::CommonBC>(m, "TimeIndependentBC");
+
+    // TODO: implement PyNeumannBC to gather correct dx (or do something like PSM_FreeElec below for brevity)
+    //       also need to add enum Side to Python wrapper
+    /*py::class_<FDBCs::NeumannBC, FDBCs::TimeIndependentBC>(m, "NeumannBC")
+        .def(py::init<std::complex<double>>(), R"V0G0N(
+            Neumann boundary condition.
 
             Parameters
             ----------
-            baseDens : Density
-                Density calculator to be used.)V0G0N",
-            "baseDens"_a);
-            
+            coeff : complex
+                Coefficient for Neumann BC.
+
+            Returns
+            -------
+            NeumannBC)V0G0N",
+            "coeff"_a);
+    
+    py::class_<FDBCs::DirichletBC, FDBCs::TimeIndependentBC>(m, "DirichletBC")
+        .def(py::init<std::complex<double>>(), R"V0G0N(
+            Dirichlet boundary condition.
+
+            Parameters
+            ----------
+            coeff : complex
+                Coefficient for Dirichlet BC.
+
+            Returns
+            -------
+            DirichletBC)V0G0N",
+            "coeff"_a);*/
+
+    //TODO: Other BCs
+
 // KINETIC OPERATORS
 
     py::class_<KineticOperators::KineticOperator_PSM>(m, "KineticOperator_PSM");
@@ -106,11 +138,36 @@ void init_Simulation(py::module &m) {
             -------
             PSM_FreeElec)V0G0N",
             "sim"_a, "meff"_a);
+    
+    py::class_<KineticOperators::CrankNicolson, KineticOperators::KineticOperator_FDM>(m, "CrankNicolson")
+        .def(py::init([](PySimulation* sim, double meff, FDBCs::BoundaryCondition* leftBC, FDBCs::BoundaryCondition* rightBC, bool useCuda){
+            return std::unique_ptr<KineticOperators::CrankNicolson>(new KineticOperators::CrankNicolson(sim->getNumPoints(), sim->getDX(), sim->getDT(), meff, leftBC, rightBC, useCuda));
+        }), py::keep_alive<1,4>(), py::keep_alive<1,5>(),
+        R"V0G0N(
+            Crank-Nicolson method using finite difference derivatives.
+
+            Parameters
+            ----------
+            sim : Simulation
+                Associated simulation.
+            meff : float
+                Effective mass (1.0 = free electron).
+            leftBC : BoundaryCondition
+                Left boundary condition.
+            rightBC : BoundaryCondition
+                Right boundary condition.
+            useCuda : bool
+                Whether to use the CUDA solver for the tridiagonal system.
+
+            Returns
+            -------
+            CrankNicolson)V0G0N",
+            "sim"_a, "meff"_a, "leftBC"_a, "rightBC"_a, "useCuda"_a);
 
 // SIMULATION
 
     py::class_<PySimulation>(m, "Simulation")
-        .def(py::init<double, double, double, double, double, std::function<void(int)>>(), R"V0G0N(
+        .def(py::init<double, double, double, double, std::function<void(int)>>(), R"V0G0N(
             Manages TDSE simulations.
 
             Parameters
@@ -123,16 +180,14 @@ void init_Simulation(py::module &m) {
                 Spatial step size.
             dt : float
                 Temporal step size.
-            maxT : float
-                Maximum time in simulation (end time).
             callback : function
                 Callback -- reports percentage complete of time-stepping runs.
 
             Returns
             -------
             Simulation)V0G0N",
-            "xmin"_a, "xmax"_a, "dx"_a, "dt"_a, "maxT"_a, "callback"_a)
-        .def("getX", &PySimulation::getX)
+            "xmin"_a, "xmax"_a, "dx"_a, "dt"_a, "callback"_a)
+        .def("getXVec", &PySimulation::getXVec)
         .def("getDX", &PySimulation::getDX)
         .def("findXIdx", &PySimulation::findXIdx, R"V0G0N(
             Finds index of position in grid.
@@ -178,15 +233,7 @@ void init_Simulation(py::module &m) {
             wght : Weight
                 Weight calculator to be used.)V0G0N",
             "wght"_a)
-        .def("setKin", py::overload_cast<KineticOperators::KineticOperator_PSM*>(&PySimulation::setKineticOperator_PSM), py::keep_alive<1,2>(), R"V0G0N(
-            Sets kinetic operator for simulation.
-
-            Parameters
-            ----------
-            nkin : KineticOperator
-                Kinetic operator to be used.)V0G0N",
-            "nkin"_a)
-        .def("setKin", py::overload_cast<KineticOperators::KineticOperator_FDM*>(&PySimulation::setKineticOperator_FDM), py::keep_alive<1,2>(), R"V0G0N(
+        .def("setKin", py::overload_cast<KineticOperators::KineticOperator*>(&PySimulation::setKineticOperator), py::keep_alive<1,2>(), R"V0G0N(
             Sets kinetic operator for simulation.
 
             Parameters
@@ -222,7 +269,7 @@ void init_Simulation(py::module &m) {
             width : float
                 Width of boundary.)V0G0N",
             "rate"_a, "width"_a)
-        .def("eigenSolve", &PySimulation::findEigenStates, R"V0G0N(
+        .def("findEigenStates", &PySimulation::findEigenStates, R"V0G0N(
             Finds eigenstates of current system, without self-consistent potentials.
 
             Parameters
@@ -232,10 +279,33 @@ void init_Simulation(py::module &m) {
             maxE : float
                 Eigenvalue upper bound)V0G0N",
             "minE"_a, "maxE"_a)
+        .def("findInhomogeneousEigenStates", &PySimulation::findInhomogeneousEigenStates, R"V0G0N(
+            Finds eigenstates of current system, with inhomogeneous boundary conditions.
+            This is only intended to work for finite difference schemes with supported boundary conditions.
+            The resulting states should be orthogonal eigenstates of the open system.
+
+            Parameters
+            ----------
+            nElec : int
+                Number of electrons in the system.
+            energies : list
+                Eigenstate energies. The boundary conditions must be consistent with these energies.)V0G0N",
+            "nElec"_a, "energies"_a)
         .def("runEPS_U2TU", &PySimulation::runEPS_U2TU, R"V0G0N(
-            Runs simulation using operator splitting method. Potential is not updated between kinetic operator propagation steps.)V0G0N")
+            Runs simulation using operator splitting method. Potential is not updated between kinetic operator propagation steps.)V0G0N",
+            "nSteps"_a)
         .def("runEPS_UW2TUW", &PySimulation::runEPS_UW2TUW, R"V0G0N(
-            Runs simulation using operator splitting method. Potential is updated between kinetic operator propagation steps.)V0G0N")
+            Runs simulation using operator splitting method. Potential is updated between kinetic operator propagation steps.)V0G0N",
+            "nSteps"_a)
+        .def("runCN_L", &PySimulation::runCN_L, R"V0G0N(
+            Runs simulation using Crank-Nicolson method. Potential is not updated between kinetic operator propagation steps.)V0G0N",
+            "nSteps"_a)
+        .def("runCN_NL", &PySimulation::runCN_NL, R"V0G0N(
+            Runs simulation using Crank-Nicolson method. Potential is updated between kinetic operator propagation steps.)V0G0N",
+            "nSteps"_a)
+        .def("run", &PySimulation::run, R"V0G0N(
+            Runs simulation using the appropriate method for the kinetic operator and potential.)V0G0N",
+            "nSteps"_a)
         .def("getElectricalCentroidSurface", &PySimulation::findElectricalSurfaceCentroidRule, R"V0G0N(
             Finds the index of the electrical surface using the centroid rule.
 

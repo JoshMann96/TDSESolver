@@ -3,7 +3,7 @@
 #include "MathTools.h"
 
 //callback sends progress int 0-100 (can be nullptr for no callback)
-SimulationManager::SimulationManager(int nPts, double dx, double dt, std::function<void(int)> callback)
+SimulationManager::SimulationManager(int nPts, double xMin, double dx, double dt, std::function<void(int)> callback)
 	: dx(dx), nPts(nPts), dt(dt), progTracker(callback), nElec(0)
 {
 	index = cyclic_int(0, HISTORY_LENGTH);
@@ -34,6 +34,10 @@ SimulationManager::SimulationManager(int nPts, double dx, double dt, std::functi
 	SimulationManager::maxT = maxT; SimulationManager::dt = dt; SimulationManager::dx = dx; SimulationManager::nPts = nPts;
 	SimulationManager::mpiRoot = mpiRoot; SimulationManager::mpiUpdateTag = mpiUpdateTag; SimulationManager::mpiJob = mpiJob;
 	*/
+
+	x = (double*) sq_malloc(sizeof(double) * nPts);
+	for(int i = 0; i < nPts; i++)
+		x[i] = xMin + i*dx;
 }
 
 SimulationManager::~SimulationManager()
@@ -53,6 +57,9 @@ SimulationManager::~SimulationManager()
 	sq_free(scratch1);
 	sq_free(scratch2);
 	sq_free(spatialDamp);
+	sq_free(step);
+
+	sq_free(x);
 	
 	if(weights)
 		sq_free(weights);

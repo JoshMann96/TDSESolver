@@ -268,7 +268,7 @@ void init_Potentials(py::module &m) {
             "sim"_a);
     
     py::class_<PyMeasuredPotential, Potential>(m, "MeasuredPotential")
-        .def(py::init<PySimulation*, Potential*, Measurers::Measurer*>(), py::keep_alive<1,3>(), py::keep_alive<1,4>(), R"V0G0N(
+        .def(py::init<PySimulation*, Potential*, Measurers::Measurer*, int>(), py::keep_alive<1,3>(), py::keep_alive<1,4>(), R"V0G0N(
             A potential which is also measured when it is called.
             At each evaluation the potential is calculated and then the measuruer passed is called using that potential only.
 
@@ -280,11 +280,13 @@ void init_Potentials(py::module &m) {
                 Potential to use and measure.
             meas: Measurer
                 Measurer to use.
+            numSteps : int
+                Number of time steps to measure.
 
             Returns
             -------
             MeasuredPotential)V0G0N",
-            "sim"_a, "pot"_a, "meas"_a);
+            "sim"_a, "pot"_a, "meas"_a, "numSteps"_a);
             
     py::enum_<LDAFunctionalType>(m, "LDAFunctionalType")
         .value("X_SLATER", LDAFunctionalType::X_SLATER)

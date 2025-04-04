@@ -12,7 +12,7 @@ class PyFileFieldProfile
     : public ElectricFieldProfiles::FileFieldProfile{
         public:
         PyFileFieldProfile(PySimulation * sim, double offset, double rightDecayPos, double leftDecayPos, double decayLength, double emax, std::string fil)
-            : ElectricFieldProfiles::FileFieldProfile(sim->getNumPoints(), sim->getXPtr(), offset, rightDecayPos, leftDecayPos, decayLength, emax, fil.c_str()){}
+            : ElectricFieldProfiles::FileFieldProfile(sim->getNumPoints(), sim->getX(), offset, rightDecayPos, leftDecayPos, decayLength, emax, fil.c_str()){}
     };
 
 // simplify instantiation of potentials
@@ -20,14 +20,14 @@ class PyFilePotential
     : public FilePotential{
         public:
         PyFilePotential(PySimulation * sim, double offset, std::string fil, double refPoint)
-            : FilePotential(sim->getNumPoints(), sim->getXPtr(), offset, fil.c_str(), sim->findXIdx(refPoint)){}
+            : FilePotential(sim->getNumPoints(), sim->getX(), offset, fil.c_str(), sim->findXIdx(refPoint)){}
     };
 
 class PyJelliumPotential
     : public JelliumPotentialBacked{
         public:
         PyJelliumPotential(PySimulation * sim, double center, double ef, double w, double backStart, double backWidth, double refPoint)
-            : JelliumPotentialBacked(sim->getNumPoints(), sim->getXPtr(), center, ef, w, backStart, backWidth, sim->findXIdx(refPoint)){}
+            : JelliumPotentialBacked(sim->getNumPoints(), sim->getX(), center, ef, w, backStart, backWidth, sim->findXIdx(refPoint)){}
     };
 
 class PyPulsePotential
@@ -41,7 +41,7 @@ class PyCylindricalImagePotential
     : public CylindricalImageCharge{
         public:
         PyCylindricalImagePotential(PySimulation* sim, double ef, double w, double rad, double posMin, double posMax, double refPoint)
-            : CylindricalImageCharge(sim->getNumPoints(), sim->getXPtr(), sim->getDX(), ef, w, rad, sim->getNElecPtr(), sim->getWeightsPtr(), sim->findXIdx(posMin), sim->findXIdx(posMax), sim->findXIdx(refPoint)){}
+            : CylindricalImageCharge(sim->getNumPoints(), sim->getX(), sim->getDX(), ef, w, rad, sim->getNElecPtr(), sim->getWeightsPtr(), sim->findXIdx(posMin), sim->findXIdx(posMax), sim->findXIdx(refPoint)){}
         
         void assemble(PySimulation* sim, int surfPos){
             CylindricalImageCharge::assemble(sim->getRho(), sim->getPsi(), surfPos);
@@ -52,7 +52,7 @@ class PyPlanarToCylindricalHartreePotential
     : public PlanarToCylindricalHartree{
         public:
         PyPlanarToCylindricalHartreePotential(PySimulation* sim, double rad, double posMin, double posMax, double refPoint)
-            : PlanarToCylindricalHartree(sim->getNumPoints(), sim->getXPtr(), sim->getDX(), rad, sim->getNElecPtr(), sim->getWeightsPtr(), sim->findXIdx(posMin), sim->findXIdx(posMax), sim->findXIdx(refPoint)){}
+            : PlanarToCylindricalHartree(sim->getNumPoints(), sim->getX(), sim->getDX(), rad, sim->getNElecPtr(), sim->getWeightsPtr(), sim->findXIdx(posMin), sim->findXIdx(posMax), sim->findXIdx(refPoint)){}
         
         void assemble(PySimulation* sim, int surfPos){
             PlanarToCylindricalHartree::assemble(sim->getRho(), sim->getPsi(), surfPos);
@@ -73,8 +73,8 @@ class PyLDAFunctional
 class PyMeasuredPotential
     : public MeasuredPotential{
         public:
-        PyMeasuredPotential(PySimulation* sim, Potential* pot, Measurers::Measurer* meas)
-            : MeasuredPotential(pot, meas, sim->getNumSteps(), sim->getMaxT()){};
+        PyMeasuredPotential(PySimulation* sim, Potential* pot, Measurers::Measurer* meas, int numSteps)
+            : MeasuredPotential(pot, meas, numSteps, numSteps*sim->getDT()){};
     };
 
 void init_Potentials(py::module &m);

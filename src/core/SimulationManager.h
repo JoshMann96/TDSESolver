@@ -101,7 +101,7 @@ private:
 
 	KineticOperators::KineticOperator* kin;
 
-	double *ts, dt, dx;
+	double *ts, *x, dt, dx;
 	double **vs, **rhos, *spatialDamp;
 	int nPts, nElec, calcDensity = 0;
 	cyclic_int index;
@@ -160,11 +160,35 @@ public:
 	/**
 	 * Constructor initializes the simulation manager with the number of points, spacing, and a callback function for progress tracking.
 	 * @param nPts The number of points in the simulation.
+	 * @param xMin The minimum x-coordinate of the simulation.
 	 * @param dx The spacing between points in the simulation.
 	 * @param dt The time step for the simulation.
 	 * @param callback The callback function to be called when progress is made. It must take in an integer (0-100) as an argument. nullptr for no callback.
 	 */
-	SimulationManager(int nPts, double dx, double dt, std::function<void(int)> callback = nullptr);
+	SimulationManager(int nPts, double xMin, double dx, double dt, std::function<void(int)> callback = nullptr);
+
+	/**
+	 * Constructor initializes the simulation manager with the x-coordinate range, spacing, and a callback function for progress tracking.
+	 * @param xMin The minimum x-coordinate of the simulation.
+	 * @param xMax The maximum x-coordinate of the simulation.
+	 * @param dx The spacing between points in the simulation.
+	 * @param dt The time step for the simulation.
+	 * @param callback The callback function to be called when progress is made. It must take in an integer (0-100) as an argument. nullptr for no callback.
+	 */
+	SimulationManager(double xMin, double xMax, double dx, double dt, std::function<void(int)> callback = nullptr) :
+		SimulationManager((int) ((xMax - xMin) / dx), xMin, dx, dt, callback) {};
+		
+	/**
+	 * Constructor initializes the simulation manager with the x-coordinate range, number of points, and a callback function for progress tracking.
+	 * @param xMin The minimum x-coordinate of the simulation.
+	 * @param xMax The maximum x-coordinate of the simulation.
+	 * @param nPts The number of points in the simulation.
+	 * @param dt The time step for the simulation.
+	 * @param callback The callback function to be called when progress is made. It must take in an integer (0-100) as an argument. nullptr for no callback.
+	 */
+	SimulationManager(double xMin, double xMax, int nPts, double dt, std::function<void(int)> callback = nullptr) :
+		SimulationManager(nPts, xMin, (xMax - xMin) / nPts, dt, callback) {};
+
 	~SimulationManager();
 
 	/**
@@ -334,6 +358,13 @@ public:
 	int getNumPoints() const {return nPts;};
 
 	/**
+	 * Returns the index which floors the given x-coordinate.
+	 * @param xp The x-coordinate to be found.
+	 * @return The index of the x-coordinate in the simulation.
+	 */
+	int findXIdx(double xp){return vtls::findValue(nPts, x, xp);}
+
+	/**
 	 * Returns the grid spacing in the simulation.
 	 * @return The grid spacing in the simulation.
 	 */
@@ -344,6 +375,12 @@ public:
 	 * @return The time step size in the simulation.
 	 */
 	double getDT() const {return dt;};
+
+	/**
+	 * Returns the grid array in the simulation.
+	 * @return The grid array in the simulation.
+	 */
+	double* getX() const {return x;};
 
 	/**
 	 * Returns a pointer to the wavefunction at the present index.

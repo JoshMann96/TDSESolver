@@ -373,7 +373,7 @@ void testInhomogeneousEigenState(){
 
 	plotting::GNUPlotter* plotter = new plotting::GNUPlotter();
 
-	SimulationManager* sm = new SimulationManager(nPts, dx, dt);
+	SimulationManager* sm = new SimulationManager(nPts, xs[0], dx, dt);
 	sm->addPotential(new Potentials::JelliumPotential(nPts, xs, 0.0, 5*PhysCon::eV, 5*PhysCon::eV, 0));
 	//sm->addPotential(new Potentials::ShieldedAtomicPotential(nPts, xs, -2e-10, 4e-10, 1.5, 1e-10) );
 	//sm->addPotential(new Potentials::FiniteBox(nPts, xs, -2e-9, -1e-9, -5.0*PhysCon::eV, 0));
@@ -490,7 +490,7 @@ void testIterationMethods(int stepType=-1, int nPts=8192){
 	for(int i = 0; i < nPts; i++)
 		xs[i] = dx*(i-nPts/2);
 
-	SimulationManager* sm = new SimulationManager(nPts, dx, dt);
+	SimulationManager* sm = new SimulationManager(nPts, xs[0], dx, dt);
 	KineticOperators::KineticOperator* cnKin = new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, new FDBCs::DirichletBC(0.0), new FDBCs::DirichletBC(0.0), true);
 	KineticOperators::KineticOperator* cnKin_cpu = new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, new FDBCs::DirichletBC(0.0), new FDBCs::DirichletBC(0.0), false);
 	KineticOperators::KineticOperator* osKin = new KineticOperators::GenDisp_PSM_FreeElec(nPts, dx, dt, 1.0, FFTW_PATIENT);
