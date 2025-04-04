@@ -5,6 +5,7 @@
 #include "WfcRhoTools.h"
 #include "blas.h"
 #include "CuTridiagSolver.h"
+#include "AbsorptiveRegions.h"
 
 #include "cuda.h"
 #include "cuda_runtime.h"
@@ -511,6 +512,8 @@ void testIterationMethods(int stepType=-1, int nPts=8192){
 		nPts, dx, 0);
 	sm->addPotential(lda_x);
 
+	//sm->addSpatialDamp(AbsorptiveRegions::getSmoothedSpatialDampDecay(nPts, nPts/10, 0, 1).get());
+	//sm->addSpatialDamp(AbsorptiveRegions::getSmoothedSpatialDampDecay(nPts, nPts*9/10, nPts-1, 1).get());
 
 	if(false){
 		plotting::GNUPlotter* plotter = new plotting::GNUPlotter();

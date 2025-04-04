@@ -75,7 +75,7 @@ namespace AbsorptiveRegions {
 	 * @param inner The inner boundary position.
 	 * @param outer The outer boundary position.
 	 * @param rate The exponent of the polynomial. Larger values make for a stronger decay.
-	 * @return A vector with elements of magnitude less than 1.
+	 * @return A unique_ptr to an array of doubles representing the smoothed decay mask.
 	*/
-	double* getSmoothedSpatialDampDecay(int len, int inner, int outer, double rate);
+	std::unique_ptr<double[]> getSmoothedSpatialDampDecay(int len, int inner, int outer, double rate);
 }

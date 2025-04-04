@@ -30,8 +30,8 @@ class PySimulation
             SimulationManager::addPotential(pot);
         }
 
-        void addLeftAbsBdy(double rate, double width){addSpatialDamp(AbsorptiveRegions::getSmoothedSpatialDampDecay(getNumPoints(), findXIdx(getX()[0]+width), 0, rate*getDT()));}
-        void addRightAbsBdy(double rate, double width){addSpatialDamp(AbsorptiveRegions::getSmoothedSpatialDampDecay(getNumPoints(), findXIdx(getX()[getNumPoints()-1]-width), getNumPoints()-1, rate*getDT()));}
+        void addLeftAbsBdy(double rate, double width){addSpatialDamp(AbsorptiveRegions::getSmoothedSpatialDampDecay(getNumPoints(), findXIdx(getX()[0]+width), 0, rate*getDT()).get());}
+        void addRightAbsBdy(double rate, double width){addSpatialDamp(AbsorptiveRegions::getSmoothedSpatialDampDecay(getNumPoints(), findXIdx(getX()[getNumPoints()-1]-width), getNumPoints()-1, rate*getDT()).get());}
 
         void findEigenStates(double minE, double maxE){
             SimulationManager::findEigenStates(minE, maxE);

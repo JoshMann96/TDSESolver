@@ -120,9 +120,9 @@ namespace AbsorptiveRegions {
 		return mask;
 	}
 
-	double* getSmoothedSpatialDampDecay(int len, int inner, int outer, double rate) {
-		double* mask = (double*) sq_malloc(len * sizeof(double));
-		std::fill_n(mask, len, 1.0);
+	std::unique_ptr<double[]> getSmoothedSpatialDampDecay(int len, int inner, int outer, double rate) {
+		std::unique_ptr<double[]> mask(new double[len], std::default_delete<double[]>());
+		std::fill_n(mask.get(), len, 1.0);
 		int size = std::abs(outer - inner);
 		double k;
 		if (outer < inner) {

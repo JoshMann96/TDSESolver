@@ -191,11 +191,20 @@ void SimulationManager::setPsi(std::complex<double>* npsi, WfcToRho::Normalizati
 		vtls::normalizeSqrNorm(nPts, psis[index], dx);
 }
 
-int SimulationManager::calculatePotential(double* rho, std::complex<double>* psi, double t, double* v){
+int SimulationManager::calculatePotential(double* rho, const std::complex<double>* psi, double t, double* v){
 	auto strt = std::chrono::high_resolution_clock::now();
 	if(calcDensity)
 		dens->calcRho(nPts, nElec, dx, weights, psi, rho);
 	pot->getV(rho, psi, t, v);
+	auto end = std::chrono::high_resolution_clock::now();
+	auto dur = std::chrono::duration_cast<std::chrono::microseconds>(end - strt);
+	return dur.count();
+}
+
+int SimulationManager::calculatePotentialFromRawRho(double* rho, const std::complex<double>* psi, double t, double* v){
+	auto strt = std::chrono::high_resolution_clock::now();
+	dens->calcRho(nPts, nElec, dx, rho);
+	pot->getV(rho, nullptr, t, v);
 	auto end = std::chrono::high_resolution_clock::now();
 	auto dur = std::chrono::duration_cast<std::chrono::microseconds>(end - strt);
 	return dur.count();
@@ -308,9 +317,9 @@ void SimulationManager::runEPS_UW2TUW(int nSteps) {
 }
 
 void SimulationManager::runCN_L(int nSteps){
-	KineticOperators::KineticOperator_FDM* kin_fdm = dynamic_cast<KineticOperators::KineticOperator_FDM*>(kin);
-	if(kin_fdm == nullptr)
-		throw std::runtime_error("SimulationManager::runCN_L: Kinetic operator is not a finite difference method!");
+	KineticOperators::CrankNicolson* kin_cn = dynamic_cast<KineticOperators::CrankNicolson*>(kin);
+	if(kin_cn == nullptr)
+		throw std::runtime_error("SimulationManager::runCN_L: Kinetic operator is not CrankNicolson!");
 
 	double* tv = (double*) sq_malloc(sizeof(double) * nPts);
 	auto rMeasure = &SimulationManager::measure;
@@ -347,7 +356,7 @@ void SimulationManager::runCN_L(int nSteps){
 		vtls::scaMulArray(nPts, 0.5, tv);
 
 		// evalute n->n+1
-		kin_fdm->step(psis[index], tv, spatialDamp, psis[index+1], nElec);
+		kin_cn->step(psis[index], tv, spatialDamp, psis[index+1], nElec);
 		
 		// measure step n while n+1->n+2 begins
 		if(i != 0)
@@ -363,6 +372,53 @@ void SimulationManager::runCN_L(int nSteps){
 		fUP.get();
 	fM.get();
 
+	progTracker.update(nSteps);
+
+	sq_free(tv);
+}
+
+void SimulationManager::runCN_NL(int nSteps){
+	KineticOperators::CrankNicolson* kin_cn = dynamic_cast<KineticOperators::CrankNicolson*>(kin);
+	if(kin_cn == nullptr)
+		throw std::runtime_error("SimulationManager::runCN_NL: Kinetic operator is not CrankNicolson!");
+
+	double* tv = (double*) sq_malloc(sizeof(double) * nPts);
+	auto rMeasure = &SimulationManager::measure;
+	std::future<int> fM;
+
+	// initialize progress tracker
+	progTracker.reset(nSteps);
+
+	for(int i = 0; i < nSteps; i++){
+		updatePotential(index);
+
+		// estimate the density at the next step using the present potential (virtual step)
+		kin_cn->stepVirtual(psis[index], vs[index], spatialDamp, psis[index+1], nElec);
+
+		// try to calculate the raw density from the device then post-process, otherwise calculate rho normally. Then calculate the approximated next potential
+		if (kin_cn->calcRawRhoByDevice(weights, rhos[index + 1], true)) // if the device can calculate raw density
+			calculatePotentialFromRawRho(rhos[index + 1], psis[index + 1], ts[index] + dt, vs[index+1]);
+		else // otherwise calculate density on CPU
+			updatePotential(index + 1);
+
+		// averaged potential
+		vtls::addArrays(nPts, vs[index], vs[index + 1], tv);
+		vtls::scaMulArray(nPts, 0.5, tv);
+
+		// actual step
+		kin_cn->step(psis[index], tv, spatialDamp, psis[index + 1], nElec);
+
+		// launch measurer
+		if(i != 0)
+			fM.get();
+		fM = std::async(rMeasure, this, index);
+		
+		progTracker.update(i);
+
+		iterateIndex();
+	}
+
+	fM.get();
 	progTracker.update(nSteps);
 
 	sq_free(tv);
