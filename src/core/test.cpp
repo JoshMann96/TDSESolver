@@ -483,7 +483,7 @@ void testIterationMethods(int stepType=-1, int nPts=8192){
 	delete[] wisdomFile;
 	*/
 
-	int nSteps = 1000;
+	int nSteps = 10000;
 	double dx = 0.16*PhysCon::a0;
 	double dt = 0.1*PhysCon::hbar/PhysCon::auE_ha;
 
@@ -502,15 +502,6 @@ void testIterationMethods(int stepType=-1, int nPts=8192){
 	sm->addMeasurer(new Measurers::BasicMeasurers(nPts, dx, dt, "data/test/"));
 	sm->addMeasurer(new Measurers::TotProb(nPts, dx, sm->getNElecPtr(), "data/test/"));
 	sm->addMeasurer(new Measurers::VDProbCurrent(nPts, dx, sm->getNElecPtr(), 0, 0, "surf", "data/test/"));
-
-	Potentials::LDAFunctional* lda_c = new Potentials::LDAFunctional(
-		Potentials::LDAFunctionalType::C_PW,
-		nPts, dx, 0);
-	sm->addPotential(lda_c);
-	Potentials::LDAFunctional* lda_x = new Potentials::LDAFunctional(
-		Potentials::LDAFunctionalType::X_SLATER,
-		nPts, dx, 0);
-	sm->addPotential(lda_x);
 
 	//sm->addSpatialDamp(AbsorptiveRegions::getSmoothedSpatialDampDecay(nPts, nPts/10, 0, 1).get());
 	//sm->addSpatialDamp(AbsorptiveRegions::getSmoothedSpatialDampDecay(nPts, nPts*9/10, nPts-1, 1).get());
@@ -533,9 +524,14 @@ void testIterationMethods(int stepType=-1, int nPts=8192){
 	std::cout << "\tFinding Eigenstates..." << std::endl;
 	sm->findEigenStates(-10.0*PhysCon::eV, -5.0*PhysCon::eV);
 
-	lda_c->assemble(sm->getRho(), sm->getPsi());
-	lda_x->assemble(sm->getRho(), sm->getPsi());
-
+	// add XC potential
+	sm->addPotential(new Potentials::LDAFunctional(
+		Potentials::LDAFunctionalType::C_PW,
+		nPts, dx, sm->getRho(), 0));
+	sm->addPotential(new Potentials::LDAFunctional(
+		Potentials::LDAFunctionalType::X_SLATER,
+		nPts, dx, sm->getRho(), 0));
+	
 	// remove finite well
 	sm->addPotential(new Potentials::FiniteBox(nPts, xs, xs[nPts/4], xs[nPts/4*3], 10.0*PhysCon::eV, 0));
 	/*sm->addPotential(

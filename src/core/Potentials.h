@@ -498,69 +498,6 @@ namespace Potentials {
 		PotentialComplexity getComplexity(){return PotentialComplexity::DYNAMIC;};
 	};
 
-	/** 
-	 * Class of potentials which generally depend on the wavefunction or density and are zero for the initial state -- they only embody the change in potential.
-	 */
-	class NonlinearDynamicalPotential :
-		public Potential
-	{
-	private:
-		int assembled = 0;
-
-		/// Assemble the potential. See implementations for details on inputs.
-		virtual void _assemble(const double* rho, const std::complex<double> * psi, va_list args) = 0; // child needs to implement assembly
-
-		/**
-		 * Protected method to calculate the potential at time \a t.
-		 * This is the actual implementation that computes the potential based on the density and wavefunction. #getV ensures that the potential has been assembled before calling this.
-		 * @param rho (in) Density.
-		 * @param psi (in) Wavefunction.
-		 * @param t Time.
-		 * @param targ (out) Array to store the potential.
-		 */
-		virtual void getV_(const double* rho, const std::complex<double> * psi, double t, double * targ) = 0; // child implements unprotected potential calculation.
-	public:
-	    /**
-		 * Assemble the potential.
-		 * @param rho (in) Density.
-		 * @param psi (in) Wavefunction.
-		 * @param ... Additional arguments. See child classes' #_assemble documentation for specifics.
-		 */
-		void assemble(const double* rho, const std::complex<double> * psi, ...){
-			// collect arguments
-			va_list args;
-			va_start(args, psi);
-
-			// call the assembly function
-			_assemble(rho, psi, args);
-			
-			va_end(args);
-
-			assembled = 1; 
-		};
-
-		/**
-		 * Check if the potential has been assembled.
-		 * @return 1 if assembled, 0 otherwise.
-		 */
-		int isAssembled(){return assembled;};
-
-		/**
-		 * Get the potential energy at time \a t. This is the potential ignoring the wavefunction or density.
-		 * @param t Time.
-		 * @param targ (out) Array to store the potential.
-		 */
-		virtual void getVBare(double t, double * targ) = 0;
-
-		void getV(const double* rho, const std::complex<double> * psi, double t, double * targ){
-			if(!isAssembled())
-				throw std::runtime_error("NonlinearDynamicalPotential not assembled before evaluation.");
-			getV_(rho, psi, t, targ);
-		};
-
-		virtual PotentialComplexity getComplexity() = 0;
-	};
-
 	/// Tool which integrates the current which passes through a point.
 	class CurrentIntegrator
 	{
@@ -602,7 +539,7 @@ namespace Potentials {
 	 * The current emitted on the right-side is integrated and used to find the total charge remaining within the cathode, regardless of the total charge bounded to the left.
 	 */
 	class CylindricalImageCharge :
-		public NonlinearDynamicalPotential
+		public Potential
 	{
 	private:
 		int nPts, refPoint, posMin, posMax, surfPos;
@@ -617,17 +554,6 @@ namespace Potentials {
 		 */
 		void calcPot(const double* rho, const std::complex<double>* psi, double cur_t, double* targ);
 		CurrentIntegrator * curInt;
-
-		/**
-		 * Assemble the potential with additional arguments.
-		 * @param rho (in) Density.
-		 * @param psi (in) Wavefunction.
-		 * @param args Additional argument:
-		 * - \a sp (int): The index of the surface position.
-		 */
-		void _assemble(const double* rho, const std::complex<double>* psi, va_list args);
-
-		void getV_(const double* rho, const std::complex<double>* psi, double t, double* targ);
 	public:
 		/**
 		 * Constructor. The surface position must be passed through #assemble. See #_assemble for details.
@@ -637,16 +563,19 @@ namespace Potentials {
 		 * @param ef Electric field strength.
 		 * @param w Work function.
 		 * @param rad Radius of the cylinder.
+		 * @param surfPos Surface position (index) of the cylinder.
 		 * @param nElec (in) Number of electrons.
-		 * @param weights (in) Weights for the density calculation. (Not referenced.)
+		 * @param weights (in) Weights for the density calculation.
+		 * @param rho0 (in) Initial density array, used to initialize the potential so that future calls to #getV will return the change in potential. If nullptr, the initial density is zero and #getV returns the full potential.
 		 * @param posMin Minimum x (index) to apply the field. This is assumed to be the surface of the cylinder.
 		 * @param posMax Maximum x (index) to apply the field.
 		 * @param refPoint Reference point (index) for the potential.
 		 */
-		CylindricalImageCharge(int nPts, const double* x, double dx, double ef, double w, double rad, const int* nElec, double * const * weights, int posMin, int posMax, int refPoint);
+		CylindricalImageCharge(int nPts, const double* x, double dx, double ef, double w, double rad, int surfPos, const int* nElec, double * const * weights, const double* rho0, int posMin, int posMax, int refPoint);
 		
 		~CylindricalImageCharge();
 		void getVBare(double t, double* targ);
+		void getV(const double* rho, const std::complex<double>* psi, double t, double* targ);
 		PotentialComplexity getComplexity(){return PotentialComplexity::WAVEFUNCTION_DEPENDENT;};
 	};
 
@@ -654,7 +583,7 @@ namespace Potentials {
 	 * A Hartree potential which uses a planar charge geometry to the left of the surface position and a cylindrical charge geometry to the right.
 	 */
 	class PlanarToCylindricalHartree :
-		public NonlinearDynamicalPotential
+		public Potential
 	{
 	private:
 		int nPts, refPoint, * nElec, posMin, posMax, surfPos;
@@ -670,33 +599,24 @@ namespace Potentials {
 		void calcPot(const double* rho, const std::complex<double>* psi, double t, double* targ);
 		CurrentIntegrator * curInt;
 		double totalCharge;
-
-		/**
-		 * Assemble the potential with additional arguments.
-		 * @param rho (in) Density.
-		 * @param psi (in) Wavefunction.
-		 * @param args Additional argument:
-		 * - \a sp (int): The index of the surface position.
-		 */
-		void _assemble(const double* rho, const std::complex<double>* psi, va_list args);
-
-		void getV_(const double* rho, const std::complex<double>* psi, double t, double* targ);
 	public:
 		/**
 		 * Constructor. The surface position must be passed through #assemble. See #_assemble for details.
 		 * @param nPts Number of points.
-		 * @param x (in) Array of positions.
 		 * @param dx Grid spacing.
 		 * @param rad Radius of the cylinder.
+		 * @param surfPos Surface position (index) of the cylinder.
 		 * @param nElec (in) Number of electrons.
-		 * @param weights (in) Weights for the density calculation. (Not referenced.)
+		 * @param weights (in) Weights for the density calculation.
+		 * @param rho0 (in) Initial density array, used to initialize the potential so that future calls to #getV will return the change in potential. If nullptr, the initial density is zero and #getV returns the full potential.
 		 * @param posMin Minimum x (index) to apply the field.
 		 * @param posMax Maximum x (index) to apply the field.
 		 * @param refPoint Reference point (index) for the potential.
 		 */
-		PlanarToCylindricalHartree(int nPts, const double* x, double dx, double rad, const int* nElec, double * const * weights, int posMin, int posMax, int refPoint);
+		PlanarToCylindricalHartree(int nPts, double dx, double rad, int surfPos, const int* nElec, double * const * weights, const double* rho0, int posMin, int posMax, int refPoint);
 		~PlanarToCylindricalHartree();
 		void getVBare(double t, double* targ);
+		void getV(const double* rho, const std::complex<double>* psi, double t, double* targ);
 		PotentialComplexity getComplexity(){return PotentialComplexity::WAVEFUNCTION_DEPENDENT;};
 	};
 
@@ -709,7 +629,7 @@ namespace Potentials {
 	};
 	
 	class LDAFunctional :
-		public NonlinearDynamicalPotential
+		public Potential
 	{
 	private:
 		int nPts, refPoint, * nElec;
@@ -722,15 +642,6 @@ namespace Potentials {
 		void calcPot(const double* rho, double* targ);
 
 		LDAFunctionalType typ;
-
-		/**
-		 * Assemble the potential with additional arguments.
-		 * @param rho (in) Density.
-		 * @param psi (in) Wavefunction.
-		 * @param args Additional arguments (none needed).
-		 */
-		void _assemble(const double* rho, const std::complex<double>* psi, va_list args);
-		void getV_(const double* rho, const std::complex<double>* psi, double t, double* targ);
 	public:
 
 		/**
@@ -738,12 +649,14 @@ namespace Potentials {
 		 * @param typ Type of LDA functional.
 		 * @param nPts Number of points.
 		 * @param dx Grid spacing.
+		 * @param rho0 (in) Initial density array, used to initialize the potential so that future calls to #getV will return the change in potential. If nullptr, the initial density is zero and #getV returns the full potential.
 		 * @param refPoint Reference point (index) for the potential.
 		 */
-		LDAFunctional(LDAFunctionalType typ, int nPts, double dx, int refPoint);
+		LDAFunctional(LDAFunctionalType typ, int nPts, double dx, const double* rho0, int refPoint);
 
 		~LDAFunctional();
 		void getVBare(double t, double* targ);
+		void getV(const double* rho, const std::complex<double>* psi, double t, double* targ);
 		PotentialComplexity getComplexity(){return PotentialComplexity::WAVEFUNCTION_DEPENDENT;};
 	};
 

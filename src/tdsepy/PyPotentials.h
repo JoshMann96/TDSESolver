@@ -40,34 +40,22 @@ class PyPulsePotential
 class PyCylindricalImagePotential
     : public CylindricalImageCharge{
         public:
-        PyCylindricalImagePotential(PySimulation* sim, double ef, double w, double rad, double posMin, double posMax, double refPoint)
-            : CylindricalImageCharge(sim->getNumPoints(), sim->getX(), sim->getDX(), ef, w, rad, sim->getNElecPtr(), sim->getWeightsPtr(), sim->findXIdx(posMin), sim->findXIdx(posMax), sim->findXIdx(refPoint)){}
-        
-        void assemble(PySimulation* sim, int surfPos){
-            CylindricalImageCharge::assemble(sim->getRho(), sim->getPsi(), surfPos);
-        }
+        PyCylindricalImagePotential(PySimulation* sim, double ef, double w, double rad, double posMin, double posMax, double surfPos, double refPoint)
+            : CylindricalImageCharge(sim->getNumPoints(), sim->getX(), sim->getDX(), ef, w, rad, sim->findXIdx(surfPos), sim->getNElecPtr(), sim->getWeightsPtr(), sim->getRho(), sim->findXIdx(posMin), sim->findXIdx(posMax), sim->findXIdx(refPoint)){}
     };
 
 class PyPlanarToCylindricalHartreePotential
     : public PlanarToCylindricalHartree{
         public:
-        PyPlanarToCylindricalHartreePotential(PySimulation* sim, double rad, double posMin, double posMax, double refPoint)
-            : PlanarToCylindricalHartree(sim->getNumPoints(), sim->getX(), sim->getDX(), rad, sim->getNElecPtr(), sim->getWeightsPtr(), sim->findXIdx(posMin), sim->findXIdx(posMax), sim->findXIdx(refPoint)){}
-        
-        void assemble(PySimulation* sim, int surfPos){
-            PlanarToCylindricalHartree::assemble(sim->getRho(), sim->getPsi(), surfPos);
-        }
+        PyPlanarToCylindricalHartreePotential(PySimulation* sim, double rad, double posMin, double posMax, double surfPos, double refPoint)
+            : PlanarToCylindricalHartree(sim->getNumPoints(), sim->getDX(), rad, sim->findXIdx(surfPos), sim->getNElecPtr(), sim->getWeightsPtr(), sim->getRho(), sim->findXIdx(posMin), sim->findXIdx(posMax), sim->findXIdx(refPoint)){}
     };
 
 class PyLDAFunctional
     : public LDAFunctional{
         public:
         PyLDAFunctional(PySimulation* sim, LDAFunctionalType typ, double refPoint)
-            : LDAFunctional(typ, sim->getNumPoints(), sim->getDX(), sim->findXIdx(refPoint)){}
-        
-        void assemble(PySimulation* sim){
-            LDAFunctional::assemble(sim->getRho(), sim->getPsi());
-        }
+            : LDAFunctional(typ, sim->getNumPoints(), sim->getDX(), sim->getRho(), sim->findXIdx(refPoint)){}
     };
 
 class PyMeasuredPotential

@@ -148,6 +148,8 @@ void SimulationManager::findEigenStates(double emin, double emax) {
 	calcWeights();
 	if(calcDensity)
 		dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
+
+	wavefunctionInitialized = true;
 }
 
 void SimulationManager::findInhomogeneousEigenStates(int nElec, const double* energies){
@@ -173,6 +175,8 @@ void SimulationManager::findInhomogeneousEigenStates(int nElec, const double* en
 		dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
 
 	normScheme = WfcToRho::NormalizationScheme::UNNORMALIZED;
+
+	wavefunctionInitialized = true;
 }
 
 void SimulationManager::setPsi(std::complex<double>* npsi, WfcToRho::NormalizationScheme norm) {
@@ -189,6 +193,11 @@ void SimulationManager::setPsi(std::complex<double>* npsi, WfcToRho::Normalizati
 
 	if(normScheme == WfcToRho::NormalizationScheme::NORMALIZED)
 		vtls::normalizeSqrNorm(nPts, psis[index], dx);
+
+	if(calcDensity)
+		dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
+
+	wavefunctionInitialized = true;
 }
 
 int SimulationManager::calculatePotential(double* rho, const std::complex<double>* psi, double t, double* v){

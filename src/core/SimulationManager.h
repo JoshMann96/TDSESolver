@@ -108,6 +108,8 @@ private:
 	int* step;
 	std::complex<double> *scratch1, *scratch2;
 
+	bool wavefunctionInitialized = false;
+
 	WfcToRho::NormalizationScheme normScheme = WfcToRho::UNNORMALIZED;
 
 	/**
@@ -396,13 +398,23 @@ public:
 	 * Returns a pointer to the wavefunction at the present index.
 	 * @return The wavefunction.
 	 */
-	std::complex<double>* getPsi() const {return psis[index];};
+	std::complex<double>* getPsi() const {
+		if(!wavefunctionInitialized)
+			return nullptr;
+		return psis[index];
+	};
 
 	/**
 	 * Returns a pointer to the density at the present index.
 	 * @return The density.
 	 */
-	double* getRho() const {return rhos[index];};
+	double* getRho() {
+		if(!wavefunctionInitialized)
+			return nullptr;
+		if(!calcDensity)
+			dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
+		return rhos[index];
+	};
 
 	/**
 	 * Gets the number of electrons currently in the simulation.
