@@ -2,6 +2,7 @@
 .vscode
 .VSCodeCounter
 .venv
+.cspell
 build*
 scratch
 **__pycache__

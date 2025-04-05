@@ -498,7 +498,7 @@ namespace vtls {
 	}
 	
 	/**
-	 * Multiplies the elements of two arryas together, storing the result in the second array.
+	 * Multiplies the elements of two arrays together, storing the result in the second array.
 	 * @tparam T The type of the first array.
 	 * @tparam U The type of the second array.
 	 * @param len The length of the arrays.

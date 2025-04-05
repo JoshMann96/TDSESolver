@@ -31,10 +31,10 @@ namespace KineticOperators {
 		
 		/**
 		 * Find the eigenstates of the system using this kinetic operator's basis.
-		 * @param v (in) The potential to use for the calculation, nPts elements
+		 * @param v (in) The potential to use for the calculation, \a nPts elements
 		 * @param emin The minimum energy to search for eigenstates
 		 * @param emax The maximum energy to search for eigenstates
-		 * @param states (out) The eigenstates found, allocated by the caller, must be of size nPts*nPts
+		 * @param states (out) The eigenstates found, allocated by the caller, must be of size \a nPts*nPts
 		 * @param nEigs (out) The number of eigenstates found, allocated by the caller
 		 */
 		virtual void findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, int* nEigs) = 0;
@@ -56,10 +56,10 @@ namespace KineticOperators {
 
 		/**
 		 * Performs a half-step of the potential followed by a full step of the kinetic operator (half-potential, full-kinetic), returning the result in real space. This is typically run \a before stepOS_UW.
-		 * @param psi0 (in) The initial wavefunction, nPts*nElec elements
-		 * @param v (in) The potential to use for the calculation, nPts elements
-		 * @param spatialDamp (in) The spatial damping to apply (for absorptive BCs), nPts elements
-		 * @param targ (out) The target wavefunction after the time step, nPts*nElec elements
+		 * @param psi0 (in) The initial wavefunction, \a nPts*nElec elements
+		 * @param v (in) The potential to use for the calculation, \a nPts elements
+		 * @param spatialDamp (in) The spatial damping to apply (for absorptive BCs), \a nPts elements
+		 * @param targ (out) The target wavefunction after the time step, \a nPts*nElec elements
 		 * @param nElec (in) The number of electrons in the system
 		 * @note This function is useful when updating the potential immediately after the kinetic phase for nonlinear systems, increasing the accuracy of the time-stepping.
 		 */
@@ -67,10 +67,10 @@ namespace KineticOperators {
 
 		/**
 		 * Performs a half-step of the potential (half-potential), returning the result in real space. This is typically run \a after stepOS_UW2T.
-		 * @param psi0 (in) The initial wavefunction, nPts*nElec elements
-		 * @param v (in) The potential to use for the calculation, nPts elements
-		 * @param spatialDamp (in) The spatial damping to apply (for absorptive BCs), nPts elements
-		 * @param targ (out) The target wavefunction after the time step, nPts*nElec elements
+		 * @param psi0 (in) The initial wavefunction, \a nPts*nElec elements
+		 * @param v (in) The potential to use for the calculation, \a nPts elements
+		 * @param spatialDamp (in) The spatial damping to apply (for absorptive BCs), \a nPts elements
+		 * @param targ (out) The target wavefunction after the time step, \a nPts*nElec elements
 		 * @param nElec (in) The number of electrons in the system
 		 * @note This function is useful when updating the potential immediately after the kinetic phase for nonlinear systems, increasing the accuracy of the time-stepping.
 		 */
@@ -78,10 +78,10 @@ namespace KineticOperators {
 
 		/**
 		 * Performs a full step of the kinetic operator (half-potential, full-kinetic, half-potential), returning the result in real space. This is fine for linear systems.
-		 * @param psi0 (in) The initial wavefunction, nPts*nElec elements
-		 * @param v (in) The potential to use for the calculation, nPts elements
-		 * @param spatialDamp (in) The spatial damping to apply (for absorptive BCs), nPts elements
-		 * @param targ (out) The target wavefunction after the time step, nPts*nElec elements
+		 * @param psi0 (in) The initial wavefunction, \a nPts*nElec elements
+		 * @param v (in) The potential to use for the calculation, \a nPts elements
+		 * @param spatialDamp (in) The spatial damping to apply (for absorptive BCs), \a nPts elements
+		 * @param targ (out) The target wavefunction after the time step, \a nPts*nElec elements
 		 * @param nElec (in) The number of electrons in the system
 		 * @note This function is typically used for linear systems, as it performs a full step of the kinetic operator.
 		 * @note It is not recommended for nonlinear systems, as the potential cannot be updated after the kinetic propagation step.
@@ -159,14 +159,14 @@ namespace KineticOperators {
 
 		/**
 		 * Executes a forward Fourier transform on the input.
-		 * @param targ (in/out) The target array to transform, which will be overwritten with the transformed data, nPts*nElec elements
+		 * @param targ (in/out) The target array to transform, which will be overwritten with the transformed data, \a nPts*nElec elements
 		 * @note This function assumes that the input data is in real space and will be transformed to reciprocal space.
 		 */
 		void executeAllFFTForward(std::complex<double>* targ);
 
 		/**
 		 * Executes a backward Fourier transform on the input.
-		 * @param targ (in/out) The target array to transform, which will be overwritten with the transformed data, nPts*nElec elements
+		 * @param targ (in/out) The target array to transform, which will be overwritten with the transformed data, \a nPts*nElec elements
 		 * @note This function assumes that the input data is in reciprocal space and will be transformed to real space.
 		 */
 		void executeAllFFTBackward(std::complex<double>* targ);
@@ -409,10 +409,10 @@ namespace KineticOperators {
 		
 		/**
 		 * Performs a time step without finalizing the boundary conditions for this step.
-		 * @param psi0 (in) The initial wavefunction, nPts*nElec elements
-		 * @param v (in) The potential to use for the calculation, nPts elements
-		 * @param spatialDamp (in) The spatial damping to apply (for absorptive BCs), nPts elements
-		 * @param targ (out) The target wavefunction after the time step, nPts*nElec elements
+		 * @param psi0 (in) The initial wavefunction, \a nPts*nElec elements
+		 * @param v (in) The potential to use for the calculation, \a nPts elements
+		 * @param spatialDamp (in) The spatial damping to apply (for absorptive BCs), \a nPts elements
+		 * @param targ (out) The target wavefunction after the time step, \a nPts*nElec elements
 		 * @param nElec The number of electrons in the system
 		 * @note This function is useful for systems where the potential is nonlinear and an approximation of the wavefunction at the next step is desired.
 		 * @note If using the GPU, this function will also neither gather the full wavefunction nor override the present state on the GPU.
@@ -421,10 +421,10 @@ namespace KineticOperators {
 		
 		/**
 		 * Performs a time step and finalizes the boundary conditions for this step.
-		 * @param psi0 (in) The initial wavefunction, nPts*nElec elements
-		 * @param v (in) The potential to use for the calculation, nPts elements
-		 * @param spatialDamp (in) The spatial damping to apply (for absorptive BCs), nPts elements
-		 * @param targ (out) The target wavefunction after the time step, nPts*nElec elements
+		 * @param psi0 (in) The initial wavefunction, \a nPts*nElec elements
+		 * @param v (in) The potential to use for the calculation, \a nPts elements
+		 * @param spatialDamp (in) The spatial damping to apply (for absorptive BCs), \a nPts elements
+		 * @param targ (out) The target wavefunction after the time step, \a nPts*nElec elements
 		 * @param nElec The number of electrons in the system
 		 */
 		virtual void step(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, int nElec) = 0;
@@ -432,9 +432,9 @@ namespace KineticOperators {
 		/**
 		 * Finds the eigenstates of the system using this kinetic operator's basis when one of the boundary conditions are inhomogeneous.
 		 * This thereby finds the eigenstates of the open system.
-		 * @param v (in) The potential to use for the calculation, nPts elements
-		 * @param es (in) The energy values to use for the calculation, nPts elements
-		 * @param states (out) The eigenstates found, allocated by the caller, must be of size nPts*nElec
+		 * @param v (in) The potential to use for the calculation, \a nPts elements
+		 * @param es (in) The energy values to use for the calculation, \a nPts elements
+		 * @param states (out) The eigenstates found, allocated by the caller, must be of size \a nPts*nElec
 		 * @param nElec The number of electrons in the system
 		 * @throw std::runtime_error if both boundary conditions are not inhomogeneous.
 		 */
@@ -442,10 +442,10 @@ namespace KineticOperators {
 
 		/**
 		 * For when the system has not been time-integrated, this function calls the underlying boundary conditions' projectHistory function.
-		 * @param psi (in) The wavefunction to project, nPts*nElec elements (only the left and right boundaries are referenced)
-		 * @param phsL (in) The phase advance for the left boundary, nElec elements
-		 * @param phsR (in) The phase advance for the right boundary, nElec elements
-		 * @param v (in) The potential to use for the calculation, nPts elements
+		 * @param psi (in) The wavefunction to project, \a nPts*nElec elements (only the left and right boundaries are referenced)
+		 * @param phsL (in) The phase advance for the left boundary, \a nElec elements
+		 * @param phsR (in) The phase advance for the right boundary, \a nElec elements
+		 * @param v (in) The potential to use for the calculation, \a nPts elements
 		 * @param nElec The number of electrons in the system
 		 */
 		void projectHistory(const std::complex<double>* psi, const std::complex<double>* phsL, const std::complex<double>* phsR, const double* v, int nElec);
@@ -453,8 +453,8 @@ namespace KineticOperators {
 		/**
 		 * Calculates the (raw, unprojected) density of the system using the weights provided.
 		 * This uses the state on the GPU.
-		 * @param weights (in) The weights to use for the calculation, nElec elements
-		 * @param rho (out) The density calculated, nPts elements
+		 * @param weights (in) The weights to use for the calculation, \a nElec elements
+		 * @param rho (out) The density calculated, \a nPts elements
 		 * @param virt (in) Whether to calculate the density from the virtual state or the regular state on the GPU.
 		 * @return true if the calculation was successful, false otherwise (e.g. if the GPU is not being used, this will return false and one must use the CPU instead).
 		 */
@@ -497,10 +497,10 @@ namespace KineticOperators {
 
 		/**
 		 * Performs a single time step of the Crank-Nicolson method.
-		 * @param psi0 (in) The initial wavefunction, nPts*nElec elements
-		 * @param v (in) The potential to use for the calculation, nPts elements
-		 * @param spatialDamp (in) The spatial damping to apply (for absorptive BCs), nPts elements
-		 * @param targ (out) The target wavefunction after the time step, nPts*nElec elements
+		 * @param psi0 (in) The initial wavefunction, \a nPts*nElec elements
+		 * @param v (in) The potential to use for the calculation, \a nPts elements
+		 * @param spatialDamp (in) The spatial damping to apply (for absorptive BCs), \a nPts elements
+		 * @param targ (out) The target wavefunction after the time step, \a nPts*nElec elements
 		 * @param nElec The number of electrons in the system
 		 * @param isVirtual (in) Whether to perform a virtual time step (without finalizing the boundary conditions)
 		 */
@@ -544,10 +544,10 @@ namespace KineticOperators {
 
 		/**
 		 * Performs a time step of the Crank-Nicolson method, finalizing the boundary conditions for this step.
-		 * @param psi0 (in) The initial wavefunction, nPts*nElec elements
-		 * @param v (in) The potential to use for the calculation, nPts elements
-		 * @param spatialDamp (in) The spatial damping to apply (for absorptive BCs), nPts elements
-		 * @param targ (out) The target wavefunction after the time step, nPts*nElec elements
+		 * @param psi0 (in) The initial wavefunction, \a nPts*nElec elements
+		 * @param v (in) The potential to use for the calculation, \a nPts elements
+		 * @param spatialDamp (in) The spatial damping to apply (for absorptive BCs), \a nPts elements
+		 * @param targ (out) The target wavefunction after the time step, \a nPts*nElec elements
 		 * @param nElec The number of electrons in the system
 		 */
 		void step(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, int nElec){
@@ -556,10 +556,10 @@ namespace KineticOperators {
 
 		/**
 		 * Performs a time step of the Crank-Nicolson method without finalizing the boundary conditions for this step.
-		 * @param psi0 (in) The initial wavefunction, nPts*nElec elements
-		 * @param v (in) The potential to use for the calculation, nPts elements
-		 * @param spatialDamp (in) The spatial damping to apply (for absorptive BCs), nPts elements
-		 * @param targ (out) The target wavefunction after the time step, nPts*nElec elements
+		 * @param psi0 (in) The initial wavefunction, \a nPts*nElec elements
+		 * @param v (in) The potential to use for the calculation, \a nPts elements
+		 * @param spatialDamp (in) The spatial damping to apply (for absorptive BCs), \a nPts elements
+		 * @param targ (out) The target wavefunction after the time step, \a nPts*nElec elements
 		 * @param nElec The number of electrons in the system
 		 */
 		void stepVirtual(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, int nElec){

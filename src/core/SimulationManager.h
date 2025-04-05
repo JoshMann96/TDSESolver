@@ -89,7 +89,7 @@ class ProgressTracker
 /** Manages simulation by calling Potentials, Measurers, and KineticOperators (with corresponding numerical methods for time integration) 
  * 		using task parallelism as well as the parallelism used within each object.
  * Stores a brief history of the potential and wavefunctions so that measurements can be done in parallel.
- * For linear systems the potential calcualtion may be done in parallel as well.
+ * For linear systems the potential calculation may be done in parallel as well.
  */
 class SimulationManager
 {
@@ -163,7 +163,7 @@ private:
 	/// Calculate the weights. 
 	void calcWeights();
 
-	const int HISTORY_LENGTH = 4; // TODO: See how much history is necessary for each scheme (psi/pot/mea asynchronous vs pot/mea asyncrhonous vs only mea asynchronous)
+	const int HISTORY_LENGTH = 4; // TODO: See how much history is necessary for each scheme (psi/pot/mea asynchronous vs pot/mea asynchronous vs only mea asynchronous)
 
 	ProgressTracker progTracker;
 
@@ -303,7 +303,7 @@ public:
 	/**
 	 * Runs \a nSteps iterations using an explicit pseudospectral method with a \a linear potential.
 	 * Half of the potential phase is applied first, then the kinetic phase is applied, and finally the other half of the potential phase is applied.
-	 * Both measurements and potential calculations are done with task paralellism if possible.
+	 * Both measurements and potential calculations are done with task parallelism if possible.
 	 * @param nSteps The number of steps to run the simulation for.
 	 */
 	void runEPS_U2TU(int nSteps);

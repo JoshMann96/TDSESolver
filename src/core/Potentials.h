@@ -391,7 +391,7 @@ namespace Potentials {
 		PotentialComplexity getComplexity(){return PotentialComplexity::STATIC;};
 	};
 
-	/// Wacther's Jellium potential.
+	/// Wachter's Jellium potential.
 	class JelliumPotential :
 		public Potential
 	{

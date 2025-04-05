@@ -44,7 +44,7 @@ namespace WfcToRho {
 	 * @details 
 	 * This class calculates the weights for each electron based on the Fermi energy level and the energies of the electrons in a bound system.
 	 * The bottom of the well is taken to be the midpoint of the maximum and minimum energies provided, minus half of the Fermi energy.
-	 * The weight of each state is then caclulated as: 
+	 * The weight of each state is then calculated as: 
 	 * \f$ w_\nu = \frac{2}{3\pi} \frac{m_e E_f}{\hbar^2} \frac{N_e}{\sum_j E_f-E_j} (E_f-E_\nu) \f$ with \f$N_e\f$ the number of states and energies are relative to the bottom of the well.
 	 * For a set of wavefunctions corresponding to the eigenstates of a finite well, this results in a nearly flat-top density.
 	 */

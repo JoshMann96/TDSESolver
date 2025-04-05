@@ -182,34 +182,34 @@ namespace FDBCs
 
 		/** 
 		 * Get the RHS value for the boundary condition
-		 * @param psibd (in) The boundary wavefunction, nElec elements
-		 * @param psiad (in) The wavefunction adjacent to the boundary, nElec elements
+		 * @param psibd (in) The boundary wavefunction, \a nElec elements
+		 * @param psiad (in) The wavefunction adjacent to the boundary, \a nElec elements
 		 * @param vb The potential at the boundary
-		 * @param res (out) The RHS value for the boundary condition, nElec elements
+		 * @param res (out) The RHS value for the boundary condition, \a nElec elements
 		 * @param nElec The number of electrons
 		 */
 		virtual void getRHS(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec) = 0; // RHS value for the condition
 		
 		/**
 		 * Finish the present step. This \a must \a be called after the RHS has been calculated and before proceeding with the next time step.
-		 * @param psibd (in) The boundary wavefunction, nElec elements
-		 * @param psiad (in) The wavefunction adjacent to the boundary, nElec elements
+		 * @param psibd (in) The boundary wavefunction, \a nElec elements
+		 * @param psiad (in) The wavefunction adjacent to the boundary, \a nElec elements
 		 * @param vb The potential at the boundary
 		 */
 		virtual void finishStep(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb) = 0;
 		
 		/**
 		 * Prepare the next step. This \a must \a be called before the RHS is calculated.
-		 * @param psibd (in) The boundary wavefunction, nElec elements
-		 * @param psiad (in) The wavefunction adjacent to the boundary, nElec elements
+		 * @param psibd (in) The boundary wavefunction, \a nElec elements
+		 * @param psiad (in) The wavefunction adjacent to the boundary, \a nElec elements
 		 * @param vb The potential at the boundary
 		 */
 		virtual void prepareStep(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb) = 0;
 		
 		/** 
-		 * Fill the history of the boundary wavefunction assuming the phase change over time provided in historialPhaseAdvance
-		 * @param psibd (in) The boundary wavefunction, nElec elements
-		 * @param historialPhaseAdvance (in) The phase advance of the wavefunction at the boundary over each time step (according to the total energy), nElec elements
+		 * Fill the history of the boundary wavefunction assuming the phase change over time provided in \a historialPhaseAdvance
+		 * @param psibd (in) The boundary wavefunction, \a nElec elements
+		 * @param historialPhaseAdvance (in) The phase advance of the wavefunction at the boundary over each time step (according to the total energy), \a nElec elements
 		 * @param vb The potential at the boundary
 		 */
 		virtual void fillHistory(const std::complex<double>* psibd, const std::complex<double>* historialPhaseAdvance, double vb) = 0;
@@ -423,8 +423,8 @@ namespace FDBCs
 		 * @param nElec The number of electrons (wavefunctions) in the system
 		 * @param dx The grid spacing
 		 * @param dt The time step
-		 * @param psibd (in) The initial boundary wavefunction(s), nElec elements
-		 * @param k0 (in) The wavevector of the wavefunction(s) at the boundary, nElec elements
+		 * @param psibd (in) The initial boundary wavefunction(s), \a nElec elements
+		 * @param k0 (in) The wavevector of the wavefunction(s) at the boundary, \a nElec elements
 		 * @param vb The potential at the boundary
 		 */
 		UniformIDTransparentBC(int order, int nElec, double dx, double dt, std::complex<double>* psibd, double* k0, double vb);

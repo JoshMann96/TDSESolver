@@ -16,7 +16,7 @@
 /**
  * CUDA tridiagonal solver system
  * 
- * This class is used to solve tridiagonal systems of the form \f$A X = B X_0\f$ on the GPU while minimizing communcation between the CPU and GPU.
+ * This class is used to solve tridiagonal systems of the form \f$A X = B X_0\f$ on the GPU while minimizing communication between the CPU and GPU.
  * The present state is stored on the device and its status may be EMPTY (uninitialized), BARE (initialized), or OPERATED (operated on by a matrix).
  * Supports virtual states which preserve the original system, useful for accurate iterations for nonlinear systems.
 */
@@ -78,17 +78,17 @@ public:
     /**
      * Solves a tridiagonal system of the form \f$A X = X_0\f$. This is intended for solving without maintaining the system on the GPU.
      * The resulting state is stored in the regular state.
-     * @param DL (in) lower diagonal of \f$A\f$, n-1 elements.
-     * @param D (in) main diagonal of \f$A\f$, n elements.
-     * @param DU (in) upper diagonal of \f$A\f$, n elements.
-     * @param x (in/out) solution vector, contains \f$X_0\f$ and is overwritten with \f$X\f$, n*nrhs elements.
+     * @param DL (in) lower diagonal of \f$A\f$, \a n-1 elements.
+     * @param D (in) main diagonal of \f$A\f$, \a n elements.
+     * @param DU (in) upper diagonal of \f$A\f$, \a n elements.
+     * @param x (in/out) solution vector, contains \f$X_0\f$ and is overwritten with \f$X\f$, \a n * \a nrhs elements.
      */
     void solve(const std::complex<double> *DL, const std::complex<double> *D, const std::complex<double> *DU, std::complex<double> *x);
     
     /**
      * Sets the internal off-diagonal elements of the tridiagonal system. Side determines whether it is \f$A\f$ or \f$B\f$ being set.
-     * @param DL (in) lower diagonal of \f$A\f$ or \f$B\f$, n-1 elements.
-     * @param DU (in) upper diagonal of \f$A\f$ or \f$B\f$, n-1 elements.
+     * @param DL (in) lower diagonal of \f$A\f$ or \f$B\f$, \a n-1 elements.
+     * @param DU (in) upper diagonal of \f$A\f$ or \f$B\f$, \a n-1 elements.
      * @param side whether to set the system's LHS (\f$A\f$) or RHS (\f$B\f$).
      */
     void setOffDiag(const std::complex<double>* DL, const std::complex<double>* DU, Side side);
@@ -96,15 +96,15 @@ public:
     /**
      * Solves a tridiagonal system of the form \f$A X = X_0\f$. This is intended for solving with the off-diagonal components of A already set on the GPU.
      * The resulting state is stored in the regular state.
-     * @param D (in) main diagonal of \f$A\f$, n elements.
-     * @param x (in/out) solution vector, contains \f$X_0\f$ and is overwritten with \f$X\f$, n*nrhs elements.
+     * @param D (in) main diagonal of \f$A\f$, \a n elements.
+     * @param x (in/out) solution vector, contains \f$X_0\f$ and is overwritten with \f$X\f$, \a n*nrhs elements.
      * @throws std::runtime_error if the off-diagonal elements of \f$A\f$ have not been set.
      */
     void solve(const std::complex<double> *D, std::complex<double> *x);
     
     /**
      * Sets the state vector on the GPU.
-     * @param x (in) state vector, n*nrhs elements.
+     * @param x (in) state vector, \a n*nrhs elements.
      * @param virt true sets the virtual state, false sets the regular state.
      * @param state vector state to set, BARE, or OPERATED.
      * @throws std::runtime_error if the vector state is not BARE or OPERATED.
@@ -113,7 +113,7 @@ public:
     
     /**
      * Gathers the state vector from the GPU to the CPU.
-     * @param x (out) state vector, n*nrhs elements.
+     * @param x (out) state vector, \a n*nrhs elements.
      * @param virt true gathers the virtual state, false gathers the regular state.
      * @throws std::runtime_error if the vector state is not BARE.
      */
@@ -121,7 +121,7 @@ public:
     
     /**
      * Gathers the RHS vector from the GPU to the CPU.
-     * @param x (out) RHS vector, n*nrhs elements.
+     * @param x (out) RHS vector, \a n*nrhs elements.
      * @param virt true gathers the virtual RHS, false gathers the regular RHS.
      * @throws std::runtime_error if the vector state is not OPERATED.
      */
@@ -156,7 +156,7 @@ public:
     /**
      * Solves a tridiagonal system of the form \f$A X = B X_0\f$. 
      * The off-diagonal elements of \f$A\f$ must have been set previously, and rhsProduct must have been called to compute \f$B X_0\f$.
-     * @param D (in) main diagonal of \f$A\f$, n elements.
+     * @param D (in) main diagonal of \f$A\f$, \a n elements.
      * @param destVirt true stores the result in the virtual state, false stores the result in the regular state.
      * @param sourceVirt true uses the virtual state as \f$X_0\f$, false uses the regular state as \f$X_0\f$.
      * @throws std::runtime_error if the source vector state is not OPERATED (did yuo call rhsProduct?).
@@ -167,7 +167,7 @@ public:
     /**
      * Calculates the particle density according to weights on the GPU and returns it to the CPU.
      * This reduces the amount of communication overhead between the CPU and GPU.
-     * @param weights (in) weights of the states, nrhs elements.
+     * @param weights (in) weights of the states, \a nrhs elements.
      * @param rho (out) density, n elements.
      * @param virt true calculates the density from the virtual state, false calculates the density from the regular state.
      */
@@ -176,7 +176,7 @@ public:
     /**
      * Calculates the Hadamard product of the current state vector with a given vector.
      * This is an element-wise multiplication of the two vectors, repeating for each substate vector.
-     * @param vec (in) The vector to multiply with, must be of size n.
+     * @param vec (in) The vector to multiply with, must be of size \a n.
      * @param virt If true, performs the operation and stores the result on the virtual state; otherwise, operates and stores on the regular state.
      */
     void vectorHadamardProduct(const double* vec, bool virt = false);

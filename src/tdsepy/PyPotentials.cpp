@@ -73,7 +73,7 @@ void init_Potentials(py::module &m) {
             leftDecayPos : float
                 Left-side position to begin decaying field to zero.
             decayLength : float
-                Lengscale over which field is decayed.
+                Lengthscale over which field is decayed.
             emax : float
                 Maximum field strength.
             fil : str
@@ -191,7 +191,7 @@ void init_Potentials(py::module &m) {
 
             Returns
             -------
-            CylindricalImagePotentail)V0G0N",
+            CylindricalImagePotential)V0G0N",
             "sim"_a, "ef"_a, "w"_a, "rad"_a, "posMin"_a, "posMax"_a, "surfPos"_a, "refPoint"_a);
 
     py::class_<PyPlanarToCylindricalHartreePotential,Potential>(m, "PlanarToCylindricalHartreePotential")
@@ -249,7 +249,7 @@ void init_Potentials(py::module &m) {
     py::class_<PyMeasuredPotential, Potential>(m, "MeasuredPotential")
         .def(py::init<PySimulation*, Potential*, Measurers::Measurer*, int>(), py::keep_alive<1,3>(), py::keep_alive<1,4>(), R"V0G0N(
             A potential which is also measured when it is called.
-            At each evaluation the potential is calculated and then the measuruer passed is called using that potential only.
+            At each evaluation the potential is calculated and then the measurer passed is called using that potential only.
 
             Parameters
             ----------

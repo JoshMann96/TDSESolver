@@ -244,7 +244,7 @@ void init_Simulation(py::module &m) {
         .def("addLeftAbsBdy", &PySimulation::addLeftAbsBdy, R"V0G0N(
             Adds absorptive boundary to left side of simulation.
             Decay is applied by multiplying states near boundary by a number of magnitude less than one.
-            Over a chage of time Dt a stationary wavefunction will be
+            Over a change of time Dt a stationary wavefunction will be
                 psi = psi_0 sigma(x)^(rate * Dt)
             With sigma(x) a polynomial smooth function, 1 on the inner boundary and 0 on the outer boundary.
 
@@ -258,7 +258,7 @@ void init_Simulation(py::module &m) {
         .def("addRightAbsBdy", &PySimulation::addRightAbsBdy, R"V0G0N(
             Adds absorptive boundary to right side of simulation.
             Decay is applied by multiplying states near boundary by a number of magnitude less than one.
-            Over a chage of time Dt a stationary wavefunction will be
+            Over a change of time Dt a stationary wavefunction will be
                 psi = psi_0 sigma(x)^(rate * Dt)
             With sigma(x) a polynomial smooth function, 1 on the inner boundary and 0 on the outer boundary.
 

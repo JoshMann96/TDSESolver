@@ -217,7 +217,7 @@ void init_Measurers(py::module &m) {
 
     py::class_<PyExpectP, Measurer>(m, "ExpectP")
         .def(py::init<PySimulation*, std::string>(), R"V0G0N(
-            Records expectation value of momentum for each state. Note: computationally expective.
+            Records expectation value of momentum for each state. Note: computationally expensive.
 
             Parameters
             ----------
