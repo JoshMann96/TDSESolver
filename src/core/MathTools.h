@@ -897,6 +897,21 @@ namespace vtls {
 				mn = arr[i];
 		return mn;
 	}
+
+	/**
+	 * Returns an array of 1's except for within the external region where it is a 13th order
+	 * polynomial that is 1 at the inner boundary and 0 at the outer boundary. The polynomial is
+	 * then raised to the power of \a rate. The result is continuous up to 7th order at the inner and outer boundaries.
+	 * The side of the boundary is determined by the order of inner and outer.
+	 * 
+	 * @warning This function allocates memory for the array. It is the responsibility of the caller to free this memory.
+	 * @param len The number of elements in the vector.
+	 * @param inner The inner boundary position.
+	 * @param outer The outer boundary position.
+	 * @param rate The exponent of the polynomial. Larger values make for a stronger decay.
+	 * @return A unique_ptr to an array of doubles representing the smoothed decay mask.
+	*/
+	std::unique_ptr<double[]> getPolynomialSmoothBoundary(int len, int inner, int outer, double rate);
 };
 
 /**

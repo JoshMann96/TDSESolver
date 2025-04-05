@@ -86,6 +86,38 @@ namespace vtls {
 
 		}
 	}
+
+	std::unique_ptr<double[]> getPolynomialSmoothBoundary(int len, int inner, int outer, double rate) {
+		std::unique_ptr<double[]> mask(new double[len], std::default_delete<double[]>());
+		std::fill_n(mask.get(), len, 1.0);
+		int size = std::abs(outer - inner);
+		double k;
+		if (outer < inner) {
+			for (int i = 0; i < size; i++) {
+				k = (double)(i + 1) / size;
+				mask[i + outer] = std::pow((924.0 * std::pow(k, 13) -
+					6006.0 * std::pow(k, 12) +
+					16380.0 * std::pow(k, 11) -
+					24024.0 * std::pow(k, 10) +
+					20020.0 * std::pow(k, 9) -
+					9009.0 * std::pow(k, 8) +
+					1716.0 * std::pow(k, 7)) , (rate));
+			}
+		}
+		else {
+			for (int i = 0; i < size; i++) {
+				k = (double)(size - i) / size;
+				mask[i + inner] = std::pow((924.0 * std::pow(k, 13) -
+					6006.0 * std::pow(k, 12) +
+					16380.0 * std::pow(k, 11) -
+					24024.0 * std::pow(k, 10) +
+					20020.0 * std::pow(k, 9) -
+					9009.0 * std::pow(k, 8) +
+					1716.0 * std::pow(k, 7)) , (rate));
+			}
+		}
+		return mask;
+	}
 }
 
 namespace vtlsPrnt {

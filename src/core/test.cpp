@@ -5,7 +5,6 @@
 #include "WfcRhoTools.h"
 #include "blas.h"
 #include "CuTridiagSolver.h"
-#include "AbsorptiveRegions.h"
 
 #include "cuda.h"
 #include "cuda_runtime.h"
@@ -503,8 +502,8 @@ void testIterationMethods(int stepType=-1, int nPts=8192){
 	sm->addMeasurer(new Measurers::TotProb(nPts, dx, sm->getNElecPtr(), "data/test/"));
 	sm->addMeasurer(new Measurers::VDProbCurrent(nPts, dx, sm->getNElecPtr(), 0, 0, "surf", "data/test/"));
 
-	//sm->addSpatialDamp(AbsorptiveRegions::getSmoothedSpatialDampDecay(nPts, nPts/10, 0, 1).get());
-	//sm->addSpatialDamp(AbsorptiveRegions::getSmoothedSpatialDampDecay(nPts, nPts*9/10, nPts-1, 1).get());
+	//sm->addSpatialDamp(AbsorptiveRegions::getPolynomialSmoothBoundary(nPts, nPts/10, 0, 1).get());
+	//sm->addSpatialDamp(AbsorptiveRegions::getPolynomialSmoothBoundary(nPts, nPts*9/10, nPts-1, 1).get());
 
 	if(false){
 		plotting::GNUPlotter* plotter = new plotting::GNUPlotter();
@@ -832,10 +831,10 @@ int main(int argc, char** argv){
 
 	// std::cout << "Done" << std::endl;
 
-	testIterationMethods(2, 2048);
-	testIterationMethods(3, 2048);
-	testIterationMethods(4, 2048);
-	testIterationMethods(5, 2048);
+	//testIterationMethods(2, 2048);
+	//testIterationMethods(3, 2048);
+	testIterationMethods(4, 2048*2);
+	//testIterationMethods(5, 2048);
 
     return 0;
 }
