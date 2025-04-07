@@ -45,7 +45,7 @@ namespace Measurers {
 	private:
 		const char* fname = "";
 	protected:
-		int isTerminated=0;
+		bool isTerminated = false;
 		bool needsDens = false;
 	public:;
 		virtual ~Measurer() = default;
@@ -536,7 +536,8 @@ namespace Measurers {
 		public Measurer {
 	private:
 		std::fstream fil;
-		int vdPos, nSamp, first=1;
+		int vdPos, nSamp;
+		bool first = true;
 		const int* nElec;
 		int index = 24;
 		int vdNum, nPts;
@@ -576,7 +577,7 @@ namespace Measurers {
 		int vdNum;
 		const int* nElec;
 		const char* fname = "psit.dat";
-		int done = 0;
+		bool done = false;
 		double curTime=-1;
 	public:
 		int getIndex() { return index; };
@@ -606,7 +607,7 @@ namespace Measurers {
 		int index = 20;
 		int vdNum;
 		const char* fname = "pott.dat";
-		int done = 0;
+		bool done = false;
 	public:
 		int getIndex() { return index; };
 
@@ -666,7 +667,7 @@ namespace Measurers {
 	private:
 		std::fstream fil;
 		int index = 22;
-		int first = 1;
+		bool first = true;
 		const int* nElec;
 		const char* fname = "nElec.dat";
 		const char* fol;
@@ -695,7 +696,7 @@ namespace Measurers {
 		double dx;
 		double tmea;
 		double* rho;
-		int first = 1;
+		bool first = true;
 		KineticOperators::KineticOperator * const* kin;
 	public:
 		int getIndex() { return index; };
@@ -722,7 +723,7 @@ namespace Measurers {
 		int index = 25;
 		const char* fname = "wghts.dat";
 		const int *nElec;
-		int first = 1;
+		bool first = true;
 		double * const * weights;
 	public:
 		int getIndex() { return index; };

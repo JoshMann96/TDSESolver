@@ -174,7 +174,7 @@ namespace WfcToRho {
 		public Density
 	{
 	private:
-		int first = 1;
+		bool first = true;
 	public:
 		void calcRho(int nPts, int nElec, double dx, double* rho);
 	};
@@ -187,7 +187,7 @@ namespace WfcToRho {
 		double center, radius, minX;
 		int startIndex, endIndex;
 		double* thinning=nullptr;
-		int first = 1;
+		bool first = true;
 		/**
 		 * Initializes the calculation.
 		 * @param nPts The number of grid points in the spatial domain.
@@ -214,7 +214,7 @@ namespace WfcToRho {
 		public Density
 	{
 	private:
-		int first = 1;
+		bool first = true;
 		double *tempRho=nullptr, sig;
 		vtls::MaskConvolver<double>* conv = nullptr;
 	public:

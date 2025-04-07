@@ -138,7 +138,7 @@ namespace WfcToRho {
 	}
 
 	void CylindricalDensity::doFirst(int nPts, double dx) {
-		first = 0;
+		first = false;
 		if(thinning)
 			sq_free(thinning);
 		thinning = (double*) sq_malloc(sizeof(double)*nPts);
@@ -181,7 +181,7 @@ namespace WfcToRho {
 				sq_free(tempRho);
 			double* mask = (double*)sq_malloc(sizeof(double)*nPts);
 			tempRho = (double*)sq_malloc(sizeof(double)*nPts);
-			first = 0;
+			first = false;
 
 			//Initialize Gaussian mask (in k space)
 			for (int i = 0; i < nPts / 2; i++) {

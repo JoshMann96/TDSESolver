@@ -353,7 +353,7 @@ namespace FDBCs
         CyclicArray<std::complex<double>> **psis;
         std::complex<double> kernel0, *kernel;
 
-		int kernelCalculated=0;
+		bool kernelCalculated = false;
 		double kernelVb;
 
         /**

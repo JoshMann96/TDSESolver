@@ -103,7 +103,8 @@ private:
 
 	double *ts, *x, dt, dx;
 	double **vs, **rhos, *spatialDamp;
-	int nPts, nElec, calcDensity = 0;
+	int nPts, nElec;
+	bool calcDensity = false;
 	cyclic_int index;
 	int* step;
 	std::complex<double> *scratch1, *scratch2;

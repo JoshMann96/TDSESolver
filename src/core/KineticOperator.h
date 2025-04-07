@@ -118,7 +118,7 @@ namespace KineticOperators {
 		void freeOpMat() {
 			if (opMat)
 				sq_free(opMat); opMat = nullptr;
-			needMat = 1;
+			needMat = true;
 		}
 
 		/// @copydoc KineticOperator::findEigenStates
@@ -132,10 +132,10 @@ namespace KineticOperators {
 		 * @param kinIn (in) The kinetic energy values to set, nPts elements
 		 */
 		void set_osKineticEnergy(std::complex<double>* kinIn) {
-			vtls::copyArray(nPts, kinIn, osKineticEnergy); needMat = 1;
+			vtls::copyArray(nPts, kinIn, osKineticEnergy); needMat = true;
 		}
 	private:
-		int firstStepAll = 1, firstStepOne = 1, needMat = 1;
+		bool firstStepAll = true, firstStepOne = true, needMat = true;
 		//DFTI_DESCRIPTOR_HANDLE dftiHandle = 0, dftiHandleMat = 0, dftiHandleKin = 0;
 		fftw_plan fftwAllForward=NULL, fftwAllBackward=NULL, fftwOneForward=NULL, fftwOneBackward=NULL;
 
@@ -276,7 +276,7 @@ namespace KineticOperators {
 		void freeOpMat() {
 			if (opMat)
 				sq_free(opMat); opMat = NULL;
-			needMat = 1;
+			needMat = true;
 		}
 
 		/// @copydoc KineticOperator::findEigenStates
@@ -293,14 +293,14 @@ namespace KineticOperators {
 		 * @param maskIn (in) The mask for the kinetic energy, nPts*nDisp elements. Ideally, the sum over the dispersion axis should be 1.
 		 */
 		void set_osKineticEnergy(const std::complex<double>* kinIn, const double* maskIn) {
-			vtls::copyArray(nPts * nDisp, kinIn, osKineticEnergy); needMat = 1; firstStepOne = 1;
+			vtls::copyArray(nPts * nDisp, kinIn, osKineticEnergy); needMat = true; firstStepOne = true;
 			vtls::copyArray(nPts * nDisp, maskIn, osKineticMask);
 			//take square root, as is required for this method
 			for (int i = 0; i < nPts * nDisp; i++)
 				osKineticEnergy[i] = std::sqrt(osKineticEnergy[i]);
 		}
 	private:
-		int firstStepAll = 1, firstStepOne = 1, needMat = 1;
+		bool firstStepAll = true, firstStepOne = true, needMat = true;
 		//DFTI_DESCRIPTOR_HANDLE dftiHandle = 0, dftiHandleMat = 0, dftiHandleKin = 0;
 		fftw_plan fftwAllForward=NULL, fftwAllBackward=NULL, fftwOneForward=NULL, fftwOneBackward=NULL;
 

@@ -71,13 +71,13 @@ SimulationManager::~SimulationManager()
 void SimulationManager::addMeasurer(Measurers::Measurer* m) {
 	meas->addMeasurer(m);
 	if (m->needsDensity())
-		calcDensity = 1;
+		calcDensity = true;
 }
 
 void SimulationManager::addPotential(Potentials::Potential* p) {
 	pot->addPotential(p);
 	if(p->getComplexity() == Potentials::PotentialComplexity::WAVEFUNCTION_DEPENDENT)
-		calcDensity = 1;
+		calcDensity = true;
 }
 
 void SimulationManager::addSpatialDamp(const double* arr) {
@@ -85,29 +85,29 @@ void SimulationManager::addSpatialDamp(const double* arr) {
 }
 
 void SimulationManager::calcEnergies(int curStep, double* energies) const {
-		for(int i = 0; i < HISTORY_LENGTH; i++){
-			if(curStep == step[i]){ //look for the present step's index
-				double* rho = (double*) sq_malloc(sizeof(double)*nPts);
-				for(int j = 0; j < nElec; j++){
-					vtls::normSqr(nPts, &psis[i][j*nPts], rho);
-					energies[j] = vtlsInt::rSumMul(nPts, rho, vs[i], dx)/vtlsInt::rSum(nPts, rho,dx) + kin->evaluateKineticEnergy(&psis[i][j*nPts]);
-					//potential energy + kinetic energy
-				}
-				sq_free(rho);
-
-				return;
+	for(int i = 0; i < HISTORY_LENGTH; i++){
+		if(curStep == step[i]){ //look for the present step's index
+			double* rho = (double*) sq_malloc(sizeof(double)*nPts);
+			for(int j = 0; j < nElec; j++){
+				vtls::normSqr(nPts, &psis[i][j*nPts], rho);
+				energies[j] = vtlsInt::rSumMul(nPts, rho, vs[i], dx)/vtlsInt::rSum(nPts, rho,dx) + kin->evaluateKineticEnergy(&psis[i][j*nPts]);
+				//potential energy + kinetic energy
 			}
-		}
+			sq_free(rho);
 
-		throw std::runtime_error("SimulationManager::calcEnergies: Step not found!");
+			return;
+		}
+	}
+
+	throw std::runtime_error("SimulationManager::calcEnergies: Step not found!");
 }
 
 void SimulationManager::calcWeights(){
 	if (nElec < 1)
-		throw std::runtime_error("SimulationManager::calcEnergies: Number of electrons is not finite! Failed to initialize.");
+		throw std::runtime_error("SimulationManager::calcWeights: Number of electrons is not finite! Failed to initialize.");
 
 	if (wght == nullptr)
-		throw std::runtime_error("SimulationManager::calcEnergies: No weight function set!");
+		throw std::runtime_error("SimulationManager::calcWeights: No weight function set!");
 
 	if(weights)
 		sq_free(weights); weights = nullptr;

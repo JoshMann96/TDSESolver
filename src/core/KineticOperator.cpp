@@ -159,7 +159,7 @@ namespace KineticOperators {
 					osKineticPhase[i] = std::exp(-PhysCon::im * dt / PhysCon::hbar * osKineticEnergy[i]);
 			}
 
-			firstStepAll = 0;
+			firstStepAll = false;
 		}
 	}
 
@@ -185,7 +185,7 @@ namespace KineticOperators {
 			if(!fftwOneForward || !fftwOneBackward)
 				throw std::runtime_error("FFTW \"one\" plan creation failed");
 
-			firstStepOne = 0;
+			firstStepOne = false;
 
 			sq_free(temp);
 		}
@@ -213,7 +213,7 @@ namespace KineticOperators {
 
 	void GenDisp_PSM::calcOpMat() {
 		if(needMat){
-			needMat = 0;
+			needMat = false;
 			if (nPts > 46340) 
 				throw std::runtime_error("Long datatype is required for grids of size nPts>46340. Rewrite this code (GenDisp_PSM::calcOpMat)");
 
@@ -572,7 +572,7 @@ namespace KineticOperators {
 			tempPsiCum = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nElec);
 			norms = (double*) sq_malloc(sizeof(double)*nElec);
 
-			firstStepAll = 0;
+			firstStepAll = false;
 		}
 	}
 
@@ -599,7 +599,7 @@ namespace KineticOperators {
 			if(!fftwOneForward || !fftwOneBackward)
 				throw std::runtime_error("FFTW \"one\" plan creation failed");
 
-			firstStepOne = 0;
+			firstStepOne = false;
 
 			sq_free(temp);
 		}

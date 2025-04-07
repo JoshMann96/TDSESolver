@@ -38,7 +38,7 @@ namespace Measurers {
 
 	MeasurerStatus NElec::measure(int step, const std::complex<double> * psi, const double* v, double t) { 
 		if(first){
-			first = 0;
+			first = false;
 			
 			fil = openFile({fol, fname});
 
@@ -388,7 +388,7 @@ namespace Measurers {
 		if ((!done && t >= meaT)) {
 			for(int i = 0; i < *nElec; i++)
 				fil.write(reinterpret_cast<const char*>(&psi[i*nPts]), sizeof(std::complex<double>)* nPts);
-			done = 1;
+			done = true;
 			return MeasurerStatus::ALL_DONE;
 		}
 		
@@ -416,7 +416,7 @@ namespace Measurers {
 	MeasurerStatus PotT::measure(int step, const std::complex<double> * psi, const double* v, double t) {
 		if (!done && t >= meaT) {
 			fil.write(reinterpret_cast<const char*>(v), sizeof(double)*n);
-			done = 1;
+			done = true;
 			return MeasurerStatus::ALL_DONE;
 		}
 		return MeasurerStatus::SUCCESS;
@@ -516,7 +516,7 @@ namespace Measurers {
 				wfcs1[i] = 0;
 			}
 			
-			first = 0;
+			first = false;
 			ct = t;
 		}
 
@@ -612,7 +612,7 @@ namespace Measurers {
 	
 	MeasurerStatus ExpectE0::measure(int step, const std::complex<double> * psi, const double* v, double t) {
 		if(first){
-			first = 0;
+			first = false;
 			double ex;
 			for(int i = 0; i < *nElec; i++){
 				vtls::normSqr(nPts, &psi[i*nPts], rho);
@@ -640,7 +640,7 @@ namespace Measurers {
 	MeasurerStatus WfcRhoWeights::measure(int step, const std::complex<double> * psi, const double* v, double t) {
 		if (first) {
 			if (*weights){
-				first = 0;
+				first = false;
 				fil.write(reinterpret_cast<const char*>(nElec), sizeof(int));
 				fil.write(reinterpret_cast<const char*>(*weights), sizeof(double)* *nElec);
 			}

@@ -25,7 +25,7 @@ namespace FDBCs{
 
     void UniformHDTransparentBC::calcKernel(double vb){
         if(!kernelCalculated){
-            kernelCalculated = 1;
+            kernelCalculated = true;
             kernelVb = vb;
         }
         else if (abs(kernelVb-vb) > 1e-5/PhysCon::auE_ha)
@@ -139,7 +139,7 @@ namespace FDBCs{
         if(!kernelCalculated){
             calcKernel(vb);
 
-            kernelCalculated = 1;
+            kernelCalculated = true;
             kernelVb = vb;
         }
         else if (abs(kernelVb-vb) > 1e-5*PhysCon::auE_ha)
