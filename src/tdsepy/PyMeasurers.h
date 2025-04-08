@@ -46,7 +46,7 @@ class PyPsi2t
     : public Psi2t{
         public:
         PyPsi2t(PySimulation* sim, int nx, int nt, int numSteps, std::string fol)
-            : Psi2t(sim->getNumPoints(), nx, nt, numSteps, numSteps*sim->getDT(), sim->getX(), sim->getNElecPtr(), fol.c_str()){}
+            : Psi2t(sim->getNumPoints(), nx, nt, numSteps, sim->getX(), sim->getNElecPtr(), fol.c_str()){}
     };
 
 class PyVfunct

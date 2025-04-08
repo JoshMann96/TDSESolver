@@ -227,7 +227,7 @@ namespace Potentials {
 		private:
 			double tau;
 			double tmax;
-			double a_t = 2.0 * std::acos(std::pow(0.5, 0.25)); // cos^4(a_t*(tau/2)/tau)=1/2 s.t. tau = FWHM-power
+			static constexpr double a_t = 1.143717740402420493750674; // cos^4(a_t*(tau/2)/tau)=1/2 s.t. tau = FWHM-power
 		public:
 			/**
 			 * Constructor.

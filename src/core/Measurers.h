@@ -39,16 +39,92 @@ namespace Measurers {
 	 */
 	std::fstream openFile(std::initializer_list<const char*> args);
 
+	/// @copydoc openFile(std::initializer_list<const char*> args)
+	std::fstream openFile(std::list<const char*> args);
+
 	/// Template for a measurer class.
 	class Measurer
 	{
-	private:
-		const char* fname = "";
 	protected:
-		bool isTerminated = false;
 		bool needsDens = false;
+		std::fstream fil;
+		const char* ext = ".dat";
+		int index;
 	public:;
-		virtual ~Measurer() = default;
+		/// Default constructor.
+		Measurer() = default;
+
+		/**
+		 * Constructor.
+		 * @param index The index of the measurer.
+		 */
+		Measurer(int index) : index(index) {};
+
+		/**
+		 * Constructor.
+		 * @param index The index of the measurer.
+		 * @param fname The name of the file to write to. The extension '.dat' will be appended and the fstream \a fil will be opened.
+		 */
+		Measurer(int index, const char* fname) : index(index) {
+			if (fname){
+				fil = openFile({fname, ext});
+				fil.write(reinterpret_cast<char*>(&index), sizeof(int));
+			}
+		}
+
+		/**
+		 * Constructor.
+		 * @param index The index of the measurer.
+		 * @param fnameArgs The path to the file to open. Must be a list of strings to be concatenated.
+		 */
+		Measurer(int index, std::initializer_list<const char*> fnameArgs) : index(index) {
+			open(fnameArgs);
+		}
+
+		/// Destructor, closes the fstream if it is open.
+		~Measurer(){
+			if(fil.is_open())
+				fil.close();
+		}
+
+		/**
+		 * Opens a file fstream for writing binary data.
+		 * @param fnameArgs The path to the file to open. Must be a list of strings to be concatenated.
+		 */
+		void open(std::initializer_list<const char*> fnameArgs){
+			if(fil.is_open()){
+				std::cerr << "Warning: File stream already open! Closing it before opening a new one." << std::endl;
+				fil.close();
+			}
+
+			std::list<const char*> args(fnameArgs);
+			args.push_back(ext);
+			fil = openFile(args);
+			fil.write(reinterpret_cast<char*>(&index), sizeof(int));
+		}
+
+		/**
+		 * Writes data to the file.
+		 * @param data The data to write.
+		 * @param size The size of the data to write.
+		 */
+		void write(void* data, size_t size){
+			fil.write(reinterpret_cast<char*>(data), size);
+		}
+
+		/// @copydoc write(void* data, size_t size)
+		void write(const void* data, size_t size){
+			fil.write(reinterpret_cast<const char*>(data), size);
+		}
+
+		/**
+		 * Closes the file stream.
+		 * This is called in the destructor, but can be called manually if needed.
+		 */
+		void close(){
+			if(fil.is_open())
+				fil.close();
+		}
 		
 		/**
 		 * Performs a measurement.
@@ -64,7 +140,7 @@ namespace Measurers {
 		 * Gets the index of the measurer.
 		 * @return The index.
 		 */
-		virtual int getIndex() = 0;
+		int getIndex(){return index;};
 
 		/**
 		 * Checks if the measurer requires that the density be calculated.
@@ -80,18 +156,14 @@ namespace Measurers {
 	private:
 		double c;
 		std::fstream fil;
-		int index = -2;
-		const char *ext = ".dat";
 	public:
-		int getIndex(){ return index; };
-
 		/**
 		 * Constructor.
 		 * @param c The constant value to record.
-		 * @param filName The name of the file to write to. The extension '.dat' will be appended.
+		 * @param name The name of the file to write to. The extension '.dat' will be appended.
 		 * @param fol The folder to write to.
 		 */
-		DoubleConst(double c, const char* filName, const char* fol);
+		DoubleConst(double c, const char* name, const char* fol);
 
 		MeasurerStatus measure(int step, const std::complex<double> * psi, const double* v, double t){return MeasurerStatus::ALL_DONE;};
 	};
@@ -102,11 +174,8 @@ namespace Measurers {
 	{
 	private:
 		std::fstream fil;
-		int index = -1;
-		const char* fname = "head.dat";
+		const char* fname = "head";
 	public:
-		int getIndex() { return index; };
-		
 		/**
 		 * Constructor.
 		 * @param title The text to write. 8 characters required.
@@ -122,11 +191,8 @@ namespace Measurers {
 		public Measurer {
 	private:
 		std::fstream fil;
-		int index = 0;
-		const char* fname = "nPts.dat";
+		const char* fname = "nPts";
 	public:
-		int getIndex() { return index; };
-
 		/**
 		 * Constructor.
 		 * @param nPts The number of grid points.
@@ -142,13 +208,11 @@ namespace Measurers {
 		public Measurer {
 	private:
 		std::fstream fil;
-		int index = 1;
-		const char* fname = "nSteps.dat";
+		
+		const char* fname = "nSteps";
 		int steps = 0;
 		double tmea = -1;
 	public:
-		int getIndex() { return index; };
-
 		/**
 		 * Constructor.
 		 * @param fol The folder to write to.
@@ -164,11 +228,8 @@ namespace Measurers {
 		public Measurer {
 	private:
 		std::fstream fil;
-		int index = 2;
-		const char* fname = "dx.dat";
+		const char* fname = "dx";
 	public:
-		int getIndex() { return index; };
-
 		/**
 		 * Constructor.
 		 * @param dx The spacing.
@@ -184,11 +245,8 @@ namespace Measurers {
 		public Measurer {
 	private:
 		std::fstream fil;
-		int index = 3;
-		const char* fname = "dt.dat";
+		const char* fname = "dt";
 	public:
-		int getIndex() { return index; };
-
 		/**
 		 * Constructor.
 		 * @param dt The spacing.
@@ -204,11 +262,8 @@ namespace Measurers {
 		public Measurer {
 	private:
 		std::fstream fil;
-		int index = 4;
-		const char* fname = "xs.dat";
+		const char* fname = "xs";
 	public:
-		int getIndex() { return index; };
-
 		/**
 		 * Constructor.
 		 * @param len The number of positions.
@@ -225,17 +280,13 @@ namespace Measurers {
 		public Measurer {
 	private:
 		std::fstream fil;
-		int index = 5;
-		const char* fname = "ts.dat";
+		const char* fname = "ts";
 	public:
-		int getIndex() { return index; };
-
 		/**
 		 * Constructor.
 		 * @param fol The folder to write to.
 		 */
 		TS(const char* fol);
-		~TS();
 
 		MeasurerStatus measure(int step, const std::complex<double> * psi, const double* v, double t);
 	};
@@ -246,12 +297,9 @@ namespace Measurers {
 	{
 	private:
 		std::fstream fil;
-		int index = 6;
 		int n;
-		const char* fname = "v0.dat";
+		const char* fname = "v0";
 	public:
-		int getIndex() { return index; };
-		
 		/**
 		 * Constructor.
 		 * @param n The number of grid points.
@@ -259,7 +307,6 @@ namespace Measurers {
 		 */
 		OrigPot(int n, const char* fol);
 
-		~OrigPot();
 		MeasurerStatus measure(int step, const std::complex<double> * psi, const double* v, double t);
 	};
 
@@ -269,7 +316,7 @@ namespace Measurers {
 	{
 	private:
 		std::fstream fil;
-		int index = 9;
+		
 		int nPts;
 		const int *nElec;
 		int nx, nt;
@@ -279,26 +326,23 @@ namespace Measurers {
 		double * psi2s;
 		double * xs;
 		double * ts;
-		const char* fname = "psi2t.dat";
+		const char* fname = "psi2t";
 
 		int *measSteps;
 
 		
 	public:
-		int getIndex() { return index; };
-
 		/**
 		 * Constructor.
 		 * @param nPts The number of grid points.
 		 * @param nx The number of spatial points to downsample to.
 		 * @param nt The number of time points to downsample to.
 		 * @param numSteps The number of time steps.
-		 * @param maxT The maximum time.
 		 * @param x (in) The array of spatial positions.
 		 * @param nElec (in) Pointer to the number of electrons. Must be determined by the time 'measure' is called.
 		 * @param fol The folder to write to.
 		 */
-		Psi2t(int nPts, int nx, int nt, int numSteps, double maxT, const double * x, const int* nElec, const char* fol);
+		Psi2t(int nPts, int nx, int nt, int numSteps, const double * x, const int* nElec, const char* fol);
 
 		~Psi2t();
 		MeasurerStatus measure(int step, const std::complex<double> * psi, const double* v, double t);
@@ -309,16 +353,14 @@ namespace Measurers {
 		public Measurer {
 	private:
 		std::fstream fil;
-		int index = 10;
-		const char* fname = "expectE.dat";
+		
+		const char* fname = "expectE";
 		int nPts;
 		const int* nElec;
 		double* rho;
 		double dx;
 		KineticOperators::KineticOperator * const* kin;
 	public:
-		int getIndex() { return index; };
-
 		/**
 		 * Constructor.
 		 * @param len The number of grid points.
@@ -337,16 +379,14 @@ namespace Measurers {
 		public Measurer {
 	private:
 		std::fstream fil;
-		int index = 11;
-		const char* fname = "expectX.dat";
+		
+		const char* fname = "expectX";
 		const double* x;
 		int nPts;
 		const int* nElec;
 		double* scratch;
 		double dx;
 	public:
-		int getIndex() { return index; };
-
 		/**
 		 * Constructor.
 		 * @param len The number of grid points.
@@ -365,15 +405,13 @@ namespace Measurers {
 		public Measurer {
 	private:
 		std::fstream fil;
-		int index = 12;
-		const char* fname = "expectP.dat";
+		
+		const char* fname = "expectP";
 		int nPts;
 		const int* nElec;
 		std::complex<double> *scratch1, *scratch2;
 		double dx;
 	public:
-		int getIndex() { return index; };
-
 		/**
 		 * Constructor.
 		 * @param len The number of grid points.
@@ -392,15 +430,13 @@ namespace Measurers {
 		public Measurer {
 	private:
 		std::fstream fil;
-		int index = 13;
-		const char* fname = "expectA.dat";
+		
+		const char* fname = "expectA";
 		int nPts;
 		const int* nElec;
 		double *scratch1, *scratch2;
 		double dx;
 	public:
-		int getIndex() { return index; };
-
 		/**
 		 * Constructor.
 		 * @param nPts The number of grid points.
@@ -423,11 +459,9 @@ namespace Measurers {
 		double * psi2;
 		int nPts;
 		const int* nElec;
-		int index = 16;
-		const char* fname = "totProb.dat";
+		
+		const char* fname = "totProb";
 	public:
-		int getIndex() { return index; };
-
 		/**
 		 * Constructor.
 		 * @param n The number of grid points.
@@ -449,12 +483,9 @@ namespace Measurers {
 		int nPts;
 		const int* nElec;
 		int vdPos;
-		int index = 14;
-		int vdNum;
-		const char* fname = "jrd.dat";
+		
+		const char* fname = "jrd";
 	public:
-		int getIndex() { return index; };
-
 		/**
 		 * Constructor.
 		 * @param n The number of grid points.
@@ -467,7 +498,6 @@ namespace Measurers {
 		 */
 		VDProbCurrent(int n, double dx, const int *nElec, int vdPos, int vdNum, const char* name, const char* fol);
 
-		~VDProbCurrent();
 		MeasurerStatus measure(int step, const std::complex<double> * psi, const double* v, double t);
 	};
 
@@ -479,12 +509,9 @@ namespace Measurers {
 		int nPts;
 		const int* nElec;
 		int vdPos;
-		int index = 15;
-		int vdNum;
-		const char* fname = "psird.dat";
+		
+		const char* fname = "psird";
 	public:
-		int getIndex() { return index; };
-
 		/**
 		 * Constructor.
 		 * @param nElec (in) Pointer to the number of electrons. Must be determined by the time 'measure' is called.
@@ -495,7 +522,6 @@ namespace Measurers {
 		 */
 		VDPsi(const int* nElec, int vdPos, int vdNum, const char* name, const char* fol);
 
-		~VDPsi();
 		MeasurerStatus measure(int step, const std::complex<double> * psi, const double* v, double t);
 	};
 
@@ -506,13 +532,11 @@ namespace Measurers {
 		std::fstream fil;
 		int n;
 		int vdPos;
-		int index = 21;
+		
 		int vdNum;
 		int curStep = -1;
-		const char* fname = "vrd.dat";
+		const char* fname = "vrd";
 	public:
-		int getIndex() { return index; };
-
 		/**
 		 * Constructor.
 		 * @param vdPos The position (index) of the virtual detector.
@@ -522,7 +546,6 @@ namespace Measurers {
 		 */
 		VDPot(int vdPos, int vdNum, const char* name, const char* fol);
 
-		~VDPot();
 		MeasurerStatus measure(int step, const std::complex<double> * psi, const double* v, double t);
 	};
 
@@ -539,15 +562,13 @@ namespace Measurers {
 		int vdPos, nSamp;
 		bool first = true;
 		const int* nElec;
-		int index = 24;
-		int vdNum, nPts;
+		
+		int nPts;
 		double ct;
 		double dw, tmax, tukeyAl=0.05;
-		const char* fname = "fluxspecvd.dat";
+		const char* fname = "fluxspecvd";
 		std::complex<double>* wfcs0 = nullptr, * wfcs1 = nullptr, *phss, cumPotPhs, *phaseCalcExpMul, *temp;
 	public:
-		int getIndex() { return index; };
-
 		/**
 		 * Constructor.
 		 * @param nPts The number of grid points.
@@ -573,15 +594,12 @@ namespace Measurers {
 		std::fstream fil;
 		int nPts;
 		double meaT;
-		int index = 19;
-		int vdNum;
+		
 		const int* nElec;
-		const char* fname = "psit.dat";
+		const char* fname = "psit";
 		bool done = false;
 		double curTime=-1;
 	public:
-		int getIndex() { return index; };
-
 		/**
 		 * Constructor.
 		 * @param n The number of grid points.
@@ -593,7 +611,6 @@ namespace Measurers {
 		 */
 		PsiT(int n, double meaT, const int* nElec, int vdNum, const char* name, const char* fol);
 
-		~PsiT();
 		MeasurerStatus measure(int step, const std::complex<double> * psi, const double* v, double t);
 	};
 
@@ -604,13 +621,11 @@ namespace Measurers {
 		std::fstream fil;
 		int n;
 		double meaT;
-		int index = 20;
+		
 		int vdNum;
-		const char* fname = "pott.dat";
+		const char* fname = "pott";
 		bool done = false;
 	public:
-		int getIndex() { return index; };
-
 		/**
 		 * Constructor.
 		 * @param n The number of grid points.
@@ -621,7 +636,6 @@ namespace Measurers {
 		 */
 		PotT(int n, double meaT, int vdNum, const char* name, const char* fol);
 
-		~PotT();
 		MeasurerStatus measure(int step, const std::complex<double> * psi, const double* v, double t);
 	};
 
@@ -631,7 +645,7 @@ namespace Measurers {
 	{
 	private:
 		std::fstream fil;
-		int index = 17;
+		
 		int nPts;
 		int nx;
 		double maxT;
@@ -641,10 +655,8 @@ namespace Measurers {
 		double * vs;
 		double * xs;
 		double * ts;
-		const char* fname = "Vfunct.dat";
+		const char* fname = "Vfunct";
 	public:
-		int getIndex() { return index; };
-
 		/**
 		 * Constructor.
 		 * @param potNum The number of grid points.
@@ -657,6 +669,7 @@ namespace Measurers {
 		 * @param fol The folder to write to.
 		 */
 		Vfunct(int potNum, int nPts, int nx, int nt, int numSteps, double maxT, const double * x, const char* fol);
+
 		~Vfunct();
 		MeasurerStatus measure(int step, const std::complex<double> * psi, const double* v, double t);
 	};
@@ -666,14 +679,12 @@ namespace Measurers {
 		public Measurer {
 	private:
 		std::fstream fil;
-		int index = 22;
+		
 		bool first = true;
 		const int* nElec;
-		const char* fname = "nElec.dat";
+		const char* fname = "nElec";
 		const char* fol;
 	public:
-		int getIndex() { return index; };
-
 		/**
 		 * Constructor.
 		 * @param nElec (in) The pointer to the number of electrons. Must be determined by the time 'measure' is called.
@@ -689,8 +700,8 @@ namespace Measurers {
 		public Measurer {
 	private:
 		std::fstream fil;
-		int index = 23;
-		const char* fname = "expectE0.dat";
+		
+		const char* fname = "expectE0";
 		int nPts;
 		const int* nElec;
 		double dx;
@@ -699,8 +710,6 @@ namespace Measurers {
 		bool first = true;
 		KineticOperators::KineticOperator * const* kin;
 	public:
-		int getIndex() { return index; };
-
 		/**
 		 * Constructor.
 		 * @param nPts The number of grid points.
@@ -720,14 +729,12 @@ namespace Measurers {
 		public Measurer {
 	private:
 		std::fstream fil;
-		int index = 25;
-		const char* fname = "wghts.dat";
+		
+		const char* fname = "wghts";
 		const int *nElec;
 		bool first = true;
 		double * const * weights;
 	public:
-		int getIndex() { return index; };
-
 		/**
 		 * Constructor.
 		 * @param nElec (in) Pointer to the number of electrons. Must be determined by the time 'measure' is called.
@@ -735,7 +742,7 @@ namespace Measurers {
 		 * @param fol The folder to write to.
 		 */
 		WfcRhoWeights(const int* nElec, double * const * weights, const char* fol);
-		~WfcRhoWeights();
+
 		MeasurerStatus measure(int step, const std::complex<double> * psi, const double* v, double t);
 	};
 
@@ -752,7 +759,7 @@ namespace Measurers {
 		double dx, *rho=nullptr;
 		bool pause;
 	public:
-		int getIndex() { return INT_MIN + 1; };
+		
 
 		/**
 		 * Constructor.
@@ -780,7 +787,7 @@ namespace Measurers {
 		const double *xs;
 		bool pause;
 	public:
-		int getIndex() { return INT_MIN + 2; };
+		
 
 		/**
 		 * Constructor.
@@ -801,8 +808,6 @@ namespace Measurers {
 	private:
 		std::vector<Measurer*> meas;
 	public:
-		int getIndex() { return INT_MIN; };
-
 		/**
 		 * Constructor.
 		 * @param nPts The number of grid points.
@@ -825,7 +830,7 @@ namespace Measurers {
 		std::vector<Measurer*> meas;
 		const char* fname;
 	public:
-		int getIndex() { return index; };
+		
 
 		/**
 		 * Constructor.
