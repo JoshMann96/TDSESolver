@@ -10,10 +10,12 @@
 #include "KineticOperator.h"
 
 /// A cyclic integer class that wraps around a maximum value. Useful for managing the local wavefunction and potential history.
+template<typename T>
 class cyclic_int
 {
+	static_assert(std::is_integral<T>::value, "cyclic_int only works with integral types");
 protected:
-	int val, max;
+	T val, max;
 public:
     /// Default constructor initializes the value to 0 and the maximum to 0.
 	cyclic_int() : val(0), max(0) {};
@@ -22,22 +24,24 @@ public:
 	 * Constructor initializes the value to 0 and the maximum to the given value.
 	 * @param max The maximum value (exclusive) for the cyclic integer.
 	 */
-	cyclic_int(int max) : val(0), max(max) {};
+	cyclic_int(T max) : val(0), max(max) {};
 
 	/**
 	 * Constructor initializes the value to the given value and the maximum to the given value.
 	 * @param val The initial value of the cyclic integer.
 	 * @param max The maximum value (exclusive) for the cyclic integer.
 	 */
-	cyclic_int(int val, int max) : val(val), max(max) {};
+	cyclic_int(T val, T max) : val(val), max(max) {};
 
 	inline void increment() { val = (val + 1) % max; };
 	inline cyclic_int& operator++() { increment(); return *this; }; //prefix
 	inline cyclic_int operator++(int) { cyclic_int c = *this; increment(); return c; }; //postfix
+	inline cyclic_int operator+(T n) { cyclic_int c(max); c.val = (val + n) % max; return c; };
 	inline cyclic_int operator+(int n) { cyclic_int c(max); c.val = (val + n) % max; return c; };
-	inline cyclic_int& operator+=(int n) { val = (val + n) % max; return *this; };
-	inline cyclic_int& operator=(int n) { val = n % max; return *this; };
+	inline cyclic_int& operator+=(T n) { val = (val + n) % max; return *this; };
+	inline cyclic_int& operator=(T n) { val = n % max; return *this; };
 	inline operator int() const { return val; };
+	inline operator long() const { return val; };
 };
 
 /// Tool for tracking progress, calling a callback function when a full percentage of the task is done.
@@ -45,7 +49,8 @@ class ProgressTracker
 {
 	private:
 		std::function<void(int)> progCallback;
-		int percDone = 0, nSteps = -1;
+		int percDone = 0;
+		size_t nSteps;
 	public:
 	/**
 	 * Constructor initializes the progress tracker with a callback function. The callback function must take in an integer (0-100) as an argument.
@@ -59,14 +64,14 @@ class ProgressTracker
 	 * @param callback The callback function to be called when progress is made.
 	 * @param nSteps The total number of steps for the task.
 	 */
-	ProgressTracker(std::function<void(int)> callback, int nSteps) : progCallback(callback), nSteps(nSteps), percDone(0) {};
+	ProgressTracker(std::function<void(int)> callback, size_t nSteps) : progCallback(callback), nSteps(nSteps), percDone(0) {};
 
 	/**
 	 * Updates the progress tracker with the current step. The callback function is called when a full percentage of the task is completed.
 	 * If multiple percentages are completed in one step, the callback function is called multiple times with each missed percentage.
 	 * @param step The current step of the task.
 	 */
-	void update(int step) {
+	void update(size_t step) {
 		if(nSteps < 0)
 			throw std::runtime_error("ProgressTracker::update: Number of steps not set!");
 		while (step*(long)100 / nSteps > percDone) {
@@ -80,7 +85,7 @@ class ProgressTracker
 	 * Resets the progress tracker with the total number of steps.
 	 * @param nSteps The total number of steps for the task.
 	 */
-	void reset(int nSteps) {
+	void reset(size_t nSteps) {
 		this->nSteps = nSteps;
 		percDone = 0;
 	};
@@ -98,15 +103,14 @@ private:
 	Measurers::MeasurementManager * meas;
 	WfcToRho::Weight* wght = nullptr;
 	WfcToRho::Density* dens = nullptr;
-
-	KineticOperators::KineticOperator* kin;
+	KineticOperators::KineticOperator* kin = nullptr;
 
 	double *ts, *x, dt, dx;
 	double **vs, **rhos, *spatialDamp;
-	int nPts, nElec;
+	size_t nPts, nElec;
 	bool calcDensity = false;
-	cyclic_int index;
-	int* step;
+	cyclic_int<size_t> index;
+	size_t* step;
 	std::complex<double> *scratch1, *scratch2;
 
 	bool wavefunctionInitialized = false;
@@ -121,7 +125,7 @@ private:
 	 * @param v The output array to store the calculated potential.
 	 * @return Time in microseconds taken to calculate the potential.
 	 */
-	int calculatePotential(double* rho, const std::complex<double>* psi, double t, double* v);
+	size_t calculatePotential(double* rho, const std::complex<double>* psi, double t, double* v);
 
 	/**
 	 * Calculate the potential from the raw density array.
@@ -131,21 +135,21 @@ private:
 	 * @param v The output array to store the calculated potential.
 	 * @return Time in microseconds taken to calculate the potential.
 	 */
-	int calculatePotentialFromRawRho(double* rho, const std::complex<double>* psi, double t, double* v);
+	size_t calculatePotentialFromRawRho(double* rho, const std::complex<double>* psi, double t, double* v);
 
 	/**
 	 * Updates the potential for the given index.
 	 * @param idx The index of the potential to be updated. It should be in the range [0, HISTORY_LENGTH).
 	 * @return Time in microseconds taken to update the potential.
 	 */
-	int updatePotential(int idx);
+	size_t updatePotential(int idx);
 
 	/**
 	 * Measures the wavefunction and potential at the given index.
 	 * @param idx The index of the measurement to be made. It should be in the range [0, HISTORY_LENGTH).
 	 * @return Time in microseconds taken to perform the measurement.
 	 */
-	int measure(int idx);
+	size_t measure(int idx);
 
 	std::complex<double> **psis;
 
@@ -178,7 +182,7 @@ public:
 	 * @param dt The time step for the simulation.
 	 * @param callback The callback function to be called when progress is made. It must take in an integer (0-100) as an argument. nullptr for no callback.
 	 */
-	SimulationManager(int nPts, double xMin, double dx, double dt, std::function<void(int)> callback = nullptr);
+	SimulationManager(size_t nPts, double xMin, double dx, double dt, std::function<void(int)> callback = nullptr);
 
 	/**
 	 * Constructor initializes the simulation manager with the x-coordinate range, spacing, and a callback function for progress tracking.
@@ -189,7 +193,7 @@ public:
 	 * @param callback The callback function to be called when progress is made. It must take in an integer (0-100) as an argument. nullptr for no callback.
 	 */
 	SimulationManager(double xMin, double xMax, double dx, double dt, std::function<void(int)> callback = nullptr) :
-		SimulationManager((int) ((xMax - xMin) / dx), xMin, dx, dt, callback) {};
+		SimulationManager((size_t) ((xMax - xMin) / dx), xMin, dx, dt, callback) {};
 		
 	/**
 	 * Constructor initializes the simulation manager with the x-coordinate range, number of points, and a callback function for progress tracking.
@@ -199,7 +203,7 @@ public:
 	 * @param dt The time step for the simulation.
 	 * @param callback The callback function to be called when progress is made. It must take in an integer (0-100) as an argument. nullptr for no callback.
 	 */
-	SimulationManager(double xMin, double xMax, int nPts, double dt, std::function<void(int)> callback = nullptr) :
+	SimulationManager(double xMin, double xMax, size_t nPts, double dt, std::function<void(int)> callback = nullptr) :
 		SimulationManager(nPts, xMin, (xMax - xMin) / nPts, dt, callback) {};
 
 	~SimulationManager();
@@ -254,7 +258,7 @@ public:
 	 * @param energies (out) The array to store the calculated energies.
 	 * @throw std::runtime_error if the step is not found in the history.
 	 */
-	void calcEnergies(int step, double* energies) const;
+	void calcEnergies(size_t step, double* energies) const;
 
 	/**
 	 * Returns a pointer to the weights presently being used.
@@ -276,7 +280,7 @@ public:
 	 * @details If the kinetic operator is the KineticOperators::CrankNicolson method, it will call #runCN_L for linear potentials or #runCN_NL for nonlinear potentials.
 	 * If the kinetic operator is a pseudospectral method (KineticOperators::KineticOperator_PSM), it will call #runEPS_U2TU for linear potentials or #runEPS_UW2TUW for nonlinear potentials.
 	 */
-	void run(int nSteps){
+	void run(size_t nSteps){
 		// is the kinetic operator Crank-Nicolson?
 		KineticOperators::CrankNicolson* kin_fdm = dynamic_cast<KineticOperators::CrankNicolson*>(kin);
 		if(kin_fdm != nullptr){
@@ -307,7 +311,7 @@ public:
 	 * Both measurements and potential calculations are done with task parallelism if possible.
 	 * @param nSteps The number of steps to run the simulation for.
 	 */
-	void runEPS_U2TU(int nSteps);
+	void runEPS_U2TU(size_t nSteps);
 
 	/**
 	 * Runs \a nSteps iterations using an explicit pseudospectral method with a \a nonlinear potential.
@@ -315,7 +319,7 @@ public:
 	 * The potential is recalculated after the kinetic phase. Therefore, only measurements are done with task parallelism.
 	 * @param nSteps The number of steps to run the simulation for.
 	 */
-	void runEPS_UW2TUW(int nSteps);
+	void runEPS_UW2TUW(size_t nSteps);
 
 	/**
 	 * Runs \a nSteps iterations using the Crank-Nicolson method with a \a linear potential.
@@ -323,7 +327,7 @@ public:
 	 * Both measurements and potential calculations are done with task parallelism if possible.
 	 * @param nSteps The number of steps to run the simulation for.
 	 */
-	void runCN_L(int nSteps); // Assumes linear potential
+	void runCN_L(size_t nSteps); // Assumes linear potential
 
 	/**
 	 * Runs \a nSteps iterations using the Crank-Nicolson method with a \a nonlinear potential.
@@ -333,7 +337,7 @@ public:
 	 * Only measurements are done with task parallelism.
 	 * @param nSteps The number of steps to run the simulation for.
 	 */
-	void runCN_NL(int nSteps);
+	void runCN_NL(size_t nSteps);
 
 	/**
 	 * Finds the eigenstates of the system using the given energy range.
@@ -352,7 +356,7 @@ public:
 	 * @throw std::runtime_error if the kinetic operator is not a finite difference method.
 	 * @see KineticOperators::KineticOperator_FDM::findInhomogeneousEigenStates
 	 */
-	void findInhomogeneousEigenStates(int nElec, const double* energies);
+	void findInhomogeneousEigenStates(size_t nElec, const double* energies);
 
 	/**
 	 * Sets the wavefunction to be used in the simulation. If nElec is not set, it will assume there is only 1 electron.
@@ -368,14 +372,14 @@ public:
 	 * Returns the number of grid points in the simulation.
 	 * @return The number of grid points in the simulation.
 	 */
-	int getNumPoints() const {return nPts;};
+	size_t getNumPoints() const {return nPts;};
 
 	/**
 	 * Returns the index which floors the given x-coordinate.
 	 * @param xp The x-coordinate to be found.
 	 * @return The index of the x-coordinate in the simulation.
 	 */
-	int findXIdx(double xp){return vtls::findValue(nPts, x, xp);}
+	size_t findXIdx(double xp){return vtls::findValue(nPts, x, xp);}
 
 	/**
 	 * Returns the grid spacing in the simulation.
@@ -421,13 +425,13 @@ public:
 	 * Gets the number of electrons currently in the simulation.
 	 * @return The number of electrons in the simulation.
 	 */
-	int getNElec() const {return nElec;};
+	size_t getNElec() const {return nElec;};
 
 	/**
 	 * Returns a pointer to the number of electrons in the simulation.
 	 * @return The number of electrons in the simulation.
 	 */
-	int* getNElecPtr() {return &nElec;};
+	size_t* getNElecPtr() {return &nElec;};
 
 	/**
 	 * Determines if the potential can be calculated asynchronously (if it is linear).
@@ -461,5 +465,5 @@ public:
 	 * @return The index of the electrical surface.
 	 * @warning This function is not fully tested yet and is likely not working.
 	 */
-	int findElectricalSurfaceCentroidRule(int minPos, int maxPos);
+	size_t findElectricalSurfaceCentroidRule(size_t minPos, size_t maxPos);
 };

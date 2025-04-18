@@ -3,27 +3,27 @@
 #include "MathTools.h"
 
 //callback sends progress int 0-100 (can be nullptr for no callback)
-SimulationManager::SimulationManager(int nPts, double xMin, double dx, double dt, std::function<void(int)> callback)
+SimulationManager::SimulationManager(size_t nPts, double xMin, double dx, double dt, std::function<void(int)> callback)
 	: dx(dx), nPts(nPts), dt(dt), progTracker(callback), nElec(0)
 {
-	index = cyclic_int(0, HISTORY_LENGTH);
+	index = cyclic_int<size_t>(0, HISTORY_LENGTH);
 
 	pot = new Potentials::PotentialManager(nPts);
 	meas = new Measurers::MeasurementManager("");
 	psis = (std::complex<double>**) sq_malloc(sizeof(std::complex<double>*)*HISTORY_LENGTH);
-	for(int i = 0; i < HISTORY_LENGTH; i++)
+	for(size_t i = 0; i < HISTORY_LENGTH; i++)
 		psis[i] = nullptr;
 
 	vs = (double**) sq_malloc(sizeof(double*)*HISTORY_LENGTH);
 	rhos = (double**) sq_malloc(sizeof(double*)*HISTORY_LENGTH);
 	ts = (double*) sq_malloc(sizeof(double)*HISTORY_LENGTH);
-	for (int i = 0; i < HISTORY_LENGTH; i++){
+	for (size_t i = 0; i < HISTORY_LENGTH; i++){
 		vs[i] = (double*) sq_malloc(sizeof(double) * nPts);
 		rhos[i] = (double*) sq_malloc(sizeof(double) * nPts);
 	}
 	std::fill_n(ts, HISTORY_LENGTH, 0.0);
 
-	step = (int*) sq_malloc(sizeof(int) * HISTORY_LENGTH);
+	step = (size_t*) sq_malloc(sizeof(size_t) * HISTORY_LENGTH);
 	std::fill_n(step, HISTORY_LENGTH, 0);
 
 	scratch1 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts);
@@ -36,13 +36,13 @@ SimulationManager::SimulationManager(int nPts, double xMin, double dx, double dt
 	*/
 
 	x = (double*) sq_malloc(sizeof(double) * nPts);
-	for(int i = 0; i < nPts; i++)
+	for(size_t i = 0; i < nPts; i++)
 		x[i] = xMin + i*dx;
 }
 
 SimulationManager::~SimulationManager()
 {
-	for(int i = 0; i < HISTORY_LENGTH; i++){
+	for(size_t i = 0; i < HISTORY_LENGTH; i++){
 		sq_free(vs[i]);
 		sq_free(rhos[i]);
 	}
@@ -84,11 +84,11 @@ void SimulationManager::addSpatialDamp(const double* arr) {
 	vtls::seqMulArrays(nPts, arr, spatialDamp);
 }
 
-void SimulationManager::calcEnergies(int curStep, double* energies) const {
-	for(int i = 0; i < HISTORY_LENGTH; i++){
+void SimulationManager::calcEnergies(size_t curStep, double* energies) const {
+	for(size_t i = 0; i < HISTORY_LENGTH; i++){
 		if(curStep == step[i]){ //look for the present step's index
 			double* rho = (double*) sq_malloc(sizeof(double)*nPts);
-			for(int j = 0; j < nElec; j++){
+			for(size_t j = 0; j < nElec; j++){
 				vtls::normSqr(nPts, &psis[i][j*nPts], rho);
 				energies[j] = vtlsInt::rSumMul(nPts, rho, vs[i], dx)/vtlsInt::rSum(nPts, rho,dx) + kin->evaluateKineticEnergy(&psis[i][j*nPts]);
 				//potential energy + kinetic energy
@@ -106,19 +106,21 @@ void SimulationManager::calcWeights(){
 	if (nElec < 1)
 		throw std::runtime_error("SimulationManager::calcWeights: Number of electrons is not finite! Failed to initialize.");
 
-	if (wght == nullptr)
-		throw std::runtime_error("SimulationManager::calcWeights: No weight function set!");
-
 	if(weights)
 		sq_free(weights); weights = nullptr;
 	weights = (double*) sq_malloc(sizeof(double)*nElec);
-	double* energies = (double*) sq_malloc(sizeof(double)*nElec);
 
-	calcEnergies(step[index], energies);
-
-	wght->calcWeights(nElec, energies, weights, normScheme);
-
-	sq_free(energies);
+	if (wght == nullptr){
+		std::cout << "No weight function set! Using default of 1.0 for all states." << std::endl;
+		for (size_t i = 0; i < nElec; i++)
+			weights[i] = 1.0;
+	}
+	else{
+		double* energies = (double*) sq_malloc(sizeof(double)*nElec);
+		calcEnergies(step[index], energies);
+		wght->calcWeights(nElec, energies, weights, normScheme);
+		sq_free(energies);
+	}
 }
 
 void SimulationManager::findEigenStates(double emin, double emax) {
@@ -128,7 +130,7 @@ void SimulationManager::findEigenStates(double emin, double emax) {
 
 	std::complex<double>* states;
 
-	kin->findEigenStates(vs[index], emin, emax, &states, &nElec);
+	kin->findEigenStates(vs[index], emin, emax, &states, &sq_malloc, &nElec);
 
 	freePsis();
 	psis[0] = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nElec);
@@ -137,10 +139,10 @@ void SimulationManager::findEigenStates(double emin, double emax) {
 
 	sq_free(states);
 
-	for (int i = 0; i < nElec; i++)
+	for (size_t i = 0; i < nElec; i++)
 		vtls::normalizeSqrNorm(nPts, &psis[0][i * nPts], dx);
 
-	for (int i = 1; i < HISTORY_LENGTH; i++) {
+	for (size_t i = 1; i < HISTORY_LENGTH; i++) {
 		psis[i] = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nElec);
 		vtls::copyArray(nPts * nElec, psis[0], psis[i]);
 	}
@@ -152,7 +154,7 @@ void SimulationManager::findEigenStates(double emin, double emax) {
 	wavefunctionInitialized = true;
 }
 
-void SimulationManager::findInhomogeneousEigenStates(int nElec, const double* energies){
+void SimulationManager::findInhomogeneousEigenStates(size_t nElec, const double* energies){
 	KineticOperators::KineticOperator_FDM* kin_fdm = dynamic_cast<KineticOperators::KineticOperator_FDM*>(kin);
 	if(kin_fdm == nullptr)
 		throw std::runtime_error("SimulationManager::findInhomogeneousEigenStates: Kinetic operator is not a finite difference method!");
@@ -160,14 +162,14 @@ void SimulationManager::findInhomogeneousEigenStates(int nElec, const double* en
 	this->nElec = nElec;
 
 	freePsis();
-	for(int i = 0; i < HISTORY_LENGTH; i++){
+	for(size_t i = 0; i < HISTORY_LENGTH; i++){
 		psis[i] = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nElec);
 		std::fill_n(psis[i], nPts*nElec, 0.0);
 		pot->getVBare(0.0, vs[i]);
 	}
 
 	kin_fdm->findInhomogeneousEigenStates(vs[index], energies, psis[index], nElec);
-	for (int i = 1; i < HISTORY_LENGTH; i++) 
+	for (size_t i = 1; i < HISTORY_LENGTH; i++) 
 		vtls::copyArray(nPts * nElec, psis[index], psis[i]);
 
 	calcWeights();
@@ -185,7 +187,7 @@ void SimulationManager::setPsi(std::complex<double>* npsi, WfcToRho::Normalizati
 	if (!nElec) {
 		nElec = 1;
 		freePsis();
-		for (int i = 0; i < HISTORY_LENGTH; i++) {
+		for (size_t i = 0; i < HISTORY_LENGTH; i++) {
 			psis[i] = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts);
 		}
 	}
@@ -200,7 +202,7 @@ void SimulationManager::setPsi(std::complex<double>* npsi, WfcToRho::Normalizati
 	wavefunctionInitialized = true;
 }
 
-int SimulationManager::calculatePotential(double* rho, const std::complex<double>* psi, double t, double* v){
+size_t SimulationManager::calculatePotential(double* rho, const std::complex<double>* psi, double t, double* v){
 	auto strt = std::chrono::high_resolution_clock::now();
 	if(calcDensity)
 		dens->calcRho(nPts, nElec, dx, weights, psi, rho);
@@ -210,7 +212,7 @@ int SimulationManager::calculatePotential(double* rho, const std::complex<double
 	return dur.count();
 }
 
-int SimulationManager::calculatePotentialFromRawRho(double* rho, const std::complex<double>* psi, double t, double* v){
+size_t SimulationManager::calculatePotentialFromRawRho(double* rho, const std::complex<double>* psi, double t, double* v){
 	auto strt = std::chrono::high_resolution_clock::now();
 	dens->calcRho(nPts, nElec, dx, rho);
 	pot->getV(rho, nullptr, t, v);
@@ -219,9 +221,9 @@ int SimulationManager::calculatePotentialFromRawRho(double* rho, const std::comp
 	return dur.count();
 }
 
-int SimulationManager::updatePotential(int idx) {return calculatePotential(rhos[idx], psis[idx], ts[idx], vs[idx]);}
+size_t SimulationManager::updatePotential(int idx) {return calculatePotential(rhos[idx], psis[idx], ts[idx], vs[idx]);}
 
-int SimulationManager::measure(int idx) {
+size_t SimulationManager::measure(int idx) {
 	auto strt = std::chrono::high_resolution_clock::now();
 	meas->measure(step[idx], psis[idx], vs[idx], ts[idx]);
 	auto end = std::chrono::high_resolution_clock::now();
@@ -230,14 +232,15 @@ int SimulationManager::measure(int idx) {
 }
 
 //Run simulation using operator splitting Fourier method (applies potential as linear)
-void SimulationManager::runEPS_U2TU(int nSteps) {
+void SimulationManager::runEPS_U2TU(size_t nSteps) {
 	KineticOperators::KineticOperator_PSM* kin_psm = dynamic_cast<KineticOperators::KineticOperator_PSM*>(kin);
 	if(kin_psm == nullptr)
 		throw std::runtime_error("SimulationManager::runEPS_U2TU: Kinetic operator is not a pseudospectral method!");
+	assert(nElec > 0);
 
 	auto rMeasure = &SimulationManager::measure;
 	auto rUpdatePotential = &SimulationManager::updatePotential;
-	std::future<int> fM, fUP;
+	std::future<size_t> fM, fUP;
 
 	// initialize progress tracker
 	progTracker.reset(nSteps);
@@ -246,7 +249,7 @@ void SimulationManager::runEPS_U2TU(int nSteps) {
 	if(!asyncCalc)
 		std::cout << "Warning: Potential is not wavefunction independent! It is recommended to use runEPS_UW2TUW to more accurately account for the nonlinearity." << std::endl;
 
-	for(int i = 0; i < nSteps; i++){
+	for(size_t i = 0; i < nSteps; i++){
 		if(asyncCalc){
 			// evaluate potential n+1
 			if (i == 0)
@@ -282,10 +285,11 @@ void SimulationManager::runEPS_U2TU(int nSteps) {
 }
 
 //Run simulation using operator splitting Fourier method (applies potential as nonlinear, second potential phase is recalculated after propagation phase)
-void SimulationManager::runEPS_UW2TUW(int nSteps) {
+void SimulationManager::runEPS_UW2TUW(size_t nSteps) {
 	KineticOperators::KineticOperator_PSM* kin_psm = dynamic_cast<KineticOperators::KineticOperator_PSM*>(kin);
 	if(kin_psm == nullptr)
 		throw std::runtime_error("SimulationManager::runEPS_UW2TUW: Kinetic operator is not a pseudospectral method!");
+	assert(nElec > 0);
 
 	// variables for the midpoint of step
 	std::complex<double>* tpsi = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nElec);
@@ -293,12 +297,12 @@ void SimulationManager::runEPS_UW2TUW(int nSteps) {
 	double* tv = (double*) sq_malloc(sizeof(double) * nPts);
 
 	auto rMeasure = &SimulationManager::measure;
-	std::future<int> fM;
+	std::future<size_t> fM;
 
 	// initialize progress tracker
 	progTracker.reset(nSteps);
 
-	for(int i = 0; i < nSteps; i++){
+	for(size_t i = 0; i < nSteps; i++){
 		// step n->n+1/2
 		updatePotential(index);
 		kin_psm->stepOS_UW2T(psis[index], vs[index], spatialDamp, tpsi, nElec);
@@ -325,15 +329,16 @@ void SimulationManager::runEPS_UW2TUW(int nSteps) {
 	sq_free(tv);
 }
 
-void SimulationManager::runCN_L(int nSteps){
+void SimulationManager::runCN_L(size_t nSteps){
 	KineticOperators::CrankNicolson* kin_cn = dynamic_cast<KineticOperators::CrankNicolson*>(kin);
 	if(kin_cn == nullptr)
 		throw std::runtime_error("SimulationManager::runCN_L: Kinetic operator is not CrankNicolson!");
+	assert(nElec > 0);
 
 	double* tv = (double*) sq_malloc(sizeof(double) * nPts);
 	auto rMeasure = &SimulationManager::measure;
 	auto rUpdatePotential = &SimulationManager::updatePotential;
-	std::future<int> fM, fUP;
+	std::future<size_t> fM, fUP;
 
 	// initialize progress tracker
 	progTracker.reset(nSteps);
@@ -342,7 +347,7 @@ void SimulationManager::runCN_L(int nSteps){
 	if(!asyncCalc)
 		std::cout << "Warning: Potential is not wavefunction independent! It is recommended to use runCN_NL to more accurately account for the nonlinearity." << std::endl;
 
-	for(int i = 0; i < nSteps; i++){
+	for(size_t i = 0; i < nSteps; i++){
 		if(asyncCalc){
 			// evaluate potential n+1
 			if (i == 0){ // evaluate potential n, n+1 if needed
@@ -386,19 +391,20 @@ void SimulationManager::runCN_L(int nSteps){
 	sq_free(tv);
 }
 
-void SimulationManager::runCN_NL(int nSteps){
+void SimulationManager::runCN_NL(size_t nSteps){
 	KineticOperators::CrankNicolson* kin_cn = dynamic_cast<KineticOperators::CrankNicolson*>(kin);
 	if(kin_cn == nullptr)
 		throw std::runtime_error("SimulationManager::runCN_NL: Kinetic operator is not CrankNicolson!");
+	assert(nElec > 0);
 
 	double* tv = (double*) sq_malloc(sizeof(double) * nPts);
 	auto rMeasure = &SimulationManager::measure;
-	std::future<int> fM;
+	std::future<size_t> fM;
 
 	// initialize progress tracker
 	progTracker.reset(nSteps);
 
-	for(int i = 0; i < nSteps; i++){
+	for(size_t i = 0; i < nSteps; i++){
 		updatePotential(index);
 
 		// estimate the density at the next step using the present potential (virtual step)
@@ -440,13 +446,13 @@ void SimulationManager::iterateIndex() {
 	index++;
 }
 
-int SimulationManager::findElectricalSurfaceCentroidRule(int minPos, int maxPos){
+size_t SimulationManager::findElectricalSurfaceCentroidRule(size_t minPos, size_t maxPos){
 	/*
 	* Calculate the electrical centroid of the electron density using first-order perturbation theory.
 	*/
 	std::complex<double>* mat = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nElec*(nElec-1)/2);
 	std::complex<double>* xpsi = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
-	auto matIndex = [this](int i, int j){return i*nElec+j-((i+1)*(i+2))/2;}; //helper function for packing/unpacking matrix
+	auto matIndex = [this](size_t i, size_t j){return i*nElec+j-((i+1)*(i+2))/2;}; //helper function for packing/unpacking matrix
 
 	std::complex<double>* psi = psis[index];
 
@@ -456,10 +462,10 @@ int SimulationManager::findElectricalSurfaceCentroidRule(int minPos, int maxPos)
 	double* idxs = (double*) sq_malloc(sizeof(double)*nPts);
 
 	// calculate matrix elements
-	for(int i = 0; i < nElec-1; i++){
-		for(int k = 0; k < nPts; k++)
+	for(size_t i = 0; i < nElec-1; i++){
+		for(size_t k = 0; k < nPts; k++)
 			xpsi[k] = ((double)k) * psi[i*nPts+k];
-		for(int j = i+1; j < nElec; j++)
+		for(size_t j = i+1; j < nElec; j++)
 			mat[matIndex(i,j)] = vtlsInt::rSumMul(nPts, xpsi, &psi[j*nPts], dx) / (energies[j]-energies[i]);
 	}
 
@@ -469,22 +475,22 @@ int SimulationManager::findElectricalSurfaceCentroidRule(int minPos, int maxPos)
 	std::complex<double>* ppsi_cc = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
 	std::complex<double>* temp = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
 	std::fill_n(drho, nPts, 0.0);
-	for(int i = 0; i < nElec-1; i++){
+	for(size_t i = 0; i < nElec-1; i++){
 		std::fill_n(ppsi_nc, nPts, 0.0);
 		std::fill_n(ppsi_cc, nPts, 0.0);
-		for(int j = i+1; j < nElec; j++){
+		for(size_t j = i+1; j < nElec; j++){
 			vtls::scaMulArray(nPts, mat[matIndex(i,j)]*weights[i], &psi[j*nPts], temp);
 			vtls::addArrays(nPts, temp, ppsi_cc);
 
 			vtls::scaMulArray(nPts, mat[matIndex(i,j)]*weights[j], &psi[j*nPts], temp);
 			vtls::addArrays(nPts, temp, ppsi_nc);
 		}
-		for(int k = 0; k < nPts; k++)
+		for(size_t k = 0; k < nPts; k++)
 			drho[k] += std::real( std::conj(psi[i*nPts+k])*ppsi_cc[k] - psi[i*nPts+k]*std::conj(ppsi_nc[k]) );
 	}
 
 	double xsum = 0.0, sum = 0.0;
-	for(int i = minPos; i < maxPos; i++){
+	for(size_t i = minPos; i < maxPos; i++){
 		xsum += i*drho[i];
 		sum += drho[i];
 	}
@@ -499,5 +505,5 @@ int SimulationManager::findElectricalSurfaceCentroidRule(int minPos, int maxPos)
 	sq_free(temp);
 	sq_free(energies);
 
-	return (int)(xsum/sum);
+	return (size_t)(xsum/sum);
 }

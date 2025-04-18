@@ -22,12 +22,12 @@ namespace vtlsInt {
 	 * @param dx The increment (step size).
 	 */
 	template <typename T, typename U>
-	decltype(std::declval<T&>()* std::declval<U&>()) rSum(int len, const T* __restrict arr, U dx) {
+	decltype(std::declval<T&>()* std::declval<U&>()) rSum(size_t len, const T* __restrict arr, U dx) {
 		if (len <= 1)
 			return 0;
 
 		T sum = 0;
-		for (int i = 0; i < len; i++) {
+		for (size_t i = 0; i < len; i++) {
 			sum += arr[i];
 		}
 		return sum * dx;
@@ -44,12 +44,12 @@ namespace vtlsInt {
 	 * @param dx The increment (step size).
 	 */
 	template <typename T, typename U, typename V>
-	decltype(std::declval<T&>()* std::declval<U&>()* std::declval<V&>()) rSumMul(int len, const T* __restrict arr1, const U* __restrict arr2, V dx) {
+	decltype(std::declval<T&>()* std::declval<U&>()* std::declval<V&>()) rSumMul(size_t len, const T* __restrict arr1, const U* __restrict arr2, V dx) {
 		if (len <= 1)
 			return 0;
 
 		decltype(std::declval<T&>() * std::declval<U&>()) sum = 0;
-		for (int i = 0; i < len; i++)
+		for (size_t i = 0; i < len; i++)
 			sum += arr1[i] * arr2[i];
 		return sum * dx;
 	}
@@ -64,12 +64,12 @@ namespace vtlsInt {
 	 * @param dx The increment (step size).
 	 */
 	template <typename T, typename U, typename V>
-	decltype(std::declval<T&>()* std::declval<U&>()* std::declval<V&>()) rSumMulConj(int len, const T* __restrict arr1, const U* __restrict arr2, V dx) {
+	decltype(std::declval<T&>()* std::declval<U&>()* std::declval<V&>()) rSumMulConj(size_t len, const T* __restrict arr1, const U* __restrict arr2, V dx) {
 		if (len <= 1)
 			return 0;
 
 		decltype(std::declval<T&>() * std::declval<U&>()) sum = 0;
-		for (int i = 0; i < len; i++)
+		for (size_t i = 0; i < len; i++)
 			sum += std::conj(arr1[i]) * arr2[i];
 		return sum * dx;
 	}
@@ -83,12 +83,12 @@ namespace vtlsInt {
 	 * @param dx The increment (step size).
 	 */
 	template <typename T, typename U>
-	decltype(std::declval<T&>() * std::declval<U&>()) trapz(int len, const T* __restrict arr, U dx) {
+	decltype(std::declval<T&>() * std::declval<U&>()) trapz(size_t len, const T* __restrict arr, U dx) {
 		if (len <= 1)
 			return 0;
 
 		T sum = (arr[0] + arr[len - 1]) / 2.0;
-		for (int i = 1; i < len - 1; i++) {
+		for (size_t i = 1; i < len - 1; i++) {
 			sum += arr[i];
 		}
 		return sum * dx;
@@ -106,12 +106,12 @@ namespace vtlsInt {
 	 * @param dx The increment (step size).
 	 */
 	template <typename T, typename U, typename V>
-	decltype(std::declval<T&>()* std::declval<U&>()* std::declval<V&>()) trapzMul(int len, const T* __restrict arr1, const U* __restrict arr2, V dx) {
+	decltype(std::declval<T&>()* std::declval<U&>()* std::declval<V&>()) trapzMul(size_t len, const T* __restrict arr1, const U* __restrict arr2, V dx) {
 		if (len <= 1)
 			return 0;
 
 		decltype(std::declval<T&>() * std::declval<U&>()) sum = (arr1[0] * arr2[0] + arr1[len - 1] * arr2[len - 1]) / 2.0;
-		for (int i = 1; i < len - 1; i++)
+		for (size_t i = 1; i < len - 1; i++)
 			sum += arr1[i] * arr2[i];
 		return sum * dx;
 	}
@@ -125,19 +125,19 @@ namespace vtlsInt {
 	 * @param dx The increment (step size).
 	 */
 	template <typename T, typename U>
-	decltype(std::declval<T&>()* std::declval<U&>()) simps(int len, const T* __restrict arr, U dx) {
+	decltype(std::declval<T&>()* std::declval<U&>()) simps(size_t len, const T* __restrict arr, U dx) {
 		if (len % 2) {
 			T sum = (arr[len - 1] + arr[0]) / 4.0;
-			for (int i = 1; i < len - 1; i += 2)
+			for (size_t i = 1; i < len - 1; i += 2)
 				sum += arr[i];
 			sum *= 2.0;
-			for (int i = 2; i < len - 1; i += 2)
+			for (size_t i = 2; i < len - 1; i += 2)
 				sum += arr[i];
 			return sum * dx * 2.0 / 3.0;
 		}
 		else {
 			T sum = (5.0 * (arr[0] + arr[len - 1]) + 13.0 * (arr[1] + arr[len - 2])) / 12.0;
-			for (int i = 2; i < len - 2; i++)
+			for (size_t i = 2; i < len - 2; i++)
 				sum += arr[i];
 			return sum * dx;
 		}
@@ -154,13 +154,13 @@ namespace vtlsInt {
 	 * @param dx The increment (step size).
 	 */
 	template <typename T, typename U, typename V>
-	decltype(std::declval<T&>()* std::declval<U&>()* std::declval<V&>()) simpsMul(int len, const T* __restrict arr1, const U* __restrict arr2, V dx) {
+	decltype(std::declval<T&>()* std::declval<U&>()* std::declval<V&>()) simpsMul(size_t len, const T* __restrict arr1, const U* __restrict arr2, V dx) {
 		if (len % 2) {
 			decltype(std::declval<T&>() * std::declval<U&>()) sum = (arr1[len - 1] * arr2[len - 1] + arr1[0] * arr2[0]) / 4.0;
-			for (int i = 1; i < len - 1; i += 2)
+			for (size_t i = 1; i < len - 1; i += 2)
 				sum += arr1[i] * arr2[i];
 			sum *= 2.0;
-			for (int i = 2; i < len - 1; i += 2)
+			for (size_t i = 2; i < len - 1; i += 2)
 				sum += arr1[i] * arr2[i];
 			return sum * dx * 2.0 / 3.0;
 		}
@@ -170,7 +170,7 @@ namespace vtlsInt {
 					5.0 * (arr1[0] * arr2[0] + arr1[len - 1] * arr2[len - 1]) +
 					13.0 * (arr1[1] * arr2[1] + arr1[len - 2] * arr2[len - 2])
 					) / 12.0;
-			for (int i = 2; i < len - 2; i++)
+			for (size_t i = 2; i < len - 2; i++)
 				sum += arr1[i] * arr2[i];
 			return sum * dx;
 		}
@@ -187,9 +187,9 @@ namespace vtlsInt {
 	 * @param targ (out) The target array to store the result.
 	 */
 	template <typename T, typename U>
-	void cumIntRectLeft(int len, const T* __restrict arr, U dx, decltype(std::declval<T&>()* std::declval<U&>())* __restrict targ) {
+	void cumIntRectLeft(size_t len, const T* __restrict arr, U dx, decltype(std::declval<T&>()* std::declval<U&>())* __restrict targ) {
 		decltype(std::declval<T&>() * std::declval<U&>()) sum = 0.0;
-		for (int i = 0; i < len; i++) {
+		for (size_t i = 0; i < len; i++) {
 			sum += arr[i] * dx;
 			targ[i] = sum;
 		}
@@ -207,9 +207,9 @@ namespace vtlsInt {
 	 * @param targ (out) The target array to store the result.
 	 */
 	template <typename T, typename U>
-	void cumIntRectRight(int len, const T* __restrict arr, U dx, decltype(std::declval<T&>()* std::declval<U&>())* __restrict targ) {
+	void cumIntRectRight(size_t len, const T* __restrict arr, U dx, decltype(std::declval<T&>()* std::declval<U&>())* __restrict targ) {
 		decltype(std::declval<T&>() * std::declval<U&>()) sum = 0.0;
-		for (int i = 0; i < len; i++) {
+		for (size_t i = 0; i < len; i++) {
 			targ[i] = sum;
 			sum += arr[i] * dx;
 		}
@@ -227,9 +227,9 @@ namespace vtlsInt {
 	 * @param targ (out) The target array to store the result.
 	 */
 	template <typename T, typename U>
-	void cumIntTrapz(int len, const T* __restrict arr, U dx, decltype(std::declval<T&>()* std::declval<U&>())* __restrict targ) {
+	void cumIntTrapz(size_t len, const T* __restrict arr, U dx, decltype(std::declval<T&>()* std::declval<U&>())* __restrict targ) {
 		decltype(std::declval<T&>() * std::declval<U&>()) sum = 0.0;
-		for (int i = 0; i < len - 1; i++) {
+		for (size_t i = 0; i < len - 1; i++) {
 			targ[i] = sum;
 			sum += (arr[i] + arr[i + 1]) * (dx / 2.0);
 		}
@@ -249,9 +249,9 @@ namespace vtlsInt {
 	 * @param targ (out) The target array to store the result.
 	 */
 	template <typename T, typename U>
-	void cumIntTrapzToRight(int len, const T* __restrict arr, U dx, decltype(std::declval<T&>()* std::declval<U&>())* __restrict targ) {
+	void cumIntTrapzToRight(size_t len, const T* __restrict arr, U dx, decltype(std::declval<T&>()* std::declval<U&>())* __restrict targ) {
 		decltype(std::declval<T&>() * std::declval<U&>()) sum = (arr[0]+arr[1]) * dx / 4.0;
-		for (int i = 0; i < len - 2; i++) {
+		for (size_t i = 0; i < len - 2; i++) {
 			targ[i] = sum;
 			sum += (arr[i] + 2.0*arr[i+1] + arr[i+2]) * (dx / 4.0);
 		}
@@ -272,10 +272,10 @@ namespace vtlsInt {
 	 * @param targ (out) The target array to store the result.
 	 */
 	template <typename T, typename U>
-	void cumIntTrapzToLeft(int len, const T* __restrict arr, U dx, decltype(std::declval<T&>()* std::declval<U&>())* __restrict targ) {
+	void cumIntTrapzToLeft(size_t len, const T* __restrict arr, U dx, decltype(std::declval<T&>()* std::declval<U&>())* __restrict targ) {
 		targ[0] = 0.0;
 		decltype(std::declval<T&>() * std::declval<U&>()) sum = (arr[0]+arr[1]) * dx / 4.0;
-		for (int i = 1; i < len - 1; i++) {
+		for (size_t i = 1; i < len - 1; i++) {
 			targ[i] = sum;
 			sum += (arr[i-1] + 2.0*arr[i] + arr[i+1]) * (dx / 4.0);
 		}
@@ -297,7 +297,7 @@ namespace vtls {
 	template <class T>
 	class Convolver{
 	private:
-		int len = -1;
+		size_t len = -1;
 		fftw_plan fp, bp;
 		std::complex<double> *temp1, *temp2;
 	public:
@@ -308,7 +308,7 @@ namespace vtls {
 		 * Constructor for Convolver.
 		 * @param len The length of the arrays to be convolved.
 		 */
-		Convolver<T>(int len);
+		Convolver<T>(size_t len);
 
 		~Convolver();
 
@@ -331,7 +331,7 @@ namespace vtls {
 	class MaskConvolver :
 		public Convolver<T>{
 	private:
-		int len;
+		size_t len;
 		fftw_plan fp, bp;
 		std::complex<double> *mask, *temp;
 	public:
@@ -340,7 +340,7 @@ namespace vtls {
 		 * @param len The length of the arrays to be convolved.
 		 * @param maskIn (in) The mask to be used for the convolution.
 		 */
-		MaskConvolver<T>(int len, const T* maskIn);
+		MaskConvolver<T>(size_t len, const T* maskIn);
 
 		~MaskConvolver();
 
@@ -368,17 +368,17 @@ namespace vtls {
 	 * @param targ (out) The target array to store the result of the matrix product, which will be a Hermitian matrix in upper triangular form (len*(len+1)/2 elements).
 	 */
 	template <typename T, typename U>
-	void mulHermitDiagHermit(int len, const T* hermitTriag, const U* diag, decltype(std::declval<T&>()* std::declval<U&>())* targ) {
+	void mulHermitDiagHermit(size_t len, const T* hermitTriag, const U* diag, decltype(std::declval<T&>()* std::declval<U&>())* targ) {
 		decltype(std::declval<T&>() * std::declval<U&>()) csum = 0.0;
-		for (int i = 0; i < len; i++) {
-			for (int j = i; j < len; j++) {
+		for (size_t i = 0; i < len; i++) {
+			for (size_t j = i; j < len; j++) {
 				//targ[i,j] = sum_k triag[i,k]diag[k]triag[k,l]
 				csum = 0.0;
-				for (int k = 0; k < i; k++)
+				for (size_t k = 0; k < i; k++)
 					csum += std::conj(hermitTriag[k + (i * (i + 1)) / 2]) * diag[k] * hermitTriag[k + (j * (j + 1)) / 2];
-				for(int k = i; k < j; k++)
+				for(size_t k = i; k < j; k++)
 					csum += hermitTriag[i + (k * (k + 1)) / 2] * diag[k] * hermitTriag[k + (j * (j + 1)) / 2];
-				for (int k = j; k < len; k++)
+				for (size_t k = j; k < len; k++)
 					csum += hermitTriag[i + (k * (k + 1)) / 2] * diag[k] * std::conj(hermitTriag[j + (k * (k + 1)) / 2]);
 				targ[i + (j * (j + 1)) / 2] = csum;
 			}
@@ -392,11 +392,11 @@ namespace vtls {
 	 * @param arr1 (in) The first array, whose imaginary component will be added.
 	 * @param arr2targ (in/out) The second array, which will be modified to store the result of the addition.
 	 */
-	void addArraysImag(int len, const std::complex<double>* arr1, double* arr2targ);
+	void addArraysImag(size_t len, const std::complex<double>* arr1, double* arr2targ);
 
 	/// @deprecated This function has been removed due to exprtk functionality being removed.
 	template <typename T, typename U>
-	void evalMathExpr(int len, const char* var, T* vals, std::string expr, U* res) {
+	void evalMathExpr(size_t len, const char* var, T* vals, std::string expr, U* res) {
 		throw std::runtime_error("exprtk functionality has been removed for 'vtls::evalMathExpr'. Future versions should implements lambdas from pybind11.");
 		/*typedef exprtk::symbol_table<T> symbol_table_t;
 		typedef exprtk::expression<T>   expression_t;
@@ -413,7 +413,7 @@ namespace vtls {
 		parser_t parser;
 		parser.compile(expr, expression);
 
-		for (int i = 0; i < len; i++) {
+		for (size_t i = 0; i < len; i++) {
 			cval = vals[i];
 			res[i] = (U)(expression.value());
 		}*/
@@ -430,8 +430,8 @@ namespace vtls {
 	 * @param y (out) The target array to store the results of the polynomial evaluation, which will be of length len.
 	 */
 	template <typename T, typename U>
-	void polyEval(int len, const T* x, int nPoly, const U* __restrict polyCoeffs, decltype(std::declval<T&>()* std::declval<U&>())* y) {
-		for (int i = 0; i < len; i++)
+	void polyEval(size_t len, const T* x, size_t nPoly, const U* __restrict polyCoeffs, decltype(std::declval<T&>()* std::declval<U&>())* y) {
+		for (size_t i = 0; i < len; i++)
 			y[i] = boost::math::tools::evaluate_polynomial(polyCoeffs, x[i], nPoly);
 	}
 
@@ -446,8 +446,8 @@ namespace vtls {
 	 * @param arr2targ (in/out) The second array, which will contain the result.
 	 */
 	template <typename T, typename U, typename V>
-	void scaMulAddArrays(int len, T scalar, const U* __restrict arr1, V* __restrict arr2targ) {
-		for (int i = 0; i < len; i++)
+	void scaMulAddArrays(size_t len, T scalar, const U* __restrict arr1, V* __restrict arr2targ) {
+		for (size_t i = 0; i < len; i++)
 			arr2targ[i] += arr1[i] * scalar;
 	}
 
@@ -462,8 +462,8 @@ namespace vtls {
 	 * @param targ (out) The target array to store the result.
 	 */
 	template <typename T, typename U, typename V>
-	void addArrays(int len, const T* __restrict arr1, const U* __restrict arr2, V* __restrict targ) {
-		for (int i = 0; i < len; i++)
+	void addArrays(size_t len, const T* __restrict arr1, const U* __restrict arr2, V* __restrict targ) {
+		for (size_t i = 0; i < len; i++)
 			targ[i] = arr1[i] + arr2[i];
 	}
 
@@ -476,8 +476,8 @@ namespace vtls {
 	 * @param arr2targ (in/out) The second array, which will contain the result of the addition.
 	 */
 	template <typename T, typename U>
-	void addArrays(int len, const T* __restrict arr1, U* __restrict arr2targ) {
-		for (int i = 0; i < len; i++)
+	void addArrays(size_t len, const T* __restrict arr1, U* __restrict arr2targ) {
+		for (size_t i = 0; i < len; i++)
 			arr2targ[i] += arr1[i];
 	}
 
@@ -492,8 +492,8 @@ namespace vtls {
 	 * @param targ (out) The target array to store the result.
 	 */
 	template <typename T, typename U, typename V>
-	void seqMulArrays(int len, const T* __restrict arr1, const U* __restrict arr2, V* __restrict targ) {
-		for (int i = 0; i < len; i++)
+	void seqMulArrays(size_t len, const T* __restrict arr1, const U* __restrict arr2, V* __restrict targ) {
+		for (size_t i = 0; i < len; i++)
 			targ[i] = arr1[i] * arr2[i];
 	}
 	
@@ -506,8 +506,8 @@ namespace vtls {
 	 * @param arr2targ (in/out) The second array, which will contain the result of the multiplication.
 	 */
 	template <typename T, typename U>
-	void seqMulArrays(int len, const T* __restrict arr1, U* __restrict arr2targ) {
-		for (int i = 0; i < len; i++)
+	void seqMulArrays(size_t len, const T* __restrict arr1, U* __restrict arr2targ) {
+		for (size_t i = 0; i < len; i++)
 			arr2targ[i] *= arr1[i];
 	}
 
@@ -523,8 +523,8 @@ namespace vtls {
 	 * @note There are type-specific in-place overloads which, in implementation, use cblas for further optimization.
 	 */
 	template <typename T, typename U, typename V>
-	void scaMulArray(int len, T scalar, const U* __restrict arr, V* __restrict targ) {
-		for (int i = 0; i < len; i++)
+	void scaMulArray(size_t len, T scalar, const U* __restrict arr, V* __restrict targ) {
+		for (size_t i = 0; i < len; i++)
 			targ[i] = arr[i] * scalar;
 	}
 
@@ -534,13 +534,13 @@ namespace vtls {
 	 * @param scalar The scalar value to multiply the array by.
 	 * @param arr (in/out) The array to multiply, which will be modified to store the result of the multiplication.
 	 */
-	void scaMulArray(int len, double scalar, double* __restrict arr);
+	void scaMulArray(size_t len, double scalar, double* __restrict arr);
 
-	/// @copydoc vtls::scaMulArray(int,double,double*)
-	void scaMulArray(int len, double scalar, std::complex<double>* __restrict arr);
+	/// @copydoc vtls::scaMulArray(size_t,double,double*)
+	void scaMulArray(size_t len, double scalar, std::complex<double>* __restrict arr);
 
-	/// @copydoc vtls::scaMulArray(int,double,double*)
-	void scaMulArray(int len, std::complex<double> scalar, std::complex<double>* __restrict arr);
+	/// @copydoc vtls::scaMulArray(size_t,double,double*)
+	void scaMulArray(size_t len, std::complex<double> scalar, std::complex<double>* __restrict arr);
 
 	/**
 	 * Multiplies an array by a scalar multiple and stores the real part of the result in a target array.
@@ -553,8 +553,8 @@ namespace vtls {
 	 * @param targ (out) The target array to store the result.
 	 */
 	template <typename T, typename U, typename V>
-	void scaMulArrayRe(int len, T scalar, const U* __restrict arr, V* __restrict targ) {
-		for (int i = 0; i < len; i++)
+	void scaMulArrayRe(size_t len, T scalar, const U* __restrict arr, V* __restrict targ) {
+		for (size_t i = 0; i < len; i++)
 			targ[i] = std::real(arr[i] * scalar);
 	}
 
@@ -568,8 +568,8 @@ namespace vtls {
 	 * @param targ (out) The target array to store the result.
 	 */
 	template <typename T>
-	void normSqr(int len, const T* __restrict arr, double* __restrict targ) {
-		for (int i = 0; i < len; i++)
+	void normSqr(size_t len, const T* __restrict arr, double* __restrict targ) {
+		for (size_t i = 0; i < len; i++)
 			targ[i] = std::norm(arr[i]);
 	}
 
@@ -583,8 +583,8 @@ namespace vtls {
 	 * @param targ (out) The target array to store the result.
 	 */
 	template <typename T>
-	void abs(int len, const T* __restrict arr, double* __restrict targ) {
-		for (int i = 0; i < len; i++)
+	void abs(size_t len, const T* __restrict arr, double* __restrict targ) {
+		for (size_t i = 0; i < len; i++)
 			targ[i] = std::abs(arr[i]);
 	}
 
@@ -599,7 +599,7 @@ namespace vtls {
 	 * @note This function allocates and subsequently frees a temporary array to store the squared norms. Consider implementing a version which accepts a user-allocated workspace if this will be used often.
 	 */
 	template <typename T>
-	void normalizeSqrNorm(int len, T* __restrict arr, double dx) {
+	void normalizeSqrNorm(size_t len, T* __restrict arr, double dx) {
 		double* temp = (double*) sq_malloc(sizeof(double)*len);
 		normSqr(len, arr, temp);
 		scaMulArray(len, 1.0 / std::sqrt(vtlsInt::simps(len, temp, dx)), arr);
@@ -617,9 +617,9 @@ namespace vtls {
 	 * @return The L2 norm of the array.
 	 */
 	template <typename T>
-	double getNorm(int len, const T* __restrict arr, double dx) {
+	double getNorm(size_t len, const T* __restrict arr, double dx) {
 		double sm = 0.0;
-		for (int i = 0; i < len; i++)
+		for (size_t i = 0; i < len; i++)
 			sm += std::pow(std::abs(arr[i]), 2);
 		return sm *= dx;
 	}
@@ -634,7 +634,7 @@ namespace vtls {
 	 * @param norm The target L2 norm.
 	 */
 	template <typename T>
-	void setNorm(int len, T* __restrict arr, double dx, double norm) {
+	void setNorm(size_t len, T* __restrict arr, double dx, double norm) {
 		scaMulArray(len, std::sqrt(norm / getNorm(len, arr, dx)), arr);
 	}
 
@@ -647,11 +647,11 @@ namespace vtls {
 	 * @param targ (out) The target array to store the result of the interpolation.
 	 */
 	template <typename T>
-	void linearInterpolateEdge(int len, const T* __restrict arr, int newLen, T* __restrict targ) {
+	void linearInterpolateEdge(size_t len, const T* __restrict arr, size_t newLen, T* __restrict targ) {
 		double step = (double)(len - 1) / (newLen - 1);
 		double curPos = 0.0;
-		for (int i = 0; i < newLen; i++) {
-			targ[i] = (1.0 - std::fmod(curPos, 1)) * arr[(int)curPos] + (fmod(curPos, 1)) * arr[(int)curPos + 1 * ((int)curPos != (len - 1))];
+		for (size_t i = 0; i < newLen; i++) {
+			targ[i] = (1.0 - std::fmod(curPos, 1)) * arr[(size_t)curPos] + (fmod(curPos, 1)) * arr[(size_t)curPos + 1 * ((size_t)curPos != (len - 1))];
 			curPos += step;
 		}
 	}
@@ -665,11 +665,11 @@ namespace vtls {
 	 * @param targ (out) The target array to store the result of the interpolation.
 	 */
 	template <typename T>
-	void linearInterpolateNoEdge(int len, const T* __restrict arr, int newLen, T* __restrict targ) {
+	void linearInterpolateNoEdge(size_t len, const T* __restrict arr, size_t newLen, T* __restrict targ) {
 		double step = (double)(len - 1) / newLen;
 		double curPos = step / 2.0;
-		for (int i = 0; i < newLen; i++) {
-			targ[i] = (1.0 - std::fmod(curPos, 1)) * arr[(int)curPos] + (fmod(curPos, 1)) * arr[(int)curPos + 1 * ((int)curPos != (len - 1))];
+		for (size_t i = 0; i < newLen; i++) {
+			targ[i] = (1.0 - std::fmod(curPos, 1)) * arr[(size_t)curPos] + (fmod(curPos, 1)) * arr[(size_t)curPos + 1 * ((size_t)curPos != (len - 1))];
 			curPos += step;
 		}
 	}
@@ -685,9 +685,9 @@ namespace vtls {
 	 * @param y2 (out) The target array to store the result of the interpolation.
 	 */
 	template <typename T>
-	void linearInterpolate(int l1, const double* __restrict x1, const T* __restrict y1, int l2, const double* __restrict x2, T* __restrict y2) {
-		int curPos = 0;
-		for (int i = 0; i < l2; i++) {
+	void linearInterpolate(size_t l1, const double* __restrict x1, const T* __restrict y1, size_t l2, const double* __restrict x2, T* __restrict y2) {
+		size_t curPos = 0;
+		for (size_t i = 0; i < l2; i++) {
 			while (x2[i] > x1[curPos] && curPos < l1)
 				curPos++;
 			if (curPos > 0 && curPos < l1)
@@ -711,8 +711,8 @@ namespace vtls {
 	 * @return The interpolated value at the sample point.
 	 */
 	template <typename T, typename U>
-	U linearInterpolate(int len, const U* __restrict arr, T xStart, T dx, T samp) {
-		int ix = (int)((samp - xStart) / dx);
+	U linearInterpolate(size_t len, const U* __restrict arr, T xStart, T dx, T samp) {
+		size_t ix = (size_t)((samp - xStart) / dx);
 		T t = (samp - xStart) / dx - ix;
 		if (ix < 0) {
 			t += ix;
@@ -734,8 +734,8 @@ namespace vtls {
 	 * @param targ (out) The target array to store the result.
 	 */
 	template <typename T>
-	void linspace(int len, T min, T max, T* __restrict targ) {
-		for (int i = 0; i < len; i++)
+	void linspace(size_t len, T min, T max, T* __restrict targ) {
+		for (size_t i = 0; i < len; i++)
 			targ[i] = (max - min) * i / (T)(len - 1) + min;
 	}
 
@@ -748,9 +748,9 @@ namespace vtls {
 	 * @return The generated array.
 	 */
 	template <typename T>
-	std::vector<T> linspace(int len, T min, T max) {
+	std::vector<T> linspace(size_t len, T min, T max) {
 		std::vector<T> ret = std::vector<T>(len);
-		for (int i = 0; i < len; i++)
+		for (size_t i = 0; i < len; i++)
 			ret[i] = (max - min) * i / (T)(len - 1) + min;
 		return ret;
 	}
@@ -764,8 +764,8 @@ namespace vtls {
 	 * @param arr (in/out) The array to which the scalar will be added.
 	 */
 	template <typename T, typename U>
-	void scaAddArray(int len, T scalar, U* __restrict arr) {
-		for (int i = 0; i < len; i++)
+	void scaAddArray(size_t len, T scalar, U* __restrict arr) {
+		for (size_t i = 0; i < len; i++)
 			arr[i] += scalar;
 	}
 
@@ -775,13 +775,13 @@ namespace vtls {
 	 * @param arr1 (in) The source array to copy from.
 	 * @param arr2 (out) The target array to copy to.
 	 */
-	void copyArray(int len, const double* __restrict arr1, double* __restrict arr2);
+	void copyArray(size_t len, const double* __restrict arr1, double* __restrict arr2);
 
-	/// @copydoc copyArray(int len, const double* __restrict arr1, double* __restrict arr2)
-	void copyArray(int len, const std::complex<double>* __restrict arr1, std::complex<double>* __restrict arr2);
+	/// @copydoc copyArray(size_t len, const double* __restrict arr1, double* __restrict arr2)
+	void copyArray(size_t len, const std::complex<double>* __restrict arr1, std::complex<double>* __restrict arr2);
 
-	/// @copydoc copyArray(int len, const double* __restrict arr1, double* __restrict arr2)
-	void copyArray(int len, const double* __restrict arr1, std::complex<double>* __restrict arr2);
+	/// @copydoc copyArray(size_t len, const double* __restrict arr1, double* __restrict arr2)
+	void copyArray(size_t len, const double* __restrict arr1, std::complex<double>* __restrict arr2);
 
 	/**
 	 * Copies the elements of one array to another, taking the real part of the source array.
@@ -791,7 +791,7 @@ namespace vtls {
 	 * @param arr2 (out) The target array to copy to.
 	 */
 	template <typename T>
-	void copyArrayRe(int len, const T* __restrict arr1, double* __restrict arr2);
+	void copyArrayRe(size_t len, const T* __restrict arr1, double* __restrict arr2);
 
 	/**
 	 * Evaluates the first derivative of an array at a specified position.
@@ -803,7 +803,7 @@ namespace vtls {
 	 * @return The value of the first derivative at the specified position.
 	 */
 	template <typename T>
-	T firstDerivative(int len, const T* __restrict arr, int pos, double dx) {
+	T firstDerivative(size_t len, const T* __restrict arr, size_t pos, double dx) {
 		if (pos == 0)
 			return (arr[1] - arr[0]) / dx;
 		else if (pos == len - 1)
@@ -822,9 +822,9 @@ namespace vtls {
 	 * @param dx The increment (step size).
 	 */
 	template <typename T>
-	void firstDerivative(int len, const T* __restrict arr, T* __restrict targ, double dx) {
+	void firstDerivative(size_t len, const T* __restrict arr, T* __restrict targ, double dx) {
 		targ[0] = (arr[1] - arr[0]) / dx;
-		for (int i = 1; i < len - 1; i++)
+		for (size_t i = 1; i < len - 1; i++)
 			targ[i] = (arr[i + 1] - arr[i - 1]) / (2.0 * dx);
 		targ[len - 1] = (arr[len - 1] - arr[len - 2]) / dx;
 	}
@@ -839,10 +839,10 @@ namespace vtls {
 	 * @param dx The increment (step size).
 	 */
 	template <typename T>
-	void secondDerivative(int len, const T* __restrict arr, T* __restrict targ, double dx) {
+	void secondDerivative(size_t len, const T* __restrict arr, T* __restrict targ, double dx) {
 		double dx2 = dx * dx;
 		targ[0] = (arr[1] - arr[0]) * 2.0 / dx2;
-		for (int i = 1; i < len - 1; i++)
+		for (size_t i = 1; i < len - 1; i++)
 			targ[i] = (arr[i - 1] - 2.0 * arr[i] + arr[i + 1]) / dx2;
 		targ[len - 1] = (arr[len - 2] - arr[len - 1]) * 2.0 / dx2;
 	}
@@ -854,9 +854,9 @@ namespace vtls {
 	 * @param len The length of the array.
 	 * @param arr (in) The array to search.
 	 * @param val The value to search for.
-	 * @return The index of the first element greater than or equal to the specified value, len-1 if the value is greater than all elements, or -1 if the value is less than all elements.
+	 * @return The index of the first element greater than or equal to the specified value, len-1 if the value is greater than all elements, or 0 if the value is less than all elements.
 	 */
-	int findValue(int len, const double* __restrict arr, double val);
+	size_t findValue(size_t len, const double* __restrict arr, double val);
 
 	/**
 	 * Sorts the input array in ascending order using insertion sort.
@@ -864,7 +864,7 @@ namespace vtls {
 	 * @param arr (in/out) The array to sort, which will be modified to store the sorted values.
 	 * @param idxs (out) The target array to store the indices of the sorted values.
 	 */
-	void insertSort_idxs(int len, double* __restrict arr, int* __restrict idxs);
+	void insertSort_idxs(size_t len, double* __restrict arr, size_t* __restrict idxs);
 
 	/**
 	 * Finds the maximum value in an array.
@@ -874,9 +874,9 @@ namespace vtls {
 	 * @return The maximum value in the array.
 	 */
 	template <typename T>
-	T max(int len, const T* __restrict arr) {
+	T max(size_t len, const T* __restrict arr) {
 		T mx = arr[0];
-		for (int i = 1; i < len; i++)
+		for (size_t i = 1; i < len; i++)
 			if (arr[i] > mx)
 				mx = arr[i];
 		return mx;
@@ -890,9 +890,9 @@ namespace vtls {
 	 * @return The minimum value in the array.
 	 */
 	template <typename T>
-	T min(int len, const T* __restrict arr) {
+	T min(size_t len, const T* __restrict arr) {
 		T mn = arr[0];
-		for (int i = 1; i < len; i++)
+		for (size_t i = 1; i < len; i++)
 			if (arr[i] < mn)
 				mn = arr[i];
 		return mn;
@@ -911,7 +911,7 @@ namespace vtls {
 	 * @param rate The exponent of the polynomial. Larger values make for a stronger decay.
 	 * @return A unique_ptr to an array of doubles representing the smoothed decay mask.
 	*/
-	std::unique_ptr<double[]> getPolynomialSmoothBoundary(int len, int inner, int outer, double rate);
+	std::unique_ptr<double[]> getPolynomialSmoothBoundary(size_t len, size_t inner, size_t outer, double rate);
 };
 
 /**
@@ -926,9 +926,9 @@ namespace vtlsPrnt {
 	 * @param arr (in) The array to print.
 	 */
 	template <typename T>
-	void printArray(int n, const T* __restrict arr) {
+	void printArray(size_t n, const T* __restrict arr) {
 		std::cout << "[";
-		for (int i = 0; i < n; i++) {
+		for (size_t i = 0; i < n; i++) {
 			std::cout << arr[i];
 			if (i != n - 1) {
 				std::cout << ",";
@@ -942,10 +942,10 @@ namespace vtlsPrnt {
 	 * @param n The length of the array.
 	 * @param arr (in) The array to plot.
 	 */
-	void printGraph(int n, const double* __restrict arr);
+	void printGraph(size_t n, const double* __restrict arr);
 
-	/// @copydoc printGraph(int n, const double* __restrict arr)
-	void printGraph(int n, const std::complex<double>* __restrict arr);
+	/// @copydoc printGraph(size_t n, const double* __restrict arr)
+	void printGraph(size_t n, const std::complex<double>* __restrict arr);
 
 	/**
 	 * Saves an array to a binary file.
@@ -955,9 +955,9 @@ namespace vtlsPrnt {
 	 * @param data (in) The array to save.
 	 */
 	template <typename T>
-	void saveArray(int n, const char* fil, const T* data) {
+	void saveArray(size_t n, const char* fil, const T* data) {
 		std::fstream fid(fil, std::ios::out | std::ios::binary);
-		fid.write(reinterpret_cast<char*>(n), sizeof(int));
+		fid.write(reinterpret_cast<char*>(n), sizeof(size_t));
 		fid.write(reinterpret_cast<char*>(data), sizeof(T) * n);
 		fid.close();
 	}
@@ -988,7 +988,7 @@ namespace plotting{
 		 * @param x (in) The x-values of the data.
 		 * @param y (in) The y-values of the data.
 		 */
-		GNUPlotter(int nPts, int nLines, const double* x, const double* y){update(nPts, nLines, x, y);};
+		GNUPlotter(size_t nPts, size_t nLines, const double* x, const double* y){update(nPts, nLines, x, y);};
 
 		/**
 		 * Constructor for initializing a GNUPlotter with data. The x-values are assumed to be the index of the data.
@@ -996,7 +996,7 @@ namespace plotting{
 		 * @param nLines The number of lines in the data.
 		 * @param y (in) The y-values of the data.
 		 */
-		GNUPlotter(int nPts, int nLines, const double* y){update(nPts, nLines, y);};
+		GNUPlotter(size_t nPts, size_t nLines, const double* y){update(nPts, nLines, y);};
 
 		/**
 		 * Updates the plot with new data.
@@ -1009,7 +1009,7 @@ namespace plotting{
 		 * @param ymin The minimum value of the y-axis to display.
 		 * @param ymax The maximum value of the y-axis to display.
 		 */
-		void update(int nPts, int nLines, const double* x, const double* y, double xmin, double xmax, double ymin, double ymax);
+		void update(size_t nPts, size_t nLines, const double* x, const double* y, double xmin, double xmax, double ymin, double ymax);
 
 		/**
 		 * Updates the plot with new data.
@@ -1018,7 +1018,7 @@ namespace plotting{
 		 * @param x (in) The x-values of the data.
 		 * @param y (in) The y-values of the data.
 		 */
-		void update(int nPts, int nLines, const double* x, const double* y);
+		void update(size_t nPts, size_t nLines, const double* x, const double* y);
 
 		/**
 		 * Updates the plot with new data. The x-values are assumed to be the index of the data.
@@ -1028,7 +1028,7 @@ namespace plotting{
 		 * @param ymin The minimum value of the y-axis to display.
 		 * @param ymax The maximum value of the y-axis to display.
 		 */
-		void update(int nPts, int nLines, const double* y, double ymin, double ymax);
+		void update(size_t nPts, size_t nLines, const double* y, double ymin, double ymax);
 
 		/**
 		 * Updates the plot with new data. The x-values are assumed to be the index of the data.
@@ -1036,7 +1036,7 @@ namespace plotting{
 		 * @param nLines The number of lines in the data.
 		 * @param y (in) The y-values of the data.
 		 */
-		void update(int nPts, int nLines, const double* y);
+		void update(size_t nPts, size_t nLines, const double* y);
 	};
 };
 

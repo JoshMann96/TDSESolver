@@ -1,7 +1,7 @@
 #pragma once
 
 #define dcomplex double __complex__
-#define lapack_int int
+#define lapack_int size_t
 #define lapack_complex_double dcomplex
 
 #ifdef __cplusplus

@@ -12,7 +12,7 @@ class PyFileFieldProfile
     : public ElectricFieldProfiles::FileFieldProfile{
         public:
         PyFileFieldProfile(PySimulation * sim, double offset, double rightDecayPos, double leftDecayPos, double decayLength, double emax, std::string fil)
-            : ElectricFieldProfiles::FileFieldProfile(sim->getNumPoints(), sim->getX(), offset, rightDecayPos, leftDecayPos, decayLength, emax, fil.c_str()){}
+            : ElectricFieldProfiles::FileFieldProfile(sim->getNumPoints(), sim->getX(), offset, rightDecayPos, leftDecayPos, decayLength, emax, fil){}
     };
 
 // simplify instantiation of potentials
@@ -20,7 +20,7 @@ class PyFilePotential
     : public FilePotential{
         public:
         PyFilePotential(PySimulation * sim, double offset, std::string fil, double refPoint)
-            : FilePotential(sim->getNumPoints(), sim->getX(), offset, fil.c_str(), sim->findXIdx(refPoint)){}
+            : FilePotential(sim->getNumPoints(), sim->getX(), offset, fil, sim->findXIdx(refPoint)){}
     };
 
 class PyJelliumPotential
@@ -61,7 +61,7 @@ class PyLDAFunctional
 class PyMeasuredPotential
     : public MeasuredPotential{
         public:
-        PyMeasuredPotential(PySimulation* sim, Potential* pot, Measurers::Measurer* meas, int numSteps)
+        PyMeasuredPotential(PySimulation* sim, Potential* pot, Measurers::Measurer* meas, size_t numSteps)
             : MeasuredPotential(pot, meas, numSteps, numSteps*sim->getDT()){};
     };
 

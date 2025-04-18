@@ -34,10 +34,11 @@ namespace KineticOperators {
 		 * @param v (in) The potential to use for the calculation, \a nPts elements
 		 * @param emin The minimum energy to search for eigenstates
 		 * @param emax The maximum energy to search for eigenstates
-		 * @param states (out) The eigenstates found, allocated by the caller, must be of size \a nPts*nPts
+		 * @param states (out) The eigenstates found. Memory is allocated by the function and must be freed by the user. See implementation notes for element count.
+		 * @param allocator (in) A pointer to the allocator to be used.
 		 * @param nEigs (out) The number of eigenstates found, allocated by the caller
 		 */
-		virtual void findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, int* nEigs) = 0;
+		virtual void findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs) = 0;
 	};
 
 	/// Base class for kinetic operators that use a PSM (pseudo-spectral method) for time-stepping. The PSM of choice is the split-step Fourier method.
@@ -63,7 +64,7 @@ namespace KineticOperators {
 		 * @param nElec (in) The number of electrons in the system
 		 * @note This function is useful when updating the potential immediately after the kinetic phase for nonlinear systems, increasing the accuracy of the time-stepping.
 		 */
-		virtual void stepOS_UW2T(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, int nElec) = 0;
+		virtual void stepOS_UW2T(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, size_t nElec) = 0;
 
 		/**
 		 * Performs a half-step of the potential (half-potential), returning the result in real space. This is typically run \a after stepOS_UW2T.
@@ -74,7 +75,7 @@ namespace KineticOperators {
 		 * @param nElec (in) The number of electrons in the system
 		 * @note This function is useful when updating the potential immediately after the kinetic phase for nonlinear systems, increasing the accuracy of the time-stepping.
 		 */
-		virtual void stepOS_UW(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, int nElec) = 0;
+		virtual void stepOS_UW(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, size_t nElec) = 0;
 
 		/**
 		 * Performs a full step of the kinetic operator (half-potential, full-kinetic, half-potential), returning the result in real space. This is fine for linear systems.
@@ -86,7 +87,7 @@ namespace KineticOperators {
 		 * @note This function is typically used for linear systems, as it performs a full step of the kinetic operator.
 		 * @note It is not recommended for nonlinear systems, as the potential cannot be updated after the kinetic propagation step.
 		 */
-		virtual void stepOS_U2TU(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, int nElec) = 0;
+		virtual void stepOS_U2TU(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, size_t nElec) = 0;
 	};
 
 	/// Base class for kinetic operators that use the PSM (phase-space method) for time-stepping, and allowing for a general dispersion relation.
@@ -101,18 +102,18 @@ namespace KineticOperators {
 		 * @param dt The time step size
 		 * @param fftwPlanPolicy The FFTW plan policy to use for FFTW plans (e.g. FFTW_ESTIMATE, FFTW_MEASURE, etc.)
 		 */
-		GenDisp_PSM(int nPts, double dx, double dt, uint fftwPlanPolicy=FFTW_PATIENT) : nPts(nPts), dx(dx), dt(dt), osKineticEnergy((std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts)), KineticOperator_PSM(fftwPlanPolicy) {};
+		GenDisp_PSM(size_t nPts, double dx, double dt, uint fftwPlanPolicy=FFTW_PATIENT) : nPts(nPts), dx(dx), dt(dt), osKineticEnergy((std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts)), KineticOperator_PSM(fftwPlanPolicy) {};
 	public:
 		~GenDisp_PSM();
 		
 		/// @copydoc KineticOperator_PSM::stepOS_UW2T
-		void stepOS_UW2T(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, int nElec);
+		void stepOS_UW2T(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, size_t nElec);
 		
 		/// @copydoc KineticOperator_PSM::stepOS_UW
-		void stepOS_UW(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, int nElec);
+		void stepOS_UW(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, size_t nElec);
 
 		/// @copydoc KineticOperator_PSM::stepOS_U2TU
-		void stepOS_U2TU(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, int nElec);
+		void stepOS_U2TU(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, size_t nElec);
 
 		/// Frees the internally allocated operator matrix (if any) and resets the needMat flag.
 		void freeOpMat() {
@@ -122,7 +123,8 @@ namespace KineticOperators {
 		}
 
 		/// @copydoc KineticOperator::findEigenStates
-		void findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, int* nEigs);
+		/// \a states will have \a nPts*nPts elements.
+		void findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs);
 
 		/// @copydoc KineticOperator::evaluateKineticEnergy
 		double evaluateKineticEnergy(const std::complex<double>* psi);
@@ -139,7 +141,7 @@ namespace KineticOperators {
 		//DFTI_DESCRIPTOR_HANDLE dftiHandle = 0, dftiHandleMat = 0, dftiHandleKin = 0;
 		fftw_plan fftwAllForward=NULL, fftwAllBackward=NULL, fftwOneForward=NULL, fftwOneBackward=NULL;
 
-		int nPts, nElec;
+		size_t nPts, nElec;
 		std::complex<double> *osKineticPhase = nullptr, * osPotentialPhase = nullptr, *opMat = nullptr;
 		std::complex<double>* osKineticEnergy = nullptr;
 		double dx, dt;
@@ -152,7 +154,7 @@ namespace KineticOperators {
 		 * @param nElec The number of electrons in the system
 		 * @note This function must be called before any time-stepping FFTW plans are executed.
 		 */
-		void initializeAllFFT(int nElec);
+		void initializeAllFFT(size_t nElec);
 
 		/// Initializes the FFTW plans for a single array (for transforming the potential to reciprocal space).
 		void initializeOneFFT();
@@ -200,7 +202,7 @@ namespace KineticOperators {
 		 * @param m_eff The effective mass of the electron (in atomic units, so 1 is the free electron mass)
 		 * @param fftwPlanPolicy The FFTW plan policy to use for FFTW plans (e.g. FFTW_ESTIMATE, FFTW_MEASURE, etc.)
 		 */
-		GenDisp_PSM_FreeElec(int nPts, double dx, double dt, double m_eff, uint fftwPlanPolicy=FFTW_PATIENT);
+		GenDisp_PSM_FreeElec(size_t nPts, double dx, double dt, double m_eff, uint fftwPlanPolicy=FFTW_PATIENT);
 	};
 
 	/** A general polynomial dispersion relation using the PSM.
@@ -219,7 +221,7 @@ namespace KineticOperators {
 		 * @param polyCoeffs (in) The polynomial coefficients
 		 * @param fftwPlanPolicy The FFTW plan policy to use for FFTW plans (e.g. FFTW_ESTIMATE, FFTW_MEASURE, etc.)
 		 */
-		GenDisp_PSM_Series(int nPts, double dx, double dt, int nPoly, const double* polyCoeffs, uint fftwPlanPolicy=FFTW_PATIENT);
+		GenDisp_PSM_Series(size_t nPts, double dx, double dt, size_t nPoly, const double* polyCoeffs, uint fftwPlanPolicy=FFTW_PATIENT);
 	};
 
 	/** A general mathematical expression for the dispersion relation using the PSM.
@@ -231,7 +233,7 @@ namespace KineticOperators {
 	{
 	public:
 		/// @deprecated
-		GenDisp_PSM_MathExpr(int nPts, double dx, double dt, std::string expr, uint fftwPlanPolicy=FFTW_PATIENT);
+		GenDisp_PSM_MathExpr(size_t nPts, double dx, double dt, std::string expr, uint fftwPlanPolicy=FFTW_PATIENT);
 	};
 
 	/**
@@ -255,7 +257,7 @@ namespace KineticOperators {
 		 * @param forceNormalization Whether to maintain the norm of the wavefunction after each step (1 for yes, 0 for no)
 		 * @param fftwPlanPolicy The FFTW plan policy to use for FFTW plans (e.g. FFTW_ESTIMATE, FFTW_MEASURE, etc.)
 		 */
-		NonUnifGenDisp_PSM(int nPts, double dx, double dt, int nDisp, int expOrder, int forceNormalization, uint fftwPlanPolicy=FFTW_PATIENT) : 
+		NonUnifGenDisp_PSM(size_t nPts, double dx, double dt, size_t nDisp, size_t expOrder, bool forceNormalization, uint fftwPlanPolicy=FFTW_PATIENT) : 
 			nPts(nPts), dx(dx), dt(dt), nDisp(nDisp), expOrder(expOrder), forceNorm(forceNormalization), 
 			osKineticEnergy((std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts*nDisp)),
 			osKineticMask((double*)sq_malloc(sizeof(double)*nPts*nDisp)),
@@ -264,13 +266,13 @@ namespace KineticOperators {
 		~NonUnifGenDisp_PSM();
 
 		/// @copydoc KineticOperator_PSM::stepOS_UW2T
-		void stepOS_UW2T(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, int nElec);
+		void stepOS_UW2T(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, size_t nElec);
 		
 		/// @copydoc KineticOperator_PSM::stepOS_UW
-		void stepOS_UW(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, int nElec);
+		void stepOS_UW(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, size_t nElec);
 
 		/// @copydoc KineticOperator_PSM::stepOS_U2TU
-		void stepOS_U2TU(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, int nElec);
+		void stepOS_U2TU(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, size_t nElec);
 
 		/// Frees the internally allocated operator matrix (if any) and resets the needMat flag.
 		void freeOpMat() {
@@ -280,7 +282,8 @@ namespace KineticOperators {
 		}
 
 		/// @copydoc KineticOperator::findEigenStates
-		void findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, int* nEigs);
+		/// \a states will have \a nPts*nPts elements.
+		void findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs);
 
 		/// @copydoc KineticOperator::evaluateKineticEnergy
 		double evaluateKineticEnergy(const std::complex<double>* psi);
@@ -296,7 +299,7 @@ namespace KineticOperators {
 			vtls::copyArray(nPts * nDisp, kinIn, osKineticEnergy); needMat = true; firstStepOne = true;
 			vtls::copyArray(nPts * nDisp, maskIn, osKineticMask);
 			//take square root, as is required for this method
-			for (int i = 0; i < nPts * nDisp; i++)
+			for (size_t i = 0; i < nPts * nDisp; i++)
 				osKineticEnergy[i] = std::sqrt(osKineticEnergy[i]);
 		}
 	private:
@@ -304,7 +307,8 @@ namespace KineticOperators {
 		//DFTI_DESCRIPTOR_HANDLE dftiHandle = 0, dftiHandleMat = 0, dftiHandleKin = 0;
 		fftw_plan fftwAllForward=NULL, fftwAllBackward=NULL, fftwOneForward=NULL, fftwOneBackward=NULL;
 
-		int nPts, nElec, nDisp, expOrder, forceNorm;
+		size_t nPts, nElec, nDisp, expOrder;
+		bool forceNorm;
 		std::complex<double>* osPotentialPhase = nullptr, * opMat = nullptr;
 		std::complex<double>* osKineticEnergy = nullptr;
 		std::complex<double>* tempPsi = nullptr, *tempPsiCum = nullptr;
@@ -319,7 +323,7 @@ namespace KineticOperators {
 		 * @param nElec The number of electrons in the system
 		 * @note This function must be called before any time-stepping FFTW plans are executed.
 		 */
-		void initializeAllFFT(int nElec);
+		void initializeAllFFT(size_t nElec);
 
 		/// Initializes the FFTW plans for a single array (for transforming the potential to reciprocal space).
 		void initializeOneFFT();
@@ -373,7 +377,7 @@ namespace KineticOperators {
 		 * @param edgeRate The rate at which the effective mass transitions near the boundaries of the calculation.
 		 * @param fftwPlanPolicy The FFTW plan policy to use for FFTW plans (e.g. FFTW_ESTIMATE, FFTW_MEASURE, etc.)
 		 */
-		NonUnifGenDisp_PSM_EffMassBoundary(int nPts, double dx, double dt, int expOrder, int forceNormalization, double meff_l, double meff_r, double transRate, int transPos, double edgeRate, uint fftwPlanPolicy=FFTW_PATIENT);
+		NonUnifGenDisp_PSM_EffMassBoundary(size_t nPts, double dx, double dt, size_t expOrder, bool forceNormalization, double meff_l, double meff_r, double transRate, size_t transPos, double edgeRate, uint fftwPlanPolicy=FFTW_PATIENT);
 	};
 
 	/// A kinetic operator that uses the PSM (phase-space method) for time-stepping, allowing for a mathematical expression for the dispersion relation.
@@ -383,7 +387,7 @@ namespace KineticOperators {
 	{
 	public:
 		/// @deprecated
-		NonUnifGenDisp_PSM_MathExprBoundary(int nPts, double dx, double dt, int expOrder, int forceNormalization, int nDisp, std::vector<std::string> exprs, double* transRates, int* transPoss, uint fftwPlanPolicy=FFTW_PATIENT);
+		NonUnifGenDisp_PSM_MathExprBoundary(size_t nPts, double dx, double dt, size_t expOrder, bool forceNormalization, size_t nDisp, std::vector<std::string> exprs, double* transRates, size_t* transPoss, uint fftwPlanPolicy=FFTW_PATIENT);
 	};
 
 	/**
@@ -397,7 +401,7 @@ namespace KineticOperators {
 	{
 	protected:
 		FDBCs::BoundaryCondition *lbc, *rbc;
-		int nPts;
+		size_t nPts;
 	public:
 		/**
 		 * Constructor for KineticOperator_FDM.
@@ -405,7 +409,7 @@ namespace KineticOperators {
 		 * @param lbc The left boundary condition to use
 		 * @param rbc The right boundary condition to use
 		 */
-		KineticOperator_FDM(int nPts, FDBCs::BoundaryCondition* lbc, FDBCs::BoundaryCondition* rbc) : nPts(nPts), lbc(lbc), rbc(rbc) {};
+		KineticOperator_FDM(size_t nPts, FDBCs::BoundaryCondition* lbc, FDBCs::BoundaryCondition* rbc) : nPts(nPts), lbc(lbc), rbc(rbc) {};
 		
 		/**
 		 * Performs a time step without finalizing the boundary conditions for this step.
@@ -417,7 +421,7 @@ namespace KineticOperators {
 		 * @note This function is useful for systems where the potential is nonlinear and an approximation of the wavefunction at the next step is desired.
 		 * @note If using the GPU, this function will also neither gather the full wavefunction nor override the present state on the GPU.
 		 */
-		virtual void stepVirtual(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, int nElec) = 0; // timestep without iterating BCs
+		virtual void stepVirtual(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, size_t nElec) = 0; // timestep without iterating BCs
 		
 		/**
 		 * Performs a time step and finalizes the boundary conditions for this step.
@@ -427,7 +431,7 @@ namespace KineticOperators {
 		 * @param targ (out) The target wavefunction after the time step, \a nPts*nElec elements
 		 * @param nElec The number of electrons in the system
 		 */
-		virtual void step(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, int nElec) = 0;
+		virtual void step(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, size_t nElec) = 0;
 		
 		/**
 		 * Finds the eigenstates of the system using this kinetic operator's basis when one of the boundary conditions are inhomogeneous.
@@ -438,7 +442,7 @@ namespace KineticOperators {
 		 * @param nElec The number of electrons in the system
 		 * @throw std::runtime_error if both boundary conditions are not inhomogeneous.
 		 */
-		virtual void findInhomogeneousEigenStates(const double* v, const double* es, std::complex<double>* states, int nElec) = 0;
+		virtual void findInhomogeneousEigenStates(const double* v, const double* es, std::complex<double>* states, size_t nElec) = 0;
 
 		/**
 		 * For when the system has not been time-integrated, this function calls the underlying boundary conditions' projectHistory function.
@@ -448,7 +452,7 @@ namespace KineticOperators {
 		 * @param v (in) The potential to use for the calculation, \a nPts elements
 		 * @param nElec The number of electrons in the system
 		 */
-		void projectHistory(const std::complex<double>* psi, const std::complex<double>* phsL, const std::complex<double>* phsR, const double* v, int nElec);
+		void projectHistory(const std::complex<double>* psi, const std::complex<double>* phsL, const std::complex<double>* phsR, const double* v, size_t nElec);
 
 		/**
 		 * Calculates the (raw, unprojected) density of the system using the weights provided.
@@ -504,7 +508,7 @@ namespace KineticOperators {
 		 * @param nElec The number of electrons in the system
 		 * @param isVirtual (in) Whether to perform a virtual time step (without finalizing the boundary conditions)
 		 */
-		void _step(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, int nElec, bool isVirtual);
+		void _step(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, size_t nElec, bool isVirtual);
 	public:
 		// note: if useCuda is true, then the CUDA solver will be used for the tridiagonal system
 		//       the present state of the system will be managed internally
@@ -520,7 +524,7 @@ namespace KineticOperators {
 		 * @note If useCuda is true, then the CUDA solver will be used for the tridiagonal system and the present state of the system will be managed internally.
 		 * @note If useCuda is false, then the CUDA solver will not be used and the present state of the system will not be managed internally.
 		 */
-		CrankNicolson(int nPts, double dx, double dt, double m_eff, FDBCs::BoundaryCondition* leftBC, FDBCs::BoundaryCondition* rightBC, bool useCuda=true);
+		CrankNicolson(size_t nPts, double dx, double dt, double m_eff, FDBCs::BoundaryCondition* leftBC, FDBCs::BoundaryCondition* rightBC, bool useCuda=true);
 		
 		~CrankNicolson(){
 			sq_free(d);
@@ -550,7 +554,7 @@ namespace KineticOperators {
 		 * @param targ (out) The target wavefunction after the time step, \a nPts*nElec elements
 		 * @param nElec The number of electrons in the system
 		 */
-		void step(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, int nElec){
+		void step(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, size_t nElec){
 			_step(psi0, v, spatialDamp, targ, nElec, false);
 		};
 
@@ -562,19 +566,20 @@ namespace KineticOperators {
 		 * @param targ (out) The target wavefunction after the time step, \a nPts*nElec elements
 		 * @param nElec The number of electrons in the system
 		 */
-		void stepVirtual(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, int nElec){
+		void stepVirtual(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, size_t nElec){
 			_step(psi0, v, spatialDamp, targ, nElec, true);
 		}
 
 		/**
 		 * @copydoc KineticOperator_FDM::findEigenStates
+		 * \a states will have \a nPts*(*nElec) elements.
 		 * @note This uses the tridiagonal representation of the Hamiltonian associated with the three-point stencil of the laplacian.
 		 * Because it only finds eigenstates of the Hamiltonian within the closed system, it is not suitable for open (specifically, inhomogeneous) systems.
 		 */
-		void findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, int* nEigs);
+		void findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs);
 
 		/// @copydoc KineticOperator_FDM::findInhomogeneousEigenStates
-		void findInhomogeneousEigenStates(const double* v, const double* es, std::complex<double>* states, int nElec);
+		void findInhomogeneousEigenStates(const double* v, const double* es, std::complex<double>* states, size_t nElec);
 
 		/// @copydoc KineticOperator::evaluateKineticEnergy
 		double evaluateKineticEnergy(const std::complex<double>* psi);
@@ -628,6 +633,16 @@ namespace KineticOperators {
 			if(std::abs(cosine) > 1.0)
 				throw std::runtime_error("Crank-Nicolson iteration phase is too large.");
 			return 1.0/dx/PhysCon::a0 * std::acos(cosine);
+		};
+
+		/**
+		 * Calculates the wavenumber associated with a given \a total energy according to the Crank-Nicolson dispersion relation.
+		 * @param energy The energy to use for the calculation
+		 * @param v The potential to use for the calculation
+		 * @return The wavenumber associated with the given energy
+		 */
+		double wavenumberFromEnergy(double energy, double v){
+			return wavenumberFromEnergy(energy, v, dx, dt, m_eff);
 		};
 
 		/**

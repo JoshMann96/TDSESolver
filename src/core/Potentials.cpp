@@ -6,7 +6,7 @@
 #include "blas.h"
 
 namespace Potentials {
-	FilePotential::FilePotential(int nPts, const double * x, double offset, const char * fil, int refPoint) {
+	FilePotential::FilePotential(size_t nPts, const double * x, double offset, const std::string fil, size_t refPoint) {
 		FilePotential::nPts = nPts;
 		v = (double*) sq_malloc(sizeof(double)*nPts);
 		std::fstream ifil = std::fstream(fil, std::ios::in | std::ios::binary);
@@ -17,7 +17,7 @@ namespace Potentials {
 		double * fv = (double*) sq_malloc(sizeof(double)*nRep);
 		ifil.read(reinterpret_cast<char*>(fx), sizeof(double)*nRep);
 		ifil.read(reinterpret_cast<char*>(fv), sizeof(double)*nRep);
-		for (int i = 0; i < nRep; i++)
+		for (size_t i = 0; i < nRep; i++)
 			fx[i] += offset;
 		vtls::linearInterpolate(nRep, fx, fv, nPts, x, v);
 		vtls::scaAddArray(nPts, -v[refPoint], v);
@@ -38,7 +38,7 @@ namespace Potentials {
 		vtls::copyArray(nPts, v, targ);
 	}
 
-	BiasFieldPotential::BiasFieldPotential(int nPts, const double * x, double tstart, double tbuf, double xmin, double xmax, double xmin_buf, double xmax_buf, double fieldStrength, int refPoint) {
+	BiasFieldPotential::BiasFieldPotential(size_t nPts, const double * x, double tstart, double tbuf, double xmin, double xmax, double xmin_buf, double xmax_buf, double fieldStrength, size_t refPoint) {
 		BiasFieldPotential::nPts = nPts;
 		BiasFieldPotential::tstart = tstart;
 		BiasFieldPotential::tbuf = tbuf;
@@ -46,7 +46,7 @@ namespace Potentials {
 
 		v = (double*) sq_malloc(sizeof(double)*nPts);
 		double cx;
-		for (int i = 0; i < nPts; i++) {
+		for (size_t i = 0; i < nPts; i++) {
 			cx = x[i];
 			if (cx < xmin)
 				v[i] = 0;
@@ -113,11 +113,11 @@ namespace Potentials {
 		getVBare(t, targ);
 	}
 
-	CoulombPotential::CoulombPotential(int nPts, const double * x, double ne, double chargePos, double minX, double maxX, int refPoint) {
+	CoulombPotential::CoulombPotential(size_t nPts, const double * x, double ne, double chargePos, double minX, double maxX, size_t refPoint) {
 		v = (double*) sq_malloc(sizeof(double)*nPts);
 		double k = PhysCon::qe*PhysCon::qe / (4.0*PhysCon::pi*PhysCon::e0);
 		double dx = (x[nPts - 1] - x[0]) / nPts;
-		for (int i = 0; i < nPts; i++) {
+		for (size_t i = 0; i < nPts; i++) {
 			if (x[i] < minX)
 				v[i] = -k / std::abs(minX - chargePos);
 			else if (x[i] > maxX)
@@ -126,7 +126,7 @@ namespace Potentials {
 				v[i] = -k / std::max(std::abs(x[i] - chargePos), dx);
 		}
 		double ref = v[refPoint];
-		for (int i = 0; i < nPts; i++)
+		for (size_t i = 0; i < nPts; i++)
 			v[i] -= ref;
 	}
 
@@ -142,10 +142,10 @@ namespace Potentials {
 		vtls::copyArray(nPts, v, targ);
 	}
 
-	FiniteBox::FiniteBox(int nPts, const double* x, double left, double right, double vin, int refPoint) {
+	FiniteBox::FiniteBox(size_t nPts, const double* x, double left, double right, double vin, size_t refPoint) {
 		FiniteBox::nPts = nPts;
 		v = (double*) sq_malloc(sizeof(double)*nPts);
-		for (int i = 0; i < nPts; i++) {
+		for (size_t i = 0; i < nPts; i++) {
 			if (x[i] > left && x[i] < right)
 				v[i] = vin;
 			else
@@ -167,7 +167,7 @@ namespace Potentials {
 	}
 
 
-	JelliumPotential::JelliumPotential(int nPts, const double* x, double center, double ef, double w, int refPoint) {
+	JelliumPotential::JelliumPotential(size_t nPts, const double* x, double center, double ef, double w, size_t refPoint) {
 		JelliumPotential::nPts = nPts;
 		v = (double*) sq_malloc(sizeof(double)*nPts);
 		double nEf = ef / PhysCon::auE_ry;
@@ -180,7 +180,7 @@ namespace Potentials {
 		double b = kf;
 		double aA = -1.0+2.0*v0/b;//4.0 * v0 / b - 1.0;
 		double bB = v0/aA;//v0 / (4.0 * v0 / b - 1.0);
-		for (int i = 0; i < nPts; i++) {
+		for (size_t i = 0; i < nPts; i++) {
 			double xc = (x[i] - center) / PhysCon::a0;
 			if (xc < zim) {
 				v[i] = -v0 / (aA*std::exp(bB*(xc-zim)) + 1.0) * PhysCon::auE_ry;
@@ -218,7 +218,7 @@ namespace Potentials {
 		getVBare(t, targ);
 	}
 
-	JelliumPotentialBacked::JelliumPotentialBacked(int nPts, const double* x, double center, double ef, double w, double backStart, double backWidth, int refPoint) {
+	JelliumPotentialBacked::JelliumPotentialBacked(size_t nPts, const double* x, double center, double ef, double w, double backStart, double backWidth, size_t refPoint) {
 		JelliumPotentialBacked::nPts = nPts;
 		v = (double*) sq_malloc(sizeof(double)*nPts);
 		double nEf = ef / PhysCon::auE_ry;
@@ -231,7 +231,7 @@ namespace Potentials {
 		double b = kf;
 		double aA = -1.0 + 2.0 * v0 / b;//4.0 * v0 / b - 1.0;
 		double bB = v0 / aA;//v0 / (4.0 * v0 / b - 1.0);
-		for (int i = 0; i < nPts; i++) {
+		for (size_t i = 0; i < nPts; i++) {
 			double xc = (x[i] - center) / PhysCon::a0;
 			if (xc < zim) {
 				v[i] = -v0 / (aA * std::exp(bB * (xc - zim)) + 1.0) * PhysCon::auE_ry;
@@ -255,7 +255,7 @@ namespace Potentials {
 			}
 		}
 		vtls::scaAddArray(nPts, -v[refPoint], v);
-		for (int i = 0; x[i] < backStart + backWidth / 2 && i < nPts; i++) {
+		for (size_t i = 0; x[i] < backStart + backWidth / 2 && i < nPts; i++) {
 			double k;
 			if (x[i] > backStart - backWidth / 2) {
 				k = (x[i] - backStart + backWidth / 2) / backWidth;
@@ -286,7 +286,7 @@ namespace Potentials {
 		getVBare(t, targ);
 	}
 
-	ElectricFieldProfileToPotential::ElectricFieldProfileToPotential(int nPts, ElectricFieldProfiles::ElectricFieldProfile * fieldProfile, double dx, double phase, double tmax, double lam, Envelopes::Envelope * env, int refPoint) {
+	ElectricFieldProfileToPotential::ElectricFieldProfileToPotential(size_t nPts, ElectricFieldProfiles::ElectricFieldProfile * fieldProfile, double dx, double phase, double tmax, double lam, Envelopes::Envelope * env, size_t refPoint) {
 		ElectricFieldProfileToPotential::tmax = tmax;
 		ElectricFieldProfileToPotential::env = env;
 		ElectricFieldProfileToPotential::nPts = nPts;
@@ -310,11 +310,11 @@ namespace Potentials {
 		getVBare(t, targ);
 	}
 
-	ShieldedAtomicPotential::ShieldedAtomicPotential(int nPts, const double* x, double center, double latticeSpacing, double zProtons, double decayLength) {
+	ShieldedAtomicPotential::ShieldedAtomicPotential(size_t nPts, const double* x, double center, double latticeSpacing, double zProtons, double decayLength) {
 		ShieldedAtomicPotential::nPts = nPts;
 		v = (double*) sq_malloc(sizeof(double)*nPts);
 		using namespace PhysCon;
-		for (int i = 0; i < nPts; i++)
+		for (size_t i = 0; i < nPts; i++)
 			v[i] = -zProtons * qe*qe / (2 * e0*latticeSpacing*latticeSpacing / decayLength)*std::exp(-std::abs(x[i] - center) / decayLength);
 	}
 
@@ -330,21 +330,21 @@ namespace Potentials {
 		getVBare(t, targ);
 	}
 
-	CurrentIntegrator::CurrentIntegrator(int nPts, double dx, int evalPoint, int side, const int* nElec, double * const * weights) :
+	CurrentIntegrator::CurrentIntegrator(size_t nPts, double dx, size_t evalPoint, int side, const size_t* nElec, double * const * weights) :
 		nPts(nPts), dx(dx), evalPoint(evalPoint), nElec(nElec), weights(weights), integratedFlux(0.0), tPrev(0.0), side(side) {};
 	
 	void CurrentIntegrator::integrate(const std::complex<double>* psi, double t) {
-		int pt0;
+		size_t pt0;
 		switch(side) {
 		case 0: // central derivative
-			for (int i = 0; i < *nElec; i++){
+			for (size_t i = 0; i < *nElec; i++){
 				pt0 = i * nPts + evalPoint;
 				integratedFlux += (t - tPrev) * PhysCon::hbar / PhysCon::me * std::imag(std::conj(psi[pt0]) * \
 					(psi[pt0 + 1] - psi[pt0 - 1]) / (2.0 * dx)) * (*weights)[i];
 			}
 			break;
 		case 1: // right-side derivative
-			for (int i = 0; i < *nElec; i++){
+			for (size_t i = 0; i < *nElec; i++){
 				pt0 = i * nPts + evalPoint;
 				integratedFlux += (t - tPrev) * PhysCon::hbar / PhysCon::me * std::imag(std::conj(psi[pt0]) * \
 					//(psi[pt0+1]-psi[pt0]) / dx) * (*weights)[i];
@@ -352,7 +352,7 @@ namespace Potentials {
 			}
 			break;
 		case -1: // left-side derivative
-			for (int i = 0; i < *nElec; i++){
+			for (size_t i = 0; i < *nElec; i++){
 				pt0 = i * nPts + evalPoint;
 				integratedFlux += (t - tPrev) * PhysCon::hbar / PhysCon::me * std::imag(std::conj(psi[pt0]) * \
 					//(psi[pt0]-psi[pt0-1]) / dx) * (*weights)[i];
@@ -364,12 +364,12 @@ namespace Potentials {
 		tPrev = t;
 	}
 
-	CylindricalImageCharge::CylindricalImageCharge(int nPts, const double* x, double dx, double ef, double w, double rad, int surfPos, 
-		const int* nElec, double * const * weights, const double* rho0, int posMin, int posMax, int refPoint) :
+	CylindricalImageCharge::CylindricalImageCharge(size_t nPts, const double* x, double dx, double ef, double w, double rad, size_t surfPos, 
+		const size_t* nElec, double * const * weights, const double* rho0, size_t posMin, size_t posMax, size_t refPoint) :
 	 	nPts(nPts), dx(dx), ef(ef), w(w), rad(rad), refPoint(refPoint), x(x),
 		posMin(posMin < 0 ? 0 : posMin),
 		posMax(posMax > nPts - 1 ? nPts - 1 : posMax),
-		surfPos(std::clamp(surfPos, 0, nPts - 1))
+		surfPos(std::clamp(surfPos, (size_t)0, nPts - 1))
 	{
 		potTemp = (double*) sq_malloc(sizeof(double)*nPts);
 		genTemp = (double*) sq_malloc(sizeof(double)*nPts);
@@ -381,18 +381,18 @@ namespace Potentials {
 
 		curInt = new CurrentIntegrator(nPts, dx, posMax, -1, nElec, weights);
 
-		for (int i = 0; i < nPts; i++)
+		for (size_t i = 0; i < nPts; i++)
 			if (x[i] - x[surfPos] <= -rad)
 				lrxr[i] = 0;
 			else
 				lrxr[i] = std::log((rad + x[i] - x[surfPos]) / rad);
 
-		for (int i = 0; i < surfPos; i++)
+		for (size_t i = 0; i < surfPos; i++)
 			nsMask[i] = 0.0;
-		for (int i = surfPos; i < nPts; i++)
+		for (size_t i = surfPos; i < nPts; i++)
 			nsMask[i] = 1.0 - std::exp(-2 * std::sqrt(2.0 * PhysCon::me * w) / PhysCon::hbar * (i - surfPos) * dx);
 
-		for (int i = 0; i < nPts; i++)
+		for (size_t i = 0; i < nPts; i++)
 			dethin[i] = i >= surfPos ? 1.0 + (i-surfPos)*dx/rad : 1.0;
 
 		if (rho0 != nullptr)
@@ -414,14 +414,14 @@ namespace Potentials {
 	}
 
 	void CylindricalImageCharge::getVBare(double t, double* targ) {
-		for (int i = 0; i < nPts; i++)
+		for (size_t i = 0; i < nPts; i++)
 			targ[i] = 0.0;
 	}
 
 	void CylindricalImageCharge::getV(const double* rho, const std::complex<double>* psi, double t, double* targ) {
 		calcPot(rho, psi, t, targ);
 		double ref = targ[refPoint] - origPot[refPoint];
-		for (int i = 0; i < nPts; i++)
+		for (size_t i = 0; i < nPts; i++)
 			targ[i] -= origPot[i] + ref;
 
 		curInt->integrate(psi, t);
@@ -450,12 +450,12 @@ namespace Potentials {
 		vtls::scaMulArray(nPts, -PhysCon::qe * PhysCon::qe / PhysCon::e0, targ);
 	}
 
-	PlanarToCylindricalHartree::PlanarToCylindricalHartree(int nPts, double dx, double rad, int surfPos, const int* nElec, double * const * weights, const double* rho0, int posMin, int posMax, int refPoint) : 
+	PlanarToCylindricalHartree::PlanarToCylindricalHartree(size_t nPts, double dx, double rad, size_t surfPos, const size_t* nElec, double * const * weights, const double* rho0, size_t posMin, size_t posMax, size_t refPoint) : 
 		nPts(nPts), dx(dx), rad(rad), refPoint(refPoint),
 		posMin(posMin < 0 ? 0 : posMin),
 		posMax(posMax > nPts - 1 ? nPts - 1 : posMax),
 		originalCharge(0.0),
-		surfPos(std::clamp(surfPos, 0, nPts - 1))
+		surfPos(std::clamp(surfPos, (size_t)0, nPts - 1))
 	{
 		curInt = new CurrentIntegrator(nPts, dx, posMax-1, -1, nElec, weights);
 
@@ -470,11 +470,11 @@ namespace Potentials {
 		std::fill_n(myRho, nPts, 0.0);
 
 		// Calculate field scaler (R/z in vacuum, 1 in material) (z evaluated half a grid step to the right)
-		for(int i = 0; i < nPts; i++)
+		for(size_t i = 0; i < nPts; i++)
 			fieldScaler[i] = i >= surfPos ? rad / (rad + ((i-surfPos)+0.5)*dx) : 1.0;
 		
 		// Calculate dethin (1 in material, z/R in vacuum)
-		for (int i = 0; i < nPts; i++)
+		for (size_t i = 0; i < nPts; i++)
 			dethin[i] = i >= surfPos ? 1.0 + (i-surfPos)*dx/rad : 1.0;
 
 		if (rho0 != nullptr){
@@ -507,7 +507,7 @@ namespace Potentials {
 		calcPot(rho, psi, t, targ);
 		double lossFraction = -(originalCharge - totalCharge - curInt->getIntegratedFlux()) / originalCharge + 1.0; // charge that moved to left is lost, scale origPot by appropriate amount
 		double ref = targ[refPoint] - lossFraction * origPot[refPoint];
-		for (int i = 0; i < nPts; i++)
+		for (size_t i = 0; i < nPts; i++)
 			targ[i] -= lossFraction * origPot[i] + ref;
 			
 		curInt->integrate(psi, t);
@@ -524,7 +524,7 @@ namespace Potentials {
 		//std::fill_n(&targ[posMax], nPts-posMax, targ[posMax-1]); // fill in right side with last value (zero field implied)
 	}
 
-	LDAFunctional::LDAFunctional(LDAFunctionalType typ, int nPts, double dx, const double* rho0, int refPoint)
+	LDAFunctional::LDAFunctional(LDAFunctionalType typ, size_t nPts, double dx, const double* rho0, size_t refPoint)
 	: typ(typ), nPts(nPts), dx(dx), refPoint(refPoint) {
 		origPot = (double*) sq_malloc(sizeof(double)*nPts);
 		std::fill_n(origPot, nPts, 0.0);
@@ -548,7 +548,7 @@ namespace Potentials {
 	void LDAFunctional::getV(const double* rho, const std::complex<double>* psi, double t, double* targ) {
 		calcPot(rho, targ);
 		double ref = targ[refPoint] - origPot[refPoint];
-		for (int i = 0; i < nPts; i++)
+		for (size_t i = 0; i < nPts; i++)
 			targ[i] -= origPot[i] + ref;
 	}
 
@@ -557,7 +557,7 @@ namespace Potentials {
 		case LDAFunctionalType::X_SLATER: // slater exchange
 		{
 			double coef = -std::pow(3.0/PhysCon::pi, 1.0/3) * PhysCon::auE_ha * PhysCon::a0; //convert linear density to a.u., then to energy in SI
-			for (int i = 0; i < nPts; i++)
+			for (size_t i = 0; i < nPts; i++)
 				targ[i] = coef * std::pow(rho[i], 1.0/3);
 			break;
 		}
@@ -567,7 +567,7 @@ namespace Potentials {
 			
 			double crs, crho, q0, q1, q1p, drsdrho;
 			double smallRho = 1e-10;
-			for(int i = 0; i < nPts; i++){
+			for(size_t i = 0; i < nPts; i++){
 				crho = rho[i] * std::pow(PhysCon::a0,3);
 				if(crho < smallRho){
 					targ[i] = PhysCon::auE_ha * al/be4*std::pow(4.0*PhysCon::pi/3.0 * crho, 2.0/3);
@@ -587,7 +587,7 @@ namespace Potentials {
 
 	}
 
-	CompositePotential::CompositePotential(int nPts, int numSPots, int numDPots, int numWPots, Potential ** staticPots, Potential ** dynamicPots, Potential ** waveFuncDependentPots) :
+	CompositePotential::CompositePotential(size_t nPts, size_t numSPots, size_t numDPots, size_t numWPots, Potential ** staticPots, Potential ** dynamicPots, Potential ** waveFuncDependentPots) :
 		nPts(nPts), numSPots(numSPots), numDPots(numDPots), numWPots(numWPots), staticPots(staticPots), dynamicPots(dynamicPots), waveFuncDependentPots(waveFuncDependentPots)
 	{
 		v0 = (double*) sq_malloc(sizeof(double)*nPts);
@@ -596,7 +596,7 @@ namespace Potentials {
 		else
 			std::fill_n(v0, nPts, 0.0);
 		nv = (double*) sq_malloc(sizeof(double)*nPts);
-		for (int i = 1; i < numSPots; i++) {
+		for (size_t i = 1; i < numSPots; i++) {
 			staticPots[i]->getVBare(0.0, nv);
 			vtls::addArrays(nPts, nv, v0);
 		}
@@ -609,7 +609,7 @@ namespace Potentials {
 
 	void CompositePotential::getVBare(double t, double * targ) {
 		vtls::copyArray(nPts, v0, targ);
-		for (int i = 0; i < numDPots; i++) {
+		for (size_t i = 0; i < numDPots; i++) {
 			dynamicPots[i]->getVBare(t, nv);
 			vtls::addArrays(nPts, nv, targ);
 		}
@@ -617,11 +617,11 @@ namespace Potentials {
 
 	void CompositePotential::getV(const double* rho, const std::complex<double> * psi, double t, double * targ) {
 		vtls::copyArray(nPts, v0, targ);
-		for (int i = 0; i < numDPots; i++) {
+		for (size_t i = 0; i < numDPots; i++) {
 			dynamicPots[i]->getV(rho, psi, t, nv);
 			vtls::addArrays(nPts, nv, targ);
 		}
-		for (int i = 0; i < numWPots; i++) {
+		for (size_t i = 0; i < numWPots; i++) {
 			waveFuncDependentPots[i]->getV(rho, psi, t, nv);
 			vtls::addArrays(nPts, nv, targ);
 		}
@@ -636,7 +636,7 @@ namespace Potentials {
 			return PotentialComplexity::STATIC;
 	}
 
-	PotentialManager::PotentialManager(int nPts) {
+	PotentialManager::PotentialManager(size_t nPts) {
 		PotentialManager::nPts = nPts;
 	}
 
@@ -662,9 +662,9 @@ namespace Potentials {
 
 	void PotentialManager::refreshCompositePotential() {
 		// copy vectors to pointer arrays
-		int ns = staticPots.size();
-		int nd = dynamicPots.size();
-		int nw = waveFuncDependentPots.size();
+		size_t ns = staticPots.size();
+		size_t nd = dynamicPots.size();
+		size_t nw = waveFuncDependentPots.size();
 
 		if (spots)
 			delete[] spots;
@@ -673,15 +673,15 @@ namespace Potentials {
 		if (wpots)
 			delete[] wpots;
 
-		spots = new Potential*[ns];
-		dpots = new Potential*[nd];
-		wpots = new Potential*[nw];
+		spots = new Potential*[ns > 0 ? ns : 1];
+		dpots = new Potential*[nd > 0 ? nd : 1];
+		wpots = new Potential*[nw > 0 ? nw : 1];
 
-		for (int i = 0; i < ns; i++)
+		for (size_t i = 0; i < ns; i++)
 			spots[i] = staticPots[i];
-		for (int i = 0; i < nd; i++)
+		for (size_t i = 0; i < nd; i++)
 			dpots[i] = dynamicPots[i];
-		for (int i = 0; i < nw; i++)
+		for (size_t i = 0; i < nw; i++)
 			wpots[i] = waveFuncDependentPots[i];
 		
 		// recreate composite potential
@@ -705,8 +705,8 @@ namespace Potentials {
 	}
 
 	namespace ElectricFieldProfiles {
-		ConstantFieldProfile::ConstantFieldProfile(int nPts, const double * x, double eMax, double minX, double maxX) : ElectricFieldProfile(nPts) {
-			for (int i = 0; i < nPts; i++) {
+		ConstantFieldProfile::ConstantFieldProfile(size_t nPts, const double * x, double eMax, double minX, double maxX) : ElectricFieldProfile(nPts) {
+			for (size_t i = 0; i < nPts; i++) {
 				if (x[i] > minX && x[i] < maxX)
 					fs[i] = eMax;
 				else
@@ -714,10 +714,10 @@ namespace Potentials {
 			}
 		}
 
-		CylindricalToLinearProfile::CylindricalToLinearProfile(int nPts, const double * x, double minX, double maxX, double r, double eMax, double enhFact) : ElectricFieldProfile(nPts) {
+		CylindricalToLinearProfile::CylindricalToLinearProfile(size_t nPts, const double * x, double minX, double maxX, double r, double eMax, double enhFact) : ElectricFieldProfile(nPts) {
 			double xc = -enhFact * r + minX + std::sqrt((enhFact - 1.0)*r*(enhFact*r + maxX - minX));
 			double xn;
-			for (int i = 0; i < nPts; i++) {
+			for (size_t i = 0; i < nPts; i++) {
 				xn = x[i];
 				if (xn < minX || xn > maxX)
 					fs[i] = 0.0;
@@ -728,9 +728,9 @@ namespace Potentials {
 			}
 		}
 
-		CylindricalToCutoffProfile::CylindricalToCutoffProfile(int nPts, const double * x, double minX, double maxX, double r, double eMax, double enhFact, double decayLength) : ElectricFieldProfile(nPts) {
+		CylindricalToCutoffProfile::CylindricalToCutoffProfile(size_t nPts, const double * x, double minX, double maxX, double r, double eMax, double enhFact, double decayLength) : ElectricFieldProfile(nPts) {
 			double xn, k;
-			for (int i = 0; i < nPts; i++) {
+			for (size_t i = 0; i < nPts; i++) {
 				xn = x[i];
 				if (xn < minX || xn > maxX)
 					fs[i] = 0.0;
@@ -750,7 +750,7 @@ namespace Potentials {
 			}
 		}
 
-		InternalPlasmonicFieldProfile::InternalPlasmonicFieldProfile(int nPts, const double * x, double minX, double maxX, double eMax, double lam, std::complex<double> er, double cond) : ElectricFieldProfile(nPts) {
+		InternalPlasmonicFieldProfile::InternalPlasmonicFieldProfile(size_t nPts, const double * x, double minX, double maxX, double eMax, double lam, std::complex<double> er, double cond) : ElectricFieldProfile(nPts) {
 			double xn;
 			//double w = PhysCon::c / lam * PhysCon::pi*2.0;
 			std::complex<double> k, kx, kz;
@@ -760,7 +760,7 @@ namespace Potentials {
 			//skin depth, slow frequencies
 			//k = w * std::sqrt(er*PhysCon::e0*PhysCon::mu0 / 2.0)*std::sqrt(std::sqrt(1.0 + std::pow(cond / (er*PhysCon::e0*w), 2)) + 1.0);
 			//k += PhysCon::im*w * std::sqrt(er*PhysCon::e0*PhysCon::mu0 / 2.0)*std::sqrt(std::sqrt(1.0 + std::pow(cond / (er*PhysCon::e0*w), 2)) - 1.0);
-			for (int i = 0; i < nPts; i++) {
+			for (size_t i = 0; i < nPts; i++) {
 				xn = x[i];
 				if (xn < minX || xn > maxX)
 					fs[i] = 0.0;
@@ -775,7 +775,7 @@ namespace Potentials {
 			}
 		}
 
-		FileFieldProfile::FileFieldProfile(int nPts, const double * x, double offset, double rightDecayPos, double leftDecayPos, double decayLength, double emax, const char * fil) : ElectricFieldProfile(nPts) {
+		FileFieldProfile::FileFieldProfile(size_t nPts, const double * x, double offset, double rightDecayPos, double leftDecayPos, double decayLength, double emax, const std::string fil) : ElectricFieldProfile(nPts) {
 			double * tre = (double*) sq_malloc(sizeof(double)*nPts);
 			double * tim = (double*) sq_malloc(sizeof(double)*nPts);
 			std::fstream ifil = std::fstream(fil, std::ios::in | std::ios::binary);
@@ -787,14 +787,14 @@ namespace Potentials {
 			ifil.read(reinterpret_cast<char*>(fx), sizeof(double)*nRep);
 			ifil.read(reinterpret_cast<char*>(fre), sizeof(double)*nRep);
 			ifil.read(reinterpret_cast<char*>(fim), sizeof(double)*nRep);
-			for (int i = 0; i < nRep; i++)
+			for (size_t i = 0; i < nRep; i++)
 				fx[i] += offset;
 			vtls::linearInterpolate(nRep, fx, fre, nPts, x, tre);
 			vtls::linearInterpolate(nRep, fx, fim, nPts, x, tim);
-			for (int i = 0; i < nPts; i++)
+			for (size_t i = 0; i < nPts; i++)
 				fs[i] = (tre[i] + PhysCon::im*tim[i])*emax;
 			double k;
-			for (int i = 0; i < nPts; i++) {
+			for (size_t i = 0; i < nPts; i++) {
 				if (x[i] > leftDecayPos && x[i] < leftDecayPos + decayLength) {
 					k = (x[i] - leftDecayPos) / decayLength;
 					fs[i] *=
@@ -828,9 +828,9 @@ namespace Potentials {
 			sq_free(fim);
 		}
 
-		ExponentialToLinearProfile::ExponentialToLinearProfile(int nPts, const double* x, double minX, double maxX, double r, double eMax) : ElectricFieldProfile(nPts) {
+		ExponentialToLinearProfile::ExponentialToLinearProfile(size_t nPts, const double* x, double minX, double maxX, double r, double eMax) : ElectricFieldProfile(nPts) {
 			double xn;
-			for (int i = 0; i < nPts; i++) {
+			for (size_t i = 0; i < nPts; i++) {
 				xn = x[i];
 				if (xn < minX || xn > maxX)
 					fs[i] = 0.0;

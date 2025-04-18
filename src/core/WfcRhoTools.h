@@ -36,7 +36,32 @@ namespace WfcToRho {
 		 * @param norm Normalization scheme to use (UNNORMALIZED or NORMALIZED).
 		 * @details The weights calculated may be used to find the density: \f$ \rho = \sum_{i=1}^{n} w_i |\psi_i|^2 \f$, where \f$ w_i \f$ are the weights and \f$ |\psi_i|^2 \f$ is the squared magnitude of the wavefunction for electron \a i.
 		 */
-		virtual void calcWeights(int nElec, const double* energies, double* weights, NormalizationScheme norm) = 0;
+		virtual void calcWeights(size_t nElec, const double* energies, double* weights, NormalizationScheme norm) = 0;
+	};
+
+	class UniformWeight :
+		public Weight
+	{
+	private:
+		double weight;
+	public:
+		/**
+		 * Constructor for UniformWeight.
+		 * @param weight The weight to be assigned to each state.
+		 */
+		UniformWeight(double weight) : weight(weight) {}
+
+		/**
+		 * Sets the weights to be a constant value for all states.
+		 * @param nElec Number of electrons.
+		 * @param energies (in) Array of energies for each electron, size nElec.
+		 * @param weights (out) Array to store the calculated weights for each electron, size nElec.
+		 * @param norm Normalization scheme to use (UNNORMALIZED or NORMALIZED).
+		 */
+		void calcWeights(size_t nElec, const double* energies, double* weights, NormalizationScheme norm) {
+			for(size_t i = 0; i < nElec; i++)
+				weights[i] = weight;
+		}
 	};
 
 	/**
@@ -60,10 +85,10 @@ namespace WfcToRho {
 		 */
 		BoundFermiGas(double ef) : ef(ef) {}
 		/**
-		 * @copydoc Weight::calcWeights(int, const double*, double*, NormalizationScheme)
+		 * @copydoc Weight::calcWeights(size_t, const double*, double*, NormalizationScheme)
 		 * @throw std::runtime_error if the normalization scheme is UNNORMALIZED
 		 */
-		void calcWeights(int nElec, const double* energies, double* weights, NormalizationScheme norm);
+		void calcWeights(size_t nElec, const double* energies, double* weights, NormalizationScheme norm);
 	};
 
 	/**
@@ -85,10 +110,10 @@ namespace WfcToRho {
 		SemiInfiniteFermiGas(double ef) : ef(ef) {}
 
 		/**
-		 * @copydoc Weight::calcWeights(int, const double*, double*, NormalizationScheme)
+		 * @copydoc Weight::calcWeights(size_t, const double*, double*, NormalizationScheme)
 		 * @throw std::runtime_error if the normalization scheme is NORMALIZED
 		 */
-		void calcWeights(int nElec, const double* energies, double* weights, NormalizationScheme norm);
+		void calcWeights(size_t nElec, const double* energies, double* weights, NormalizationScheme norm);
 	};
 
 	/**
@@ -97,7 +122,7 @@ namespace WfcToRho {
 	 * This class reads a file containing the density of states (DOS) data and uses it to calculate the weights for each electron based on their energies.
 	 * The DOS is interpolated using a cardinal cubic B-spline to provide smooth weights.
 	 * The file is a binary format with contents:
-	 *  - (int)\f$\times 1\f$ : number of samples in the DOS data, \a n
+	 *  - (int32)\f$\times 1\f$ : number of samples in the DOS data, \a n
 	 *  - (double)\f$\times n\f$ : The energy samples IN ELECTRONVOLTS relative to the Fermi level.
 	 *  - (double)\f$\times n\f$ : The corresponding DOS values at those energies in \f$\mathrm{\#/m}^3\mathrm{eV}\f$.
 	 */
@@ -118,10 +143,10 @@ namespace WfcToRho {
 		FromDOS(double fl, double ef, double leff, const char* fil);
 
 		/**
-		 * @copydoc Weight::calcWeights(int, const double*, double*, NormalizationScheme)
+		 * @copydoc Weight::calcWeights(size_t, const double*, double*, NormalizationScheme)
 		 * @warning This is intended for use with normalized wavefunctions only. Though, it is possible to use it with unnormalized wavefunctions if you know what you're doing.
 		 */
-		void calcWeights(int nElec, const double* energies, double* weights, NormalizationScheme norm);
+		void calcWeights(size_t nElec, const double* energies, double* weights, NormalizationScheme norm);
 	};
 
 	/**
@@ -142,7 +167,7 @@ namespace WfcToRho {
 		 * @param psi2_work (in/out) Workspace for squared magnitudes of wavefunctions, size nPts * nElec.
 		 * @param rho (out) Array to store the calculated raw density, size nPts.
 		 */
-		static void calcRawRho(int nPts, int nElec, const double* weights, const std::complex<double>* psi, double* psi2_work, double* rho);
+		static void calcRawRho(size_t nPts, size_t nElec, const double* weights, const std::complex<double>* psi, double* psi2_work, double* rho);
 
 		/**
 		 * Calculate the electron density from wavefunctions and weights, applying any necessary post-processing (e.g., geometry considerations).
@@ -153,7 +178,7 @@ namespace WfcToRho {
 		 * @param psi (in) Array of wavefunctions, size nPts * nElec.
 		 * @param rho (out) Array to store the calculated processed density, size nPts.
 		 */
-		void calcRho(int nPts, int nElec, double dx, const double* weights, const std::complex<double>* psi, double* rho) {
+		void calcRho(size_t nPts, size_t nElec, double dx, const double* weights, const std::complex<double>* psi, double* rho) {
 			if (!psi2_work) psi2_work = (double*)sq_malloc(sizeof(double) * nPts * nElec);
 			calcRawRho(nPts, nElec, weights, psi, psi2_work, rho);
 			calcRho(nPts, nElec, dx, rho);
@@ -166,7 +191,7 @@ namespace WfcToRho {
 		 * @param dx The grid spacing in the spatial domain.
 		 * @param rho (in/out) Array of raw density values, size nPts. This will be modified to contain the processed density.
 		 */
-		virtual void calcRho(int nPts, int nElec, double dx, double* rho) = 0;
+		virtual void calcRho(size_t nPts, size_t nElec, double dx, double* rho) = 0;
 	};
 
 	/// Performs no post-processing on the raw density, simply returning it as is.
@@ -176,7 +201,7 @@ namespace WfcToRho {
 	private:
 		bool first = true;
 	public:
-		void calcRho(int nPts, int nElec, double dx, double* rho);
+		void calcRho(size_t nPts, size_t nElec, double dx, double* rho);
 	};
 
 	/// A density calculator which models a region of cylindrical geometry such that the density decreases further away from the cylinder.
@@ -185,7 +210,7 @@ namespace WfcToRho {
 	{
 	private:
 		double center, radius, minX;
-		int startIndex, endIndex;
+		size_t startIndex, endIndex;
 		double* thinning=nullptr;
 		bool first = true;
 		/**
@@ -193,7 +218,7 @@ namespace WfcToRho {
 		 * @param nPts The number of grid points in the spatial domain.
 		 * @param dx The grid spacing in the spatial domain.
 		 */
-		void doFirst(int nPts, double dx);
+		void doFirst(size_t nPts, double dx);
 	public:
 		/**
 		 * Constructor for CylindricalDensity.
@@ -204,7 +229,7 @@ namespace WfcToRho {
 		CylindricalDensity(double center, double radius, double minX);
 
 		~CylindricalDensity();
-		void calcRho(int nPts, int nElec, double dx, double* rho);
+		void calcRho(size_t nPts, size_t nElec, double dx, double* rho);
 	};
 
 	/**
@@ -225,6 +250,6 @@ namespace WfcToRho {
 		GaussianSmoothedDensity(double sig) : sig(sig) {}
 
 		~GaussianSmoothedDensity();
-		void calcRho(int nPts, int nElec, double dx, double* rho);
+		void calcRho(size_t nPts, size_t nElec, double dx, double* rho);
 	};
 }

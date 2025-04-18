@@ -24,27 +24,31 @@ namespace FDBCs
 		template <typename U>
 		friend class CyclicArray; // allow access to other CyclicArray instances' private members when template types differ
     private:
-        int size, idx;
+        size_t size, idx;
         T* arr;
 		/**
 		 * Returns the local index of the i-th element in the CyclicArray.
 		 * @param i The index to access, can be negative or larger than size.
 		 * @return The local index in the cyclic array, wrapping around if necessary.
 		 */ 
-		int localIdx(int i) { return (idx + i) % size; };
+		template <typename U>
+		size_t localIdx(U i) {
+			static_assert(std::is_integral<U>::value, "Template parameter U must be an integral type.");
+			return (idx + i) % size;
+		};
     public:
 		/**
 		 * Construct a CyclicArray object
 		 * @param size The size of the array
 		 */
-        CyclicArray(int size) : size(size), idx(size-1), arr(static_cast<T *>(sq_malloc(sizeof(T) * size))) {};
+        CyclicArray(size_t size) : size(size), idx(size-1), arr(static_cast<T *>(sq_malloc(sizeof(T) * size))) {};
 		
 		/**
 		 * Construct a CyclicArray object and initialize it with a value
 		 * @param size The size of the array
 		 * @param val The value to initialize the array with
 		 */
-		CyclicArray(int size, T val) : CyclicArray(size) { std::fill_n(arr, size, val); };
+		CyclicArray(size_t size, T val) : CyclicArray(size) { std::fill_n(arr, size, val); };
 
         ~CyclicArray() { sq_free(arr); };
 
@@ -65,7 +69,11 @@ namespace FDBCs
 		 * @param i The index of the element to set
 		 * @param val The value to set the element to
 		 */
-        void set(int i, T val) { arr[localIdx(i)] = val; };
+		template <typename U>
+        void set(U i, T val) { 
+			static_assert(std::is_integral<U>::value, "Template parameter U must be an integral type.");
+			arr[localIdx(i)] = val; 
+		};
 
 		/**
 		 * Step the index forward
@@ -82,19 +90,23 @@ namespace FDBCs
 		 * @param i The index of the element to get
 		 * @return The value of the i-th element
 		 */
-        T get(int i) { return arr[localIdx(i)]; };
+		template <typename U>
+        T get(U i) { 
+			static_assert(std::is_integral<U>::value, "Template parameter U must be an integral type.");
+			return arr[localIdx(i)]; 
+		};
 
 		/**
 		 * Print the array
 		 * @details Prints the array in order, starting from the present index.
 		 */
-        void print() { for (int i = 0; i < size; i++) std::cout << arr[i] << " "; std::cout << std::endl; };
+        void print() { for (size_t i = 0; i < size; i++) std::cout << arr[i] << " "; std::cout << std::endl; };
 
 		/**
 		 * Multiply the array by a scalar
 		 * @param val The scalar to multiply by
 		 */
-		void mul(T val) { for (int i = 0; i < size; i++) arr[i] *= val; };
+		void mul(T val) { for (size_t i = 0; i < size; i++) arr[i] *= val; };
 
 		/**
 		 * Perform the inner product with another CyclicArray
@@ -111,7 +123,7 @@ namespace FDBCs
 				return this->aligned_inner(arr);
 			else{
 				decltype(std::declval<T&>()* std::declval<U&>()) sum = 0;
-				for (int i = 0; i < this->size; i++)
+				for (size_t i = 0; i < this->size; i++)
 					sum += this->get(i) * arr->get(i);
 				return sum;
 			}
@@ -131,7 +143,7 @@ namespace FDBCs
 
 			decltype(std::declval<T&>()* std::declval<U&>()) sum = 0;
 			if (this->idx == arr->idx) // aligned arrays lead to faster code
-				for (int i = 0; i < this->size; i++)
+				for (size_t i = 0; i < this->size; i++)
 					sum += this->arr[i] * arr->arr[i];
 			else
 				throw std::invalid_argument("Arrays must be aligned.");
@@ -156,7 +168,7 @@ namespace FDBCs
 					sum += temp;
 				}
 			else
-				for (int i = 0; i < this->size; i++)
+				for (size_t i = 0; i < this->size; i++)
 					sum += this->get(i) * arr[i];
 			return sum;
 		}
@@ -188,7 +200,7 @@ namespace FDBCs
 		 * @param res (out) The RHS value for the boundary condition, \a nElec elements
 		 * @param nElec The number of electrons
 		 */
-		virtual void getRHS(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec) = 0; // RHS value for the condition
+		virtual void getRHS(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb, std::complex<double>* res, size_t nElec) = 0; // RHS value for the condition
 		
 		/**
 		 * Finish the present step. This \a must \a be called after the RHS has been calculated and before proceeding with the next time step.
@@ -248,8 +260,8 @@ namespace FDBCs
 	{
 	public:
 		/// @copydoc BoundaryCondition::getLHSEle
-		void getRHS(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec) {
-			for (int i = 0; i < nElec; i++)
+		void getRHS(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb, std::complex<double>* res, size_t nElec) {
+			for (size_t i = 0; i < nElec; i++)
 				res[i] = getRHS(vb);
 		}
 
@@ -266,7 +278,7 @@ namespace FDBCs
 		virtual std::complex<double> getRHS(double vb) = 0; // RHS value for the condition
 	};
 
-	/// Boundary condition which is time-independent
+	/// Boundary condition which is time-independent (and also the same for all wavefunctions)
 	class TimeIndependentBC :
 		public CommonBC
 	{
@@ -348,7 +360,7 @@ namespace FDBCs
 		public BoundaryCondition
 	{
 	protected:
-        int order, nElec;
+        size_t order, nElec;
         double dx, dt;
         CyclicArray<std::complex<double>> **psis;
         std::complex<double> kernel0, *kernel;
@@ -369,7 +381,7 @@ namespace FDBCs
 		 * @param dx The grid spacing
 		 * @param dt The time step
 		 */
-		UniformHDTransparentBC(int order, int nElec, double dx, double dt);
+		UniformHDTransparentBC(size_t order, size_t nElec, double dx, double dt);
         
 		~UniformHDTransparentBC();
 
@@ -380,7 +392,7 @@ namespace FDBCs
 		std::complex<double> getLHSAdjEle() { return 1.0; };
 		
 		/// @copydoc BoundaryCondition::getRHS
-		void getRHS(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec);
+		void getRHS(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb, std::complex<double>* res, size_t nElec);
         
 		/// @copydoc BoundaryCondition::finishStep
 		void finishStep(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb);
@@ -389,7 +401,7 @@ namespace FDBCs
 		void prepareStep(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb);
 		
 		/// @copydoc BoundaryCondition::getRHS
-		void printKernel() { for (int i = 0; i < order; i++) std::cout << kernel[i] << " "; std::cout << std::endl; };
+		void printKernel() { for (size_t i = 0; i < order; i++) std::cout << kernel[i] << " "; std::cout << std::endl; };
 		
 		/// @copydoc BoundaryCondition::fillHistory
 		void fillHistory(const std::complex<double>* psibd, const std::complex<double>* historialPhaseAdvance, double vb);
@@ -427,7 +439,7 @@ namespace FDBCs
 		 * @param k0 (in) The wavevector of the wavefunction(s) at the boundary, \a nElec elements
 		 * @param vb The potential at the boundary
 		 */
-		UniformIDTransparentBC(int order, int nElec, double dx, double dt, std::complex<double>* psibd, double* k0, double vb);
+		UniformIDTransparentBC(size_t order, size_t nElec, double dx, double dt, std::complex<double>* psibd, double* k0, double vb);
 		
 		~UniformIDTransparentBC() { sq_free(phaseAdvance); sq_free(phs); sq_free(adjphs); sq_free(ihpsi); sq_free(hompsi); };
 		
@@ -435,7 +447,7 @@ namespace FDBCs
 		void prepareStep(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb);
 		
 		/// @copydoc BoundaryCondition::getRHS
-		void getRHS(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb, std::complex<double>* res, int nElec);
+		void getRHS(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb, std::complex<double>* res, size_t nElec);
 		
 		/// @copydoc BoundaryCondition::finishStep
 		void finishStep(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb);

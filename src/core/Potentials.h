@@ -33,7 +33,7 @@ namespace Potentials {
 			 * Constructor.
 			 * @param nPts Number of points in the profile.
 			 */
-			ElectricFieldProfile(int nPts) : fs((std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts)) {};
+			ElectricFieldProfile(size_t nPts) : fs((std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts)) {};
 
 			/**
 			 * Destructor.
@@ -53,7 +53,7 @@ namespace Potentials {
 			 * @param minX Minimum x.
 			 * @param maxX Maximum x.
 			 */
-			ConstantFieldProfile(int nPts, const double * x, double ef, double minX, double maxX);
+			ConstantFieldProfile(size_t nPts, const double * x, double ef, double minX, double maxX);
 		};
 
 		/**
@@ -74,7 +74,7 @@ namespace Potentials {
 			 * @param eMax Maximum electric field strength (at minX).
 			 * @param enhFact Enhancement factor.
 			 */
-			CylindricalToLinearProfile(int nPts, const double * x, double minX, double maxX, double r, double eMax, double enhFact);
+			CylindricalToLinearProfile(size_t nPts, const double * x, double minX, double maxX, double r, double eMax, double enhFact);
 		};
 
 		/**
@@ -96,7 +96,7 @@ namespace Potentials {
 			 * @param enhFact Enhancement factor.
 			 * @param decayLength Length over which the field is tapered to zero on the right boundary.
 			 */
-			CylindricalToCutoffProfile(int nPts, const double * x, double minX, double maxX, double r, double eMax, double enhFact, double decayLength);
+			CylindricalToCutoffProfile(size_t nPts, const double * x, double minX, double maxX, double r, double eMax, double enhFact, double decayLength);
 		};
 
 		/**
@@ -117,7 +117,7 @@ namespace Potentials {
 			 * @param er Relative permittivity of the plasmonic material.
 			 * @param cond Conductivity of the plasmonic material. (Not referenced.)
 			 */
-			InternalPlasmonicFieldProfile(int nPts, const double * x, double minX, double maxX, double eMax, double lam, std::complex<double> er, double cond);
+			InternalPlasmonicFieldProfile(size_t nPts, const double * x, double minX, double maxX, double eMax, double lam, std::complex<double> er, double cond);
 		};
 
 		/**
@@ -136,13 +136,13 @@ namespace Potentials {
 			 * @param r Decay length of the exponential field. (\f$E~\exp(-\frac{x-x_0}{r})\f$)
 			 * @param eMax Maximum electric field strength (at minX).
 			 */
-			ExponentialToLinearProfile(int nPts, const double* x, double minX, double maxX, double r, double eMax);
+			ExponentialToLinearProfile(size_t nPts, const double* x, double minX, double maxX, double r, double eMax);
 		};
 
 		/**
 		 * Field which is defined in a binary file.
 		 * The binary file should contain the following:
-		 *  - (int)\f$\times 1\f$ : Number of samples in the file \a n
+		 *  - (int32)\f$\times 1\f$ : Number of samples in the file \a n
 		 *  - (double)\f$\times n\f$ : The positions \a x at which the field is sampled
 		 *  - (double)\f$\times n\f$ : The real component of the electric field values \a E at those positions
 		 *  - (double)\f$\times n\f$ : The imaginary component of the electric field values \a E at those positions
@@ -162,7 +162,7 @@ namespace Potentials {
 			 * @param emax Maximum electric field strength, assuming the peak field in the file is normalized to 1.0.
 			 * @param fil File to read from.
 			 */
-			FileFieldProfile(int nPts, const double * x, double offset, double rightDecayPos, double leftDecayPos, double decayLength, double emax, const char * fil);
+			FileFieldProfile(size_t nPts, const double * x, double offset, double rightDecayPos, double leftDecayPos, double decayLength, double emax, const std::string fil);
 		};
 	};
 
@@ -289,7 +289,7 @@ namespace Potentials {
 	{
 	private:
 		double * v;
-		int nPts;
+		size_t nPts;
 	public:
 		/**
 		 * Constructor.
@@ -299,7 +299,7 @@ namespace Potentials {
 		 * @param fil File to read from.
 		 * @param refPoint Reference point for the potential.
 		 */
-		FilePotential(int nPts, const double * x, double offset, const char * fil, int refPoint);
+		FilePotential(size_t nPts, const double * x, double offset, const std::string fil, size_t refPoint);
 
 		~FilePotential();
 		void getVBare(double t, double * targ);
@@ -318,7 +318,7 @@ namespace Potentials {
 	private:
 		double * v;
 		double tstart, tbuf;
-		int nPts;
+		size_t nPts;
 	public:
 	    /**
 		 * Constructor.
@@ -330,7 +330,7 @@ namespace Potentials {
 		 * @param xmax Maximum x to apply the field.
 		 * @param xmin_buf Minimum x to start the ramp up.
 		 */
-		BiasFieldPotential(int nPts, const double * x, double tstart, double tbuf, double xmin, double xmax, double xmin_buf, double xmax_buf, double fieldStrength, int refPoint);
+		BiasFieldPotential(size_t nPts, const double * x, double tstart, double tbuf, double xmin, double xmax, double xmin_buf, double xmax_buf, double fieldStrength, size_t refPoint);
 		
 		~BiasFieldPotential();
 		void getVBare(double t, double * targ);
@@ -344,7 +344,7 @@ namespace Potentials {
 	{
 	private:
 		double * v;
-		int nPts;
+		size_t nPts;
 	public:
 	    /**
 		 * Constructor.
@@ -356,7 +356,7 @@ namespace Potentials {
 		 * @param maxX Maximum x to apply the field.
 		 * @param refPoint Reference point for the potential.
 		 */
-		CoulombPotential(int nPts, const double * x, double ne, double chargePos, double minX, double maxX, int refPoint);
+		CoulombPotential(size_t nPts, const double * x, double ne, double chargePos, double minX, double maxX, size_t refPoint);
 		
 		~CoulombPotential();
 		void getVBare(double t, double * targ);
@@ -372,7 +372,7 @@ namespace Potentials {
 	{
 	private:
 		double * v;
-		int nPts;
+		size_t nPts;
 	public:
 		/**
 		 * Constructor.
@@ -383,7 +383,7 @@ namespace Potentials {
 		 * @param vin Potential inside the box.
 		 * @param refPoint Reference point for the potential.
 		 */
-		FiniteBox(int nPts, const double * x, double left, double right, double vin, int refPoint);
+		FiniteBox(size_t nPts, const double * x, double left, double right, double vin, size_t refPoint);
 		
 		~FiniteBox();
 		void getVBare(double t, double * targ);
@@ -397,7 +397,7 @@ namespace Potentials {
 	{
 	private:
 		double * v;
-		int nPts;
+		size_t nPts;
 	public:
 		/**
 		 * Constructor.
@@ -408,7 +408,7 @@ namespace Potentials {
 		 * @param w Work function.
 		 * @param refPoint Reference point for the potential.
 		 */
-		JelliumPotential(int nPts, const double * x, double center, double ef, double w, int refPoint);
+		JelliumPotential(size_t nPts, const double * x, double center, double ef, double w, size_t refPoint);
 		
 		~JelliumPotential();
 		void getVBare(double t, double * targ);
@@ -422,7 +422,7 @@ namespace Potentials {
 	{
 	private:
 		double * v;
-		int nPts;
+		size_t nPts;
 	public:
 	    /**
 		 * Constructor.
@@ -435,7 +435,7 @@ namespace Potentials {
 		 * @param backWidth Total width of the backing.
 		 * @param refPoint Reference point for the potential.
 		 */
-		JelliumPotentialBacked(int nPts, const double * x, double center, double ef, double w, double backStart, double backWidth, int refPoint);
+		JelliumPotentialBacked(size_t nPts, const double * x, double center, double ef, double w, double backStart, double backWidth, size_t refPoint);
 		
 		~JelliumPotentialBacked();
 		void getVBare(double t, double * targ);
@@ -448,7 +448,7 @@ namespace Potentials {
 		public Potential {
 	private:
 		double * v;
-		int nPts;
+		size_t nPts;
 	public:
 		/**
 		 * Constructor.
@@ -459,7 +459,7 @@ namespace Potentials {
 		 * @param zProtons Number of elementary charges.
 		 * @param decayLength Decay length of the shielded potential. Use, e.g., the Thomas-Fermi length.
 		 */
-		ShieldedAtomicPotential(int nPts, const double * x, double center, double latticeSpacing, double zProtons, double decayLength);
+		ShieldedAtomicPotential(size_t nPts, const double * x, double center, double latticeSpacing, double zProtons, double decayLength);
 		
 		~ShieldedAtomicPotential();
 		void getVBare(double t, double * targ);
@@ -472,7 +472,7 @@ namespace Potentials {
 		public Potential
 	{
 	private:
-		int nPts;
+		size_t nPts;
 		std::complex<double> * potMask;
 		double phase;
 		double tmax;
@@ -490,7 +490,7 @@ namespace Potentials {
 		 * @param env Envelope.
 		 * @param refPoint Reference point for the potential.
 		 */
-		ElectricFieldProfileToPotential(int nPts, ElectricFieldProfiles::ElectricFieldProfile * fieldProfile, double dx, double phase, double tmax, double lam, Envelopes::Envelope * env, int refPoint);
+		ElectricFieldProfileToPotential(size_t nPts, ElectricFieldProfiles::ElectricFieldProfile * fieldProfile, double dx, double phase, double tmax, double lam, Envelopes::Envelope * env, size_t refPoint);
 		
 		~ElectricFieldProfileToPotential();
 		void getVBare(double t, double * targ);
@@ -504,8 +504,9 @@ namespace Potentials {
 	private:
 		double integratedFlux, tPrev, dx;
 		double * const * weights;
-		int evalPoint, nPts, side;
-		const int * nElec;
+		size_t evalPoint, nPts;
+		int side;
+		const size_t * nElec;
 	public:
 		/**
 		 * Constructor.
@@ -516,7 +517,7 @@ namespace Potentials {
 		 * @param nElec (in) Number of electrons.
 		 * @param weights (in) Weights for the current calculation.
 		 */
-		CurrentIntegrator(int nPts, double dx, int evalPoint, int side, const int* nElec, double * const * weights);
+		CurrentIntegrator(size_t nPts, double dx, size_t evalPoint, int side, const size_t* nElec, double * const * weights);
 		
 		/**
 		 * Integrate the current for the present time step.
@@ -542,7 +543,7 @@ namespace Potentials {
 		public Potential
 	{
 	private:
-		int nPts, refPoint, posMin, posMax, surfPos;
+		size_t nPts, refPoint, posMin, posMax, surfPos;
 		double dx, ef, w, rad, * origPot, * potTemp, * genTemp, * lrxr, * myRho, *nsMask, *dethin;
 		const double *x;
 		/**
@@ -571,7 +572,7 @@ namespace Potentials {
 		 * @param posMax Maximum x (index) to apply the field.
 		 * @param refPoint Reference point (index) for the potential.
 		 */
-		CylindricalImageCharge(int nPts, const double* x, double dx, double ef, double w, double rad, int surfPos, const int* nElec, double * const * weights, const double* rho0, int posMin, int posMax, int refPoint);
+		CylindricalImageCharge(size_t nPts, const double* x, double dx, double ef, double w, double rad, size_t surfPos, const size_t* nElec, double * const * weights, const double* rho0, size_t posMin, size_t posMax, size_t refPoint);
 		
 		~CylindricalImageCharge();
 		void getVBare(double t, double* targ);
@@ -586,7 +587,7 @@ namespace Potentials {
 		public Potential
 	{
 	private:
-		int nPts, refPoint, * nElec, posMin, posMax, surfPos;
+		size_t nPts, refPoint, * nElec, posMin, posMax, surfPos;
 		double dx, rad, * origPot, * potTemp, * fieldScaler, *myRho, *dethin;
 		double originalCharge;
 		/**
@@ -613,7 +614,7 @@ namespace Potentials {
 		 * @param posMax Maximum x (index) to apply the field.
 		 * @param refPoint Reference point (index) for the potential.
 		 */
-		PlanarToCylindricalHartree(int nPts, double dx, double rad, int surfPos, const int* nElec, double * const * weights, const double* rho0, int posMin, int posMax, int refPoint);
+		PlanarToCylindricalHartree(size_t nPts, double dx, double rad, size_t surfPos, const size_t* nElec, double * const * weights, const double* rho0, size_t posMin, size_t posMax, size_t refPoint);
 		~PlanarToCylindricalHartree();
 		void getVBare(double t, double* targ);
 		void getV(const double* rho, const std::complex<double>* psi, double t, double* targ);
@@ -632,7 +633,7 @@ namespace Potentials {
 		public Potential
 	{
 	private:
-		int nPts, refPoint, * nElec;
+		size_t nPts, refPoint, * nElec;
 		double * origPot, * rho, dx;
 		/**
 		 * Calculate the potential.
@@ -652,7 +653,7 @@ namespace Potentials {
 		 * @param rho0 (in) Initial density array, used to initialize the potential so that future calls to #getV will return the change in potential. If nullptr, the initial density is zero and #getV returns the full potential.
 		 * @param refPoint Reference point (index) for the potential.
 		 */
-		LDAFunctional(LDAFunctionalType typ, int nPts, double dx, const double* rho0, int refPoint);
+		LDAFunctional(LDAFunctionalType typ, size_t nPts, double dx, const double* rho0, size_t refPoint);
 
 		~LDAFunctional();
 		void getVBare(double t, double* targ);
@@ -664,10 +665,10 @@ namespace Potentials {
 	class CompositePotential :
 		public Potential {
 	private:
-		int nPts;
-		int numSPots;
-		int numDPots;
-		int numWPots;
+		size_t nPts;
+		size_t numSPots;
+		size_t numDPots;
+		size_t numWPots;
 		Potential ** staticPots;
 		Potential ** dynamicPots;
 		Potential ** waveFuncDependentPots;
@@ -685,7 +686,7 @@ namespace Potentials {
 		 * @param waveFuncDependentPots Array of wavefunction-dependent potentials.
 		 * @note The arrays are not copied, so they must remain valid for the lifetime of this object.
 		 */
-		CompositePotential(int nPts, int numSPots, int numDPots, int numWPots, Potential ** staticPots, Potential ** dynamicPots, Potential ** waveFuncDependentPots);
+		CompositePotential(size_t nPts, size_t numSPots, size_t numDPots, size_t numWPots, Potential ** staticPots, Potential ** dynamicPots, Potential ** waveFuncDependentPots);
 		
 		~CompositePotential();
 		void getVBare(double t, double * targ);
@@ -698,7 +699,7 @@ namespace Potentials {
 		public Potential {
 	private:
 		bool compositeRefreshed = false;
-		int nPts;
+		size_t nPts;
 		std::vector<Potential*> staticPots, dynamicPots, waveFuncDependentPots;
 		CompositePotential * pot=nullptr;
 		PotentialComplexity myComplex = PotentialComplexity::STATIC;
@@ -708,7 +709,7 @@ namespace Potentials {
 		 * Constructor.
 		 * @param nPts Number of points.
 		 */
-		PotentialManager(int nPts);
+		PotentialManager(size_t nPts);
 
 		~PotentialManager(){if(pot) delete pot; if(spots) delete[] spots; if(dpots) delete[] dpots; if(wpots) delete[] wpots;};
 
@@ -736,7 +737,7 @@ namespace Potentials {
 	private:
 		Potential * pot;
 		Measurers::Measurer * meas;
-		int numSteps;
+		size_t numSteps;
 		double maxT;
 	public:
 		/**
@@ -746,13 +747,13 @@ namespace Potentials {
 		 * @param numSteps Number of steps to measure.
 		 * @param maxT Maximum time to measure. This is used to find the present step index for the measurer.
 		 */
-		MeasuredPotential(Potential * pot, Measurers::Measurer * meas, int numSteps, double maxT) : pot(pot), meas(meas), numSteps(numSteps), maxT(maxT){};
+		MeasuredPotential(Potential * pot, Measurers::Measurer * meas, size_t numSteps, double maxT) : pot(pot), meas(meas), numSteps(numSteps), maxT(maxT){};
 		
 		~MeasuredPotential(){};
 		void getVBare(double t, double * targ){pot->getVBare(t, targ);};
 		void getV(const double* rho, const std::complex<double> * psi, double t, double * targ){
 			pot->getV(rho, psi, t, targ);
-			meas->measure((int)(t/maxT*numSteps), psi, targ, t);
+			meas->measure((size_t)(t/maxT*numSteps), psi, targ, t);
 		};
 		PotentialComplexity getComplexity(){return pot->getComplexity();};
 	};

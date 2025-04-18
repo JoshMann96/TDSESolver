@@ -36,13 +36,13 @@ class PySimulation
             SimulationManager::findEigenStates(minE, maxE);
         }
 
-        void findInhomogeneousEigenStates(int nElec, const std::vector<double> &energies){
+        void findInhomogeneousEigenStates(size_t nElec, const std::vector<double> &energies){
             SimulationManager::findInhomogeneousEigenStates(nElec, energies.data());
         }
 
         std::vector<double> getXVec(){return std::vector<double>(SimulationManager::getX(), SimulationManager::getX() + getNumPoints());}
 
-        int findElectricalSurfaceCentroidRule(double minPos, double maxPos){
+        size_t findElectricalSurfaceCentroidRule(double minPos, double maxPos){
             return SimulationManager::findElectricalSurfaceCentroidRule(findXIdx(minPos), findXIdx(maxPos));
         }
     };

@@ -247,7 +247,7 @@ void init_Potentials(py::module &m) {
             "sim"_a, "typ"_a, "refPoint"_a);
     
     py::class_<PyMeasuredPotential, Potential>(m, "MeasuredPotential")
-        .def(py::init<PySimulation*, Potential*, Measurers::Measurer*, int>(), py::keep_alive<1,3>(), py::keep_alive<1,4>(), R"V0G0N(
+        .def(py::init<PySimulation*, Potential*, Measurers::Measurer*, size_t>(), py::keep_alive<1,3>(), py::keep_alive<1,4>(), R"V0G0N(
             A potential which is also measured when it is called.
             At each evaluation the potential is calculated and then the measurer passed is called using that potential only.
 
@@ -259,7 +259,7 @@ void init_Potentials(py::module &m) {
                 Potential to use and measure.
             meas: Measurer
                 Measurer to use.
-            numSteps : int
+            numSteps : uint
                 Number of time steps to measure.
 
             Returns

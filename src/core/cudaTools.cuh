@@ -12,7 +12,7 @@
  * @param n The number of elements in the vector.
  * @return cudaError code.
  */
-cudaError_t cudaNormSquare(const cuDoubleComplex* x, double* result, int n);
+cudaError_t cudaNormSquare(const cuDoubleComplex* x, double* result, size_t n);
 
 /**
  * Compute the density of a vector via CUDA. All arrays are assumed to be on the device.
@@ -23,7 +23,7 @@ cudaError_t cudaNormSquare(const cuDoubleComplex* x, double* result, int n);
  * @param nrhs Number of right-hand sides.
  * @return cudaError code.
  */
-cudaError_t cudaDensity(const double* weights, const cuDoubleComplex* x, double* result, int n, int nrhs);
+cudaError_t cudaDensity(const double* weights, const cuDoubleComplex* x, double* result, size_t n, size_t nrhs);
 
 /**
  * Compute the Hadamard product of a vector and a matrix via CUDA. All arrays are assumed to be on the device.
@@ -33,4 +33,4 @@ cudaError_t cudaDensity(const double* weights, const cuDoubleComplex* x, double*
  * @param nrhs The number of right-hand sides (columns of x).
  * @return cudaError code.
  */
-cudaError_t cudaHadamard(const double* vec, cuDoubleComplex* x, int n, int nrhs);
+cudaError_t cudaHadamard(const double* vec, cuDoubleComplex* x, size_t n, size_t nrhs);

@@ -12,14 +12,14 @@
 
 void testTransparentBCs(){
     using namespace FDBCs;
-    int ne = 10;
+    size_t ne = 10;
     BoundaryCondition* bc = new UniformHDTransparentBC(1000, ne, 0.1*PhysCon::a0, 0.1*PhysCon::hbar/PhysCon::auE_ha);
     std::complex<double>* res = new std::complex<double>[ne];
     std::complex<double>* psibd = new std::complex<double>[ne];
     std::complex<double>* psiad = new std::complex<double>[ne];
-    int time = 0;
-    for (int i = 0; i < 100; i++){
-        for (int j = 0; j < ne; j++){
+    size_t time = 0;
+    for (size_t i = 0; i < 100; i++){
+        for (size_t j = 0; j < ne; j++){
             psibd[j] = std::exp(PhysCon::im*(i/100.0));
             psiad[j] = std::exp(PhysCon::im*(i/100.0+0.01));
         }
@@ -46,7 +46,7 @@ void testCyclicArray(){
     delete arr2;
 }
 
-void testTridiagonalAlgorithms(int nRhs=2, bool plot=true){
+void testTridiagonalAlgorithms(size_t nRhs=2, bool plot=true){
 	// Test timing of methods for the multiplication and inversion of tridiagonal matrices
 	// rhsMethod: 0 for BLAS matrix multiplication, 1 for direct treatment, 2 for direct + OMP
 	// lhsMethod: 0 for zgtsv (general tridiagonal), 1 for zgtsvx (general tridiagonal with pivoting), 2 for zptsv (positive definite tridiagonal), 3 for zptsvx (positive definite tridiagonal with pivoting)
@@ -57,13 +57,13 @@ void testTridiagonalAlgorithms(int nRhs=2, bool plot=true){
 	double dx = 0.2, dt = 0.1;
     double one = 1.0;
 
-	int nPts = std::ceil(xmax / dx);
+	size_t nPts = std::ceil(xmax / dx);
 
-	int nsteps = std::ceil(tmax / dt);
-	int plotSteps = nsteps / 10;
+	size_t nsteps = std::ceil(tmax / dt);
+	size_t plotSteps = nsteps / 10;
 
 	double* kins = new double[nRhs];
-	for(int i = 0; i < nRhs; i++)
+	for(size_t i = 0; i < nRhs; i++)
 		kins[i] = i+1.0;
 
 	std::cout << "nPts = " << nPts << std::endl;
@@ -75,7 +75,7 @@ void testTridiagonalAlgorithms(int nRhs=2, bool plot=true){
 	// inhomogeneous DTBC
 	std::complex<double>* psibd = new std::complex<double>[nRhs];
 	double* k0 = new double[nRhs];
-	for (int i = 0; i < nRhs; i++){
+	for (size_t i = 0; i < nRhs; i++){
 		psibd[i] = 1.0;
 		k0[i] = std::sqrt(2.0*kins[i]);
 	}
@@ -95,8 +95,8 @@ void testTridiagonalAlgorithms(int nRhs=2, bool plot=true){
     std::complex<double>* v0 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts);
 	std::complex<double>* v = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts);
 
-	for(int i = 0; i < nRhs; i++)
-		for(int j = 0; j < nPts; j++)
+	for(size_t i = 0; i < nRhs; i++)
+		for(size_t j = 0; j < nPts; j++)
 			x[i*nPts+j] = 5.0*std::exp(PhysCon::im*dx*(std::sqrt(2.0*kins[i])*j))*std::exp(-dx*dx/100.0*(double)((j-nPts/2)*(j-nPts/2)));
 	double norm0 = vtls::getNorm(nPts*nRhs, x, dx);
 
@@ -105,9 +105,9 @@ void testTridiagonalAlgorithms(int nRhs=2, bool plot=true){
 	cblas_zcopy(nRhs, x, nPts, lvs, 1);
 	cblas_zcopy(nRhs, &x[nPts-1], nPts, rvs, 1);
 	std::complex<double>* phs = new std::complex<double>[nRhs];
-	for(int i = 0; i < nRhs; i++)
+	for(size_t i = 0; i < nRhs; i++)
 		phs[i] = KineticOperators::CrankNicolson::phaseAdvanceFromEnergy(kins[i], dt);
-	for(int i = 0; i < nRhs; i++){
+	for(size_t i = 0; i < nRhs; i++){
 		lbc->fillHistory(lvs, phs, 0.0);
 		rbc->fillHistory(rvs, phs, 0.0);
 	}
@@ -143,9 +143,9 @@ void testTridiagonalAlgorithms(int nRhs=2, bool plot=true){
 
 	// test tridiagonal inversion
 	std::chrono::high_resolution_clock::time_point time0, time1;
-	int copyBCTime = 0, rhsTime = 0, invTime = 0;
-	for(int i = 0; i < nsteps; i++){
-        for(int k = 0; k < nPts; k++)
+	size_t copyBCTime = 0, rhsTime = 0, invTime = 0;
+	for(size_t i = 0; i < nsteps; i++){
+        for(size_t k = 0; k < nPts; k++)
             v0[k] = 0.0;//(nPts-1-k)*10.0/nPts;//-std::exp(-dx*dx/100.0*(double)((k-nPts/2)*(k-nPts/2)));//10.0*std::sin((30.0*i)/nsteps);//
 
 		// status update
@@ -202,35 +202,35 @@ void testTridiagonalAlgorithms(int nRhs=2, bool plot=true){
 		vtls::copyArray(nPts*nRhs, x, x0);
 
 		#pragma omp parallel for collapse(2)
-		for(int j = 0; j < nRhs; j++)
-			for(int k = 1; k < nPts-1; k++)
+		for(size_t j = 0; j < nRhs; j++)
+			for(size_t k = 1; k < nPts-1; k++)
 				x[j*nPts+k] = rd[k]*x0[j*nPts+k] + rhsSupDiag*x0[j*nPts+k-1] + rhsSupDiag*x0[j*nPts+k+1];
 
 		/*switch(rhsMethod){
 			case 0: // with submethods
-				for(int j = 0; j < nRhs; j++){
+				for(size_t j = 0; j < nRhs; j++){
 					cblas_zscal(nPts, &rd, &x[j*nPts], 1);
                     cblas_zaxpy(nPts-1, &rhsSupDiag, &x0[j*nPts], 1, &x[j*nPts+1], 1); // x[:-1] += rhsSupDiag[1:]  * x0
                     cblas_zaxpy(nPts-1, &rhsSupDiag, &x0[j*nPts+1], 1, &x[j*nPts], 1); // x[1:]  += rhsSupDiag[:-1] * x0
                 }
 				break;
 			case 1: // direct treatment
-				for(int j = 0; j < nRhs; j++)
-                    for(int k = 1; k < nPts-1; k++)
+				for(size_t j = 0; j < nRhs; j++)
+                    for(size_t k = 1; k < nPts-1; k++)
                         x[j*nPts+k] = rd[k]*x0[j*nPts+k] + rhsSupDiag*x0[j*nPts+k-1] + rhsSupDiag*x0[j*nPts+k+1];
                 
-                for(int j = 0; j < nRhs; j++){
+                for(size_t j = 0; j < nRhs; j++){
                     x[j*nPts] = rd[0]*x0[j*nPts] + rhsSupDiag*x0[j*nPts+1];
                     x[j*nPts+nPts-1] = rd[nPts-1]*x0[j*nPts+nPts-1] + rhsSupDiag*x0[j*nPts+nPts-2];
                 }
 				break;
 			case 2: // direct treatment with OMP
 				#pragma omp parallel for collapse(2)
-				for(int j = 0; j < nRhs; j++)
-                    for(int k = 1; k < nPts-1; k++)
+				for(size_t j = 0; j < nRhs; j++)
+                    for(size_t k = 1; k < nPts-1; k++)
                         x[j*nPts+k] = rd[k]*x0[j*nPts+k] + rhsSupDiag*x0[j*nPts+k-1] + rhsSupDiag*x0[j*nPts+k+1];
                 
-                for(int j = 0; j < nRhs; j++){
+                for(size_t j = 0; j < nRhs; j++){
                     x[j*nPts] = rd[0]*x0[j*nPts] + rhsSupDiag*x0[j*nPts+1];
                     x[j*nPts+nPts-1] = rd[nPts-1]*x0[j*nPts+nPts-1] + rhsSupDiag*x0[j*nPts+nPts-2];
                 }
@@ -245,7 +245,7 @@ void testTridiagonalAlgorithms(int nRhs=2, bool plot=true){
 		// solve tridiagonal system: (ld, d, ud) x = rhs   ( x initially contains rhs )
 		time0 = std::chrono::high_resolution_clock::now();
 
-		int info;
+		lapack_int info;
 		LAPACK_zgtsv(&nPts, &nRhs, reinterpret_cast<dcomplex*>(ld), reinterpret_cast<dcomplex*>(d), reinterpret_cast<dcomplex*>(ud), reinterpret_cast<dcomplex*>(x), &nPts, &info);
 		/*switch(lhsMethod){
 			case 0: // zgtsv
@@ -300,17 +300,17 @@ void testTridiagonalAlgorithms(int nRhs=2, bool plot=true){
 }
 
 void testCrankNicolson(){
-	int nPts = 1000;
+	size_t nPts = 1000;
 	double dx = 1e-11;
 	double dt = 1e-18;
-	int numSteps = 10000;
-	int plotSteps = 1000;
+	size_t numSteps = 10000;
+	size_t plotSteps = 1000;
 
 	double* v0 = new double[nPts];
 	double* xs = new double[nPts];
 	double* damp = new double[nPts];
 
-	for(int i = 0; i < nPts; i++){
+	for(size_t i = 0; i < nPts; i++){
 		xs[i] = dx*(i-nPts/2);
 		v0[i] = -PhysCon::eV*10*std::exp(-xs[i]*xs[i]/(2.0*1e-18));
 		damp[i] = 1.0;
@@ -319,10 +319,14 @@ void testCrankNicolson(){
 	KineticOperators::CrankNicolson* cn = new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, new FDBCs::DirichletBC((std::complex<double>)0.0), new FDBCs::DirichletBC((std::complex<double>)0.0));
 
 	std::complex<double>* psi0, *psi;
-	int nElec;
+	size_t nElec;
 
-	cn->findEigenStates(v0, vtls::min(nPts, v0), 0.5*vtls::min(nPts, v0), &psi0, &nElec);
+	cn->findEigenStates(v0, vtls::min(nPts, v0), 0.5*vtls::min(nPts, v0), &psi0, &sq_malloc, &nElec);
 	psi = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts*nElec);
+	vtls::copyArray(nPts*nElec, psi0, psi);
+	sq_free(psi0);
+	psi0 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts*nElec);
+	vtls::copyArray(nPts*nElec, psi, psi0);
 
 	std::cout << "nElec: " << nElec << std::endl;
 
@@ -341,11 +345,11 @@ void testCrankNicolson(){
 	std::cout << "Press enter to continue..." << std::endl;
 	std::cin.get();	
 	
-	for(int i = 0; i < nPts; i++)
+	for(size_t i = 0; i < nPts; i++)
 		v0[i] = 1e9*PhysCon::eV*(i*dx);
 
 	double norm0 = vtls::getNorm(nPts*nElec, psi0, dx);
-	for(int i = 0; i < numSteps; i++){
+	for(size_t i = 0; i < numSteps; i++){
 		cn->step(psi0, v0, damp, psi, nElec);
 
 		if(i % plotSteps == 0){
@@ -363,12 +367,12 @@ void testCrankNicolson(){
 }
 
 void testInhomogeneousEigenState(){
-	int nPts = 5000;
+	size_t nPts = 5000;
 	double dx = 0.02*PhysCon::a0;
 	double dt = 0.1*PhysCon::hbar/PhysCon::auE_ha;
 
 	double* xs = new double[nPts];
-	for(int i = 0; i < nPts; i++)
+	for(size_t i = 0; i < nPts; i++)
 		xs[i] = dx*(i-nPts/2);
 
 	plotting::GNUPlotter* plotter = new plotting::GNUPlotter();
@@ -382,11 +386,11 @@ void testInhomogeneousEigenState(){
 	sm->addMeasurer(m);
 
 	// define incoming wavefunctions
-	int nElec = 50;
+	size_t nElec = 50;
 	std::complex<double>* psibd = new std::complex<double>[nElec];
 	double* energy = new double[nElec];
 	double* ks = new double[nElec];
-	for (int i = 0; i < nElec; i++){
+	for (size_t i = 0; i < nElec; i++){
 		psibd[i] = 1.0;
 		energy[i] = 5.0*PhysCon::eV*std::pow((i+1.0)/nElec, 2.0);//(i+1.0)/nElec; // 0-5 eV
 		//ks[i] = std::sqrt(2.0*PhysCon::me*energy[i]/PhysCon::hbar/PhysCon::hbar);
@@ -417,7 +421,7 @@ void testInhomogeneousEigenState(){
 
 	double* state_energies = new double[nElec];
 	sm->calcEnergies(0, state_energies);
-	for(int i = 0; i < nElec; i++)
+	for(size_t i = 0; i < nElec; i++)
 		std::cout << "Expected " << i << ": " << energy[i]/PhysCon::eV << ", Got : " << state_energies[i]/PhysCon::eV << " eV" << std::endl;
 	delete[] state_energies;
 
@@ -445,8 +449,8 @@ void testInhomogeneousEigenState(){
 	double* damp = (double*)sq_malloc(sizeof(double)*nPts);
 	std::fill_n(damp, nPts, 1.0);
 	temp = (double*)sq_malloc(sizeof(double)*nPts*nElec);
-	for(int j = 0; j < 100; j++){
-		for(int i = 0; i < 100; i++){
+	for(size_t j = 0; j < 100; j++){
+		for(size_t i = 0; i < 100; i++){
 			cn->step(psi0, v, damp, psi1, nElec);
 			vtls::copyArray(nPts*nElec, psi1, psi0);
 		}
@@ -466,14 +470,14 @@ void testInhomogeneousEigenState(){
 	delete sm;
 }
 
-void testIterationMethods(int stepType=-1, int nPts=8192){
+void testIterationMethods(int stepType=-1, size_t nPts=8192){
 	/* FOR RUNNING WITH WISDOM DO THIS IN MAIN
 	char* wisdomFile = new char[64];
 	std::snprintf(wisdomFile, 64, "fftw_nt_%04d.wisdom", omp_get_max_threads());
 	fftw_init_threads();
 	fftw_import_wisdom_from_filename(wisdomFile);
 
-	//for(int i = 0; i < 3; i++)
+	//for(size_t i = 0; i < 3; i++)
 	//	testIterationMethods(i);
 	testIterationMethods();
 	std::cout << "Done" << std::endl;
@@ -482,12 +486,12 @@ void testIterationMethods(int stepType=-1, int nPts=8192){
 	delete[] wisdomFile;
 	*/
 
-	int nSteps = 10000;
+	size_t nSteps = 10000;
 	double dx = 0.16*PhysCon::a0;
 	double dt = 0.1*PhysCon::hbar/PhysCon::auE_ha;
 
 	double* xs = new double[nPts];
-	for(int i = 0; i < nPts; i++)
+	for(size_t i = 0; i < nPts; i++)
 		xs[i] = dx*(i-nPts/2);
 
 	SimulationManager* sm = new SimulationManager(nPts, xs[0], dx, dt);
@@ -655,7 +659,7 @@ std::complex<double> randComplex(){
 }
 
 void testCuTridiagSolver(){
-	int n=32768, nrhs=128;
+	size_t n=32768, nrhs=128;
 	std::complex<double> *d = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*n);
 	std::complex<double> *ud = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*(n-1));
 	std::complex<double> *ld = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*(n-1));
@@ -664,25 +668,25 @@ void testCuTridiagSolver(){
 	std::complex<double> *b_m = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*n*nrhs);
 
 	// fill matrix and x with random values
-	for(int i = 0; i < n; i++){
+	for(size_t i = 0; i < n; i++){
 		d[i] = randComplex();
 		if(i < n-1){
 			ud[i] = randComplex();
 			ld[i] = randComplex();
 		}
-		for(int j = 0; j < nrhs; j++){
+		for(size_t j = 0; j < nrhs; j++){
 			x[j*n+i] = randComplex();
 			//x[j*n+i] = (i == 8190) ? 1.0 : 0.0; // onehot to probe structure
 		}
 	}
 	// fill matrix with constants, vector with onehot to probe structure
-	/*for(int i = 0; i < n; i++){
+	/*for(size_t i = 0; i < n; i++){
 		d[i] = i;
 		if(i < n-1){
 			ud[i] = n+i;
 			ld[i] = 2*n+i;
 		}
-		for(int j = 0; j < nrhs; j++){
+		for(size_t j = 0; j < nrhs; j++){
 			x[j*n+i] = (i == 8191) ? 1.0 : 0.0;
 		}
 	}*/
@@ -691,9 +695,9 @@ void testCuTridiagSolver(){
 
 	// calculate tridiagonal matrix product manually
 	auto t1 = std::chrono::high_resolution_clock::now();
-	for(int j = 0; j < nrhs; j++){
+	for(size_t j = 0; j < nrhs; j++){
 		b_m[j*n] = d[0]*x[j*n] + ud[0]*x[j*n+1];
-		for(int i = 1; i < n-1; i++)
+		for(size_t i = 1; i < n-1; i++)
 			b_m[j*n+i] = d[i]*x[j*n+i] + ud[i]*x[j*n+i+1] + ld[i-1]*x[j*n+i-1];
 		b_m[j*n+n-1] = d[n-1]*x[j*n+n-1] + ld[n-2]*x[j*n+n-2];
 	}
@@ -726,8 +730,8 @@ void testCuTridiagSolver(){
 	
 	// compare results
 	std::cout << "\tChecking for errors..." << std::endl;
-	for(int j = 0; j < nrhs; j++)
-		for(int i = 0; i < n; i++)
+	for(size_t j = 0; j < nrhs; j++)
+		for(size_t i = 0; i < n; i++)
 			if(std::abs(b_c[j*n+i] - b_m[j*n+i]) > 1e-10)
 				std::cout << "\t\tMismatch at " << i << ", " << j << " : CUDA != CPU : " << b_c[j*n+i] << " != " << b_m[j*n+i] << std::endl;
 
@@ -740,7 +744,7 @@ void testCuTridiagSolver(){
 	cblas_zcopy(n-1, ld, 1, ldt, 1);
 	cblas_zcopy(n-1, ud, 1, udt, 1);
 	cblas_zcopy(n, d, 1, dt, 1);
-	int info;
+	lapack_int info;
 	LAPACK_zgtsv(&n, &nrhs, reinterpret_cast<dcomplex*>(ldt), reinterpret_cast<dcomplex*>(dt), reinterpret_cast<dcomplex*>(udt), reinterpret_cast<dcomplex*>(b_m), &n, &info);
 	t2 = std::chrono::high_resolution_clock::now();
 	std::cout << "\tLAPACK inversion took " << std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() << " us" << std::endl;
@@ -756,13 +760,13 @@ void testCuTridiagSolver(){
 	// compare results, should be same as original vector
 	std::cout << "\tChecking for errors..." << std::endl;
 	// cpu
-	for(int j = 0; j < nrhs; j++)
-		for(int i = 0; i < n; i++)
+	for(size_t j = 0; j < nrhs; j++)
+		for(size_t i = 0; i < n; i++)
 			if(std::abs(x[j*n+i] - b_m[j*n+i]) > 1e-10)
 				std::cout << "\t\tMismatch at " << i << ", " << j << " : CPU != EXPCTD : " << b_m[j*n+i] << " != " << x[j*n+i] << std::endl;
 	// gpu
-	for(int j = 0; j < nrhs; j++)
-		for(int i = 0; i < n; i++)
+	for(size_t j = 0; j < nrhs; j++)
+		for(size_t i = 0; i < n; i++)
 			if(std::abs(x[j*n+i] - b_c[j*n+i]) > 1e-10)
 				std::cout << "\t\tMismatch at " << i << ", " << j << " : CUDA != EXPCTD : " << b_c[j*n+i] << " != " << x[j*n+i] << std::endl;
 
@@ -776,9 +780,9 @@ void testCuTridiagSolver(){
 	// cpu
 	t1 = std::chrono::high_resolution_clock::now();
 	#pragma omp parallel for
-	for(int i = 0; i < n; i++){
+	for(size_t i = 0; i < n; i++){
 		rho[i] = 0;
-		for(int j = 0; j < nrhs; j++)
+		for(size_t j = 0; j < nrhs; j++)
 			rho[i] += weights[j]*std::abs(x[j*n+i]*x[j*n+i]);
 	}
 	t2 = std::chrono::high_resolution_clock::now();
@@ -792,7 +796,7 @@ void testCuTridiagSolver(){
 
 	// compare results
 	std::cout << "\tChecking for errors..." << std::endl;
-	for(int i = 0; i < n; i++)
+	for(size_t i = 0; i < n; i++)
 		if(std::abs(rho[i] - rho_c[i]) > 1e-10)
 			std::cout << "\t\tMismatch at " << i << " : CUDA != CPU : " << rho_c[i] << " != " << rho[i] << std::endl;
 

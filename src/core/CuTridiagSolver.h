@@ -37,7 +37,7 @@ private:
         VectorState status = EMPTY;
     } cX, cXV; // solution vector and virtual solution vector
 
-    int n, nrhs;
+    size_t n, nrhs;
     cusparseHandle_t csHandle;
     cublasHandle_t cbHandle;
     cuDoubleComplex *cDL, *cD, *cDU; // LHS matrix definition
@@ -71,7 +71,7 @@ public:
      * @param n number of gridpoints in the system.
      * @param nrhs number of right hand sides (Kohn-Sham orbitals).
     */
-    cudaTridiagonalSolverSystem(int n, int nrhs);
+    cudaTridiagonalSolverSystem(size_t n, size_t nrhs);
 
     ~cudaTridiagonalSolverSystem();
 

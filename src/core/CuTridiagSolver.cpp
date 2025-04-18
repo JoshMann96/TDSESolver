@@ -1,7 +1,7 @@
 #include "CuTridiagSolver.h"
 #include "cudaTools.cuh"
 
-cudaTridiagonalSolverSystem::cudaTridiagonalSolverSystem(int n, int nrhs) : n(n), nrhs(nrhs), lhsOffdiagDefined(false), rhsOffdiagDefined(false) {
+cudaTridiagonalSolverSystem::cudaTridiagonalSolverSystem(size_t n, size_t nrhs) : n(n), nrhs(nrhs), lhsOffdiagDefined(false), rhsOffdiagDefined(false) {
     cudaStatCheck(  cusparseCreate(&csHandle));
     cudaStatCheck(  cublasCreate_v2(&cbHandle));
     
@@ -135,13 +135,13 @@ void cudaTridiagonalSolverSystem::rhsProduct(const std::complex<double>* D, bool
     cuDoubleComplex zero = make_cuDoubleComplex(0.0, 0.0);
     // gbmv cannot work in-place, so if the source and dest are the same use a temporary buffer
     if(destVirt == sourceVirt){
-        for(int i = 0; i < nrhs; i++){
+        for(size_t i = 0; i < nrhs; i++){
             cudaStatCheck(  cublasZgbmv_v2(cbHandle, CUBLAS_OP_N, n, n, 1, 1, &one, cRHSMat, 3, sourceX.data+(i*n), 1, &zero, rhsTemp, 1));
             cudaStatCheck(  cublasZcopy_v2(cbHandle, n, rhsTemp, 1, destX.data+(i*n), 1));
         }
     }
     else{
-        for(int i = 0; i < nrhs; i++)
+        for(size_t i = 0; i < nrhs; i++)
             cudaStatCheck(  cublasZgbmv_v2(cbHandle, CUBLAS_OP_N, n, n, 1, 1, &one, cRHSMat, 3, sourceX.data+(i*n), 1, &zero, destX.data+(i*n), 1));
     }
 

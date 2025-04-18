@@ -1,6 +1,7 @@
+#include <stddef.h>
 namespace vtls{
     template<class T>
-	Convolver<T>::Convolver(int len) : len(len){
+	Convolver<T>::Convolver(size_t len) : len(len){
 		temp1 = reinterpret_cast<std::complex<double>*>(sq_malloc(sizeof(fftw_complex)*len));
 		temp2 = reinterpret_cast<std::complex<double>*>(sq_malloc(sizeof(fftw_complex)*len));
 
@@ -9,8 +10,10 @@ namespace vtls{
 		fftw_plan_with_nthreads(omp_get_max_threads());
 		//std::cout << "Assigned FFTW threads: " << fftw_planner_nthreads() << std:: endl;
 
-		fp = fftw_plan_dft(1, &len, reinterpret_cast<fftw_complex*>(temp1), reinterpret_cast<fftw_complex*>(temp1), FFTW_FORWARD, FFTW_PATIENT);
-		bp = fftw_plan_dft(1, &len, reinterpret_cast<fftw_complex*>(temp2), reinterpret_cast<fftw_complex*>(temp2), FFTW_BACKWARD, FFTW_PATIENT);
+		assert(len <= INT_MAX);
+		int lenInt = static_cast<int>(len);
+		fp = fftw_plan_dft(1, &lenInt, reinterpret_cast<fftw_complex*>(temp1), reinterpret_cast<fftw_complex*>(temp1), FFTW_FORWARD, FFTW_PATIENT);
+		bp = fftw_plan_dft(1, &lenInt, reinterpret_cast<fftw_complex*>(temp2), reinterpret_cast<fftw_complex*>(temp2), FFTW_BACKWARD, FFTW_PATIENT);
 
 		mtx.unlock();
 	}
@@ -45,7 +48,7 @@ namespace vtls{
 
 
 	template<class T>
-	MaskConvolver<T>::MaskConvolver(int len, const T* maskIn) : len(len){
+	MaskConvolver<T>::MaskConvolver(size_t len, const T* maskIn) : len(len){
 		mask = reinterpret_cast<std::complex<double>*>(sq_malloc(sizeof(fftw_complex)*len));
 		temp = reinterpret_cast<std::complex<double>*>(sq_malloc(sizeof(fftw_complex)*len));
 
@@ -54,8 +57,10 @@ namespace vtls{
 		fftw_plan_with_nthreads(omp_get_max_threads());
 		//std::cout << "Assigned FFTW threads: " << fftw_planner_nthreads() << std:: endl;
 
-		fp = fftw_plan_dft(1, &len, reinterpret_cast<fftw_complex*>(mask), reinterpret_cast<fftw_complex*>(mask), FFTW_FORWARD, FFTW_PATIENT);
-		bp = fftw_plan_dft(1, &len, reinterpret_cast<fftw_complex*>(temp), reinterpret_cast<fftw_complex*>(temp), FFTW_BACKWARD, FFTW_PATIENT);
+		assert(len <= INT_MAX);
+		int lenInt = static_cast<int>(len);
+		fp = fftw_plan_dft(1, &lenInt, reinterpret_cast<fftw_complex*>(mask), reinterpret_cast<fftw_complex*>(mask), FFTW_FORWARD, FFTW_PATIENT);
+		bp = fftw_plan_dft(1, &lenInt, reinterpret_cast<fftw_complex*>(temp), reinterpret_cast<fftw_complex*>(temp), FFTW_BACKWARD, FFTW_PATIENT);
 
 		mtx.unlock();
 

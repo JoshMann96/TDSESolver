@@ -45,14 +45,14 @@ class PyOrigPot
 class PyPsi2t
     : public Psi2t{
         public:
-        PyPsi2t(PySimulation* sim, int nx, int nt, int numSteps, std::string fol)
+        PyPsi2t(PySimulation* sim, size_t nx, size_t nt, size_t numSteps, std::string fol)
             : Psi2t(sim->getNumPoints(), nx, nt, numSteps, sim->getX(), sim->getNElecPtr(), fol.c_str()){}
     };
 
 class PyVfunct
     : public Vfunct{
         public:
-        PyVfunct(PySimulation* sim, int nx, int nt, int numSteps, int index, std::string fol)
+        PyVfunct(PySimulation* sim, size_t nx, size_t nt, size_t numSteps, int index, std::string fol)
             : Vfunct(index, sim->getNumPoints(), nx, nt, numSteps, numSteps*sim->getDT(), sim->getX(), fol.c_str()){}
     };
 
@@ -124,7 +124,7 @@ class PyVDPot
 class PyVDFluxSpec
     : public VDFluxSpec{
         public:
-        PyVDFluxSpec(PySimulation* sim, double vdPos, int vdNum, int nSamp, double emax, double maxT, std::string name, std::string fol)
+        PyVDFluxSpec(PySimulation* sim, double vdPos, int vdNum, size_t nSamp, double emax, double maxT, std::string name, std::string fol)
             : VDFluxSpec(sim->getNumPoints(), sim->findXIdx(vdPos), vdNum, sim->getNElecPtr(), nSamp, emax, maxT, name.c_str(),fol.c_str()){}
     };
 
