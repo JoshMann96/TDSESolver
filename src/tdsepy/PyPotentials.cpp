@@ -56,8 +56,12 @@ void init_Potentials(py::module &m) {
 
     py::class_<ElectricFieldProfiles::ElectricFieldProfile>(m, "FieldProfile");
 
-    py::class_<PyFileFieldProfile, ElectricFieldProfiles::ElectricFieldProfile>(m, "FileFieldProfile")
-        .def(py::init<PySimulation*, double, double, double, double, double, std::string>(), R"V0G0N(
+    py::class_<ElectricFieldProfiles::FileFieldProfile, ElectricFieldProfiles::ElectricFieldProfile>(m, "FileFieldProfile")
+        .def(py::init([](PySimulation* sim, double offset, double rightDecayPos, double leftDecayPos, double decayLength, double emax, std::string fil){
+            return std::unique_ptr<ElectricFieldProfiles::FileFieldProfile>(new ElectricFieldProfiles::FileFieldProfile(
+                sim->getNumPoints(), sim->getX(), offset, rightDecayPos, leftDecayPos, decayLength, emax, fil
+            ));
+        }), R"V0G0N(
             Spatial laser field profile as defined in a file.
             See documentation for appropriate file format.
             The field may be further confined by the "decay" parameters.
@@ -88,8 +92,12 @@ void init_Potentials(py::module &m) {
 
     py::class_<Potential>(m, "Potential");
 
-    py::class_<PyFilePotential, Potential>(m, "FilePotential")
-        .def(py::init<PySimulation*, double, const std::string, double>(), R"V0G0N(
+    py::class_<FilePotential, Potential>(m, "FilePotential")
+        .def(py::init([](PySimulation* sim, double offset, const std::string fil, double refPoint){
+            return std::unique_ptr<FilePotential>(new FilePotential(
+                sim->getNumPoints(), sim->getX(), offset, fil, sim->findXIdx(refPoint)
+            ));
+        }), R"V0G0N(
             Static potential as defined in a binary file.
             See documentation for appropriate file format.
 
@@ -110,9 +118,13 @@ void init_Potentials(py::module &m) {
             "sim"_a, "offset"_a, "fil"_a, "refPoint"_a);
 
 
-    py::class_<PyJelliumPotential, Potential>(m, "JelliumPotential")
-        .def(py::init<PySimulation*, double, double, double, double, double, double>(), R"V0G0N(
-            Static Jellium slab potential.
+    py::class_<JelliumPotentialBacked, Potential>(m, "JelliumPotentialBacked")
+        .def(py::init([](PySimulation* sim, double center, double ef, double w, double backStart, double backWidth, double refPoint){
+            return std::unique_ptr<JelliumPotentialBacked>(new JelliumPotentialBacked(
+                sim->getNumPoints(), sim->getX(), center, ef, w, backStart, backWidth, sim->findXIdx(refPoint)
+            ));
+        }), R"V0G0N(
+            Static Jellium slab potential. The right side of the potential is the Jellium surface while the left side is a polynomial-smooth backing.
 
             Parameters
             ----------
@@ -133,12 +145,67 @@ void init_Potentials(py::module &m) {
 
             Returns
             -------
-            JelliumPotential)V0G0N",
+            JelliumPotentialBacked)V0G0N",
             "sim"_a, "center"_a, "ef"_a, "w"_a, "backStart"_a, "backWidth"_a, "refPoint"_a);
 
-    
-    py::class_<PyPulsePotential, Potential>(m, "PulsePotential")
-        .def(py::init<PySimulation*, ElectricFieldProfiles::ElectricFieldProfile*, Envelopes::Envelope*, double, double, double, double>(),  py::keep_alive<1,3>(),  py::keep_alive<1,4>(), R"V0G0N(
+    py::class_<JelliumPotential, Potential>(m, "JelliumPotential")
+        .def(py::init([](PySimulation* sim, double center, double ef, double w, double refPoint){
+            return std::unique_ptr<JelliumPotential>(new JelliumPotential(
+                sim->getNumPoints(), sim->getX(), center, ef, w, sim->findXIdx(refPoint)
+            ));
+        }), R"V0G0N(
+            Static semiinfinite Jellium potential. The right side of the potential is the Jellium surface, and to the left is within the material.
+
+            Parameters
+            ----------
+            sim : Simulation
+                Associated simulation.
+            center : float
+                Center point of surface sigmoid function.
+            ef : float
+                Fermi energy.
+            w : float
+                Work function.
+            refPoint : float
+                Potential reference point.
+
+            Returns
+            -------
+            JelliumPotentialBacked)V0G0N",
+            "sim"_a, "center"_a, "ef"_a, "w"_a, "refPoint"_a);
+
+    py::class_<FiniteBox, Potential>(m, "FiniteBox")
+        .def(py::init([](PySimulation* sim, double left, double right, double vin, double refPoint){
+            return std::unique_ptr<FiniteBox>(new FiniteBox(
+                sim->getNumPoints(), sim->getX(), left, right, vin, sim->findXIdx(refPoint)
+            ));
+        }), R"V0G0N(
+            Static finite box potential.
+
+            Parameters
+            ----------
+            sim : Simulation
+                Associated simulation.
+            left : float
+                Left-side position of box.
+            right : float
+                Right-side position of box.
+            vin : float
+                Potential inside the box.
+            refPoint : float
+                Potential reference point.
+
+            Returns
+            -------
+            FiniteBox)V0G0N",
+            "sim"_a, "left"_a, "right"_a, "vin"_a, "refPoint"_a);
+
+    py::class_<ElectricFieldProfileToPotential, Potential>(m, "PulsePotential")
+        .def(py::init([](PySimulation* sim, ElectricFieldProfiles::ElectricFieldProfile* fieldProfile, Envelopes::Envelope* env, double phase, double tmax, double lam, double refPoint){
+            return std::unique_ptr<ElectricFieldProfileToPotential>(new ElectricFieldProfileToPotential(
+                sim->getNumPoints(), fieldProfile, sim->getDX(), phase, tmax, lam, env, sim->findXIdx(refPoint)
+            ));
+        }),  py::keep_alive<1,3>(),  py::keep_alive<1,4>(), R"V0G0N(
             Pulsed laser potential under dipole approximation. 
 
             Parameters
@@ -164,8 +231,12 @@ void init_Potentials(py::module &m) {
             "sim"_a, "fieldProfile"_a, "env"_a, "phase"_a, "tmax"_a, "lam"_a, "refPoint"_a);
     
 
-    py::class_<PyCylindricalImagePotential, Potential>(m, "CylindricalImagePotential")
-        .def(py::init<PySimulation*, double, double, double, double, double, double, double>(), R"V0G0N(
+    py::class_<CylindricalImageCharge, Potential>(m, "CylindricalImagePotential")
+        .def(py::init([](PySimulation* sim, double ef, double w, double rad, double posMin, double posMax, double surfPos, double refPoint){
+            return std::unique_ptr<CylindricalImageCharge>(new CylindricalImageCharge(
+                sim->getNumPoints(), sim->getX(), sim->getDX(), ef, w, rad, sim->findXIdx(surfPos), sim->getNElecPtr(), sim->getWeightsPtr(), sim->getRho(), sim->findXIdx(posMin), sim->findXIdx(posMax), sim->findXIdx(refPoint)
+            ));
+        }), R"V0G0N(
             Collective image charge potential assuming a cylindrical conductor geometry.
             If the wavefunction has not been initialized upon construction then the potential will be returned as-is (with reference to refPoint).
             If the wavefunction has been initialized, then the potential will be returned as the change in potential with respect to the initial density.
@@ -194,8 +265,12 @@ void init_Potentials(py::module &m) {
             CylindricalImagePotential)V0G0N",
             "sim"_a, "ef"_a, "w"_a, "rad"_a, "posMin"_a, "posMax"_a, "surfPos"_a, "refPoint"_a);
 
-    py::class_<PyPlanarToCylindricalHartreePotential,Potential>(m, "PlanarToCylindricalHartreePotential")
-        .def(py::init<PySimulation*, double, double, double, double, double>(), R"V0G0N(
+    py::class_<PlanarToCylindricalHartree,Potential>(m, "PlanarToCylindricalHartreePotential")
+        .def(py::init([](PySimulation* sim, double rad, double posMin, double posMax, double surfPos, double refPoint){
+            return std::unique_ptr<PlanarToCylindricalHartree>(new PlanarToCylindricalHartree(
+                sim->getNumPoints(), sim->getDX(), rad, sim->findXIdx(surfPos), sim->getNElecPtr(), sim->getWeightsPtr(), sim->getRho(), sim->findXIdx(posMin), sim->findXIdx(posMax), sim->findXIdx(refPoint)
+            ));
+        }), R"V0G0N(
             Nonlocal Hartree potential assuming charge is distributed on a planar geometry for x <= surfPos 
             and on a cylindrical geometry for x > surfPos, with a transition radius of curvature rad (the planar
             charge is assumed to be within the cylinder of radius rad for x > surfPos).
@@ -224,8 +299,12 @@ void init_Potentials(py::module &m) {
             PlanarToCylindricalHartreePotential)V0G0N",
             "sim"_a, "rad"_a, "posMin"_a, "posMax"_a, "surfPos"_a, "refPoint"_a);
 
-    py::class_<PyLDAFunctional, Potential>(m, "LDAFunctional")
-        .def(py::init<PySimulation*, LDAFunctionalType, double>(), R"V0G0N(
+    py::class_<LDAFunctional, Potential>(m, "LDAFunctional")
+        .def(py::init([](PySimulation* sim, LDAFunctionalType typ, double refPoint){
+            return std::unique_ptr<LDAFunctional>(new LDAFunctional(
+                typ, sim->getNumPoints(), sim->getDX(), sim->getRho(), sim->findXIdx(refPoint)
+            ));
+        }), R"V0G0N(
             Local density approximation (LDA) functional potential.
             If the wavefunction has not been initialized upon construction then the potential will be returned as-is (with reference to refPoint).
             If the wavefunction has been initialized, then the potential will be returned as the change in potential with respect to the initial density.
@@ -246,8 +325,12 @@ void init_Potentials(py::module &m) {
             LDAFunctional)V0G0N",
             "sim"_a, "typ"_a, "refPoint"_a);
     
-    py::class_<PyMeasuredPotential, Potential>(m, "MeasuredPotential")
-        .def(py::init<PySimulation*, Potential*, Measurers::Measurer*, size_t>(), py::keep_alive<1,3>(), py::keep_alive<1,4>(), R"V0G0N(
+    py::class_<MeasuredPotential, Potential>(m, "MeasuredPotential")
+        .def(py::init([](PySimulation* sim, Potential* pot, Measurers::Measurer* meas, size_t numSteps){
+            return std::unique_ptr<MeasuredPotential>(new MeasuredPotential(
+                pot, meas, numSteps, numSteps*sim->getDT()
+            ));
+        }), py::keep_alive<1,3>(), py::keep_alive<1,4>(), R"V0G0N(
             A potential which is also measured when it is called.
             At each evaluation the potential is calculated and then the measurer passed is called using that potential only.
 
