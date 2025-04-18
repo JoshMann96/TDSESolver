@@ -50,14 +50,14 @@ void init_Simulation(py::module &m) {
             pot : Potential
                 Potential to be added.)V0G0N",
             "pot"_a)
-        .def("addMeas", &PySimulation::addMeasurer, py::keep_alive<1,2>(), R"V0G0N(
+        .def("addMeas", &PySimulation::addMeasurer, R"V0G0N(
             Adds measurer to the simulation.
 
             Parameters
             ----------
             meas : Measurer
                 Measurer to be added.)V0G0N",
-            "meas"_a)
+            "meas"_a) // no need for keep_alive as Measurer has py::nodelete, the MeasurementManager will take care of the memory
         .def("setDens", &PySimulation::setDensity, py::keep_alive<1,2>(), R"V0G0N(
             Sets density calculator for simulation.
 

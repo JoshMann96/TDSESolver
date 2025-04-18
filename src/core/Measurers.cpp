@@ -36,9 +36,9 @@ namespace Measurers {
 		if(first && *nElec > 0){
 			first = false;
 			
-			open({fol, fname});
+			open({makeDirectory(fol), fname});
 
-			write(&nElec, sizeof(size_t));
+			write(nElec, sizeof(size_t));
 
 			close();
 		}
@@ -519,7 +519,7 @@ namespace Measurers {
 
 
 	WfcRhoWeights::WfcRhoWeights(const size_t* nElec, double * const * weights, const std::string fol) : 
-		nElec(nElec), weights(weights), Measurer(18, fol, fname){ needsDens=true; }
+		nElec(nElec), weights(weights), Measurer(18, fol, fname){}
 
 	MeasurerStatus WfcRhoWeights::measure(size_t step, const std::complex<double> * psi, const double* v, double t) {
 		if (first) {

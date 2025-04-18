@@ -85,7 +85,7 @@ def getConstant(name:_CONSTANT_NAMES, fol:str, dtype:_C_DTYPES = None):
     with open(combinePath(fol, name + ".dat"), 'rb') as fil:
         INT_SIZE = readData(fil, 'int32')
         typ = readData(fil, 'int32')
-        dat = readData(fil, _CONSTANT_DTYPES[name] if dtype is None else dtype)
+        dat = readData(fil, _CONSTANT_DTYPES[name] if dtype is None else dtype, INT_SIZE=INT_SIZE)
     return dat, typ
 
 def getPsi2t(fol:str):

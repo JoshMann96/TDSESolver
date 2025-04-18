@@ -179,7 +179,8 @@ namespace WfcToRho {
 		 * @param rho (out) Array to store the calculated processed density, size nPts.
 		 */
 		void calcRho(size_t nPts, size_t nElec, double dx, const double* weights, const std::complex<double>* psi, double* rho) {
-			if (!psi2_work) psi2_work = (double*)sq_malloc(sizeof(double) * nPts * nElec);
+			if (!psi2_work) 
+				psi2_work = (double*)sq_malloc(sizeof(double) * nPts * nElec);
 			calcRawRho(nPts, nElec, weights, psi, psi2_work, rho);
 			calcRho(nPts, nElec, dx, rho);
 		};

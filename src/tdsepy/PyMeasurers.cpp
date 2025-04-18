@@ -148,6 +148,7 @@ void init_Measurers(py::module &m) {
             ));
         }), R"V0G0N(
             Records wavefunction probability densities, downsampling to nx spatial points and nt temporal points.
+            Parsing the output requires that Measurers NElec and Weights also be added to the simulation.
 
             Parameters
             ----------

@@ -58,10 +58,7 @@ namespace Measurers {
 		 * @param fname The name of the file to write to. The extension '.dat' will be appended and the fstream \a fil will be opened.
 		 */
 		Measurer(int index, const std::string fol, const std::string fname) : index(index) {
-			std::string fixedFol = fol;
-			if(!fixedFol.empty() && fixedFol.back() != '/')
-				fixedFol += '/';
-			fil = openFile(fixedFol + fname + ext);
+			fil = openFile(makeDirectory(fol) + fname + ext);
 
 			writePreamble(index);
 		}
@@ -70,6 +67,13 @@ namespace Measurers {
 		~Measurer(){
 			if(fil.is_open())
 				fil.close();
+		}
+
+		std::string makeDirectory(const std::string fol){
+			std::string fixedFol = fol;
+			if(!fixedFol.empty() && fixedFol.back() != '/')
+				fixedFol += '/';
+			return fixedFol;
 		}
 
 		/**
@@ -83,10 +87,8 @@ namespace Measurers {
 			}
 
 			std::string path("");
-			for(const std::string& ele : pathParts){
-				std::cout << ele << std::endl;
+			for(const std::string& ele : pathParts)
 				path += ele;
-			}
 			path += ext;
 			fil = openFile(path);
 			
@@ -840,6 +842,8 @@ namespace Measurers {
 		 * @param fname The folder to write to.
 		 */
 		MeasurementManager(const std::string fname);
+
+		MeasurementManager() : MeasurementManager("") {};
 
 		~MeasurementManager();
 

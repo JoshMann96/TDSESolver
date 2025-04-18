@@ -9,7 +9,7 @@ SimulationManager::SimulationManager(size_t nPts, double xMin, double dx, double
 	index = cyclic_int<size_t>(0, HISTORY_LENGTH);
 
 	pot = new Potentials::PotentialManager(nPts);
-	meas = new Measurers::MeasurementManager("");
+	meas = new Measurers::MeasurementManager();
 	psis = (std::complex<double>**) sq_malloc(sizeof(std::complex<double>*)*HISTORY_LENGTH);
 	for(size_t i = 0; i < HISTORY_LENGTH; i++)
 		psis[i] = nullptr;
@@ -148,8 +148,11 @@ void SimulationManager::findEigenStates(double emin, double emax) {
 	}
 
 	calcWeights();
-	if(calcDensity)
+	if(calcDensity){
+		if(dens == nullptr)
+			throw std::runtime_error("SimulationManager::findEigenStates: Density not set!");
 		dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
+	}
 
 	wavefunctionInitialized = true;
 }
@@ -173,8 +176,11 @@ void SimulationManager::findInhomogeneousEigenStates(size_t nElec, const double*
 		vtls::copyArray(nPts * nElec, psis[index], psis[i]);
 
 	calcWeights();
-	if(calcDensity)
+	if(calcDensity){
+		if(dens == nullptr)
+			throw std::runtime_error("SimulationManager::findInhomogeneousEigenStates: Density not set!");
 		dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
+	}
 
 	normScheme = WfcToRho::NormalizationScheme::UNNORMALIZED;
 
@@ -196,16 +202,22 @@ void SimulationManager::setPsi(std::complex<double>* npsi, WfcToRho::Normalizati
 	if(normScheme == WfcToRho::NormalizationScheme::NORMALIZED)
 		vtls::normalizeSqrNorm(nPts, psis[index], dx);
 
-	if(calcDensity)
+	if(calcDensity){
+		if(dens == nullptr)
+			throw std::runtime_error("SimulationManager::setPsi: Density not set!");
 		dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
+	}
 
 	wavefunctionInitialized = true;
 }
 
 size_t SimulationManager::calculatePotential(double* rho, const std::complex<double>* psi, double t, double* v){
 	auto strt = std::chrono::high_resolution_clock::now();
-	if(calcDensity)
+	if(calcDensity){
+		if(dens == nullptr)
+			throw std::runtime_error("SimulationManager::calculatePotential: Density not set!");
 		dens->calcRho(nPts, nElec, dx, weights, psi, rho);
+	}
 	pot->getV(rho, psi, t, v);
 	auto end = std::chrono::high_resolution_clock::now();
 	auto dur = std::chrono::duration_cast<std::chrono::microseconds>(end - strt);
