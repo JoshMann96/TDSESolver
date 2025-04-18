@@ -112,7 +112,7 @@ namespace Measurers {
 	Psi2t::Psi2t(size_t nPts, size_t nx, size_t nt, size_t numSteps, const double * x, const size_t* nElec, const std::string fol) :
 		nPts(nPts), nx(nx), nt(nt), numSteps(numSteps), nElec(nElec), curIdx(0), Measurer(9, fol, fname)
 	{
-		measSteps = (size_t*) sq_malloc(sizeof(size_t)*numSteps);
+		measSteps = (size_t*) sq_malloc(sizeof(size_t)*nt);
 		vtls::linspace(nt, (size_t)0, (size_t)(numSteps - 1), measSteps);
 
 		xs = (double*) sq_malloc(sizeof(double)*nx);
@@ -361,10 +361,20 @@ namespace Measurers {
 
 
 	VDFluxSpec::VDFluxSpec(size_t nPts, size_t vdPos, int vdNum, const size_t* nElec, size_t nSamp, double emax, double tmax, const std::string name, const std::string fol) :
-		vdPos(vdPos),  nElec(nElec), nSamp(nSamp), tmax(tmax), nPts(nPts), dw(emax / PhysCon::hbar / nSamp),
+		nElec(nElec), nSamp(nSamp), tmax(tmax), nPts(nPts), dw(emax / PhysCon::hbar / nSamp),
 		Measurer(24, fol, std::to_string(vdNum) + fname)
 	 {
 		assert(name.length() == 4);
+
+		// set right-sided derivative by default, left-sided if on right boundary
+		if(vdPos == nPts-1){
+			vdpL = nPts-2;
+			vdpR = nPts-1;
+		}
+		else{
+			vdpL = vdPos;
+			vdpR = vdPos+1;
+		}
 
 		phss = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nSamp);
 		temp = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nSamp);
@@ -413,7 +423,7 @@ namespace Measurers {
 			ct = t;
 		}
 
-		cumPotPhs *= std::exp(PhysCon::im * (v[vdPos] + v[vdPos + 1]) / (2.0 * PhysCon::hbar) * (t - ct));
+		cumPotPhs *= std::exp(PhysCon::im * (v[vdpL] + v[vdpR]) / (2.0 * PhysCon::hbar) * (t - ct));
 		double winMul;
 		if (t < tukeyAl / 2 * tmax)
 			winMul = 0.5 * (1 - std::cos(2.0 * PhysCon::pi * t / (tukeyAl * tmax)));
@@ -433,8 +443,8 @@ namespace Measurers {
 		for(size_t i = 0; i < *nElec; i++){
 			//wfcs0[i0 + i] += psip0 * phss[i]
 			//wfcs1[i0 + i] += psip1 * phss[i]
-			cblas_zaxpy(nSamp, &psi[i*nPts + vdPos  ], phss, 1, &wfcs0[i*nSamp], 1);
-			cblas_zaxpy(nSamp, &psi[i*nPts + vdPos+1], phss, 1, &wfcs1[i*nSamp], 1);
+			cblas_zaxpy(nSamp, &psi[i*nPts + vdpL], phss, 1, &wfcs0[i*nSamp], 1);
+			cblas_zaxpy(nSamp, &psi[i*nPts + vdpR], phss, 1, &wfcs1[i*nSamp], 1);
 		}
 
 		ct = t;
@@ -446,7 +456,7 @@ namespace Measurers {
 	Vfunct::Vfunct(int potNum, size_t nPts, size_t nx, size_t nt, size_t numSteps, double maxT, const double * x, const std::string fol) :
 		nPts(nPts), nx(nx), nt(nt), maxT(maxT), curIdx(0), Measurer(17, fol, std::to_string(potNum) + fname)
 	{
-		measSteps = (size_t*) sq_malloc(sizeof(size_t)*numSteps);
+		measSteps = (size_t*) sq_malloc(sizeof(size_t)*nt);
 		vtls::linspace(nt, (size_t)0, (size_t)(numSteps - 1), measSteps);
 
 		xs = (double*) sq_malloc(sizeof(double)*nx);
@@ -615,14 +625,13 @@ namespace Measurers {
 
 	MeasurerStatus MeasurementManager::measure(size_t step, const std::complex<double> * psi, const double* v, double t) {
 		for ( auto it = meas.begin(); it != meas.end(); ){
-			if( (*it)->measure(step, psi, v, t) == 1) {
+			if( (*it)->measure(step, psi, v, t) == MeasurerStatus::ALL_DONE) {
 				delete (*it);
 				it = meas.erase(it);
 			}
 			else
 				++it;
 		}
-		//std::cout << std::flush;
 		return MeasurerStatus::SUCCESS;
 	}
 }

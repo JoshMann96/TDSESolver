@@ -561,7 +561,7 @@ namespace Measurers {
 		public Measurer {
 	private:
 		std::fstream fil;
-		size_t vdPos;
+		size_t vdpL, vdpR;
 		size_t nSamp;
 		bool first = true;
 		const size_t* nElec;
