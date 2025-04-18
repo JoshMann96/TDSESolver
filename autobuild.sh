@@ -64,14 +64,14 @@ make -j 8
 if [ "$PYTHON_BINDINGS" = TRUE ]
     then
     cd lib/tdsepy
-    pip3 install -e .
+    pip3 install .
 
     echo ""
     echo "BUILD COMPLETE"
     echo "To install to a custom venv"
     echo "    1. source the desired venv"
     echo "    2. cd to build/lib/tdsepy"
-    echo "    3. run 'pip install -e .'"
+    echo "    3. run 'pip install .'"
 
     deactivate
     fi

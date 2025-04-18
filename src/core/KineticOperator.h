@@ -36,7 +36,7 @@ namespace KineticOperators {
 		 * @param emax The maximum energy to search for eigenstates
 		 * @param states (out) The eigenstates found. Memory is allocated by the function and must be freed by the user. See implementation notes for element count.
 		 * @param allocator (in) A pointer to the allocator to be used.
-		 * @param nEigs (out) The number of eigenstates found, allocated by the caller
+		 * @param nEigs (out) The number of eigenstates found
 		 */
 		virtual void findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs) = 0;
 	};

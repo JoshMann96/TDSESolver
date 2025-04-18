@@ -14,7 +14,7 @@ target_link_libraries(tdsepy PRIVATE core pybind11::pybind11)
 set(Stubgen_Executable "${CMAKE_SOURCE_DIR}/.venv/bin/stubgen")
 if(EXISTS "${Stubgen_Executable}")
     add_custom_command(TARGET tdsepy POST_BUILD
-        COMMAND ${Stubgen_Executable} --include-docstrings -p tdsepy -o ..
+        COMMAND ${Stubgen_Executable} --include-docstrings -v -p tdsepy -o .
         WORKING_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}
         COMMENT "Use stubgen to create .pyi for statement completion")
 else()
@@ -34,4 +34,6 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/__init__.py ${CMAKE_LIBRARY_OUTPUT_DI
 
 # Create a py.typed file
 add_custom_command(TARGET tdsepy POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E touch ${TDSEPY_OUTER_DIRECTORY}/tdsepy/py.typed)
+    COMMAND ${CMAKE_COMMAND} -E 
+        touch ${TDSEPY_OUTER_DIRECTORY}/tdsepy/py.typed
+        && touch ${TDSEPY_OUTER_DIRECTORY}/tdsepy/__init__.pyi)
