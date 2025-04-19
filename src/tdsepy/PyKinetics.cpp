@@ -84,8 +84,6 @@ void init_Kinetics(py::module &m) {
             py::array_t<double, py::array::c_style | py::array::forcecast> energies, 
             double m_eff, double vb){
                 
-            vtlsPrnt::printArray(nElec, energies.data());
-
             // get k0
             double* k0s = (double*) sq_malloc(sizeof(double) * nElec);
             for (size_t i = 0; i < nElec; i++)
