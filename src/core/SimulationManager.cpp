@@ -261,7 +261,7 @@ void SimulationManager::runEPS_U2TU(size_t nSteps) {
 	if(!asyncCalc)
 		std::cout << "Warning: Potential is not wavefunction independent! It is recommended to use runEPS_UW2TUW to more accurately account for the nonlinearity." << std::endl;
 
-	for(size_t i = 0; i < nSteps; i++){
+	for(size_t i = 0; i <= nSteps; i++){
 		if(asyncCalc){
 			// evaluate potential n+1
 			if (i == 0)
@@ -314,7 +314,7 @@ void SimulationManager::runEPS_UW2TUW(size_t nSteps) {
 	// initialize progress tracker
 	progTracker.reset(nSteps);
 
-	for(size_t i = 0; i < nSteps; i++){
+	for(size_t i = 0; i <= nSteps; i++){
 		// step n->n+1/2
 		updatePotential(index);
 		kin_psm->stepOS_UW2T(psis[index], vs[index], spatialDamp, tpsi, nElec);
@@ -359,7 +359,7 @@ void SimulationManager::runCN_L(size_t nSteps){
 	if(!asyncCalc)
 		std::cout << "Warning: Potential is not wavefunction independent! It is recommended to use runCN_NL to more accurately account for the nonlinearity." << std::endl;
 
-	for(size_t i = 0; i < nSteps; i++){
+	for(size_t i = 0; i <= nSteps; i++){
 		if(asyncCalc){
 			// evaluate potential n+1
 			if (i == 0){ // evaluate potential n, n+1 if needed
@@ -416,7 +416,7 @@ void SimulationManager::runCN_NL(size_t nSteps){
 	// initialize progress tracker
 	progTracker.reset(nSteps);
 
-	for(size_t i = 0; i < nSteps; i++){
+	for(size_t i = 0; i <= nSteps; i++){
 		updatePotential(index);
 
 		// estimate the density at the next step using the present potential (virtual step)

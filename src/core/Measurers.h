@@ -64,12 +64,12 @@ namespace Measurers {
 		}
 
 		/// Destructor, closes the fstream if it is open.
-		~Measurer(){
+		virtual ~Measurer(){
 			if(fil.is_open())
 				fil.close();
 		}
 
-		std::string makeDirectory(const std::string fol){
+		std::string static makeDirectory(const std::string fol){
 			std::string fixedFol = fol;
 			if(!fixedFol.empty() && fixedFol.back() != '/')
 				fixedFol += '/';

@@ -113,7 +113,7 @@ namespace Measurers {
 		nPts(nPts), nx(nx), nt(nt), numSteps(numSteps), nElec(nElec), curIdx(0), Measurer(9, fol, fname)
 	{
 		measSteps = (size_t*) sq_malloc(sizeof(size_t)*nt);
-		vtls::linspace(nt, (size_t)0, (size_t)(numSteps - 1), measSteps);
+		vtls::linspace(nt, (size_t)0, (size_t)numSteps, measSteps);
 
 		xs = (double*) sq_malloc(sizeof(double)*nx);
 		vtls::linearInterpolateEdge(nPts, x, nx, xs);
@@ -457,7 +457,7 @@ namespace Measurers {
 		nPts(nPts), nx(nx), nt(nt), maxT(maxT), curIdx(0), Measurer(17, fol, (potNum < 0 ? std::string("") : std::to_string(potNum)) + fname)
 	{
 		measSteps = (size_t*) sq_malloc(sizeof(size_t)*nt);
-		vtls::linspace(nt, (size_t)0, (size_t)(numSteps - 1), measSteps);
+		vtls::linspace(nt, (size_t)0, (size_t)numSteps, measSteps);
 
 		xs = (double*) sq_malloc(sizeof(double)*nx);
 		vtls::linearInterpolateEdge(nPts, x, nx, xs);
