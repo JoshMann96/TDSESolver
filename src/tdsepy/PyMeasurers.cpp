@@ -169,7 +169,7 @@ void init_Measurers(py::module &m) {
             "sim"_a, "nx"_a, "nt"_a, "numSteps"_a, "fol"_a);
 
     py::class_<Vfunct, Measurer, std::unique_ptr<Vfunct, py::nodelete>>(m, "Vfunct")
-        .def(py::init([](PySimulation* sim, size_t nx, size_t nt, size_t numSteps, int idx, std::string fol){
+        .def(py::init([](PySimulation* sim, size_t nx, size_t nt, size_t numSteps, std::string fol, int idx){
             return std::unique_ptr<Vfunct, py::nodelete>(new Vfunct(
                 idx, sim->getNumPoints(), nx, nt, numSteps, numSteps*sim->getDT(), sim->getX(), fol
             ));
@@ -186,15 +186,15 @@ void init_Measurers(py::module &m) {
                 Number of temporal points to sample.
             numSteps : uint
                 Number of time steps in the full calculation.
-            idx: int
-                Index of record, to prepend the output file. < 0 for no index, >= 0 for listed index.
             fol : str
                 Directory to contain file.
+            idx: int
+                Index of record, to prepend the output file. < 0 for no index, >= 0 for listed index. Defaults to -1.
 
             Returns
             -------
             Vfunct)V0G0N",
-            "sim"_a, "nx"_a, "nt"_a, "numSteps"_a, "idx"_a, "fol"_a);
+            "sim"_a, "nx"_a, "nt"_a, "numSteps"_a, "fol"_a, "idx"_a=-1);
 
     py::class_<ExpectE, Measurer, std::unique_ptr<ExpectE, py::nodelete>>(m, "ExpectE")
         .def(py::init([](PySimulation* sim, std::string fol){

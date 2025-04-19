@@ -112,7 +112,7 @@ namespace FDBCs{
         return 1.0 + phaseAdvance;
     }
 
-    UniformIDTransparentBC::UniformIDTransparentBC(size_t order, size_t nElec, double dx, double dt, std::complex<double>* psibd, double* k0, double vb) : UniformHDTransparentBC(order, nElec, dx, dt) {
+    UniformIDTransparentBC::UniformIDTransparentBC(size_t order, size_t nElec, double dx, double dt, const std::complex<double>* psibd, const double* k0, double vb) : UniformHDTransparentBC(order, nElec, dx, dt) {
         phaseAdvance = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nElec);
         phs = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nElec);
         adjphs = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nElec);

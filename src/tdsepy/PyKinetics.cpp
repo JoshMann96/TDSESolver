@@ -79,23 +79,13 @@ void init_Kinetics(py::module &m) {
             "sim"_a, "order"_a, "nElec"_a);
 
     py::class_<FDBCs::UniformIDTransparentBC, FDBCs::UniformHDTransparentBC>(m, "UniformIDTransparentBC")
-        .def(py::init([](PySimulation* sim, size_t order, size_t nElec, std::complex<double>* psibd, double* energies, double m_eff, FDBCs::BCSide side){
-            // get boundary potential
-            double* v = (double*) sq_malloc(sizeof(double) * nElec);
-            sim->getPotPointer()->getVBare(0.0, v);
-            double vb;
-            if (side == FDBCs::BCSide::LEFT)
-                vb = v[0];
-            else
-                vb = v[sim->getNumPoints()-1];
-            sq_free(v);
-
+        .def(py::init([](PySimulation* sim, size_t order, size_t nElec, py::array_t<std::complex<double>> psibd, py::array_t<double> energies, double m_eff, double vb){
             // get k0
             double* k0s = (double*) sq_malloc(sizeof(double) * nElec);
             for (size_t i = 0; i < nElec; i++)
-                k0s[i] = KineticOperators::CrankNicolson::wavenumberFromEnergy(energies[i], vb, sim->getDX(), sim->getDT(), m_eff);
+                k0s[i] = KineticOperators::CrankNicolson::wavenumberFromEnergy(energies.at(i), vb, sim->getDX(), sim->getDT(), m_eff);
 
-            std::unique_ptr<FDBCs::UniformIDTransparentBC> res(new FDBCs::UniformIDTransparentBC(order, nElec, sim->getDX(), sim->getDT(), psibd, k0s, vb));
+            std::unique_ptr<FDBCs::UniformIDTransparentBC> res(new FDBCs::UniformIDTransparentBC(order, nElec, sim->getDX(), sim->getDT(), psibd.data(), k0s, vb));
 
             sq_free(k0s);
 
@@ -127,13 +117,13 @@ void init_Kinetics(py::module &m) {
                 Energies of the eigenstates, nElec elements.
             m_eff : float
                 Effective mass of the electrons. 1.0 = free electron mass.
-            side : BCSide
-                Side of the boundary condition. Used for finding the initial potential.
+            vb : float
+                Potential at the boundary.
             
             Returns
             -------
             UniformIDTransparentBC)V0G0N",
-            "sim"_a, "order"_a, "nElec"_a, "psibd"_a, "energies"_a, "m_eff"_a, "side"_a);
+            "sim"_a, "order"_a, "nElec"_a, "psibd"_a, "energies"_a, "m_eff"_a, "vb"_a);
     
 
 // KINETIC OPERATORS

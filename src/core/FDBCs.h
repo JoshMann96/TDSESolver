@@ -439,7 +439,7 @@ namespace FDBCs
 		 * @param k0 (in) The wavevector of the wavefunction(s) at the boundary, \a nElec elements
 		 * @param vb The potential at the boundary
 		 */
-		UniformIDTransparentBC(size_t order, size_t nElec, double dx, double dt, std::complex<double>* psibd, double* k0, double vb);
+		UniformIDTransparentBC(size_t order, size_t nElec, double dx, double dt, const std::complex<double>* psibd, const double* k0, double vb);
 		
 		~UniformIDTransparentBC() { sq_free(phaseAdvance); sq_free(phs); sq_free(adjphs); sq_free(ihpsi); sq_free(hompsi); };
 		
