@@ -247,8 +247,7 @@ namespace KineticOperators {
 	}
 
 	void GenDisp_PSM::findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs) {
-		if (nPts > 46340)
-			throw std::runtime_error("Long datatype is required for grids of size nPts>46340. Rewrite this code (GenDisp_PSM::findEigenStates)");
+		assert(nPts <= std::sqrt(LAPACK_INT_MAX));
 			
 		calcOpMat();
 		for (size_t i = 0; i < nPts; i++)
@@ -267,11 +266,19 @@ namespace KineticOperators {
 
 		double prec = LAPACK_dlamch(&cS);//(2 * dlamch_(&cS));
 		lapack_int info;
+		lapack_int nPts_int = static_cast<lapack_int>(nPts);
+		lapack_int nEigs_int;
 
-		LAPACK_zhpevx(&cV, &cV, &cU, &nPts, reinterpret_cast<dcomplex *>(opMat), &emin, &emax, 0, 0, &prec, nEigs, eigs, reinterpret_cast<dcomplex *>(*states), &nPts, work, work2, iwork3, ifail, &info);
+		LAPACK_zhpevx(&cV, &cV, &cU, &nPts_int, reinterpret_cast<dcomplex *>(opMat), &emin, &emax, 0, 0, &prec, &nEigs_int, eigs, reinterpret_cast<dcomplex *>(*states), &nPts_int, work, work2, iwork3, ifail, &info);
+
+		if (info != 0) {
+			std::cerr << "Error in LAPACK_zhpevx: " << info << std::endl;
+			throw std::runtime_error("LAPACK_zhpevx failed");
+		}
 
 		freeOpMat();
 
+		*nEigs = static_cast<size_t>(nEigs_int);
 		nElec = *nEigs;
 
 		sq_free(work);
@@ -698,8 +705,15 @@ namespace KineticOperators {
 
 		double prec = LAPACK_dlamch(&cS);//(2 * dlamch_(&cS));
 		lapack_int info;
+		lapack_int nPts_int = static_cast<lapack_int>(nPts);
+		lapack_int nEigs_int;
 
-		LAPACK_zhpevx(&cV, &cV, &cU, &nPts, reinterpret_cast<dcomplex *>(opMat), &emin, &emax, 0, 0, &prec, nEigs, eigs, reinterpret_cast<dcomplex *>(*states), &nPts, work, work2, iwork3, ifail, &info);
+		LAPACK_zhpevx(&cV, &cV, &cU, &nPts_int, reinterpret_cast<dcomplex *>(opMat), &emin, &emax, 0, 0, &prec, &nEigs_int, eigs, reinterpret_cast<dcomplex *>(*states), &nPts_int, work, work2, iwork3, ifail, &info);
+
+		if (info != 0) {
+			std::cerr << "Error in LAPACK_zhpevx: " << info << std::endl;
+			throw std::runtime_error("LAPACK_zhpevx failed");
+		}
 
 		freeOpMat();
 
@@ -947,7 +961,16 @@ namespace KineticOperators {
 		}
 		else{
 			lapack_int info;
-			LAPACK_zgtsv(&nPts, &nElec, reinterpret_cast<dcomplex*>(ld), reinterpret_cast<dcomplex*>(d), reinterpret_cast<dcomplex*>(ud), reinterpret_cast<dcomplex*>(targ), &nPts, &info);
+			lapack_int nElec = static_cast<lapack_int>(nElec);
+			assert(nPts <= LAPACK_INT_MAX);
+			lapack_int nPts_int = static_cast<lapack_int>(nPts);
+			LAPACK_zgtsv(&nPts_int, &nElec, reinterpret_cast<dcomplex*>(ld), reinterpret_cast<dcomplex*>(d), reinterpret_cast<dcomplex*>(ud), reinterpret_cast<dcomplex*>(targ), &nPts_int, &info);
+			
+			if(info != 0) {
+				std::cerr << "Error in LAPACK_zgtsv: " << info << std::endl;
+				throw std::runtime_error("LAPACK_zgtsv failed");
+			}
+
 			for(size_t i = 0; i < nElec; i++) // apply spatial damping
 				vtls::seqMulArrays(nPts, spatialDamp, &targ[i*nPts]);
 		}
@@ -982,13 +1005,28 @@ namespace KineticOperators {
 		const char* cS = "S";
 		double prec = 2.0*LAPACK_dlamch(cS);
 		lapack_int info;
-		LAPACK_dstebz("V", "B", &nPts, &emin, &emax, 0, 0, &prec, hd, hod, nEigs, &nSplit, eigs, iblock, isplit, work, iwork, &info);
+		assert(nPts <= LAPACK_INT_MAX);
+		lapack_int nPts_int = static_cast<lapack_int>(nPts);
+		lapack_int nEigs_int;
+		LAPACK_dstebz("V", "B", &nPts_int, &emin, &emax, 0, 0, &prec, hd, hod, &nEigs_int, &nSplit, eigs, iblock, isplit, work, iwork, &info);
 
+		if (info != 0) {
+			std::cerr << "Error in LAPACK_dstebz: " << info << std::endl;
+			throw std::runtime_error("LAPACK_dstebz failed");
+		}
+
+		*nEigs = static_cast<size_t>(nEigs_int);
 		double* statesTemp = (double*)sq_malloc(sizeof(double)*nPts*(*nEigs));
 		lapack_int* ifail = (lapack_int*)sq_malloc(sizeof(lapack_int)*(*nEigs));
 
 		// get eigenvectors
-		LAPACK_dstein(&nPts, hd, hod, nEigs, eigs, iblock, isplit, statesTemp, &nPts, work, iwork, ifail, &info);
+		LAPACK_dstein(&nPts_int, hd, hod, &nEigs_int, eigs, iblock, isplit, statesTemp, &nPts_int, work, iwork, ifail, &info);
+
+		if (info != 0) {
+			std::cerr << "Error in LAPACK_dstein: " << info << std::endl;
+			throw std::runtime_error("LAPACK_dstein failed");
+		}
+
 		// copy eigenvectors to states
 		*states = (std::complex<double>*)allocator(sizeof(std::complex<double>)*nPts*(*nEigs));
 		vtls::copyArray(nPts*(*nEigs), statesTemp, *states);
@@ -1051,8 +1089,16 @@ namespace KineticOperators {
 				throw std::runtime_error("System must be inhomogeneous to use findInhomogeneousEigenStates");
 			//SOLVE
 			lapack_int info, one=1;
-			LAPACK_zgtsv(&nPts, &one, reinterpret_cast<dcomplex*>(lhs_ld), reinterpret_cast<dcomplex*>(lhs_d), reinterpret_cast<dcomplex*>(lhs_ud), reinterpret_cast<dcomplex*>(rhs), &nPts, &info);
+			assert(nPts <= LAPACK_INT_MAX);
+			lapack_int nPts_int = static_cast<lapack_int>(nPts);
+
+			LAPACK_zgtsv(&nPts_int, &one, reinterpret_cast<dcomplex*>(lhs_ld), reinterpret_cast<dcomplex*>(lhs_d), reinterpret_cast<dcomplex*>(lhs_ud), reinterpret_cast<dcomplex*>(rhs), &nPts_int, &info);
 		
+			if(info != 0) {
+				std::cerr << "Error in LAPACK_zgtsv: " << info << std::endl;
+				throw std::runtime_error("LAPACK_zgtsv failed");
+			}
+
 			vtls::copyArray(nPts, rhs, &states[i*nPts]);
 		}
 

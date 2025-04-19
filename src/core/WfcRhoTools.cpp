@@ -35,8 +35,10 @@ namespace WfcToRho {
 		double* energyRangeBoundaries = (double*) sq_malloc(sizeof(double) * (nElec+1));
 		energyRangeBoundaries[0] = 0.0;
 		for (size_t i = 0; i < nElec-1; i++){
-			if(energies[i] > energies[i+1])
+			if(energies[i] > energies[i+1]){
+				vtlsPrnt::printArray(nElec, energies);
 				throw std::runtime_error("WfcToRho::SemiInfiniteFermiGas::calcWeights: energies not sorted");
+			}
 			energyRangeBoundaries[i + 1] = (energies[i] + energies[i+1])/2.0 - bottom;
 		}
 		energyRangeBoundaries[nElec] = ef;

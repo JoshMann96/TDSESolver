@@ -79,7 +79,13 @@ void init_Kinetics(py::module &m) {
             "sim"_a, "order"_a, "nElec"_a);
 
     py::class_<FDBCs::UniformIDTransparentBC, FDBCs::UniformHDTransparentBC>(m, "UniformIDTransparentBC")
-        .def(py::init([](PySimulation* sim, size_t order, size_t nElec, py::array_t<std::complex<double>> psibd, py::array_t<double> energies, double m_eff, double vb){
+        .def(py::init([](PySimulation* sim, size_t order, size_t nElec, 
+            py::array_t<std::complex<double>, py::array::c_style | py::array::forcecast> psibd, 
+            py::array_t<double, py::array::c_style | py::array::forcecast> energies, 
+            double m_eff, double vb){
+                
+            vtlsPrnt::printArray(nElec, energies.data());
+
             // get k0
             double* k0s = (double*) sq_malloc(sizeof(double) * nElec);
             for (size_t i = 0; i < nElec; i++)
@@ -132,7 +138,18 @@ void init_Kinetics(py::module &m) {
 
     py::class_<KineticOperators::KineticOperator_PSM, KineticOperators::KineticOperator>(m, "KineticOperator_PSM");
 
-    py::class_<KineticOperators::KineticOperator_FDM, KineticOperators::KineticOperator>(m, "KineticOperator_FDM");
+    py::class_<KineticOperators::KineticOperator_FDM, KineticOperators::KineticOperator>(m, "KineticOperator_FDM")
+        .def("setBC", &KineticOperators::KineticOperator_FDM::setBC, py::keep_alive<1,2>(), R"V0G0N(
+            Sets the left or right boundary condition for the system.
+            This may be done at any time.
+
+            Parameters
+            ----------
+            bc : BoundaryCondition
+                The boundary condition to set.
+            side : BCSide
+                The side of the system to set the boundary condition for (left or right).)V0G0N",
+            "bc"_a, "side"_a);
 
     py::class_<KineticOperators::GenDisp_PSM_FreeElec, KineticOperators::KineticOperator_PSM>(m, "PSM_FreeElec")
         .def(py::init([](PySimulation* sim, double meff){

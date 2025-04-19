@@ -36,7 +36,7 @@ class PySimulation
             SimulationManager::findEigenStates(minE, maxE);
         }
 
-        void findInhomogeneousEigenStates(size_t nElec, const std::vector<double> &energies){
+        void findInhomogeneousEigenStates(size_t nElec, const py::array_t<double, py::array::c_style | py::array::forcecast> energies){
             SimulationManager::findInhomogeneousEigenStates(nElec, energies.data());
         }
 

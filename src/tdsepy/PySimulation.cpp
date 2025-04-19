@@ -129,7 +129,7 @@ void init_Simulation(py::module &m) {
             ----------
             nElec : uint
                 Number of electrons in the system.
-            energies : list
+            energies : float array
                 Eigenstate energies. The boundary conditions must be consistent with these energies.)V0G0N",
             "nElec"_a, "energies"_a)
         .def("run", &PySimulation::run, R"V0G0N(

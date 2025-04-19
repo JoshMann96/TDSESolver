@@ -5,6 +5,9 @@ from scipy.signal import windows
 from scipy import constants as cons
 from scipy.fft import fft
 
+plt.rcParams['text.usetex'] = True
+plt.rcParams['font.size'] = 16
+
 def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=-11, vmax:float=-4, cmap="magma", ax = None, difference=False):
     """Plots the 1-D collective electron density as a function of time for a selection of states.
     AXIS | VAR | UNIT
@@ -33,9 +36,6 @@ def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=-11, vmax:float=
     dat, xs, ts, _ = getPsi2t(fol)
     wghts, _ = getWghts(fol)
     
-    print(dat.shape)
-    print(wghts.shape)
-    
     #retain weight only for desired states
     if elecNum != -1:
         desWght = wghts[elecNum]
@@ -51,6 +51,15 @@ def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=-11, vmax:float=
     else:
         im = ax.pcolormesh(xs*1e9, ts*1e15, np.log10(np.tensordot(wghts, dat, (0,0))*(cons.physical_constants["atomic unit of length"][0]**3)), cmap=cmap, vmin=vmin, vmax=vmax)
     
+    ax.set_xlabel(r"$x$ (nm)")
+    ax.set_ylabel(r"$t$ (fs)")
+    ax.set_title("Electron Density")
+    cb = plt.colorbar(im, ax=ax)
+    if difference:
+        cb.set_label(r"$\Delta n$ (1/a$_0^3$)")
+    else:
+        cb.set_label(r"$\log n$ (1/a$_0^3$)")
+
     if fig is not None:
         return im, fig, ax
     else:
@@ -75,6 +84,11 @@ def plotPotential(fol:str, ax = None, potIndex = -1):
         fig, ax = plt.subplots()
         
     im = ax.pcolormesh(xs*1e9, ts*1e15, dat/cons.eV)
+    ax.set_xlabel(r"$x$ (nm)")
+    ax.set_ylabel(r"$t$ (fs)")
+    ax.set_title("Potential")
+    cb = plt.colorbar(im, ax=ax)
+    cb.set_label(r"$V$ (eV)")
     
     if fig is not None:
         return im, fig, ax
@@ -169,12 +183,14 @@ def plot1DFluxSpectrum(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0, max
         ax (axis, optional): Axis to plot on. Defaults to None (create own fig, ax and return).
     """
     es, spc = get1DTotalFluxSpectrum(fol, vdNum, elecNum, minE, maxE)
-    
+
     fig = None
     if ax is None:
         fig, ax = plt.subplots()
     
     im = ax.semilogy(es, spc)
+    ax.set_xlabel(r"$E$ (eV)")
+    ax.set_ylabel(r"$n(E)$ (1/m$^2$ eV)")
     
     if fig is not None:
         return im, fig, ax
@@ -194,7 +210,7 @@ def get1DStateYield(fol:str, vdNum:int = 0, minE:float = 0, maxE:float=500*cons.
         yld [ 1 / m^2 ]: Weighed yield, shape (nElec).
     """    
     es, spc = get1DStateFluxSpectrum(fol, vdNum, minE, maxE)
-    return np.trapz(x = es, y = spc, axis=1)
+    return np.trapezoid(x = es, y = spc, axis=1)
 
 def get1DTotalYield(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0, maxE:float = 500*cons.e):
     """Gets total yield for selected 1-D states within energy range.

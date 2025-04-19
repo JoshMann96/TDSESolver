@@ -246,7 +246,9 @@ void testTridiagonalAlgorithms(size_t nRhs=2, bool plot=true){
 		time0 = std::chrono::high_resolution_clock::now();
 
 		lapack_int info;
-		LAPACK_zgtsv(&nPts, &nRhs, reinterpret_cast<dcomplex*>(ld), reinterpret_cast<dcomplex*>(d), reinterpret_cast<dcomplex*>(ud), reinterpret_cast<dcomplex*>(x), &nPts, &info);
+		lapack_int nRhs_int = static_cast<lapack_int>(nRhs);
+		lapack_int nPts_int = static_cast<lapack_int>(nPts);
+		LAPACK_zgtsv(&nPts_int, &nRhs_int, reinterpret_cast<dcomplex*>(ld), reinterpret_cast<dcomplex*>(d), reinterpret_cast<dcomplex*>(ud), reinterpret_cast<dcomplex*>(x), &nPts_int, &info);
 		/*switch(lhsMethod){
 			case 0: // zgtsv
 				LAPACK_zgtsv(&nPts, &nRhs, reinterpret_cast<dcomplex*>(ld), reinterpret_cast<dcomplex*>(d), reinterpret_cast<dcomplex*>(ud), reinterpret_cast<dcomplex*>(x), &nPts, &info);
@@ -745,7 +747,9 @@ void testCuTridiagSolver(){
 	cblas_zcopy(n-1, ud, 1, udt, 1);
 	cblas_zcopy(n, d, 1, dt, 1);
 	lapack_int info;
-	LAPACK_zgtsv(&n, &nrhs, reinterpret_cast<dcomplex*>(ldt), reinterpret_cast<dcomplex*>(dt), reinterpret_cast<dcomplex*>(udt), reinterpret_cast<dcomplex*>(b_m), &n, &info);
+	lapack_int n_int = static_cast<lapack_int>(n);
+	lapack_int nrhs_int = static_cast<lapack_int>(nrhs);
+	LAPACK_zgtsv(&n_int, &nrhs_int, reinterpret_cast<dcomplex*>(ldt), reinterpret_cast<dcomplex*>(dt), reinterpret_cast<dcomplex*>(udt), reinterpret_cast<dcomplex*>(b_m), &n_int, &info);
 	t2 = std::chrono::high_resolution_clock::now();
 	std::cout << "\tLAPACK inversion took " << std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() << " us" << std::endl;
 

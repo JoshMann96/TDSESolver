@@ -126,6 +126,19 @@ namespace Measurers {
 	}
 
 	Psi2t::~Psi2t() {
+		if(curIdx != nt){
+			std::cerr << "Warning: Psi2t measurer terminated before all measurements were made. Expected " << nt << " measurements, but only " << curIdx << " were made." << std::endl;
+			std::cerr << "\t Padding with zeros." << std::endl;
+
+			std::fill_n(psi2s, nx, 0.0);
+			while(curIdx < nt){
+				for(size_t i = 0; i < *nElec; i++)
+					write(psi2s, sizeof(double)*nx);
+				ts[curIdx] = 0.0;
+				curIdx++;
+			}
+		}
+
 		write(xs, sizeof(double)*nx);
 		write(ts, sizeof(double)*nt);
 
@@ -471,6 +484,18 @@ namespace Measurers {
 	}
 
 	Vfunct::~Vfunct() {
+		if(curIdx < nt){
+			std::cerr << "Warning: Vfunct measurer terminated before all measurements were made. Expected " << nt << " measurements, but only " << curIdx << " were made." << std::endl;
+			std::cerr << "\t Padding with zeros." << std::endl;
+
+			std::fill_n(vs, nx, 0.0);
+			while(curIdx < nt){
+				write(vs, sizeof(double)*nx);
+				ts[curIdx] = 0.0;
+				curIdx++;
+			}
+		}
+
 		write(xs, sizeof(double)*nx);
 		write(ts, sizeof(double)*nt);
 
