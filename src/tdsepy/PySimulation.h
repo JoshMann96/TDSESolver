@@ -12,8 +12,8 @@ class PySimulation
     private:
         char* wisdomFile = new char[50];
     public:
-        PySimulation(double xmin, double xmax, double dx, double dt, const std::function<void(int)> &callback)
-            : SimulationManager(xmin, xmax, dx, dt, callback){
+        PySimulation(double xmin, double xmax, double dx, double dt, const std::optional<std::function<void(double)>> &callback, std::optional<size_t> numCallbackCalls)
+            : SimulationManager(xmin, xmax, dx, dt, callback.has_value() ? callback.value() : nullptr, numCallbackCalls.has_value() ? numCallbackCalls.value() : 101){
 			    std::snprintf(wisdomFile, 50, "fftw_nt_%04d.wisdom", omp_get_max_threads());
                 fftw_init_threads();
 				fftw_import_wisdom_from_filename(wisdomFile);

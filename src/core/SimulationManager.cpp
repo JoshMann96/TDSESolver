@@ -2,9 +2,8 @@
 #include "PhysCon.h"
 #include "MathTools.h"
 
-//callback sends progress int 0-100 (can be nullptr for no callback)
-SimulationManager::SimulationManager(size_t nPts, double xMin, double dx, double dt, std::function<void(int)> callback)
-	: dx(dx), nPts(nPts), dt(dt), progTracker(callback), nElec(0)
+SimulationManager::SimulationManager(size_t nPts, double xMin, double dx, double dt, std::function<void(double)> callback, size_t numCallbackCalls)
+	: dx(dx), nPts(nPts), dt(dt), progTracker(callback, numCallbackCalls), nElec(0)
 {
 	index = cyclic_int<size_t>(0, HISTORY_LENGTH);
 
@@ -261,17 +260,16 @@ void SimulationManager::runEPS_U2TU(size_t nSteps) {
 	if(!asyncCalc)
 		std::cout << "Warning: Potential is not wavefunction independent! It is recommended to use runEPS_UW2TUW to more accurately account for the nonlinearity." << std::endl;
 
-	for(size_t i = 0; i <= nSteps; i++){
+	for(size_t i = 0; i < nSteps; i++){
+		// evaluate potential n
 		if(asyncCalc){
-			// evaluate potential n+1
 			if (i == 0)
-				updatePotential(index);
+				updatePotential(index); // directly calculate
 			else
-				fUP.get();
-			fUP = std::async(rUpdatePotential, this, index + 1);
+				fUP.get(); // gather result
+			fUP = std::async(rUpdatePotential, this, index + 1); // start n+1
 		}
 		else{
-			// evaluate potential n
 			updatePotential(index);
 		}
 
@@ -282,7 +280,7 @@ void SimulationManager::runEPS_U2TU(size_t nSteps) {
 		if(i != 0)
 			fM.get();
 		fM = std::async(rMeasure, this, index);
-		
+
 		progTracker.update(i);
 
 		iterateIndex();
@@ -292,6 +290,11 @@ void SimulationManager::runEPS_U2TU(size_t nSteps) {
 	if(asyncCalc)
 		fUP.get();
 	fM.get();
+
+	// perform last measurement
+	if (!asyncCalc)
+		updatePotential(index);
+	measure(index);
 
 	progTracker.update(nSteps);
 }
@@ -314,7 +317,7 @@ void SimulationManager::runEPS_UW2TUW(size_t nSteps) {
 	// initialize progress tracker
 	progTracker.reset(nSteps);
 
-	for(size_t i = 0; i <= nSteps; i++){
+	for(size_t i = 0; i < nSteps; i++){
 		// step n->n+1/2
 		updatePotential(index);
 		kin_psm->stepOS_UW2T(psis[index], vs[index], spatialDamp, tpsi, nElec);
@@ -333,7 +336,13 @@ void SimulationManager::runEPS_UW2TUW(size_t nSteps) {
 		iterateIndex();
 	}
 	
+	// collect remaining future
 	fM.get();
+
+	// perform last measurement
+	updatePotential(index);
+	measure(index);
+
 	progTracker.update(nSteps);
 
 	sq_free(tpsi);
@@ -359,19 +368,18 @@ void SimulationManager::runCN_L(size_t nSteps){
 	if(!asyncCalc)
 		std::cout << "Warning: Potential is not wavefunction independent! It is recommended to use runCN_NL to more accurately account for the nonlinearity." << std::endl;
 
-	for(size_t i = 0; i <= nSteps; i++){
+	for(size_t i = 0; i < nSteps; i++){
+		// evaluate potential n+1 (n is already calculated)
 		if(asyncCalc){
-			// evaluate potential n+1
-			if (i == 0){ // evaluate potential n, n+1 if needed
+			if (i == 0){ // evaluate potential n, n+1 at beginning
 				updatePotential(index);
 				updatePotential(index + 1);
 			}
 			else
 				fUP.get();
-			fUP = std::async(rUpdatePotential, this, index + 2);
+			fUP = std::async(rUpdatePotential, this, index + 2); // get n+2 going
 		}
 		else{
-			// evaluate potential n
 			if(i == 0)
 				updatePotential(index);
 			updatePotential(index + 1);
@@ -394,9 +402,15 @@ void SimulationManager::runCN_L(size_t nSteps){
 		iterateIndex();
 	}
 
+	// collect remaining futures
 	if(asyncCalc)
 		fUP.get();
 	fM.get();
+
+	// perform last measurement
+	if (!asyncCalc)
+		updatePotential(index);
+	measure(index);
 
 	progTracker.update(nSteps);
 
@@ -416,13 +430,15 @@ void SimulationManager::runCN_NL(size_t nSteps){
 	// initialize progress tracker
 	progTracker.reset(nSteps);
 
-	for(size_t i = 0; i <= nSteps; i++){
+	for(size_t i = 0; i < nSteps; i++){
+		// evaluate potential n
 		updatePotential(index);
 
 		// estimate the density at the next step using the present potential (virtual step)
 		kin_cn->stepVirtual(psis[index], vs[index], spatialDamp, psis[index+1], nElec);
 
-		// try to calculate the raw density from the device then post-process, otherwise calculate rho normally. Then calculate the approximated next potential
+		// evaluate estimated potential n+1
+		// 	try to calculate the raw density from the device then post-process, otherwise calculate rho normally
 		if (kin_cn->calcRawRhoByDevice(weights, rhos[index + 1], true)) // if the device can calculate raw density
 			calculatePotentialFromRawRho(rhos[index + 1], psis[index + 1], ts[index] + dt, vs[index+1]);
 		else // otherwise calculate density on CPU
@@ -432,10 +448,10 @@ void SimulationManager::runCN_NL(size_t nSteps){
 		vtls::addArrays(nPts, vs[index], vs[index + 1], tv);
 		vtls::scaMulArray(nPts, 0.5, tv);
 
-		// actual step
+		// true step n -> n+1
 		kin_cn->step(psis[index], tv, spatialDamp, psis[index + 1], nElec);
 
-		// launch measurer
+		// measure step n while n+1->n+2 begins
 		if(i != 0)
 			fM.get();
 		fM = std::async(rMeasure, this, index);
@@ -445,7 +461,13 @@ void SimulationManager::runCN_NL(size_t nSteps){
 		iterateIndex();
 	}
 
+	// collect remaining futures
 	fM.get();
+
+	// perform last measurement
+	updatePotential(index);
+	measure(index);
+
 	progTracker.update(nSteps);
 
 	sq_free(tv);

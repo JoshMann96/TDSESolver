@@ -44,27 +44,21 @@ public:
 	inline operator long() const { return val; };
 };
 
-/// Tool for tracking progress, calling a callback function when a full percentage of the task is done.
+/// Tool for tracking progress, calling a callback function wit the current progress (as a double) of the current run call.
 class ProgressTracker
 {
 	private:
-		std::function<void(int)> progCallback;
-		int percDone = 0;
-		size_t nSteps;
+		std::function<void(double)> progCallback;
+		size_t nSteps = -1, totalCalls = -1, numCalls = 0;
 	public:
-	/**
-	 * Constructor initializes the progress tracker with a callback function. The callback function must take in an integer (0-100) as an argument.
-	 * #reset must be called to set the total number of steps before use.
-	 * @param callback The callback function to be called when progress is made.
-	 */
-	ProgressTracker(std::function<void(int)> callback) : progCallback(callback) {};
 
 	/**
 	 * Constructor initializes the progress tracker with a callback function and the total number of steps.
+	 * #reset must be called to set the total number of steps before use.
 	 * @param callback The callback function to be called when progress is made.
-	 * @param nSteps The total number of steps for the task.
+	 * @param nCalls The number of calls to the callback function. First call (0) and last call (1.0) are included. Default is 101.
 	 */
-	ProgressTracker(std::function<void(int)> callback, size_t nSteps) : progCallback(callback), nSteps(nSteps), percDone(0) {};
+	ProgressTracker(std::function<void(double)> callback, size_t nCalls = 101) : progCallback(callback) { setNumCallbacks(nCalls); };
 
 	/**
 	 * Updates the progress tracker with the current step. The callback function is called when a full percentage of the task is completed.
@@ -74,20 +68,27 @@ class ProgressTracker
 	void update(size_t step) {
 		if(nSteps < 0)
 			throw std::runtime_error("ProgressTracker::update: Number of steps not set!");
-		while (step*(long)100 / nSteps > percDone) {
+		// while(step / nSteps > step / totalCalls),  multiplly denominators, use double to avoid overflow
+		while ((double)step * totalCalls >= (double)numCalls * nSteps) {
+			numCalls++;
 			if (progCallback != nullptr)
-				progCallback(percDone);
-			percDone++;
+				progCallback((double) (step) / (double) (nSteps));
 		}
 	};
 
 	/**
+	 * Sets the number of times throughout a whole calculation that the callback function will be called.
+	 * @param callback The callback function to be called when progress is made. First call (0) and last call (1.0) are included.
+	 */
+	void setNumCallbacks(size_t nCalls) { totalCalls = nCalls; };
+
+	/**
 	 * Resets the progress tracker with the total number of steps.
-	 * @param nSteps The total number of steps for the task.
+	 * @param nSteps The maximum step value for the current run. The last call to update should be equal to this value.
 	 */
 	void reset(size_t nSteps) {
 		this->nSteps = nSteps;
-		percDone = 0;
+		numCalls = 0;
 	};
 };
 
@@ -176,35 +177,44 @@ public:
 
 	/**
 	 * Constructor initializes the simulation manager with the number of points, spacing, and a callback function for progress tracking.
+	 * This implementation of the constructor uses the left boundary position, the grid spacing, and the number of grid points to generate the grid.
 	 * @param nPts The number of points in the simulation.
 	 * @param xMin The minimum x-coordinate of the simulation.
 	 * @param dx The spacing between points in the simulation.
 	 * @param dt The time step for the simulation.
-	 * @param callback The callback function to be called when progress is made. It must take in an integer (0-100) as an argument. nullptr for no callback.
+	 * @param callback The callback function to be called when progress is made. Default is nullptr.
+	 * 					It will be called \a numCallbackCalls times with doubles ranging from 0 to 100.0, inclusive, nullptr for no callback.
+	 * @param numCallbackCalls The number of times the callback function will be called. Default is 101.
 	 */
-	SimulationManager(size_t nPts, double xMin, double dx, double dt, std::function<void(int)> callback = nullptr);
+	SimulationManager(size_t nPts, double xMin, double dx, double dt, std::function<void(double)> callback = nullptr, size_t numCallbackCalls = 101);
 
 	/**
 	 * Constructor initializes the simulation manager with the x-coordinate range, spacing, and a callback function for progress tracking.
+	 * This implementation of the constructor uses the left and right boundary positions and the grid spacing to generate the grid. The right boundary position may not actually be included exactly.
 	 * @param xMin The minimum x-coordinate of the simulation.
 	 * @param xMax The maximum x-coordinate of the simulation.
 	 * @param dx The spacing between points in the simulation.
 	 * @param dt The time step for the simulation.
-	 * @param callback The callback function to be called when progress is made. It must take in an integer (0-100) as an argument. nullptr for no callback.
+	 * @param callback The callback function to be called when progress is made. Default is nullptr.
+	 * 					It will be called \a numCallbackCalls times with doubles ranging from 0 to 1.0, inclusive, nullptr for no callback.
+	 * @param numCallbackCalls The number of times the callback function will be called. Default is 101.
 	 */
-	SimulationManager(double xMin, double xMax, double dx, double dt, std::function<void(int)> callback = nullptr) :
-		SimulationManager((size_t) ((xMax - xMin) / dx), xMin, dx, dt, callback) {};
+	SimulationManager(double xMin, double xMax, double dx, double dt, std::function<void(double)> callback = nullptr, size_t numCallbackCalls = 101) :
+		SimulationManager( ( (size_t) ((xMax - xMin) / dx) ) + 1, xMin, dx, dt, callback, numCallbackCalls) {};
 		
 	/**
 	 * Constructor initializes the simulation manager with the x-coordinate range, number of points, and a callback function for progress tracking.
+	 * This implementation of the constructor uses the left and right boundary positions and the number of points to generate the grid. The right boundary position may not actually be included exactly.
 	 * @param xMin The minimum x-coordinate of the simulation.
 	 * @param xMax The maximum x-coordinate of the simulation.
 	 * @param nPts The number of points in the simulation.
 	 * @param dt The time step for the simulation.
-	 * @param callback The callback function to be called when progress is made. It must take in an integer (0-100) as an argument. nullptr for no callback.
+	 * @param callback The callback function to be called when progress is made. Default is nullptr.
+	 * 					It will be called \a numCallbackCalls times with doubles ranging from 0 to 1.0, inclusive, nullptr for no callback.
+	 * @param numCallbackCalls The number of times the callback function will be called. Default is 101.
 	 */
-	SimulationManager(double xMin, double xMax, size_t nPts, double dt, std::function<void(int)> callback = nullptr) :
-		SimulationManager(nPts, xMin, (xMax - xMin) / nPts, dt, callback) {};
+	SimulationManager(double xMin, double xMax, size_t nPts, double dt, std::function<void(double)> callback = nullptr, size_t numCallbackCalls = 101) :
+		SimulationManager(nPts, xMin, (double)((xMax - xMin) / (nPts-1)), dt, callback, numCallbackCalls) {};
 
 	~SimulationManager();
 
@@ -456,6 +466,12 @@ public:
 	 * @return The PotentialManager.
 	 */
 	Potentials::Potential* getPotPointer() const { return pot; }
+
+	/**
+	 * Sets the number of callback calls for the progress tracker.
+	 * @param nCalls The number of callback calls to be set.
+	 */
+	void setNumCallbackCalls(size_t nCalls) { progTracker.setNumCallbacks(nCalls); }
 
 	/**
 	 * Finds the electrical surface of an initial state using first-order perturbation theory.

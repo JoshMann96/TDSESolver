@@ -8,7 +8,7 @@
 
 void init_Simulation(py::module &m) {
     py::class_<PySimulation>(m, "Simulation")
-        .def(py::init<double, double, double, double, std::function<void(int)>>(), R"V0G0N(
+        .def(py::init<double, double, double, double, const std::optional<std::function<void(double)>>, std::optional<size_t>>(), R"V0G0N(
             Manages TDSE simulations.
 
             Parameters
@@ -22,12 +22,15 @@ void init_Simulation(py::module &m) {
             dt : float
                 Temporal step size.
             callback : function
-                Callback -- reports percentage complete of time-stepping runs.
+                Callback function. Takes in a float between 0 and 1.0 for the progress of the present calculation. Default is None (no callback).
+            numCallbackCalls : int
+                Number of times to call the callback function. Default is 101.
+                The callback function will be called with doubles ranging from 0 to 1.0, inclusive.
 
             Returns
             -------
             Simulation)V0G0N",
-            "xmin"_a, "xmax"_a, "dx"_a, "dt"_a, "callback"_a)
+            "xmin"_a, "xmax"_a, "dx"_a, "dt"_a, "callback"_a = py::none(), "numCallbackCalls"_a = 101)
         .def("getXVec", &PySimulation::getXVec)
         .def("getDX", &PySimulation::getDX)
         .def("findXIdx", &PySimulation::findXIdx, R"V0G0N(
@@ -147,6 +150,14 @@ void init_Simulation(py::module &m) {
         .def("runCN_NL", &PySimulation::runCN_NL, R"V0G0N(
             Runs simulation using Crank-Nicolson method. Potential is updated between kinetic operator propagation steps.)V0G0N",
             "nSteps"_a)
+        .def("setNumCallbackCalls", &PySimulation::setNumCallbackCalls, R"V0G0N(
+            Sets the number of times throughout a run that the callback function will be called.
+
+            Parameters
+            ----------
+            nCalls : int
+                Number of times to call the callback function.)V0G0N",
+            "nCalls"_a)
         .def("getElectricalCentroidSurface", &PySimulation::findElectricalSurfaceCentroidRule, R"V0G0N(
             Finds the index of the electrical surface using the centroid rule.
 
