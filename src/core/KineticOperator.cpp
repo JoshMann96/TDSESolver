@@ -1114,14 +1114,15 @@ namespace KineticOperators {
 	}
 
 	double CrankNicolson::evaluateKineticEnergy(const std::complex<double>* psi){
-		std::complex<double>* temp = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*(nPts-2));
-		vtls::scaMulArray(nPts-2, PhysCon::hbar*PhysCon::hbar/(PhysCon::me*m_eff*dx*dx), &psi[1], temp);
-		vtls::scaMulAddArrays(nPts-3, -0.5*PhysCon::hbar*PhysCon::hbar/(PhysCon::me*m_eff*dx*dx), &psi[2], &temp[0]);
-		vtls::scaMulAddArrays(nPts-3, -0.5*PhysCon::hbar*PhysCon::hbar/(PhysCon::me*m_eff*dx*dx), &psi[1], &temp[1]);
+		if(!tempPsi1)
+			tempPsi1 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts);
 
-		sq_free(temp);
+		// ignore left and right bdys
+		vtls::scaMulArray(nPts-2, PhysCon::hbar*PhysCon::hbar/(PhysCon::me*m_eff*dx*dx), &psi[1], tempPsi1);
+		vtls::scaMulAddArrays(nPts-3, -0.5*PhysCon::hbar*PhysCon::hbar/(PhysCon::me*m_eff*dx*dx), &psi[2], &tempPsi1[0]);
+		vtls::scaMulAddArrays(nPts-3, -0.5*PhysCon::hbar*PhysCon::hbar/(PhysCon::me*m_eff*dx*dx), &psi[1], &tempPsi1[1]);
 
-		return std::real(vtlsInt::rSumMulConj(nPts-2, &psi[1], temp, 1.0) / vtls::getNorm(nPts-2, &psi[1], 1.0));
+		return std::real(vtlsInt::rSumMulConj(nPts-2, &psi[1], tempPsi1, 1.0) / vtls::getNorm(nPts-2, &psi[1], 1.0));
 	}
 
 	bool CrankNicolson::calcRawRhoByDevice(const double* weights, double* rho, bool virt){

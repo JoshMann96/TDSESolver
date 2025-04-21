@@ -156,7 +156,7 @@ namespace WfcToRho {
 	private:
 		double* psi2_work = nullptr;
 	public:
-		~Density() { if (psi2_work) sq_free(psi2_work); }
+		virtual ~Density() { if (psi2_work) sq_free(psi2_work); }
 
 		/**
 		 * Calculate the raw electron density, without any post-processing for geometry considerations.

@@ -162,6 +162,7 @@ private:
 				psis[i] = nullptr;
 			}
 		}
+		wavefunctionInitialized = false;
 	}
 
 	double* weights = nullptr;
@@ -260,6 +261,12 @@ public:
 	 * @return The Density calculator used in the simulation.
 	 */
 	WfcToRho::Density* getDensity () const { return dens; }
+
+	/** 
+	 * Returns whether the wavefunction has been initialized.
+	 * @return True if the wavefunction has been initialized, false otherwise.
+	 */
+	bool wavefunctionIsInitialized() const { return wavefunctionInitialized; }
 
 	/**
 	 * Calculates the energies of the wavefunctions for the requested step.
@@ -421,13 +428,16 @@ public:
 
 	/**
 	 * Returns a pointer to the density at the present index.
-	 * @return The density.
+	 * The wavefunction must be initialized and the density calculator must be set.
+	 * @return The density, \a npts elements.
 	 */
 	double* getRho() {
-		if(!wavefunctionInitialized)
-			return nullptr;
+		assert(wavefunctionInitialized);
 		if(!calcDensity)
-			dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
+			if(!dens)
+				throw std::runtime_error("SimulationManager::getRho: Density not set!");
+			else
+				dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
 		return rhos[index];
 	};
 

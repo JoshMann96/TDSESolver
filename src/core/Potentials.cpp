@@ -347,7 +347,6 @@ namespace Potentials {
 			for (size_t i = 0; i < *nElec; i++){
 				pt0 = i * nPts + evalPoint;
 				integratedFlux += (t - tPrev) * PhysCon::hbar / PhysCon::me * std::imag(std::conj(psi[pt0]) * \
-					//(psi[pt0+1]-psi[pt0]) / dx) * (*weights)[i];
 					(-psi[pt0 + 2] + 4.0*psi[pt0+1] - 3.0*psi[pt0]) / (2.0*dx)) * (*weights)[i];
 			}
 			break;
@@ -355,7 +354,6 @@ namespace Potentials {
 			for (size_t i = 0; i < *nElec; i++){
 				pt0 = i * nPts + evalPoint;
 				integratedFlux += (t - tPrev) * PhysCon::hbar / PhysCon::me * std::imag(std::conj(psi[pt0]) * \
-					//(psi[pt0]-psi[pt0-1]) / dx) * (*weights)[i];
 					(3.0*psi[pt0] - 4.0*psi[pt0-1] + psi[pt0-2]) / (2.0*dx)) * (*weights)[i];
 			}
 			break;
@@ -450,14 +448,19 @@ namespace Potentials {
 		vtls::scaMulArray(nPts, -PhysCon::qe * PhysCon::qe / PhysCon::e0, targ);
 	}
 
-	PlanarToCylindricalHartree::PlanarToCylindricalHartree(size_t nPts, double dx, double rad, size_t surfPos, const size_t* nElec, double * const * weights, const double* rho0, size_t posMin, size_t posMax, size_t refPoint) : 
+	PlanarToCylindricalHartree::PlanarToCylindricalHartree(bool mimickOpenSystem, size_t nPts, double dx, double rad, size_t surfPos,
+		const size_t* nElec, double * const * weights, const double* rho0, size_t posMin, size_t posMax, size_t refPoint)  : 
 		nPts(nPts), dx(dx), rad(rad), refPoint(refPoint),
 		posMin(posMin < 0 ? 0 : posMin),
 		posMax(posMax > nPts - 1 ? nPts - 1 : posMax),
 		originalCharge(0.0),
-		surfPos(std::clamp(surfPos, (size_t)0, nPts - 1))
+		surfPos(std::clamp(surfPos, (size_t)0, nPts - 1)),
+		mimickOpenSystem(mimickOpenSystem)
 	{
-		curInt = new CurrentIntegrator(nPts, dx, posMax-1, -1, nElec, weights);
+		if(mimickOpenSystem){
+			std::cerr << "Warning: PlanarToCylindricalHartree: mimicking an open system with a closed one may not be implemented correctly. Please check the source, with how charge is conserved." << std::endl;
+			curInt = new CurrentIntegrator(nPts, dx, posMax-1, -1, nElec, weights);
+		}
 
 		potTemp = (double*) sq_malloc(sizeof(double)*nPts);
 		origPot = (double*) sq_malloc(sizeof(double)*nPts);
@@ -496,7 +499,8 @@ namespace Potentials {
 		sq_free(dethin);
 		sq_free(myRho);
 
-		delete curInt;
+		if(curInt)
+			delete curInt;
 	}
 
 	void PlanarToCylindricalHartree::getVBare(double t, double* targ) {
@@ -504,13 +508,19 @@ namespace Potentials {
 	}
 
 	void PlanarToCylindricalHartree::getV(const double* rho, const std::complex<double>* psi, double t, double* targ) {
-		calcPot(rho, psi, t, targ);
-		double lossFraction = -(originalCharge - totalCharge - curInt->getIntegratedFlux()) / originalCharge + 1.0; // charge that moved to left is lost, scale origPot by appropriate amount
-		double ref = targ[refPoint] - lossFraction * origPot[refPoint];
-		for (size_t i = 0; i < nPts; i++)
-			targ[i] -= lossFraction * origPot[i] + ref;
-			
-		curInt->integrate(psi, t);
+		calcPot(rho, psi, t, targ); // evaluates totalCharge as part of calculation
+		if(mimickOpenSystem){
+			double lossFraction = -(originalCharge - totalCharge - curInt->getIntegratedFlux()) / originalCharge + 1.0; // charge that moved to left is lost, scale origPot by appropriate amount
+			double ref = targ[refPoint] - lossFraction * origPot[refPoint];
+
+			for (size_t i = 0; i < nPts; i++)
+				targ[i] -= lossFraction * origPot[i] + ref;
+		}
+		else{
+			double ref = targ[refPoint] - origPot[refPoint];
+			for (size_t i = 0; i < nPts; i++)
+				targ[i] -= origPot[i] + ref;
+		}
 	}
 
 	void PlanarToCylindricalHartree::calcPot(const double* rho, const std::complex<double>* psi, double t, double* targ) {

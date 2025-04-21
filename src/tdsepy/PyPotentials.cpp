@@ -266,9 +266,9 @@ void init_Potentials(py::module &m) {
             "sim"_a, "ef"_a, "w"_a, "rad"_a, "posMin"_a, "posMax"_a, "surfPos"_a, "refPoint"_a);
 
     py::class_<PlanarToCylindricalHartree,Potential>(m, "PlanarToCylindricalHartreePotential")
-        .def(py::init([](PySimulation* sim, double rad, double posMin, double posMax, double surfPos, double refPoint){
+        .def(py::init([](PySimulation* sim, bool mimickOpenSystem, double rad, double posMin, double posMax, double surfPos, double refPoint){
             return std::unique_ptr<PlanarToCylindricalHartree>(new PlanarToCylindricalHartree(
-                sim->getNumPoints(), sim->getDX(), rad, sim->findXIdx(surfPos), sim->getNElecPtr(), sim->getWeightsPtr(), sim->getRho(), sim->findXIdx(posMin), sim->findXIdx(posMax), sim->findXIdx(refPoint)
+                mimickOpenSystem, sim->getNumPoints(), sim->getDX(), rad, sim->findXIdx(surfPos), sim->getNElecPtr(), sim->getWeightsPtr(), sim->wavefunctionIsInitialized() ? sim->getRho() : nullptr, sim->findXIdx(posMin), sim->findXIdx(posMax), sim->findXIdx(refPoint)
             ));
         }), R"V0G0N(
             Nonlocal Hartree potential assuming charge is distributed on a planar geometry for x <= surfPos 
@@ -276,13 +276,16 @@ void init_Potentials(py::module &m) {
             charge is assumed to be within the cylinder of radius rad for x > surfPos).
             Charge lost to the left (planar) boundary is re-distributed over the initial density.
             surfPos is set after construction via assemble.
-            If the wavefunction has not been initialized upon construction then the potential will be returned as-is (with reference to refPoint).
-            If the wavefunction has been initialized, then the potential will be returned as the change in potential with respect to the initial density.
+            If the sim's wavefunction has not been initialized upon construction then the potential will be returned as-is (with reference to refPoint).
+            If the sim's wavefunction has been initialized, then the potential will be returned as the change in potential with respect to the initial density.
 
             Parameters
             ----------
             sim : Simulation
                 Associated simulation.
+            mimickOpenSystem : bool
+                If true, the charge is scaled to conserve the total charge, minus what leaves the left boundary at posMax.
+                This can only be used if the density/wavefunction is initialized.
             rad : float
                 Cylinder radius of curvature.
             posMin : float
@@ -297,12 +300,12 @@ void init_Potentials(py::module &m) {
             Returns
             -------
             PlanarToCylindricalHartreePotential)V0G0N",
-            "sim"_a, "rad"_a, "posMin"_a, "posMax"_a, "surfPos"_a, "refPoint"_a);
+            "sim"_a, "mimickOpenSystem"_a, "rad"_a, "posMin"_a, "posMax"_a, "surfPos"_a, "refPoint"_a);
 
     py::class_<LDAFunctional, Potential>(m, "LDAFunctional")
         .def(py::init([](PySimulation* sim, LDAFunctionalType typ, double refPoint){
             return std::unique_ptr<LDAFunctional>(new LDAFunctional(
-                typ, sim->getNumPoints(), sim->getDX(), sim->getRho(), sim->findXIdx(refPoint)
+                typ, sim->getNumPoints(), sim->getDX(), sim->wavefunctionIsInitialized() ? sim->getRho() : nullptr, sim->findXIdx(refPoint)
             ));
         }), R"V0G0N(
             Local density approximation (LDA) functional potential.

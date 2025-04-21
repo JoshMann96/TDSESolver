@@ -12,6 +12,7 @@ SimulationManager::SimulationManager(size_t nPts, double xMin, double dx, double
 	psis = (std::complex<double>**) sq_malloc(sizeof(std::complex<double>*)*HISTORY_LENGTH);
 	for(size_t i = 0; i < HISTORY_LENGTH; i++)
 		psis[i] = nullptr;
+	wavefunctionInitialized = false;
 
 	vs = (double**) sq_malloc(sizeof(double*)*HISTORY_LENGTH);
 	rhos = (double**) sq_malloc(sizeof(double*)*HISTORY_LENGTH);
@@ -84,6 +85,7 @@ void SimulationManager::addSpatialDamp(const double* arr) {
 }
 
 void SimulationManager::calcEnergies(size_t curStep, double* energies) const {
+	assert(wavefunctionInitialized);
 	for(size_t i = 0; i < HISTORY_LENGTH; i++){
 		if(curStep == step[i]){ //look for the present step's index
 			double* rho = (double*) sq_malloc(sizeof(double)*nPts);
@@ -115,6 +117,8 @@ void SimulationManager::calcWeights(){
 			weights[i] = 1.0;
 	}
 	else{
+		assert(wavefunctionInitialized);
+
 		double* energies = (double*) sq_malloc(sizeof(double)*nElec);
 		calcEnergies(step[index], energies);
 		wght->calcWeights(nElec, energies, weights, normScheme);
@@ -146,14 +150,14 @@ void SimulationManager::findEigenStates(double emin, double emax) {
 		vtls::copyArray(nPts * nElec, psis[0], psis[i]);
 	}
 
+	wavefunctionInitialized = true;
+
 	calcWeights();
 	if(calcDensity){
 		if(dens == nullptr)
 			throw std::runtime_error("SimulationManager::findEigenStates: Density not set!");
 		dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
 	}
-
-	wavefunctionInitialized = true;
 }
 
 void SimulationManager::findInhomogeneousEigenStates(size_t nElec, const double* energies){
@@ -174,6 +178,8 @@ void SimulationManager::findInhomogeneousEigenStates(size_t nElec, const double*
 	for (size_t i = 1; i < HISTORY_LENGTH; i++) 
 		vtls::copyArray(nPts * nElec, psis[index], psis[i]);
 
+	wavefunctionInitialized = true;
+
 	calcWeights();
 	if(calcDensity){
 		if(dens == nullptr)
@@ -182,8 +188,6 @@ void SimulationManager::findInhomogeneousEigenStates(size_t nElec, const double*
 	}
 
 	normScheme = WfcToRho::NormalizationScheme::UNNORMALIZED;
-
-	wavefunctionInitialized = true;
 }
 
 void SimulationManager::setPsi(std::complex<double>* npsi, WfcToRho::NormalizationScheme norm) {
@@ -244,6 +248,8 @@ size_t SimulationManager::measure(int idx) {
 
 //Run simulation using operator splitting Fourier method (applies potential as linear)
 void SimulationManager::runEPS_U2TU(size_t nSteps) {
+	assert(wavefunctionInitialized);
+
 	KineticOperators::KineticOperator_PSM* kin_psm = dynamic_cast<KineticOperators::KineticOperator_PSM*>(kin);
 	if(kin_psm == nullptr)
 		throw std::runtime_error("SimulationManager::runEPS_U2TU: Kinetic operator is not a pseudospectral method!");
@@ -301,6 +307,8 @@ void SimulationManager::runEPS_U2TU(size_t nSteps) {
 
 //Run simulation using operator splitting Fourier method (applies potential as nonlinear, second potential phase is recalculated after propagation phase)
 void SimulationManager::runEPS_UW2TUW(size_t nSteps) {
+	assert(wavefunctionInitialized);
+
 	KineticOperators::KineticOperator_PSM* kin_psm = dynamic_cast<KineticOperators::KineticOperator_PSM*>(kin);
 	if(kin_psm == nullptr)
 		throw std::runtime_error("SimulationManager::runEPS_UW2TUW: Kinetic operator is not a pseudospectral method!");
@@ -351,6 +359,8 @@ void SimulationManager::runEPS_UW2TUW(size_t nSteps) {
 }
 
 void SimulationManager::runCN_L(size_t nSteps){
+	assert(wavefunctionInitialized);
+	
 	KineticOperators::CrankNicolson* kin_cn = dynamic_cast<KineticOperators::CrankNicolson*>(kin);
 	if(kin_cn == nullptr)
 		throw std::runtime_error("SimulationManager::runCN_L: Kinetic operator is not CrankNicolson!");
@@ -418,6 +428,8 @@ void SimulationManager::runCN_L(size_t nSteps){
 }
 
 void SimulationManager::runCN_NL(size_t nSteps){
+	assert(wavefunctionInitialized);
+	
 	KineticOperators::CrankNicolson* kin_cn = dynamic_cast<KineticOperators::CrankNicolson*>(kin);
 	if(kin_cn == nullptr)
 		throw std::runtime_error("SimulationManager::runCN_NL: Kinetic operator is not CrankNicolson!");
@@ -484,6 +496,8 @@ size_t SimulationManager::findElectricalSurfaceCentroidRule(size_t minPos, size_
 	/*
 	* Calculate the electrical centroid of the electron density using first-order perturbation theory.
 	*/
+	assert(wavefunctionInitialized);
+
 	std::complex<double>* mat = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nElec*(nElec-1)/2);
 	std::complex<double>* xpsi = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nPts);
 	auto matIndex = [this](size_t i, size_t j){return i*nElec+j-((i+1)*(i+2))/2;}; //helper function for packing/unpacking matrix

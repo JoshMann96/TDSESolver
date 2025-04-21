@@ -586,10 +586,11 @@ namespace Potentials {
 	class PlanarToCylindricalHartree :
 		public Potential
 	{
-	private:
+	protected:
 		size_t nPts, refPoint, * nElec, posMin, posMax, surfPos;
 		double dx, rad, * origPot, * potTemp, * fieldScaler, *myRho, *dethin;
 		double originalCharge;
+		bool mimickOpenSystem;
 		/**
 		 * Calculate the potential at time \a t.
 		 * @param rho (in) Density.
@@ -598,11 +599,12 @@ namespace Potentials {
 		 * @param targ (out) Array to store the potential.
 		 */
 		void calcPot(const double* rho, const std::complex<double>* psi, double t, double* targ);
-		CurrentIntegrator * curInt;
+		CurrentIntegrator * curInt = nullptr;
 		double totalCharge;
 	public:
 		/**
 		 * Constructor. The surface position must be passed through #assemble. See #_assemble for details.
+		 * @param mimickOpenSystem If true, the charge is scaled to conserve the total charge, minus what leaves the right boundary.
 		 * @param nPts Number of points.
 		 * @param dx Grid spacing.
 		 * @param rad Radius of the cylinder.
@@ -614,12 +616,14 @@ namespace Potentials {
 		 * @param posMax Maximum x (index) to apply the field.
 		 * @param refPoint Reference point (index) for the potential.
 		 */
-		PlanarToCylindricalHartree(size_t nPts, double dx, double rad, size_t surfPos, const size_t* nElec, double * const * weights, const double* rho0, size_t posMin, size_t posMax, size_t refPoint);
+		PlanarToCylindricalHartree(bool mimickOpenSystem, size_t nPts, double dx, double rad, size_t surfPos, const size_t* nElec, double * const * weights,
+			 const double* rho0, size_t posMin, size_t posMax, size_t refPoint);
 		~PlanarToCylindricalHartree();
 		void getVBare(double t, double* targ);
 		void getV(const double* rho, const std::complex<double>* psi, double t, double* targ);
 		PotentialComplexity getComplexity(){return PotentialComplexity::WAVEFUNCTION_DEPENDENT;};
 	};
+		
 
 	/// Types of local density approximation (LDA) functionals.
 	enum class LDAFunctionalType {

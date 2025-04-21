@@ -496,6 +496,8 @@ namespace KineticOperators {
 		std::complex<double> *d, *ud, *ld, *r_d=nullptr;
 
 		std::complex<double> *rbct=nullptr, *lbct=nullptr, *bct1=nullptr, *bct2=nullptr;
+
+		std::complex<double> *tempPsi1 = nullptr;
 	
 		cudaTridiagonalSolverSystem *cuSolver = nullptr;
 
@@ -541,6 +543,9 @@ namespace KineticOperators {
 				sq_free(bct1);
 			if(bct2)
 				sq_free(bct2);
+
+			if(tempPsi1)
+				sq_free(tempPsi1);
 
 			if(cuSolver)
 				delete cuSolver;
