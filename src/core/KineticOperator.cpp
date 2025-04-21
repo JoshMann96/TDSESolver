@@ -1053,9 +1053,15 @@ namespace KineticOperators {
 
 		std::complex<double>* phaseAdvancement = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nElec);
 
+		// choose dt for this calculation only based on largest absolute energy
+		double maxE = 0.0;
+		for(size_t i = 0; i < nElec; i++)
+			maxE = std::max(maxE, std::abs(es[i]));
+		double my_dt = 2.0*PhysCon::hbar/maxE;
+
 		for(size_t i = 0; i < nElec; i++){
-			//std::complex<double> phase = (1.0 - 0.5*PhysCon::im*es[i]*dt/PhysCon::hbar) / (1.0 + 0.5*PhysCon::im*es[i]*dt/PhysCon::hbar);
-			phaseAdvancement[i] = phaseAdvanceFromEnergy(es[i], dt);
+			//std::complex<double> phase = (1.0 - 0.5*PhysCon::im*es[i]*my_dt/PhysCon::hbar) / (1.0 + 0.5*PhysCon::im*es[i]*my_dt/PhysCon::hbar);
+			phaseAdvancement[i] = phaseAdvanceFromEnergy(es[i], my_dt);
 
 			// define inner system
 			for(size_t k = 1; k < nPts-1; k++)
@@ -1068,10 +1074,10 @@ namespace KineticOperators {
 			// get wavenumbers on either side associated with energy
 			// if energy is less than potential, wavenumber is set to decay constant
 			//     this is encoded with a negative value
-			try{ kls[i] = wavenumberFromEnergy(es[i], v[0], dx, dt, m_eff); }
-			catch(const std::exception& e) { kls[i] = -wavenumberFromEnergy(-es[i], -v[0], dx, dt, m_eff); }
-			try{ krs[i] = wavenumberFromEnergy(es[i], v[nPts-1], dx, dt, m_eff); }
-			catch(const std::exception& e) { krs[i] = -wavenumberFromEnergy(-es[i], -v[nPts-1], dx, dt, m_eff); }
+			try{ kls[i] = wavenumberFromEnergy(es[i], v[0], dx, my_dt, m_eff); }
+			catch(const std::exception& e) { kls[i] = -wavenumberFromEnergy(-es[i], -v[0], dx, my_dt, m_eff); }
+			try{ krs[i] = wavenumberFromEnergy(es[i], v[nPts-1], dx, my_dt, m_eff); }
+			catch(const std::exception& e) { krs[i] = -wavenumberFromEnergy(-es[i], -v[nPts-1], dx, my_dt, m_eff); }
 			
 			// define boundaries of system
 			lhs_d[0] = lbc->getSteadyLHSEle(phaseAdvancement[i], kls[i], v[0]);

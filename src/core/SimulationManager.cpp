@@ -176,7 +176,7 @@ void SimulationManager::findInhomogeneousEigenStates(size_t nElec, const double*
 
 	kin_fdm->findInhomogeneousEigenStates(vs[index], energies, psis[index], nElec);
 	for (size_t i = 1; i < HISTORY_LENGTH; i++) 
-		vtls::copyArray(nPts * nElec, psis[index], psis[i]);
+		vtls::copyArray(nPts * nElec, psis[index], psis[index + i]);
 
 	wavefunctionInitialized = true;
 
