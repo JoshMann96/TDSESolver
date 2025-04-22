@@ -231,27 +231,30 @@ namespace FDBCs
 		 * @param phaseAdvance The phase advance of the wavefunction at the boundary (due to its total energy) -- Use the Crank-Nicolson dispersion relation!
 		 * @param k0 The wavevector of the wavefunction at the boundary
 		 * @param vb The potential at the boundary
+		 * @param dt The time step size. Default is zero, which means the BoundaryCondition's internal value is used (if applicable).
 		 * @return The steady-state right-hand-side value for the boundary condition
 		 */
-		virtual std::complex<double> getSteadyRHS(std::complex<double> phaseAdvance, double k0, double vb) = 0; // assuming the wavefunction is an eigenstate of the open system, what is the right-hand-side value in the first row?
+		virtual std::complex<double> getSteadyRHS(std::complex<double> phaseAdvance, double k0, double vb, double dt = 0) = 0; // assuming the wavefunction is an eigenstate of the open system, what is the right-hand-side value in the first row?
 		
 		/**
 		 * Get the steady-state left-hand-side diagonal element for the boundary condition. For finding the open system eigenstate.
 		 * @param phaseAdvance The phase advance of the wavefunction at the boundary (due to its total energy) -- Use the Crank-Nicolson dispersion relation!
 		 * @param k0 The wavevector of the wavefunction at the boundary
 		 * @param vb The potential at the boundary
+		 * @param dt The time step size. Default is zero, which means the BoundaryCondition's internal value is used (if applicable).
 		 * @return The steady-state left-hand-side diagonal element for the boundary condition
 		 */
-		virtual std::complex<double> getSteadyLHSEle(std::complex<double> phaseAdvance, double k0, double vb) = 0; // '' what is the diagonal first-row LHS component?
+		virtual std::complex<double> getSteadyLHSEle(std::complex<double> phaseAdvance, double k0, double vb, double dt = 0) = 0; // '' what is the diagonal first-row LHS component?
 		
 		/**
 		 * Get the steady-state left-hand-side adjacent element for the boundary condition. For finding the open system eigenstate.
 		 * @param phaseAdvance The phase advance of the wavefunction at the boundary (due to its total energy) -- Use the Crank-Nicolson dispersion relation!
 		 * @param k0 The wavevector of the wavefunction at the boundary
 		 * @param vb The potential at the boundary
+		 * @param dt The time step size. Default is zero, which means the BoundaryCondition's internal value is used (if applicable).
 		 * @return The steady-state left-hand-side adjacent element for the boundary condition
 		 */
-		virtual std::complex<double> getSteadyLHSAdjEle(std::complex<double> phaseAdvance, double k0, double vb) = 0; // '' what is the first-row LHS component adjacent to the diagonal?
+		virtual std::complex<double> getSteadyLHSAdjEle(std::complex<double> phaseAdvance, double k0, double vb, double dt = 0) = 0; // '' what is the first-row LHS component adjacent to the diagonal?
 	};
 
 	/// Boundary condition which is the same for all orbitals
@@ -284,17 +287,17 @@ namespace FDBCs
 	{
 	public:
 		/// @copydoc CommonBC::getLHSEle
-		std::complex<double> getSteadyRHS(std::complex<double> phaseAdvance, double k0, double vb){
+		std::complex<double> getSteadyRHS(std::complex<double> phaseAdvance, double k0, double vb, double dt = 0){
 			return getRHS(vb);
 		};
 
 		/// @copydoc CommonBC::getLHSAdjEle
-		std::complex<double> getSteadyLHSEle(std::complex<double> phaseAdvance, double k0, double vb){
+		std::complex<double> getSteadyLHSEle(std::complex<double> phaseAdvance, double k0, double vb, double dt = 0){
 			return getLHSEle();
 		};
 
 		/// @copydoc CommonBC::getLHSAdjEle
-		std::complex<double> getSteadyLHSAdjEle(std::complex<double> phaseAdvance, double k0, double vb){
+		std::complex<double> getSteadyLHSAdjEle(std::complex<double> phaseAdvance, double k0, double vb, double dt = 0){
 			return getLHSAdjEle();
 		};
 	};
@@ -371,8 +374,9 @@ namespace FDBCs
         /**
 		 * Calculate the kernel for the boundary condition
 		 * @param vb The potential at the boundary
+		 * @param dt The time step size. Default is zero, which means the BoundaryCondition's internal value is used (if applicable).
 		 */
-        void calcKernel(double vb);
+        void calcKernel(double vb, double dt = 0);
 	public:
 		/**
 		 * Construct a UniformHDTransparentBC object
@@ -386,7 +390,12 @@ namespace FDBCs
 		~UniformHDTransparentBC();
 
 		/// @copydoc BoundaryCondition::getLHSEle
-		std::complex<double> getLHSEle() { return -kernel0; };
+		std::complex<double> getLHSEle() { 
+			if(kernelCalculated) 
+				return -kernel0;
+			else
+				throw std::runtime_error("Kernel not calculated yet. Call prepareStep() first.");
+		};
 
 		/// @copydoc BoundaryCondition::getLHSAdjEle
 		std::complex<double> getLHSAdjEle() { return 1.0; };
@@ -407,13 +416,13 @@ namespace FDBCs
 		void fillHistory(const std::complex<double>* psibd, const std::complex<double>* historialPhaseAdvance, double vb);
 		
 		/// @copydoc BoundaryCondition::getSteadyRHS
-		std::complex<double> getSteadyRHS(std::complex<double> phaseAdvance, double k0, double vb);
+		std::complex<double> getSteadyRHS(std::complex<double> phaseAdvance, double k0, double vb, double dt = 0);
 
 		/// @copydoc BoundaryCondition::getSteadyLHSEle
-		std::complex<double> getSteadyLHSEle(std::complex<double> phaseAdvance, double k0, double vb);
+		std::complex<double> getSteadyLHSEle(std::complex<double> phaseAdvance, double k0, double vb, double dt = 0);
 		
 		/// @copydoc BoundaryCondition::getSteadyLHSAdjEle
-		std::complex<double> getSteadyLHSAdjEle(std::complex<double> phaseAdvance, double k0, double vb);
+		std::complex<double> getSteadyLHSAdjEle(std::complex<double> phaseAdvance, double k0, double vb, double dt = 0);
 	};
 
 	/**
@@ -456,7 +465,6 @@ namespace FDBCs
 		void fillHistory(const std::complex<double>* psibd, const std::complex<double>* historialPhaseAdvance, double vb);
 
 		/// @copydoc BoundaryCondition::getSteadyRHS
-		std::complex<double> getSteadyRHS(std::complex<double> phaseAdvance, double k0, double vb);
+		std::complex<double> getSteadyRHS(std::complex<double> phaseAdvance, double k0, double vb, double dt = 0);
 	};
-
 }

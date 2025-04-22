@@ -492,7 +492,7 @@ namespace KineticOperators {
 	{
 		bool useCuda;
 		double dx, dt, m_eff;
-		std::complex<double> lhsOffDiag0, lhsDiag0, rhsDiag0, rhsOffDiag, potmul; // elements of LHS tridiagonal matrix
+		std::complex<double> lhsOffDiag0, lhsDiag0, rhsDiag0, rhsOffDiag, potCoef; // elements of LHS tridiagonal matrix
 		std::complex<double> *d, *ud, *ld, *r_d=nullptr;
 
 		std::complex<double> *rbct=nullptr, *lbct=nullptr, *bct1=nullptr, *bct2=nullptr;

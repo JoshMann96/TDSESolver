@@ -23,16 +23,19 @@ namespace FDBCs{
         sq_free(kernel);
     }
 
-    void UniformHDTransparentBC::calcKernel(double vb){
-        if(!kernelCalculated){
+    void UniformHDTransparentBC::calcKernel(double vb, double dt){
+        if(!kernelCalculated && dt == 0.0){ // standard calculation, use internal dt
             kernelCalculated = true;
             kernelVb = vb;
+            dt = this->dt;
+        }
+        else if (dt != 0.0){ // particular calculation with specified dt, kernel will need to be re-calculated later
+            kernelCalculated = false;
         }
         else if (abs(kernelVb-vb) > 1e-5/PhysCon::auE_ha)
             throw std::runtime_error("Potential at UniformHDTransparentBC is not constant. Consider using a different boundary condition.");
         else
             return;
-
         
         double rr = 4.0*dx*dx/dt;
         double sig = 2.0*dx*dx*vb;
@@ -47,18 +50,6 @@ namespace FDBCs{
         for (size_t i = 2; i < order; i++)
             kernel[i] = (2.0*i-1.0)/(i+1.0) * mu / lam * kernel[i-1] - (i-2.0)/(i+1.0) / (lam*lam) * kernel[i-2];
     }
-
-    /*void UniformHDTransparentBC::calcCVPsis(double vb){
-        for (size_t i = 0; i < nElec; i++){
-            std::complex<double> phs = 1.0;
-            for (size_t j = 0; j < order-1; j++){
-                cvpsis[i]->set(j, phs * psis[i]->get(j));
-                phs *= (2.0 + PhysCon::im*dt*(vb - vbs->get(j+1))*(1.0+psis[i]->get(j)/psis[i]->get(j+1))) /\
-                    (2.0 - PhysCon::im*dt*(vb - vbs->get(j+1))*(1.0+psis[i]->get(j+1)/psis[i]->get(j)));
-            }
-            cvpsis[i]->set(order-1, phs * psis[i]->get(order-1));
-        }
-    }*/
 
     void UniformHDTransparentBC::getRHS(const std::complex<double>* psibd, const std::complex<double>* psiad, double vb, std::complex<double>* res, size_t nElec){
         if (this->nElec != nElec)
@@ -92,12 +83,12 @@ namespace FDBCs{
         }
     };
 
-    std::complex<double> UniformHDTransparentBC::getSteadyRHS(std::complex<double> phaseAdvance, double k0, double vb){
+    std::complex<double> UniformHDTransparentBC::getSteadyRHS(std::complex<double> phaseAdvance, double k0, double vb, double dt){
         return 0.0; // homogeneous, no source
     }
 
-    std::complex<double> UniformHDTransparentBC::getSteadyLHSEle(std::complex<double> phaseAdvance, double k0, double vb){
-        calcKernel(vb);
+    std::complex<double> UniformHDTransparentBC::getSteadyLHSEle(std::complex<double> phaseAdvance, double k0, double vb, double dt){
+        calcKernel(vb, dt);
 
         std::complex<double> phs = phaseAdvance;
         std::complex<double> sum = -phs * kernel0;
@@ -108,7 +99,7 @@ namespace FDBCs{
         return sum;
     }
 
-    std::complex<double> UniformHDTransparentBC::getSteadyLHSAdjEle(std::complex<double> phaseAdvance, double k0, double vb){
+    std::complex<double> UniformHDTransparentBC::getSteadyLHSAdjEle(std::complex<double> phaseAdvance, double k0, double vb, double dt){
         return 1.0 + phaseAdvance;
     }
 
@@ -172,8 +163,8 @@ namespace FDBCs{
         sq_free(dpsibd);
     }
 
-    std::complex<double> UniformIDTransparentBC::getSteadyRHS(std::complex<double> phaseAdvance, double k0, double vb){
-        calcKernel(vb);
+    std::complex<double> UniformIDTransparentBC::getSteadyRHS(std::complex<double> phaseAdvance, double k0, double vb, double dt){
+        calcKernel(vb, dt);
 
         std::complex<double> ihPhs = phaseAdvance;
         std::complex<double> sum = 0.0;

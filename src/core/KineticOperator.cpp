@@ -870,7 +870,7 @@ namespace KineticOperators {
 			std::fill_n(ud, nPts-1, lhsOffDiag0);
 			std::fill_n(ld, nPts-1, lhsOffDiag0);
 
-			potmul = 0.5*PhysCon::im*dt/PhysCon::hbar;
+			potCoef = 0.5*PhysCon::im*dt/PhysCon::hbar;
 	}
 
 	void CrankNicolson::_step(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, size_t nElec, bool isVirtual) {
@@ -919,7 +919,7 @@ namespace KineticOperators {
 
 		//prepare LHS matrix
 		std::fill_n(d, nPts, lhsDiag0);
-		vtls::scaMulAddArrays(nPts-2, potmul, &v[1], &d[1]); // d += potmul*v, leave BCs alone
+		vtls::scaMulAddArrays(nPts-2, potCoef, &v[1], &d[1]); // d += potmul*v, leave BCs alone
 
 		d[0] = lbc->getLHSEle();
 		d[nPts-1] = rbc->getLHSEle();
@@ -931,7 +931,7 @@ namespace KineticOperators {
 
 			// evaluate RHS
 			std::fill_n(r_d, nPts, rhsDiag0);
-			vtls::scaMulAddArrays(nPts, -potmul, v, r_d); // r_d += potmul*v
+			vtls::scaMulAddArrays(nPts, -potCoef, v, r_d); // r_d += potmul*v
 			cuSolver->rhsProduct(r_d, isVirtual, false);
 		}
 		else{
@@ -944,7 +944,7 @@ namespace KineticOperators {
 			#pragma omp parallel for collapse(2)
 			for(size_t j = 0; j < nElec; j++)
 				for(size_t k = 1; k < nPts-1; k++)
-					targ[j*nPts+k] = (-potmul*v[k]+rhsDiag0)*psi0[j*nPts+k] +
+					targ[j*nPts+k] = (-potCoef*v[k]+rhsDiag0)*psi0[j*nPts+k] +
 						(rhsOffDiag*psi0[j*nPts+k-1] + rhsOffDiag*psi0[j*nPts+k+1]);
 
 			// apply RHS BC
@@ -1059,16 +1059,23 @@ namespace KineticOperators {
 			maxE = std::max(maxE, std::abs(es[i]));
 		double my_dt = 2.0*PhysCon::hbar/maxE;
 
+		// calculate matrix elements with different timestep
+		std::complex<double> my_lhsDiag0 = 1.0 + 0.5*PhysCon::im*PhysCon::hbar/PhysCon::me/m_eff*my_dt/(dx*dx);
+		std::complex<double> my_lhsOffDiag0 = -0.25*PhysCon::im*PhysCon::hbar/PhysCon::me/m_eff*my_dt/(dx*dx);
+		std::complex<double> my_rhsDiag0 = 1.0 - 0.5*PhysCon::im*PhysCon::hbar/PhysCon::me/m_eff*my_dt/(dx*dx);
+		std::complex<double> my_rhsOffDiag = 0.25*PhysCon::im*PhysCon::hbar/PhysCon::me/m_eff*my_dt/(dx*dx);
+		std::complex<double> my_potCoef = 0.5*PhysCon::im*my_dt/PhysCon::hbar;
+
 		for(size_t i = 0; i < nElec; i++){
 			//std::complex<double> phase = (1.0 - 0.5*PhysCon::im*es[i]*my_dt/PhysCon::hbar) / (1.0 + 0.5*PhysCon::im*es[i]*my_dt/PhysCon::hbar);
 			phaseAdvancement[i] = phaseAdvanceFromEnergy(es[i], my_dt);
 
 			// define inner system
 			for(size_t k = 1; k < nPts-1; k++)
-				lhs_d[k] = phaseAdvancement[i]*lhsDiag0 - rhsDiag0 + (1.0+phaseAdvancement[i])*potmul*v[k];
+				lhs_d[k] = phaseAdvancement[i]*my_lhsDiag0 - my_rhsDiag0 + (1.0+phaseAdvancement[i])*my_potCoef*v[k];
 			for(size_t k = 0; k < nPts-2; k++){
-				lhs_ld[k] = phaseAdvancement[i]*lhsOffDiag0 - rhsOffDiag;
-				lhs_ud[k+1] = phaseAdvancement[i]*lhsOffDiag0 - rhsOffDiag;
+				lhs_ld[k] = phaseAdvancement[i]*my_lhsOffDiag0 - my_rhsOffDiag;
+				lhs_ud[k+1] = phaseAdvancement[i]*my_lhsOffDiag0 - my_rhsOffDiag;
 			}
 
 			// get wavenumbers on either side associated with energy
@@ -1080,15 +1087,15 @@ namespace KineticOperators {
 			catch(const std::exception& e) { krs[i] = -wavenumberFromEnergy(-es[i], -v[nPts-1], dx, my_dt, m_eff); }
 			
 			// define boundaries of system
-			lhs_d[0] = lbc->getSteadyLHSEle(phaseAdvancement[i], kls[i], v[0]);
-			lhs_d[nPts-1] = rbc->getSteadyLHSEle(phaseAdvancement[i], krs[i], v[nPts-1]);
-			lhs_ud[0] = lbc->getSteadyLHSAdjEle(phaseAdvancement[i], kls[i], v[0]);
-			lhs_ld[nPts-2] = rbc->getSteadyLHSAdjEle(phaseAdvancement[i], krs[i], v[nPts-1]);
+			lhs_d[0] = lbc->getSteadyLHSEle(phaseAdvancement[i], kls[i], v[0], my_dt);
+			lhs_d[nPts-1] = rbc->getSteadyLHSEle(phaseAdvancement[i], krs[i], v[nPts-1], my_dt);
+			lhs_ud[0] = lbc->getSteadyLHSAdjEle(phaseAdvancement[i], kls[i], v[0], my_dt);
+			lhs_ld[nPts-2] = rbc->getSteadyLHSAdjEle(phaseAdvancement[i], krs[i], v[nPts-1], my_dt);
 
 			// get inhomogeneous matrix
 			std::fill_n(rhs, nPts, 0.0);
-			rhs[0] = lbc->getSteadyRHS(phaseAdvancement[i], kls[i], v[0]);
-			rhs[nPts-1] = rbc->getSteadyRHS(phaseAdvancement[i], krs[i], v[nPts-1]);
+			rhs[0] = lbc->getSteadyRHS(phaseAdvancement[i], kls[i], v[0], my_dt);
+			rhs[nPts-1] = rbc->getSteadyRHS(phaseAdvancement[i], krs[i], v[nPts-1], my_dt);
 
 			// check if the sytem is inhomogeneous
 			if(std::abs(rhs[0]) < 1e-10 && std::abs(rhs[nPts-1]) < 1e-10)
