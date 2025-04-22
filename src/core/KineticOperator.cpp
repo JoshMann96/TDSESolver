@@ -961,10 +961,11 @@ namespace KineticOperators {
 		}
 		else{
 			lapack_int info;
-			lapack_int nElec = static_cast<lapack_int>(nElec);
+			assert(nElec <= LAPACK_INT_MAX);
+			lapack_int nElec_int = static_cast<lapack_int>(nElec);
 			assert(nPts <= LAPACK_INT_MAX);
 			lapack_int nPts_int = static_cast<lapack_int>(nPts);
-			LAPACK_zgtsv(&nPts_int, &nElec, reinterpret_cast<dcomplex*>(ld), reinterpret_cast<dcomplex*>(d), reinterpret_cast<dcomplex*>(ud), reinterpret_cast<dcomplex*>(targ), &nPts_int, &info);
+			LAPACK_zgtsv(&nPts_int, &nElec_int, reinterpret_cast<dcomplex*>(ld), reinterpret_cast<dcomplex*>(d), reinterpret_cast<dcomplex*>(ud), reinterpret_cast<dcomplex*>(targ), &nPts_int, &info);
 			
 			if(info != 0) {
 				std::cerr << "Error in LAPACK_zgtsv: " << info << std::endl;
