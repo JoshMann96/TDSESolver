@@ -882,6 +882,10 @@ namespace KineticOperators {
 			lbct = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nElec);
 		if(rbct == nullptr)
 			rbct = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nElec);
+		#ifndef USE_CUDA
+		if(useCuda)
+			throw std::runtime_error("CUDA support not compiled in this build");
+		#else // USE_CUDA
 		if(useCuda && !cuSolver){
 			cuSolver = new cudaTridiagonalSolverSystem(nPts, nElec);
 			if(!r_d)
@@ -898,6 +902,7 @@ namespace KineticOperators {
 			cuSolver->setOffDiag(ld, ud, cudaTridiagonalSolverSystem::RHS);
 			cuSolver->setX(psi0);
 		}
+		#endif // USE_CUDA
 			
 		//prepare left BC
 		cblas_zcopy(nElec, psi0, nPts, bct1, 1); // map first element of all wavefunctions to bct1
@@ -926,6 +931,7 @@ namespace KineticOperators {
 		ud[0] = lbc->getLHSAdjEle();
 		ld[nPts-2] = rbc->getLHSAdjEle();
 		if(useCuda){
+			#ifdef USE_CUDA
 			cuSolver->setBdyCond(ud[0], lbct, cudaTridiagonalSolverSystem::LHS);
 			cuSolver->setBdyCond(ld[nPts-2], rbct, cudaTridiagonalSolverSystem::RHS);
 
@@ -933,6 +939,7 @@ namespace KineticOperators {
 			std::fill_n(r_d, nPts, rhsDiag0);
 			vtls::scaMulAddArrays(nPts, -potCoef, v, r_d); // r_d += potmul*v
 			cuSolver->rhsProduct(r_d, isVirtual, false);
+			#endif // USE_CUDA
 		}
 		else{
 			std::fill_n(ud, nPts-1, lhsOffDiag0);
@@ -954,10 +961,12 @@ namespace KineticOperators {
 
 		//SOLVE
 		if(useCuda){
+			#ifdef USE_CUDA
 			cuSolver->solve(d, isVirtual, isVirtual);
 			cuSolver->vectorHadamardProduct(spatialDamp, isVirtual); // apply spatial damping
 			if(!isVirtual)
 				cuSolver->gatherX(targ, false);
+			#endif // USE_CUDA
 		}
 		else{
 			lapack_int info;
@@ -1142,8 +1151,12 @@ namespace KineticOperators {
 	bool CrankNicolson::calcRawRhoByDevice(const double* weights, double* rho, bool virt){
 		if(!useCuda)
 			return false;
-
+		#ifdef USE_CUDA
 		cuSolver->calcRawRho(weights, rho, virt);
+		#else // USE_CUDA
+		throw std::runtime_error("CUDA support not compiled in this build");
+		#endif // USE_CUDA
+		
 		return true;
 	}
 

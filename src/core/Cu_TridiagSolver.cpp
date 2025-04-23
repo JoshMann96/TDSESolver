@@ -1,4 +1,4 @@
-#include "CuTridiagSolver.h"
+#include "Cu_TridiagSolver.h"
 #include "cudaTools.cuh"
 
 cudaTridiagonalSolverSystem::cudaTridiagonalSolverSystem(size_t n, size_t nrhs) : n(n), nrhs(nrhs), lhsOffdiagDefined(false), rhsOffdiagDefined(false) {

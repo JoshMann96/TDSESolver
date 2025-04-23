@@ -13,6 +13,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 option(PYTHON_BINDINGS "Build Python bindings" ON)
+option(USE_CUDA "Build and link with CUDA capabilities" OFF)
 
 # CPU type
 set(CPU_MARCH "native")
@@ -78,7 +79,9 @@ else()
         HINTS ${BLAS_HINTS})
 endif()
 
+if(USE_CUDA)
 find_package(CUDA REQUIRED)
+endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lstdc++ -O3 -march=${CPU_MARCH} -mtune=native -fPIC -fopenmp")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fPIC -fopenmp")

@@ -4,11 +4,13 @@
 #include "SimulationManager.h"
 #include "WfcRhoTools.h"
 #include "blas.h"
-#include "CuTridiagSolver.h"
 
+#ifdef USE_CUDA
+#include "Cu_TridiagSolver.h"
 #include "cuda.h"
 #include "cuda_runtime.h"
 #include "cublas_v2.h"
+#endif
 
 void testTransparentBCs(){
     using namespace FDBCs;
@@ -661,6 +663,7 @@ std::complex<double> randComplex(){
 }
 
 void testCuTridiagSolver(){
+	#ifdef USE_CUDA
 	size_t n=32768, nrhs=128;
 	std::complex<double> *d = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*n);
 	std::complex<double> *ud = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*(n-1));
@@ -819,6 +822,7 @@ void testCuTridiagSolver(){
 	sq_free(dt);
 	sq_free(rho);
 	sq_free(rho_c);
+	#endif // USE_CUDA
 }
 
 

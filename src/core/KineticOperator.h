@@ -6,7 +6,12 @@
 #include "CORECommonHeader.h"
 #include "MathTools.h"
 #include "FDBCs.h"
-#include "CuTridiagSolver.h"
+
+#ifdef USE_CUDA
+#include "Cu_TridiagSolver.h"
+#else
+#define cudaTridiagonalSolverSystem void
+#endif
 
 /**
  * @namespace KineticOperators
@@ -547,8 +552,10 @@ namespace KineticOperators {
 			if(tempPsi1)
 				sq_free(tempPsi1);
 
+			#ifdef USE_CUDA
 			if(cuSolver)
 				delete cuSolver;
+			#endif
 		};
 
 		/**
