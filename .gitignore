@@ -2,6 +2,7 @@
 .vscode
 .VSCodeCounter
 .venv
+.cuvenv
 .cspell
 build*
 scratch

@@ -1140,12 +1140,18 @@ namespace KineticOperators {
 		if(!tempPsi1)
 			tempPsi1 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts);
 
-		// ignore left and right bdys
-		vtls::scaMulArray(nPts-2, PhysCon::hbar*PhysCon::hbar/(PhysCon::me*m_eff*dx*dx), &psi[1], tempPsi1);
-		vtls::scaMulAddArrays(nPts-3, -0.5*PhysCon::hbar*PhysCon::hbar/(PhysCon::me*m_eff*dx*dx), &psi[2], &tempPsi1[0]);
-		vtls::scaMulAddArrays(nPts-3, -0.5*PhysCon::hbar*PhysCon::hbar/(PhysCon::me*m_eff*dx*dx), &psi[1], &tempPsi1[1]);
+		double kineticCoef = PhysCon::hbar*PhysCon::hbar/(2.0*PhysCon::me*m_eff*dx*dx);
 
-		return std::real(vtlsInt::rSumMulConj(nPts-2, &psi[1], tempPsi1, 1.0) / vtls::getNorm(nPts-2, &psi[1], 1.0));
+		// ignore left and right bdys
+		vtls::scaMulArray(nPts-2, 2.0*kineticCoef, &psi[1], &tempPsi1[1]);
+		vtls::scaMulAddArrays(nPts-3, -kineticCoef, &psi[2], &tempPsi1[1]);
+		vtls::scaMulAddArrays(nPts-3, -kineticCoef, &psi[1], &tempPsi1[2]);
+
+		// use four-point stencil to evaluate second derivative on boundaries
+		tempPsi1[0] = kineticCoef * (2.0*psi[0] - 5.0*psi[1] + 4.0*psi[2] - psi[3]);
+		tempPsi1[nPts-1] = kineticCoef * (2.0*psi[nPts-1] - 5.0*psi[nPts-2] + 4.0*psi[nPts-3] - psi[nPts-4]);
+
+		return std::real(vtlsInt::rSumMulConj(nPts, psi, tempPsi1, 1.0) / vtls::getNorm(nPts, psi, 1.0));
 	}
 
 	bool CrankNicolson::calcRawRhoByDevice(const double* weights, double* rho, bool virt){

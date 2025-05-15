@@ -74,4 +74,10 @@ if [ "$PYTHON_BINDINGS" = TRUE ]
     echo "    3. run 'pip install .'"
 
     deactivate
+
+    cd ../..
+
     fi
+cd ..
+
+ls
