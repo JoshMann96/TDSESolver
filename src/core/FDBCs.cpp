@@ -88,7 +88,7 @@ namespace FDBCs{
     }
 
     std::complex<double> UniformHDTransparentBC::getSteadyLHSEle(std::complex<double> phaseAdvance, double k0, double vb, double dt){
-        calcKernel(vb, dt);
+        calcKernel(vb, dt / PhysCon::hbar * PhysCon::auE_ha);
 
         std::complex<double> phs = phaseAdvance;
         std::complex<double> sum = -phs * kernel0;
@@ -164,16 +164,9 @@ namespace FDBCs{
     }
 
     std::complex<double> UniformIDTransparentBC::getSteadyRHS(std::complex<double> phaseAdvance, double k0, double vb, double dt){
-        calcKernel(vb, dt);
-
-        std::complex<double> ihPhs = phaseAdvance;
-        std::complex<double> sum = 0.0;
-        for (size_t i = 0; i < order; i++){
-            ihPhs /= phaseAdvance;
-            sum -= ihPhs * kernel[i];
-        }
-                                        // Interpret negative k0 as exponential growth (thereby decaying in the external domain) instead of wave
-        sum += (1.0+phaseAdvance) * std::exp((k0>=0.0 ? PhysCon::im : 1.0)*k0*dx*PhysCon::a0) - phaseAdvance*kernel0;
+        std::complex<double> sum = getSteadyLHSEle(phaseAdvance, k0, vb, dt);
+                                // Interpret negative k0 as exponential growth (thereby decaying in the external domain) instead of wave
+        sum += (phaseAdvance+1.0) * std::exp((k0>=0.0 ? PhysCon::im : 1.0)*k0*dx*PhysCon::a0);
 
         return sum;
     }

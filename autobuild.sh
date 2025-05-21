@@ -79,5 +79,3 @@ if [ "$PYTHON_BINDINGS" = TRUE ]
 
     fi
 cd ..
-
-ls

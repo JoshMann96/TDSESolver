@@ -14,6 +14,11 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 option(PYTHON_BINDINGS "Build Python bindings" ON)
 option(USE_CUDA "Build and link with CUDA capabilities" OFF)
+option(DEBUG "Build with debug flags" OFF)
+
+if(USE_CUDA)
+    add_definitions(-DUSE_CUDA)
+endif()
 
 # CPU type
 set(CPU_MARCH "native")
@@ -80,10 +85,13 @@ else()
 endif()
 
 if(USE_CUDA)
-find_package(CUDA REQUIRED)
+    find_package(CUDA REQUIRED)
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lstdc++ -O3 -march=${CPU_MARCH} -mtune=native -fPIC -fopenmp")
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fPIC -fopenmp")
+if(DEBUG)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ggdb3 -O0 -fPIC -fopenmp")
+else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lstdc++ -O3 -march=${CPU_MARCH} -mtune=native -fPIC -fopenmp")
+endif()
 
 add_subdirectory(src)

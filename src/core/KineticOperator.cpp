@@ -855,22 +855,22 @@ namespace KineticOperators {
 
 	CrankNicolson::CrankNicolson(size_t nPts, double dx, double dt, double m_eff, FDBCs::BoundaryCondition* leftBC, FDBCs::BoundaryCondition* rightBC, bool useCuda) :
 		KineticOperator_FDM(nPts, leftBC, rightBC), dx(dx), dt(dt), m_eff(m_eff), useCuda(useCuda) {
-			d = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nPts);
-			ud= (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * (nPts-1));
-			ld= (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * (nPts-1));
+		d = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nPts);
+		ud= (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * (nPts-1));
+		ld= (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * (nPts-1));
 
 
-			lhsDiag0 = 1.0 + 0.5*PhysCon::im*PhysCon::hbar/PhysCon::me/m_eff*dt/(dx*dx);
-			lhsOffDiag0 = -0.25*PhysCon::im*PhysCon::hbar/PhysCon::me/m_eff*dt/(dx*dx);
+		lhsDiag0 = 1.0 + 0.5*PhysCon::im*PhysCon::hbar/PhysCon::me/m_eff*dt/(dx*dx);
+		lhsOffDiag0 = -0.25*PhysCon::im*PhysCon::hbar/PhysCon::me/m_eff*dt/(dx*dx);
 
-			rhsDiag0 = 1.0 - 0.5*PhysCon::im*PhysCon::hbar/PhysCon::me/m_eff*dt/(dx*dx);
-			rhsOffDiag = 0.25*PhysCon::im*PhysCon::hbar/PhysCon::me/m_eff*dt/(dx*dx);
+		rhsDiag0 = 1.0 - 0.5*PhysCon::im*PhysCon::hbar/PhysCon::me/m_eff*dt/(dx*dx);
+		rhsOffDiag = 0.25*PhysCon::im*PhysCon::hbar/PhysCon::me/m_eff*dt/(dx*dx);
 
-			std::fill_n(d, nPts, lhsDiag0);
-			std::fill_n(ud, nPts-1, lhsOffDiag0);
-			std::fill_n(ld, nPts-1, lhsOffDiag0);
+		std::fill_n(d, nPts, lhsDiag0);
+		std::fill_n(ud, nPts-1, lhsOffDiag0);
+		std::fill_n(ld, nPts-1, lhsOffDiag0);
 
-			potCoef = 0.5*PhysCon::im*dt/PhysCon::hbar;
+		potCoef = 0.5*PhysCon::im*dt/PhysCon::hbar;
 	}
 
 	void CrankNicolson::_step(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, size_t nElec, bool isVirtual) {
