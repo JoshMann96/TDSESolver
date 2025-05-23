@@ -159,7 +159,7 @@ namespace WfcToRho {
 			throw std::runtime_error("CylindricalDensity: Radius must be larger than half of grid size.");
 		
 		for(size_t i = startIndex; i < endIndex; i++)
-			thinning[i] = radius / (i * dx - center - minX);
+			thinning[i] = radius / (i * dx - (center - minX));
 	}
 
 	void CylindricalDensity::calcRho(size_t nPts, size_t nElec, double dx, double* rho) {
