@@ -6,7 +6,7 @@
 #include "CORECommonHeader.h"
 #include "Measurers.h"
 #include "Potentials.h"
-#include "WfcRhoTools.h"
+#include "Densities.h"
 #include "KineticOperator.h"
 
 /// A cyclic integer class that wraps around a maximum value. Useful for managing the local wavefunction and potential history.
@@ -102,8 +102,8 @@ class SimulationManager
 private:
 	Potentials::PotentialManager * pot;
 	Measurers::MeasurementManager * meas;
-	WfcToRho::Weight* wght = nullptr;
-	WfcToRho::Density* dens = nullptr;
+	Densities::Weight* wght = nullptr;
+	Densities::Density* dens = nullptr;
 	KineticOperators::KineticOperator* kin = nullptr;
 
 	double *ts, *x, dt, dx;
@@ -116,7 +116,7 @@ private:
 
 	bool wavefunctionInitialized = false;
 
-	WfcToRho::NormalizationScheme normScheme = WfcToRho::UNNORMALIZED;
+	Densities::NormalizationScheme normScheme = Densities::UNNORMALIZED;
 
 	/**
 	 * Calculate the potential with provided allocated memory.
@@ -242,20 +242,20 @@ public:
 	 * Sets the weight calculator to be used in the simulation.
 	 * @param nwght The weight calculator to be used in the simulation.
 	 */
-	void setWeight(WfcToRho::Weight* nwght) { wght = nwght; }
+	void setWeight(Densities::Weight* nwght) { wght = nwght; }
 
 	/**
 	 * Sets the Density calculator to be used in the simulation.
 	 * @param ndens The Density calculator to be used in the simulation.
 	 */
-	void setDensity(WfcToRho::Density* ndens) { dens = ndens; }
+	void setDensity(Densities::Density* ndens) { dens = ndens; }
 
 	/**
 	 * Gets the Weight calculator used in the simulation.
 	 * @return The Weight calculator used in the simulation.
 	 * @throw std::runtime_error if the weight calculator is not set.
 	 */
-	WfcToRho::Weight* getWeight () const { 
+	Densities::Weight* getWeight () const { 
 		if(!wght) 
 			throw std::runtime_error("SimulationManager::getWeight: Weight calculator not set!");
 		return wght; 
@@ -266,7 +266,7 @@ public:
 	 * @return The Density calculator used in the simulation.
 	 * @throw std::runtime_error if the density calculator is not set.
 	 */
-	WfcToRho::Density* getDensity () const { 
+	Densities::Density* getDensity () const { 
 		if(!dens) 
 			throw std::runtime_error("SimulationManager::getDensity: Density calculator not set!");
 		return dens; 
@@ -388,9 +388,9 @@ public:
 	/**
 	 * Sets the wavefunction to be used in the simulation. If nElec is not set, it will assume there is only 1 electron.
 	 * @param npsi The wavefunction to be used in the simulation.
-	 * @param norm The normalization scheme to be used for the wavefunction. Default is WfcToRho::UNNORMALIZED.
+	 * @param norm The normalization scheme to be used for the wavefunction. Default is Densities::UNNORMALIZED.
 	 */
-	void setPsi(std::complex<double>* npsi, WfcToRho::NormalizationScheme norm = WfcToRho::UNNORMALIZED);
+	void setPsi(std::complex<double>* npsi, Densities::NormalizationScheme norm = Densities::UNNORMALIZED);
 
 	/// Iterates the simulation index.
 	void iterateIndex();

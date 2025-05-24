@@ -1,6 +1,6 @@
 #include "PySimulation.h"
 #include "KineticOperator.h"
-#include "WfcRhoTools.h"
+#include "Densities.h"
 #include <memory>
 #include <pybind11/attr.h>
 #include <pybind11/detail/common.h>

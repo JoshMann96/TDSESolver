@@ -2,7 +2,7 @@
 #include "CORECommonHeader.h"
 #include "KineticOperator.h"
 #include "SimulationManager.h"
-#include "WfcRhoTools.h"
+#include "Densities.h"
 #include "blas.h"
 
 #ifdef USE_CUDA
@@ -400,8 +400,8 @@ void testInhomogeneousEigenState(){
 	FDBCs::BoundaryCondition* lbc = new FDBCs::UniformIDTransparentBC(1000, nElec, dx, dt, ks, 0.0);
 	KineticOperators::CrankNicolson* cn = new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, lbc, rbc);
 	sm->setKineticOperator(cn);
-	sm->setWeight(new WfcToRho::SemiInfiniteFermiGas(5.0*PhysCon::eV));
-	sm->setDensity(new WfcToRho::DirectDensity());
+	sm->setWeight(new Densities::SemiInfiniteFermiGas(5.0*PhysCon::eV));
+	sm->setDensity(new Densities::DirectDensity());
 
 	// plot potential
 	/*double* temp = new double[nPts];
@@ -497,8 +497,8 @@ void testIterationMethods(int stepType=-1, size_t nPts=8192){
 	KineticOperators::KineticOperator* cnKin_cpu = new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, new FDBCs::DirichletBC(0.0), new FDBCs::DirichletBC(0.0), false);
 	KineticOperators::KineticOperator* osKin = new KineticOperators::GenDisp_PSM_FreeElec(nPts, dx, dt, 1.0, FFTW_PATIENT);
 	sm->setKineticOperator(cnKin);
-	sm->setWeight(new WfcToRho::BoundFermiGas(5.0*PhysCon::eV));
-	sm->setDensity(new WfcToRho::DirectDensity());
+	sm->setWeight(new Densities::BoundFermiGas(5.0*PhysCon::eV));
+	sm->setDensity(new Densities::DirectDensity());
 	sm->addPotential(new Potentials::FiniteBox(nPts, xs, xs[nPts/4], xs[nPts/4*3], -10.0*PhysCon::eV, 0));
 	sm->addMeasurer(new Measurers::BasicMeasurers(nPts, dx, dt, "data/test/"));
 	sm->addMeasurer(new Measurers::TotProb(nPts, dx, sm->getNElecPtr(), "data/test/"));

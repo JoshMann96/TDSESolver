@@ -1,5 +1,5 @@
 /**
- * @file WfcRhoTools.h
+ * @file Densities.h
  * @brief Tools for calculating the electron density from the single-particle wavefunctions.
  */
 #pragma once
@@ -8,10 +8,10 @@
 #include "KineticOperator.h"
 
 /**
- * @namespace WfcToRho
+ * @namespace Densities
  * @brief Contains classes and functions for calculating electron density from wavefunctions.
  */
-namespace WfcToRho {
+namespace Densities {
 
 	/// Normalization schemes -- whether the wavefunction is normalized or if the wavefunction's absolute magnitude holds physical significance.
 	enum NormalizationScheme{

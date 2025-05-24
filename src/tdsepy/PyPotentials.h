@@ -4,7 +4,7 @@
 #include "PySimulation.h"
 #include "Potentials.h"
 #include "Measurers.h"
-#include "WfcRhoTools.h"
+#include "Densities.h"
 
 using namespace Potentials;
 

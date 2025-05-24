@@ -1,6 +1,6 @@
 #include "PyKinetics.h"
 #include "KineticOperator.h"
-#include "WfcRhoTools.h"
+#include "Densities.h"
 #include <pybind11/attr.h>
 #include <pybind11/detail/common.h>
 #include <pybind11/pytypes.h>

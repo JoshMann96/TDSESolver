@@ -1,11 +1,11 @@
-#include "WfcRhoTools.h"
+#include "Densities.h"
 #include "PhysCon.h"
 #include <stdexcept>
 
-namespace WfcToRho {
+namespace Densities {
 	void BoundFermiGas::calcWeights(size_t nElec, const double* energies, double* weights, NormalizationScheme norm) {
 		if(norm == NormalizationScheme::UNNORMALIZED)
-			throw std::runtime_error("WfcToRho::BoundFermiGas Cannot use UNNORMALIZED scheme with BoundFermiGas");
+			throw std::runtime_error("Densities::BoundFermiGas Cannot use UNNORMALIZED scheme with BoundFermiGas");
 
 		double minE = vtls::min(nElec, energies);
 		double maxE = vtls::max(nElec, energies);
@@ -25,7 +25,7 @@ namespace WfcToRho {
 
 	void SemiInfiniteFermiGas::calcWeights(size_t nElec, const double* energies, double* weights, NormalizationScheme norm) {
 		if(norm == NormalizationScheme::NORMALIZED)
-			throw std::runtime_error("WfcToRho::SemiInfiniteFermiGas expects a wavefunction which has a normalization dicated by boundary conditions, not the total norm.");
+			throw std::runtime_error("Densities::SemiInfiniteFermiGas expects a wavefunction which has a normalization dicated by boundary conditions, not the total norm.");
 
 		double minE = vtls::min(nElec, energies);
 		double maxE = vtls::max(nElec, energies);
@@ -37,7 +37,7 @@ namespace WfcToRho {
 		for (size_t i = 0; i < nElec-1; i++){
 			if(energies[i] > energies[i+1]){
 				vtlsPrnt::printArray(nElec, energies);
-				throw std::runtime_error("WfcToRho::SemiInfiniteFermiGas::calcWeights: energies not sorted");
+				throw std::runtime_error("Densities::SemiInfiniteFermiGas::calcWeights: energies not sorted");
 			}
 			energyRangeBoundaries[i + 1] = (energies[i] + energies[i+1])/2.0 - bottom;
 		}

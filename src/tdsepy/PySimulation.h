@@ -5,7 +5,7 @@
 #include "pybind11/attr.h"
 #include "pybind11/functional.h"
 #include "SimulationManager.h"
-#include "WfcRhoTools.h"
+#include "Densities.h"
 
 class PySimulation 
     : public SimulationManager {

@@ -126,7 +126,7 @@ void SimulationManager::calcWeights(){
 }
 
 void SimulationManager::findEigenStates(double emin, double emax) {
-	normScheme = WfcToRho::NormalizationScheme::NORMALIZED;
+	normScheme = Densities::NormalizationScheme::NORMALIZED;
 	
 	pot->getVBare(0.0, vs[index]);
 
@@ -199,10 +199,10 @@ void SimulationManager::findInhomogeneousEigenStates(size_t nElec, const double*
 		dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
 	}
 
-	normScheme = WfcToRho::NormalizationScheme::UNNORMALIZED;
+	normScheme = Densities::NormalizationScheme::UNNORMALIZED;
 }
 
-void SimulationManager::setPsi(std::complex<double>* npsi, WfcToRho::NormalizationScheme norm) {
+void SimulationManager::setPsi(std::complex<double>* npsi, Densities::NormalizationScheme norm) {
 	normScheme = norm;
 
 	if (!nElec) {
@@ -214,7 +214,7 @@ void SimulationManager::setPsi(std::complex<double>* npsi, WfcToRho::Normalizati
 	}
 	vtls::copyArray(nPts, npsi, psis[index]);
 
-	if(normScheme == WfcToRho::NormalizationScheme::NORMALIZED)
+	if(normScheme == Densities::NormalizationScheme::NORMALIZED)
 		vtls::normalizeSqrNorm(nPts, psis[index], dx);
 
 	if(calcDensity){

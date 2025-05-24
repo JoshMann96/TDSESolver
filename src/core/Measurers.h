@@ -5,7 +5,7 @@
 #pragma once
 #include "CORECommonHeader.h"
 #include "KineticOperator.h"
-#include "WfcRhoTools.h"
+#include "Densities.h"
 #include "MathTools.h"
 
 
@@ -758,7 +758,7 @@ namespace Measurers {
 		plotting::GNUPlotter* plotter=nullptr;
 		size_t nPts, stepsPerPlot;
 		const size_t* nElec;
-		WfcToRho::Density *const dens;
+		Densities::Density *const dens;
 		double *const*wght;
 		const double *xs;
 		double dx, *rho=nullptr;
@@ -777,7 +777,7 @@ namespace Measurers {
 		 * @param stepsPerPlot The number of time steps to wait before updating the plot. Default is 1.
 		 * @param pause Whether to pause and wait for user input after each plot. Default is true.
 		 */
-		DensityPlotter(size_t nPts, const size_t* nElec, double dx, const double* xs, WfcToRho::Density *const dens, double * const * wght, size_t stepsPerPlot=1, bool pause=true);
+		DensityPlotter(size_t nPts, const size_t* nElec, double dx, const double* xs, Densities::Density *const dens, double * const * wght, size_t stepsPerPlot=1, bool pause=true);
 		
 		~DensityPlotter();
 		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double* v, double t);

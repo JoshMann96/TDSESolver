@@ -586,7 +586,7 @@ namespace Measurers {
 	}
 
 
-	DensityPlotter::DensityPlotter(size_t nPts, const size_t *nElec, double dx, const double *xs, WfcToRho::Density *const dens, double * const * wght, size_t stepsPerPlot, bool pause):
+	DensityPlotter::DensityPlotter(size_t nPts, const size_t *nElec, double dx, const double *xs, Densities::Density *const dens, double * const * wght, size_t stepsPerPlot, bool pause):
 		nPts(nPts), nElec(nElec), dens(dens), wght(wght), dx(dx), xs(xs), pause(pause), stepsPerPlot(stepsPerPlot)
 	{
 		needsDens = true;
