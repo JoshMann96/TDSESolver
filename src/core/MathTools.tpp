@@ -1,5 +1,12 @@
 #include <stddef.h>
 namespace vtls{
+
+	template <typename T>
+	void copyArrayRe(size_t len, const T* __restrict arr1, double* __restrict arr2){
+		for (size_t i = 0; i < len; i++)
+			arr2[i] = std::real(arr1[i]);
+	}
+	
     template<class T>
 	Convolver<T>::Convolver(size_t len) : len(len){
 		temp1 = reinterpret_cast<std::complex<double>*>(sq_malloc(sizeof(fftw_complex)*len));

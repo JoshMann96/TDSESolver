@@ -4,6 +4,7 @@
  */
 #pragma once
 #include "CORECommonHeader.h"
+#include "blas.h"
 #include <omp.h>
 #include <mutex>
 
@@ -22,8 +23,8 @@ namespace vtlsInt {
 	 * @param dx The increment (step size).
 	 */
 	template <typename T, typename U>
-	decltype(std::declval<T&>()* std::declval<U&>()) rSum(size_t len, const T* __restrict arr, U dx) {
-		if (len <= 1)
+	decltype(std::declval<T&>()* std::declval<U&>()) sum(size_t len, const T* __restrict arr, U dx) {
+		if (len <= 0)
 			return 0;
 
 		T sum = 0;
@@ -44,14 +45,22 @@ namespace vtlsInt {
 	 * @param dx The increment (step size).
 	 */
 	template <typename T, typename U, typename V>
-	decltype(std::declval<T&>()* std::declval<U&>()* std::declval<V&>()) rSumMul(size_t len, const T* __restrict arr1, const U* __restrict arr2, V dx) {
-		if (len <= 1)
+	decltype(std::declval<T&>()* std::declval<U&>()* std::declval<V&>()) innerProduct(size_t len, const T* __restrict arr1, const U* __restrict arr2, V dx) {
+		if (len <= 0)
 			return 0;
 
 		decltype(std::declval<T&>() * std::declval<U&>()) sum = 0;
 		for (size_t i = 0; i < len; i++)
 			sum += arr1[i] * arr2[i];
 		return sum * dx;
+	}
+
+	inline double innerProduct(size_t len, const double* __restrict arr1, const double* __restrict arr2, double dx) {
+		return cblas_ddot(len, arr1, 1, arr2, 1) * dx;
+	}
+
+	inline std::complex<double> innerProduct(size_t len, const std::complex<double>* __restrict arr1, const std::complex<double>* __restrict arr2, double dx) {
+		return cblas_zdotu(len, arr1, 1, arr2, 1) * dx;
 	}
 
 	/**
@@ -64,14 +73,22 @@ namespace vtlsInt {
 	 * @param dx The increment (step size).
 	 */
 	template <typename T, typename U, typename V>
-	decltype(std::declval<T&>()* std::declval<U&>()* std::declval<V&>()) rSumMulConj(size_t len, const T* __restrict arr1, const U* __restrict arr2, V dx) {
-		if (len <= 1)
+	decltype(std::declval<T&>()* std::declval<U&>()* std::declval<V&>()) conjugateInnerProduct(size_t len, const T* __restrict arr1, const U* __restrict arr2, V dx) {
+		if (len <= 0)
 			return 0;
 
 		decltype(std::declval<T&>() * std::declval<U&>()) sum = 0;
 		for (size_t i = 0; i < len; i++)
 			sum += std::conj(arr1[i]) * arr2[i];
 		return sum * dx;
+	}
+
+	inline double conjugateInnerProduct(size_t len, const double* __restrict arr1, const double* __restrict arr2, double dx) {
+		return cblas_ddot(len, arr1, 1, arr2, 1) * dx;
+	}
+
+	inline std::complex<double> conjugateInnerProduct(size_t len, const std::complex<double>* __restrict arr1, const std::complex<double>* __restrict arr2, double dx) {
+		return cblas_zdotc(len, arr1, 1, arr2, 1) * dx;
 	}
 
 	/**
@@ -84,7 +101,7 @@ namespace vtlsInt {
 	 */
 	template <typename T, typename U>
 	decltype(std::declval<T&>() * std::declval<U&>()) trapz(size_t len, const T* __restrict arr, U dx) {
-		if (len <= 1)
+		if (len < 1)
 			return 0;
 
 		T sum = (arr[0] + arr[len - 1]) / 2.0;
@@ -512,6 +529,21 @@ namespace vtls {
 	}
 
 	/**
+	 * Multiplies the elements of two arrays together and adds the result to a target array.
+	 * @tparam T The type of the first array.
+	 * @tparam U The type of the second array.
+	 * @param len The length of the arrays.
+	 * @param arr1 (in) The first array to multiply.
+	 * @param arr2 (in) The second array to multiply.
+	 * @param targ (out) The target array to add the result of the multiplication.
+	 */
+	template<typename T, typename U>
+	void seqMulAddArrays(size_t len, const T* __restrict arr1, const U* __restrict arr2, decltype(std::declval<T&>()* std::declval<U&>())* __restrict targ) {
+		for (size_t i = 0; i < len; i++)
+			targ[i] += arr1[i] * arr2[i];
+	}
+
+	/**
 	 * Multiplies an array by a scalar multiple and stores the result in a target array.
 	 * @tparam T The type of the scalar.
 	 * @tparam U The type of the input array.
@@ -620,10 +652,21 @@ namespace vtls {
 	double getNorm(size_t len, const T* __restrict arr, double dx) {
 		double sm = 0.0;
 		for (size_t i = 0; i < len; i++)
-			sm += std::pow(std::abs(arr[i]), 2);
+			sm += std::norm(arr[i]);
+			//sm += std::pow(std::abs(arr[i]), 2);
 		return sm *= dx;
 	}
+
+	inline double getNorm(size_t len, const double* __restrict arr, double dx) {
+		double val = cblas_dnrm2(len, arr, 1);
+		return val*val * dx;
+	}
 	
+	inline double getNorm(size_t len, const std::complex<double>* __restrict arr, double dx) {
+		double val = cblas_dznrm2(len, arr, 1);
+		return val*val * dx;
+	}
+
 	/**
 	 * Sets the L2 norm of an array to a specified value assuming uniform grid spacing \f$dx\f$.
 	 * 
@@ -631,7 +674,7 @@ namespace vtls {
 	 * @param len The length of the array.
 	 * @param arr (in/out) The input array to be normalized, which will be modified to store the normalized values.
 	 * @param dx The grid spacing.
-	 * @param norm The target L2 norm.
+	 * @param norm The target L2 norm (squared).
 	 */
 	template <typename T>
 	void setNorm(size_t len, T* __restrict arr, double dx, double norm) {

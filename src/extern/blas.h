@@ -193,6 +193,18 @@ extern void cblas_zaxpy(const int N, const void *alpha, const void *X,
                  const int incX, void *Y, const int incY);
 extern void cblas_zdotu_sub(const int N, const void *X, const int incX,
                        const void *Y, const int incY, void *dotu);
+extern double cblas_ddot(const int N, const double *X, const int incX,
+                  const double *Y, const int incY);
+extern std::complex<double> cblas_zdotu(const int N, const void *X, const int incX,
+                  const void *Y, const int incY);
+extern std::complex<double> cblas_zdotc(const int N, const void *X, const int incX,
+                  const void *Y, const int incY);
+extern double cblas_dnrm2(const int N, const double *X, const int incX);
+extern double cblas_dznrm2(const int N, const void *X, const int incX);
+
+
+extern double cblas_dnrm2(const int N, const double *X, const int incX);
+extern double cblas_dznrm2(const int N, const void *X, const int incX);
 
 enum CBLAS_ORDER {CblasRowMajor=101, CblasColMajor=102};
 typedef CBLAS_ORDER CBLAS_LAYOUT;
