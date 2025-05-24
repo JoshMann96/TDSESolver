@@ -499,4 +499,24 @@ void init_Measurers(py::module &m) {
             -------
             DensityPlotter)V0G0N",
             "sim"_a, "stepsPerPlot"_a, "pause"_a);
+    
+    py::class_<PotentialPlotter, Measurer, std::unique_ptr<PotentialPlotter, py::nodelete>>(m, "PotentialPlotter")
+        .def(py::init([](PySimulation* sim, int stepsPerPlot, bool pause){
+            return std::unique_ptr<PotentialPlotter, py::nodelete>(new PotentialPlotter(sim->getNumPoints(), sim->getX(), stepsPerPlot, pause));
+        }), R"V0G0N(
+            Plots the potential with a gnuplot window as the simulation runs.
+
+            Parameters
+            ----------
+            sim : Simulation
+                Associated simulation.
+            stepsPerPlot : int
+                Number of steps between plots.
+            pause : bool
+                Whether to pause after each plot.
+
+            Returns
+            -------
+            PotentialPlotter)V0G0N",
+            "sim"_a, "stepsPerPlot"_a, "pause"_a);
 }
