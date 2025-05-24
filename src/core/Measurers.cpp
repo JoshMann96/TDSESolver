@@ -180,8 +180,7 @@ namespace Measurers {
 	MeasurerStatus ExpectE::measure(size_t step, const std::complex<double> * psi, const double* v, double t) {
 		double ex;
 		for(size_t i = 0; i < *nElec; i++){
-			vtls::normSqr(nPts, &psi[i*nPts], rho);
-			ex = vtlsInt::rSumMul(nPts, rho, v, dx) / vtlsInt::rSum(nPts, rho, dx) + (*kin)->evaluateKineticEnergy(&psi[i*nPts]);
+			ex = (*kin)->evaluateEnergy(&psi[i*nPts], v);
 
 			write(&ex, sizeof(double));
 		}
@@ -534,8 +533,7 @@ namespace Measurers {
 			first = false;
 			double ex;
 			for(size_t i = 0; i < *nElec; i++){
-				vtls::normSqr(nPts, &psi[i*nPts], rho);
-				ex = vtlsInt::rSumMul(nPts, rho, v, dx) + (*kin)->evaluateKineticEnergy(&psi[i*nPts]);
+				ex = (*kin)->evaluateEnergy(&psi[i*nPts], v);
 				write(&ex, sizeof(double));
 			}
 		}

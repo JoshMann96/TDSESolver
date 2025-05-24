@@ -27,12 +27,14 @@ namespace KineticOperators {
 	class KineticOperator
 	{
 	public:
+
 		/**
-		 * Calculate the kinetic energy for a wavefunction
-		 * @param psi The wavefunction for which to calculate the kinetic energy
-		 * @return The kinetic energy of the wavefunction
+		 * Calculate the energy for a wavefunction
+		 * @param psi The wavefunction for which to calculate the energy, \a nPts elements
+		 * @param v The potential to use for the calculation, \a nPts elements
+		 * @return The energy of the wavefunction
 		 */
-		virtual double evaluateKineticEnergy(const std::complex<double>* psi) = 0;
+		virtual double evaluateEnergy(const std::complex<double>* psi, const double* v) = 0;
 		
 		/**
 		 * Find the eigenstates of the system using this kinetic operator's basis.
@@ -131,8 +133,8 @@ namespace KineticOperators {
 		/// \a states will have \a nPts*nPts elements.
 		void findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs);
 
-		/// @copydoc KineticOperator::evaluateKineticEnergy
-		double evaluateKineticEnergy(const std::complex<double>* psi);
+		/// @copydoc KineticOperator::evaluateEnergy
+		double evaluateEnergy(const std::complex<double>* psi, const double* v);
 
 		/**
 		 * Defines the dispersion relation on the reciprocal (momentum-space) grid.
@@ -290,8 +292,8 @@ namespace KineticOperators {
 		/// \a states will have \a nPts*nPts elements.
 		void findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs);
 
-		/// @copydoc KineticOperator::evaluateKineticEnergy
-		double evaluateKineticEnergy(const std::complex<double>* psi);
+		/// @copydoc KineticOperator::evaluateEnergy
+		double evaluateEnergy(const std::complex<double>* psi, const double* v);
 
 		/**
 		 * Defines the dispersion relation on the reciprocal (momentum-space) grid.
@@ -450,6 +452,17 @@ namespace KineticOperators {
 		virtual void findInhomogeneousEigenStates(const double* v, const double* es, std::complex<double>* states, size_t nElec) = 0;
 
 		/**
+		 * Finds the eigenstates of the system using this kinetic operator's basis when one of the boundary conditions are inhomogeneous.
+		 * This thereby finds the eigenstates of the open system.
+		 * @param v (in) The potential to use for the calculation, \a nPts elements
+		 * @param es (in) The energy values to use for the calculation, \a nPts elements
+		 * @param states (out) The eigenstates found, allocated by the caller, must be of size \a nPts*nElec
+		 * @param nElec The number of electrons in the system
+		 * @throw std::runtime_error if both boundary conditions are not inhomogeneous.
+		 */
+		virtual void findInhomogeneousEigenStates_PHASE_ADVANCE(const double* v, const double* es, std::complex<double>* states, size_t nElec) = 0;
+
+		/**
 		 * For when the system has not been time-integrated, this function calls the underlying boundary conditions' projectHistory function.
 		 * @param psi (in) The wavefunction to project, \a nPts*nElec elements (only the left and right boundaries are referenced)
 		 * @param phsL (in) The phase advance for the left boundary, \a nElec elements
@@ -495,6 +508,7 @@ namespace KineticOperators {
 	class CrankNicolson:
 		public KineticOperator_FDM
 	{
+	private:
 		bool useCuda;
 		double dx, dt, m_eff;
 		std::complex<double> lhsOffDiag0, lhsDiag0, rhsDiag0, rhsOffDiag, potCoef; // elements of LHS tridiagonal matrix
@@ -516,6 +530,9 @@ namespace KineticOperators {
 		 * @param isVirtual (in) Whether to perform a virtual time step (without finalizing the boundary conditions)
 		 */
 		void _step(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, size_t nElec, bool isVirtual);
+	
+		void fillInhomEigenMatrix(std::complex<double> *lhs_ld, std::complex<double> *lhs_ud, std::complex<double> *rhs, std::complex<double> *lhs_d, double e, const double *v);
+
 	public:
 		// note: if useCuda is true, then the CUDA solver will be used for the tridiagonal system
 		//       the present state of the system will be managed internally
@@ -591,10 +608,15 @@ namespace KineticOperators {
 		void findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs);
 
 		/// @copydoc KineticOperator_FDM::findInhomogeneousEigenStates
-		void findInhomogeneousEigenStates(const double* v, const double* es, std::complex<double>* states, size_t nElec);
+        void findInhomogeneousEigenStates(const double *v, const double *es, std::complex<double> *states, size_t nElec);
 
-		/// @copydoc KineticOperator::evaluateKineticEnergy
-		double evaluateKineticEnergy(const std::complex<double>* psi);
+
+        /// @copydoc KineticOperator_FDM::findInhomogeneousEigenStates
+		/// @note This is a specialized version of the function for the phase advance method. Doesn't work for small spatial steps.
+		void findInhomogeneousEigenStates_PHASE_ADVANCE(const double* v, const double* es, std::complex<double>* states, size_t nElec);
+
+		/// @copydoc KineticOperator::evaluateEnergy
+		double evaluateEnergy(const std::complex<double>* psi, const double* v);
 
 		/// @copydoc KineticOperator_FDM::calcRawRhoByDevice
 		bool calcRawRhoByDevice(const double* weights, double* rho, bool virt);
@@ -621,30 +643,39 @@ namespace KineticOperators {
 		};
 
 		/**
+		 * Calculates the wavenumber associated with a given positive \a kinetic energy according to the Crank-Nicolson dispersion relation.
+		 * @param kin The kinetic energy to use for the calculation
+		 * @param dx The spatial grid spacing
+		 * @param m_eff The effective mass of the electron (in atomic units, so 1 is the free electron mass)
+		 * @return The wavenumber associated with the given energy
+		 */
+		static double wavenumberFromKineticEnergy(double kin, double dx, double m_eff){
+			assert(kin >= 0.0);
+			
+			kin /= PhysCon::auE_ha;
+			dx /= PhysCon::a0;
+
+			double scaleE = m_eff*dx*dx*( kin );
+			if(scaleE < 1e-10) // if small energy, use small angle approximation (analytic dispersion)
+				return std::sqrt(2.0*kin/m_eff)/PhysCon::a0;
+			else{
+				double cosine = 1.0 - scaleE ;
+				if(std::abs(cosine) > 1.0)
+					throw std::runtime_error("Crank-Nicolson iteration phase is too large.");
+				return 1.0/dx/PhysCon::a0 * std::acos(cosine);
+			}
+		}
+
+		/**
 		 * Calculates the wavenumber associated with a given \a total energy according to the Crank-Nicolson dispersion relation.
 		 * @param energy The energy to use for the calculation
 		 * @param v The potential to use for the calculation
 		 * @param dx The spatial grid spacing
-		 * @param dt The time step size
 		 * @param m_eff The effective mass of the electron (in atomic units, so 1 is the free electron mass)
 		 * @return The wavenumber associated with the given energy
 		 */
-		static double wavenumberFromEnergy(double energy, double v, double dx, double dt, double m_eff){
-			energy /= PhysCon::auE_ha;
-			dx /= PhysCon::a0;
-			dt *= PhysCon::auE_ha/PhysCon::hbar;
-			v  /= PhysCon::auE_ha;
-			
-			//std::cout << "energy: " << energy << std::endl;
-			//std::cout << "v: " << v << std::endl;
-
-			double cosine = 1.0 - m_eff*dx*dx*( energy - v ) ;
-
-			//std::cout << "cosine: " << cosine << std::endl;
-
-			if(std::abs(cosine) > 1.0)
-				throw std::runtime_error("Crank-Nicolson iteration phase is too large.");
-			return 1.0/dx/PhysCon::a0 * std::acos(cosine);
+		static double wavenumberFromEnergy(double energy, double v, double dx, double m_eff){
+			return wavenumberFromKineticEnergy(energy-v, dx, m_eff);
 		};
 
 		/**
@@ -654,7 +685,7 @@ namespace KineticOperators {
 		 * @return The wavenumber associated with the given energy
 		 */
 		double wavenumberFromEnergy(double energy, double v){
-			return wavenumberFromEnergy(energy, v, dx, dt, m_eff);
+			return wavenumberFromEnergy(energy, v, dx, m_eff);
 		};
 
 		/**

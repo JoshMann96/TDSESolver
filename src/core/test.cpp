@@ -75,14 +75,11 @@ void testTridiagonalAlgorithms(size_t nRhs=2, bool plot=true){
 	//FDBCs::BoundaryCondition* rbc = new FDBCs::DirichletBC((std::complex<double>)0.0);//new FDBCs::UniformHDTransparentBC(10000, nRhs, dx, dt);
 
 	// inhomogeneous DTBC
-	std::complex<double>* psibd = new std::complex<double>[nRhs];
 	double* k0 = new double[nRhs];
 	for (size_t i = 0; i < nRhs; i++){
-		psibd[i] = 1.0;
 		k0[i] = std::sqrt(2.0*kins[i]);
 	}
-	FDBCs::BoundaryCondition* rbc = new FDBCs::UniformIDTransparentBC(1000, nRhs, dx, dt, psibd, k0, 0.0);
-	delete[] psibd;
+	FDBCs::BoundaryCondition* rbc = new FDBCs::UniformIDTransparentBC(1000, nRhs, dx, dt, k0, 0.0);
 	delete[] k0;
 
 	std::complex<double> *rbct(new std::complex<double>[nRhs]), *lbct(new std::complex<double>[nRhs]), *bct1(new std::complex<double>[nRhs]), *bct2(new std::complex<double>[nRhs]);
@@ -391,18 +388,16 @@ void testInhomogeneousEigenState(){
 
 	// define incoming wavefunctions
 	size_t nElec = 50;
-	std::complex<double>* psibd = new std::complex<double>[nElec];
 	double* energy = new double[nElec];
 	double* ks = new double[nElec];
 	for (size_t i = 0; i < nElec; i++){
-		psibd[i] = 1.0;
 		energy[i] = 5.0*PhysCon::eV*std::pow((i+1.0)/nElec, 2.0);//(i+1.0)/nElec; // 0-5 eV
 		//ks[i] = std::sqrt(2.0*PhysCon::me*energy[i]/PhysCon::hbar/PhysCon::hbar);
-		ks[i] = KineticOperators::CrankNicolson::wavenumberFromEnergy(energy[i], 0.0, dx, dt, 1.0);
+		ks[i] = KineticOperators::CrankNicolson::wavenumberFromEnergy(energy[i], 0.0, dx, 1.0);
 	}
 
 	FDBCs::BoundaryCondition* rbc = new FDBCs::UniformHDTransparentBC(1000, nElec, dx, dt);
-	FDBCs::BoundaryCondition* lbc = new FDBCs::UniformIDTransparentBC(1000, nElec, dx, dt, psibd, ks, 0.0);
+	FDBCs::BoundaryCondition* lbc = new FDBCs::UniformIDTransparentBC(1000, nElec, dx, dt, ks, 0.0);
 	KineticOperators::CrankNicolson* cn = new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, lbc, rbc);
 	sm->setKineticOperator(cn);
 	sm->setWeight(new WfcToRho::SemiInfiniteFermiGas(5.0*PhysCon::eV));
@@ -437,7 +432,6 @@ void testInhomogeneousEigenState(){
 	plotter->update(nPts, 2, temp);
 	sq_free(temp);
 
-	delete[] psibd;
 	delete[] ks;
 	delete[] xs;
 	delete[] energy;
@@ -845,8 +839,19 @@ int main(int argc, char** argv){
 
 	//testIterationMethods(2, 2048);
 	//testIterationMethods(3, 2048);
-	testIterationMethods(4, 2048*2);
+	//testIterationMethods(4, 2048*2);
 	//testIterationMethods(5, 2048);
+
+	uint n = 1U<<20;
+	std::complex<double>* d1 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*n);
+	std::complex<double>* d2 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*n);
+	for(uint i = 0; i < n; i++){
+		d1[i] = std::exp(std::complex<double>(0.0, 2.0*M_PI*std::rand()/RAND_MAX));
+		d2[i] = std::complex(8.01e-19, (std::rand()-RAND_MAX/2)*1e-30/RAND_MAX) * d1[i];
+	}
+
+	std::cout << "n : " << n << std::endl;
+	std::cout << "<d1,d2> : " << vtlsInt::conjugateInnerProduct(n, d1, d2, 1.0)/(double)n << std::endl;
 
     return 0;
 }

@@ -79,17 +79,16 @@ void init_Kinetics(py::module &m) {
             "sim"_a, "order"_a, "nElec"_a);
 
     py::class_<FDBCs::UniformIDTransparentBC, FDBCs::UniformHDTransparentBC>(m, "UniformIDTransparentBC")
-        .def(py::init([](PySimulation* sim, size_t order, size_t nElec, 
-            py::array_t<std::complex<double>, py::array::c_style | py::array::forcecast> psibd, 
+        .def(py::init([](PySimulation* sim, size_t order, size_t nElec,
             py::array_t<double, py::array::c_style | py::array::forcecast> energies, 
             double m_eff, double vb){
                 
             // get k0
             double* k0s = (double*) sq_malloc(sizeof(double) * nElec);
             for (size_t i = 0; i < nElec; i++)
-                k0s[i] = KineticOperators::CrankNicolson::wavenumberFromEnergy(energies.at(i), vb, sim->getDX(), sim->getDT(), m_eff);
+                k0s[i] = KineticOperators::CrankNicolson::wavenumberFromEnergy(energies.at(i), vb, sim->getDX(), m_eff);
 
-            std::unique_ptr<FDBCs::UniformIDTransparentBC> res(new FDBCs::UniformIDTransparentBC(order, nElec, sim->getDX(), sim->getDT(), psibd.data(), k0s, vb));
+            std::unique_ptr<FDBCs::UniformIDTransparentBC> res(new FDBCs::UniformIDTransparentBC(order, nElec, sim->getDX(), sim->getDT(), k0s, vb));
 
             sq_free(k0s);
 
@@ -114,9 +113,6 @@ void init_Kinetics(py::module &m) {
                 order >> h / ( dt * E_min )
             nElec : uint
                 Number of electrons.
-            psibd : complex array
-                Boundary wavefunction, nElec elements.
-                It is recommended that the magnitude of the values are 1.0.
             energies : float array
                 Energies of the eigenstates, nElec elements.
             m_eff : float
@@ -127,7 +123,7 @@ void init_Kinetics(py::module &m) {
             Returns
             -------
             UniformIDTransparentBC)V0G0N",
-            "sim"_a, "order"_a, "nElec"_a, "psibd"_a, "energies"_a, "m_eff"_a, "vb"_a);
+            "sim"_a, "order"_a, "nElec"_a, "energies"_a, "m_eff"_a, "vb"_a);
     
 
 // KINETIC OPERATORS

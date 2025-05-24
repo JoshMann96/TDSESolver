@@ -1,5 +1,6 @@
 #include "CORECommonHeader.h"
 #include "MathTools.h"
+#include "KineticOperator.h"
 #include "FDBCs.h"
 
 namespace FDBCs{
@@ -83,11 +84,31 @@ namespace FDBCs{
         }
     };
 
-    std::complex<double> UniformHDTransparentBC::getSteadyRHS(std::complex<double> phaseAdvance, double k0, double vb, double dt){
+    std::complex<double> UniformHDTransparentBC::getSteadyRHS(double kin){
         return 0.0; // homogeneous, no source
     }
 
-    std::complex<double> UniformHDTransparentBC::getSteadyLHSEle(std::complex<double> phaseAdvance, double k0, double vb, double dt){
+    std::complex<double> UniformHDTransparentBC::getSteadyLHSEle(double kin){
+        if(kin >= 0){
+            double k = KineticOperators::CrankNicolson::wavenumberFromKineticEnergy(kin, dx*PhysCon::a0, 1.0);
+            return 1.0 - 0.5*(std::exp(PhysCon::im*k*dx*PhysCon::a0)    + kin / (PhysCon::hbar*PhysCon::hbar/(2.0*PhysCon::me*dx*dx * PhysCon::a0 * PhysCon::a0)));
+            //return 0.5*std::exp(-PhysCon::im*k*dx*PhysCon::a0);
+        }
+        else{
+            double k = KineticOperators::CrankNicolson::wavenumberFromKineticEnergy(-kin, dx*PhysCon::a0, 1.0);
+            return 1.0 - 0.5*(std::exp(-k*dx*PhysCon::a0)               + kin / (PhysCon::hbar*PhysCon::hbar/(2.0*PhysCon::me*dx*dx * PhysCon::a0 * PhysCon::a0)));
+        }
+    }
+
+    std::complex<double> UniformHDTransparentBC::getSteadyLHSAdjEle(double kin){
+        return -0.5;
+    }
+
+    std::complex<double> UniformHDTransparentBC::getSteadyRHS_PA(std::complex<double> phaseAdvance, double k0, double vb, double dt){
+        return 0.0; // homogeneous, no source
+    }
+
+    std::complex<double> UniformHDTransparentBC::getSteadyLHSEle_PA(std::complex<double> phaseAdvance, double k0, double vb, double dt){
         calcKernel(vb, dt / PhysCon::hbar * PhysCon::auE_ha);
 
         std::complex<double> phs = phaseAdvance;
@@ -99,11 +120,11 @@ namespace FDBCs{
         return sum;
     }
 
-    std::complex<double> UniformHDTransparentBC::getSteadyLHSAdjEle(std::complex<double> phaseAdvance, double k0, double vb, double dt){
+    std::complex<double> UniformHDTransparentBC::getSteadyLHSAdjEle_PA(std::complex<double> phaseAdvance, double k0, double vb, double dt){
         return 1.0 + phaseAdvance;
     }
 
-    UniformIDTransparentBC::UniformIDTransparentBC(size_t order, size_t nElec, double dx, double dt, const std::complex<double>* psibd, const double* k0, double vb) : UniformHDTransparentBC(order, nElec, dx, dt) {
+    UniformIDTransparentBC::UniformIDTransparentBC(size_t order, size_t nElec, double dx, double dt, const double* k0, double vb) : UniformHDTransparentBC(order, nElec, dx, dt) {
         phaseAdvance = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nElec);
         phs = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nElec);
         adjphs = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nElec);
@@ -118,7 +139,7 @@ namespace FDBCs{
 
             adjphs[i] = std::exp(PhysCon::im*k0[i]*PhysCon::a0*this->dx);
 
-            ihpsi[i] = psibd[i];
+            ihpsi[i] = 1.0;
         }
         std::fill_n(phs, nElec, 1.0);
     }
@@ -163,8 +184,19 @@ namespace FDBCs{
         sq_free(dpsibd);
     }
 
-    std::complex<double> UniformIDTransparentBC::getSteadyRHS(std::complex<double> phaseAdvance, double k0, double vb, double dt){
-        std::complex<double> sum = getSteadyLHSEle(phaseAdvance, k0, vb, dt);
+    std::complex<double> UniformIDTransparentBC::getSteadyRHS(double kin){
+        if(kin >= 0){
+            double k = KineticOperators::CrankNicolson::wavenumberFromKineticEnergy(kin, dx*PhysCon::a0, 1.0);
+            return -PhysCon::im * std::sin(k * dx * PhysCon::a0);
+        }
+        else{
+            double k = KineticOperators::CrankNicolson::wavenumberFromKineticEnergy(-kin, dx*PhysCon::a0, 1.0);
+            return std::sinh(k * dx * PhysCon::a0);
+        }
+    }
+
+    std::complex<double> UniformIDTransparentBC::getSteadyRHS_PA(std::complex<double> phaseAdvance, double k0, double vb, double dt){
+        std::complex<double> sum = getSteadyLHSEle_PA(phaseAdvance, k0, vb, dt);
                                 // Interpret negative k0 as exponential growth (thereby decaying in the external domain) instead of wave
         sum += (phaseAdvance+1.0) * std::exp((k0>=0.0 ? PhysCon::im : 1.0)*k0*dx*PhysCon::a0);
 

@@ -90,8 +90,7 @@ void SimulationManager::calcEnergies(size_t curStep, double* energies) const {
 		if(curStep == step[i]){ //look for the present step's index
 			double* rho = (double*) sq_malloc(sizeof(double)*nPts);
 			for(size_t j = 0; j < nElec; j++){
-				vtls::normSqr(nPts, &psis[i][j*nPts], rho);
-				energies[j] = vtlsInt::rSumMul(nPts, rho, vs[i], dx)/vtlsInt::rSum(nPts, rho,dx) + kin->evaluateKineticEnergy(&psis[i][j*nPts]);
+				energies[j] = kin->evaluateEnergy(&psis[i][j*nPts], vs[i]);
 				//potential energy + kinetic energy
 			}
 			sq_free(rho);
@@ -181,7 +180,7 @@ void SimulationManager::findInhomogeneousEigenStates(size_t nElec, const double*
 	wavefunctionInitialized = true;
 
 	try{
-	calcWeights();
+		calcWeights();
 	}
 	catch(std::runtime_error& e){
 		std::complex<double>* smallWfcs = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * 1000 * nElec);
@@ -527,7 +526,7 @@ size_t SimulationManager::findElectricalSurfaceCentroidRule(size_t minPos, size_
 		for(size_t k = 0; k < nPts; k++)
 			xpsi[k] = ((double)k) * psi[i*nPts+k];
 		for(size_t j = i+1; j < nElec; j++)
-			mat[matIndex(i,j)] = vtlsInt::rSumMul(nPts, xpsi, &psi[j*nPts], dx) / (energies[j]-energies[i]);
+			mat[matIndex(i,j)] = vtlsInt::innerProduct(nPts, xpsi, &psi[j*nPts], dx) / (energies[j]-energies[i]);
 	}
 
 	// calculate density change
