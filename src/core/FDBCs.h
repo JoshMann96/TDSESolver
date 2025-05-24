@@ -247,38 +247,6 @@ namespace FDBCs
 		 * @return The steady-state left-hand-side adjacent element for the boundary condition
 		 */
 		virtual std::complex<double> getSteadyLHSAdjEle(double kin) = 0; // '' what is the first-row LHS component adjacent to the diagonal?
-	
-
-
-		/**
-		 * Get the steady-state right-hand-side value for the boundary condition. For finding the open system eigenstate. This is intended for the phase advance version of eigensolving.
-		 * @param phaseAdvance The phase advance of the wavefunction at the boundary (due to its total energy) -- Use the Crank-Nicolson dispersion relation!
-		 * @param k0 The wavevector of the wavefunction at the boundary
-		 * @param vb The potential at the boundary
-		 * @param dt The time step size. Default is zero, which means the BoundaryCondition's internal value is used (if applicable).
-		 * @return The steady-state right-hand-side value for the boundary condition
-		 */
-		virtual std::complex<double> getSteadyRHS_PA(std::complex<double> phaseAdvance, double k0, double vb, double dt = 0) = 0; // assuming the wavefunction is an eigenstate of the open system, what is the right-hand-side value in the first row?
-		
-		/**
-		 * Get the steady-state left-hand-side diagonal element for the boundary condition. For finding the open system eigenstate. This is intended for the phase advance version of eigensolving.
-		 * @param phaseAdvance The phase advance of the wavefunction at the boundary (due to its total energy) -- Use the Crank-Nicolson dispersion relation!
-		 * @param k0 The wavevector of the wavefunction at the boundary
-		 * @param vb The potential at the boundary
-		 * @param dt The time step size. Default is zero, which means the BoundaryCondition's internal value is used (if applicable).
-		 * @return The steady-state left-hand-side diagonal element for the boundary condition
-		 */
-		virtual std::complex<double> getSteadyLHSEle_PA(std::complex<double> phaseAdvance, double k0, double vb, double dt = 0) = 0; // '' what is the diagonal first-row LHS component?
-		
-		/**
-		 * Get the steady-state left-hand-side adjacent element for the boundary condition. For finding the open system eigenstate. This is intended for the phase advance version of eigensolving.
-		 * @param phaseAdvance The phase advance of the wavefunction at the boundary (due to its total energy) -- Use the Crank-Nicolson dispersion relation!
-		 * @param k0 The wavevector of the wavefunction at the boundary
-		 * @param vb The potential at the boundary
-		 * @param dt The time step size. Default is zero, which means the BoundaryCondition's internal value is used (if applicable).
-		 * @return The steady-state left-hand-side adjacent element for the boundary condition
-		 */
-		virtual std::complex<double> getSteadyLHSAdjEle_PA(std::complex<double> phaseAdvance, double k0, double vb, double dt = 0) = 0; // '' what is the first-row LHS component adjacent to the diagonal?
 	};
 
 	/// Boundary condition which is the same for all orbitals
@@ -322,21 +290,6 @@ namespace FDBCs
 
 		/// @copydoc BoundaryCondition::getSteadyLHSAdjEle
 		std::complex<double> getSteadyLHSAdjEle(double kin) {
-			return getLHSAdjEle();
-		};
-
-		/// @copydoc BoundaryCondition::getSteadyRHS_PA
-		std::complex<double> getSteadyRHS_PA(std::complex<double> phaseAdvance, double k0, double vb, double dt = 0){
-			return getRHS(vb);
-		};
-
-		/// @copydoc BoundaryCondition::getSteadyLHSEle_PA
-		std::complex<double> getSteadyLHSEle_PA(std::complex<double> phaseAdvance, double k0, double vb, double dt = 0){
-			return getLHSEle();
-		};
-
-		/// @copydoc BoundaryCondition::getSteadyLHSAdjEle_PA
-		std::complex<double> getSteadyLHSAdjEle_PA(std::complex<double> phaseAdvance, double k0, double vb, double dt = 0){
 			return getLHSAdjEle();
 		};
 	};
@@ -391,6 +344,7 @@ namespace FDBCs
 		std::complex<double> getRHS(double vb) { return bdDer; };
 	};
 
+	// TODO: Add effective mass for DTBCs
 	/**
 	 * @brief Homogeneous Discrete Transparent Boundary Condition (HDTBC)
 	 * @details This class implements the homogeneous discrete transparent boundary condition for the Crank-Nicolson method.
@@ -462,15 +416,6 @@ namespace FDBCs
 
 		/// @copydoc BoundaryCondition::getSteadyLHSAdjEle
 		std::complex<double> getSteadyLHSAdjEle(double kin);
-
-		/// @copydoc BoundaryCondition::getSteadyRHS_PA
-		std::complex<double> getSteadyRHS_PA(std::complex<double> phaseAdvance, double k0, double vb, double dt = 0);
-
-		/// @copydoc BoundaryCondition::getSteadyLHSEle_PA
-		std::complex<double> getSteadyLHSEle_PA(std::complex<double> phaseAdvance, double k0, double vb, double dt = 0);
-		
-		/// @copydoc BoundaryCondition::getSteadyLHSAdjEle_PA
-		std::complex<double> getSteadyLHSAdjEle_PA(std::complex<double> phaseAdvance, double k0, double vb, double dt = 0);
 	};
 
 	/**
@@ -513,8 +458,5 @@ namespace FDBCs
 
 		/// @copydoc BoundaryCondition::getSteadyRHS
 		std::complex<double> getSteadyRHS(double kin);
-
-		/// @copydoc BoundaryCondition::getSteadyRHS_PA
-		std::complex<double> getSteadyRHS_PA(std::complex<double> phaseAdvance, double k0, double vb, double dt = 0);
 	};
 }

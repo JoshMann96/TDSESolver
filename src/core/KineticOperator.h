@@ -452,17 +452,6 @@ namespace KineticOperators {
 		virtual void findInhomogeneousEigenStates(const double* v, const double* es, std::complex<double>* states, size_t nElec) = 0;
 
 		/**
-		 * Finds the eigenstates of the system using this kinetic operator's basis when one of the boundary conditions are inhomogeneous.
-		 * This thereby finds the eigenstates of the open system.
-		 * @param v (in) The potential to use for the calculation, \a nPts elements
-		 * @param es (in) The energy values to use for the calculation, \a nPts elements
-		 * @param states (out) The eigenstates found, allocated by the caller, must be of size \a nPts*nElec
-		 * @param nElec The number of electrons in the system
-		 * @throw std::runtime_error if both boundary conditions are not inhomogeneous.
-		 */
-		virtual void findInhomogeneousEigenStates_PHASE_ADVANCE(const double* v, const double* es, std::complex<double>* states, size_t nElec) = 0;
-
-		/**
 		 * For when the system has not been time-integrated, this function calls the underlying boundary conditions' projectHistory function.
 		 * @param psi (in) The wavefunction to project, \a nPts*nElec elements (only the left and right boundaries are referenced)
 		 * @param phsL (in) The phase advance for the left boundary, \a nElec elements
@@ -609,11 +598,6 @@ namespace KineticOperators {
 
 		/// @copydoc KineticOperator_FDM::findInhomogeneousEigenStates
         void findInhomogeneousEigenStates(const double *v, const double *es, std::complex<double> *states, size_t nElec);
-
-
-        /// @copydoc KineticOperator_FDM::findInhomogeneousEigenStates
-		/// @note This is a specialized version of the function for the phase advance method. Doesn't work for small spatial steps.
-		void findInhomogeneousEigenStates_PHASE_ADVANCE(const double* v, const double* es, std::complex<double>* states, size_t nElec);
 
 		/// @copydoc KineticOperator::evaluateEnergy
 		double evaluateEnergy(const std::complex<double>* psi, const double* v);
