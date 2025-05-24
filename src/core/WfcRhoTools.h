@@ -233,6 +233,7 @@ namespace WfcToRho {
 		void calcRho(size_t nPts, size_t nElec, double dx, double* rho);
 	};
 
+	// TODO: Make version which is not periodic
 	/**
 	 * Smooths the density by convolution against a Gaussian.
 	 */
@@ -243,12 +244,20 @@ namespace WfcToRho {
 		bool first = true;
 		double *tempRho=nullptr, sig;
 		vtls::MaskConvolver<double>* conv = nullptr;
+		Density* baseDens = nullptr;
 	public:
 		/**
 		 * Constructor for GaussianSmoothedDensity.
 		 * @param sig The standard deviation of the Gaussian used for smoothing.
 		 */
 		GaussianSmoothedDensity(double sig) : sig(sig) {}
+
+		/**
+		 * Constructor for GaussianSmoothedDensity.
+		 * @param sig The standard deviation of the Gaussian used for smoothing.
+		 * @param baseDens The base density calculator to use for the raw density calculation.
+		 */
+		GaussianSmoothedDensity(double sig, Density* baseDens) : sig(sig), baseDens(baseDens) {}
 
 		~GaussianSmoothedDensity();
 		void calcRho(size_t nPts, size_t nElec, double dx, double* rho);

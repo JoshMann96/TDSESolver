@@ -180,7 +180,20 @@ void SimulationManager::findInhomogeneousEigenStates(size_t nElec, const double*
 
 	wavefunctionInitialized = true;
 
+	try{
 	calcWeights();
+	}
+	catch(std::runtime_error& e){
+		std::complex<double>* smallWfcs = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * 1000 * nElec);
+		double* realWfcs = (double*) sq_malloc(sizeof(double) * 1000 * nElec);
+		for(int i = 0; i < nElec; i++)
+			vtls::linearInterpolateNoEdge(nPts, &psis[index][i*nPts], 1000, smallWfcs + i*1000);
+		vtls::copyArrayRe(1000*nElec, smallWfcs, realWfcs);
+		plotting::GNUPlotter gp(1000, nElec, x, realWfcs);
+		sq_free(smallWfcs);
+		sq_free(realWfcs);
+		throw e;
+	}
 	if(calcDensity){
 		if(dens == nullptr)
 			throw std::runtime_error("SimulationManager::findInhomogeneousEigenStates: Density not set!");

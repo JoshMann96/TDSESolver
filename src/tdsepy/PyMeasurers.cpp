@@ -479,4 +479,24 @@ void init_Measurers(py::module &m) {
             -------
             PotT)V0G0N",
             "sim"_a, "meaT"_a, "vdNum"_a, "name"_a, "fol"_a);
+    
+    py::class_<DensityPlotter, Measurer, std::unique_ptr<DensityPlotter, py::nodelete>>(m, "DensityPlotter")
+        .def(py::init([](PySimulation* sim, int stepsPerPlot, bool pause){
+            return std::unique_ptr<DensityPlotter, py::nodelete>(new DensityPlotter(sim->getNumPoints(), sim->getNElecPtr(), sim->getDX(), sim->getX(), sim->getDensity(), sim->getWeightsPtr(), stepsPerPlot, pause));
+        }), R"V0G0N(
+            Plots the density of the wavefunction with a gnuplot window as the simulation runs.
+
+            Parameters
+            ----------
+            sim : Simulation
+                Associated simulation.
+            stepsPerPlot : int
+                Number of steps between plots.
+            pause : bool
+                Whether to pause after each plot.
+
+            Returns
+            -------
+            DensityPlotter)V0G0N",
+            "sim"_a, "stepsPerPlot"_a, "pause"_a);
 }

@@ -253,14 +253,24 @@ public:
 	/**
 	 * Gets the Weight calculator used in the simulation.
 	 * @return The Weight calculator used in the simulation.
+	 * @throw std::runtime_error if the weight calculator is not set.
 	 */
-	WfcToRho::Weight* getWeight () const { return wght; }
+	WfcToRho::Weight* getWeight () const { 
+		if(!wght) 
+			throw std::runtime_error("SimulationManager::getWeight: Weight calculator not set!");
+		return wght; 
+	}
 
 	/**
 	 * Gets the Density calculator used in the simulation.
 	 * @return The Density calculator used in the simulation.
+	 * @throw std::runtime_error if the density calculator is not set.
 	 */
-	WfcToRho::Density* getDensity () const { return dens; }
+	WfcToRho::Density* getDensity () const { 
+		if(!dens) 
+			throw std::runtime_error("SimulationManager::getDensity: Density calculator not set!");
+		return dens; 
+	}
 
 	/** 
 	 * Returns whether the wavefunction has been initialized.
