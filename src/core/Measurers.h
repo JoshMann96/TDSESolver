@@ -570,9 +570,23 @@ namespace Measurers {
 		
 		size_t nPts;
 		double ct;
-		double dw, tmax, tukeyAl=0.05;
+		double tmax, tukeyAl=0.05;
 		static constexpr const char* fname = "fluxspecvd";
-		std::complex<double>* wfcs0 = nullptr, * wfcs1 = nullptr, *phss, cumPotPhs, *phaseCalcExpMul, *temp;
+		std::complex<double>* wfcs0 = nullptr, * wfcs1 = nullptr, *phss;
+		double *kineticEnergies;
+
+		KineticOperators::KineticOperator ** kinOp;
+
+		void advancePhaseOS(double dt, double v) {
+			for(size_t i = 0; i < nSamp; i++)
+				phss[i] *= std::exp(std::complex<double>(0.0, (kineticEnergies[i]+v) * dt / PhysCon::hbar));
+		}
+
+		void advancePhaseCN(double dt, double v){
+			for(size_t i = 0; i < nSamp; i++)
+				phss[i] *= 	std::complex<double>(1.0, 0.5 * dt * (kineticEnergies[i]+v) / PhysCon::hbar) / 
+							std::complex<double>(1.0,-0.5 * dt * (kineticEnergies[i]+v) / PhysCon::hbar);
+		}
 	public:
 		/**
 		 * Constructor.
@@ -582,11 +596,12 @@ namespace Measurers {
 		 * @param nElec (in) Pointer to the number of electrons. Must be determined by the time 'measure' is called.
 		 * @param nSamp The number of samples to take (in frequency space) for the Fourier transform.
 		 * @param emax The maximum energy to consider in the Fourier transform.
+		 * @param tet The time evolution type used to evolve the wavefunction's phase in time.
 		 * @param tmax The maximum time.
 		 * @param name A 4-character descriptor for the detector to be saved within the data file.
 		 * @param fol The folder to write to.
 		 */
-		VDFluxSpec(size_t nPts, size_t vdPos, int vdNum, const size_t* nElec, size_t nSamp, double emax, double tmax, const std::string name, const std::string fol);
+		VDFluxSpec(size_t nPts, size_t vdPos, int vdNum, const size_t* nElec, size_t nSamp, double emax, KineticOperators::KineticOperator** kinOp, double tmax, const std::string name, const std::string fol);
 
 		~VDFluxSpec();
 		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double* v, double t);

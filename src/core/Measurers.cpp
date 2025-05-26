@@ -372,8 +372,8 @@ namespace Measurers {
 	}
 
 
-	VDFluxSpec::VDFluxSpec(size_t nPts, size_t vdPos, int vdNum, const size_t* nElec, size_t nSamp, double emax, double tmax, const std::string name, const std::string fol) :
-		nElec(nElec), nSamp(nSamp), tmax(tmax), nPts(nPts), dw(emax / PhysCon::hbar / nSamp),
+	VDFluxSpec::VDFluxSpec(size_t nPts, size_t vdPos, int vdNum, const size_t* nElec, size_t nSamp, double emax, KineticOperators::KineticOperator** kinOp, double tmax, const std::string name, const std::string fol) :
+		nElec(nElec), nSamp(nSamp), tmax(tmax), nPts(nPts), kinOp(kinOp),
 		Measurer(24, fol, std::to_string(vdNum) + fname)
 	 {
 		assert(name.length() == 4);
@@ -389,13 +389,10 @@ namespace Measurers {
 		}
 
 		phss = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nSamp);
-		temp = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nSamp);
+		kineticEnergies = (double*) sq_malloc(sizeof(double)*nSamp);
 
-		phaseCalcExpMul = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nSamp);
-		for(size_t i = 0; i < nSamp; i++)
-			phaseCalcExpMul[i] = PhysCon::im * dw * (double)i; //to be multiplied by t then exponentiated later
-		
-		cumPotPhs = 1;
+		std::fill_n(phss, nSamp, 0.0);
+		vtls::linspace(nSamp, 0.0, emax, kineticEnergies);
 
 		write(&vdNum, sizeof(int));
 		write(name.c_str(), 4);
@@ -413,8 +410,7 @@ namespace Measurers {
 		if(wfcs1)
 			sq_free(wfcs1); wfcs1 = nullptr;
 		sq_free(phss);
-		sq_free(phaseCalcExpMul);
-		sq_free(temp);
+		sq_free(kineticEnergies);
 	}
 
 	MeasurerStatus VDFluxSpec::measure(size_t step, const std::complex<double> * psi, const double* v, double t) {
@@ -426,16 +422,14 @@ namespace Measurers {
 			wfcs0 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nSamp * *nElec);
 			wfcs1 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nSamp * *nElec);
 
-			for (size_t i = 0; i < nSamp * *nElec; i++) {
-				wfcs0[i] = 0;
-				wfcs1[i] = 0;
-			}
+			std::fill_n(wfcs0, nSamp * *nElec, 0.0);
+			std::fill_n(wfcs1, nSamp * *nElec, 0.0);
 			
 			first = false;
 			ct = t;
 		}
 
-		cumPotPhs *= std::exp(PhysCon::im * (v[vdpL] + v[vdpR]) / (2.0 * PhysCon::hbar) * (t - ct));
+		// calculate Tukey window value
 		double winMul;
 		if (t < tukeyAl / 2 * tmax)
 			winMul = 0.5 * (1 - std::cos(2.0 * PhysCon::pi * t / (tukeyAl * tmax)));
@@ -444,6 +438,19 @@ namespace Measurers {
 		else
 			winMul = 1.0;
 
+		// accumulate phase for each kinetic energy
+		switch((*kinOp)->getTimeEvolutionType()){
+			case KineticOperators::TimeEvolutionType::PSEUDOSPECTRAL:
+				advancePhaseOS(t - ct, (v[vdpL] + v[vdpR])/2.0);
+				break;
+			case KineticOperators::TimeEvolutionType::CRANK_NICOLSON:
+				advancePhaseCN(t - ct, (v[vdpL] + v[vdpR])/2.0);
+				break;
+			default:
+				throw std::runtime_error("Unknown time evolution type in VDFluxSpec measurer.");
+		}
+
+			/*		ORIGINAL, WORKS FOR PSEUDOSPECTRAL
 		//exp(i t dw (idx))*cumPotPhs*winMul, expanded to hopefully vectorize better
 		cblas_zcopy(nSamp, phaseCalcExpMul, 1, phss, 1); 	// phss = 		i dw (idx)
 		cblas_zdscal(nSamp, t, phss, 1); 					// phss = 		i dw (idx) t
@@ -451,7 +458,8 @@ namespace Measurers {
 			phss[i] = std::exp(phss[i]);					// phss = exp(	i dw (idx) t)
 		std::complex<double> cpwm = cumPotPhs * winMul;
 		cblas_zscal(nSamp, &cpwm, phss, 1);
-			
+			*/
+
 		for(size_t i = 0; i < *nElec; i++){
 			//wfcs0[i0 + i] += psip0 * phss[i]
 			//wfcs1[i0 + i] += psip1 * phss[i]

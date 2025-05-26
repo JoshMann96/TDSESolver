@@ -891,7 +891,7 @@ namespace vtls {
 	}
 
 	/**
-	 * Finds the index of the first element in an array that is equal to a specified value.
+	 * Finds the index of the first element in an array that is greater than or equal to a specified value.
 	 * The array must be sorted in ascending order.
 	 * @tparam T The type of the array elements.
 	 * @param len The length of the array.

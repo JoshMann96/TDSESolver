@@ -19,6 +19,11 @@
  */
 namespace KineticOperators {
 
+	enum TimeEvolutionType{
+		PSEUDOSPECTRAL, // exact time evolution for constant potential
+		CRANK_NICOLSON // semi-implicit (\theta=1/2) 
+	};
+
 	/**
 	 * @brief Base class for kinetic operators.
 	 * @details This class defines the interface for kinetic operators used in solution of the TDSE.
@@ -46,6 +51,12 @@ namespace KineticOperators {
 		 * @param nEigs (out) The number of eigenstates found
 		 */
 		virtual void findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs) = 0;
+	
+		/**
+		 * Returns the type of time evolution used by this kinetic operator.
+		 * @return The type of time evolution used by this kinetic operator, one of the TimeEvolutionType enum values.
+		 */
+		virtual TimeEvolutionType getTimeEvolutionType() const = 0;
 	};
 
 	/// Base class for kinetic operators that use a PSM (pseudo-spectral method) for time-stepping. The PSM of choice is the split-step Fourier method.
@@ -95,6 +106,9 @@ namespace KineticOperators {
 		 * @note It is not recommended for nonlinear systems, as the potential cannot be updated after the kinetic propagation step.
 		 */
 		virtual void stepOS_U2TU(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, size_t nElec) = 0;
+	
+		///@copydoc KineticOperator::getTimeEvolutionType
+		TimeEvolutionType getTimeEvolutionType() const override { return PSEUDOSPECTRAL; }
 	};
 
 	/// Base class for kinetic operators that use the PSM (phase-space method) for time-stepping, and allowing for a general dispersion relation.
@@ -699,6 +713,11 @@ namespace KineticOperators {
 		static std::complex<double> phaseAdvanceFromEnergy(double e, double dt){
 			std::complex<double> num = 1.0-0.5*dt*PhysCon::im*e/PhysCon::hbar;
 			return num/std::conj(num);
+		};
+
+		/// @copydoc KineticOperator::getTimeEvolutionType
+		TimeEvolutionType getTimeEvolutionType() const override {
+			return TimeEvolutionType::CRANK_NICOLSON;
 		};
 	};
 }

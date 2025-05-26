@@ -398,7 +398,7 @@ void init_Measurers(py::module &m) {
     py::class_<VDFluxSpec, Measurer, std::unique_ptr<VDFluxSpec, py::nodelete>>(m, "VDFluxSpec")
         .def(py::init([](PySimulation* sim, double vdPos, int vdNum, size_t nSamp, double emax, double maxT, std::string name, std::string fol){
             return std::unique_ptr<VDFluxSpec, py::nodelete>(new VDFluxSpec(
-                sim->getNumPoints(), sim->findXIdx(vdPos), vdNum, sim->getNElecPtr(), nSamp, emax, maxT, name, fol
+                sim->getNumPoints(), sim->findXIdx(vdPos), vdNum, sim->getNElecPtr(), nSamp, emax, sim->getKin(), maxT, name, fol
             ));
         }), R"V0G0N(
             Virtual detector which measures the bidirectional flux spectrum of the state passing through a point for each state.
