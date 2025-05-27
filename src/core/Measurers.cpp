@@ -388,10 +388,14 @@ namespace Measurers {
 			vdpR = vdPos+1;
 		}
 
-		phss = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nSamp);
+		phsL = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nSamp);
+		phsR = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nSamp);
+		scaledPhsL = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nSamp);
+		scaledPhsR = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nSamp);
 		kineticEnergies = (double*) sq_malloc(sizeof(double)*nSamp);
 
-		std::fill_n(phss, nSamp, 0.0);
+		std::fill_n(phsL, nSamp, 1.0);
+		std::fill_n(phsR, nSamp, 1.0);
 		vtls::linspace(nSamp, 0.0, emax, kineticEnergies);
 
 		write(&vdNum, sizeof(int));
@@ -402,28 +406,31 @@ namespace Measurers {
 	}
 
 	VDFluxSpec::~VDFluxSpec() {
-		write(wfcs0, *nElec * nSamp * sizeof(std::complex<double>));
-		write(wfcs1, *nElec * nSamp * sizeof(std::complex<double>));
+		write(wfcsL, *nElec * nSamp * sizeof(std::complex<double>));
+		write(wfcsR, *nElec * nSamp * sizeof(std::complex<double>));
 
-		if(wfcs0)
-			sq_free(wfcs0); wfcs0 = nullptr;
-		if(wfcs1)
-			sq_free(wfcs1); wfcs1 = nullptr;
-		sq_free(phss);
+		if(wfcsL)
+			sq_free(wfcsL); wfcsL = nullptr;
+		if(wfcsR)
+			sq_free(wfcsR); wfcsR = nullptr;
+		sq_free(phsL);
+		sq_free(scaledPhsL);
+		sq_free(phsR);
+		sq_free(scaledPhsR);
 		sq_free(kineticEnergies);
 	}
 
 	MeasurerStatus VDFluxSpec::measure(size_t step, const std::complex<double> * psi, const double* v, double t) {
 		if (first) {
-			if(wfcs0)
-				sq_free(wfcs0);
-			if(wfcs1)
-				sq_free(wfcs1);
-			wfcs0 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nSamp * *nElec);
-			wfcs1 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nSamp * *nElec);
+			if(wfcsL)
+				sq_free(wfcsL);
+			if(wfcsR)
+				sq_free(wfcsR);
+			wfcsL = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nSamp * *nElec);
+			wfcsR = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nSamp * *nElec);
 
-			std::fill_n(wfcs0, nSamp * *nElec, 0.0);
-			std::fill_n(wfcs1, nSamp * *nElec, 0.0);
+			std::fill_n(wfcsL, nSamp * *nElec, 0.0);
+			std::fill_n(wfcsR, nSamp * *nElec, 0.0);
 			
 			first = false;
 			ct = t;
@@ -441,30 +448,25 @@ namespace Measurers {
 		// accumulate phase for each kinetic energy
 		switch((*kinOp)->getTimeEvolutionType()){
 			case KineticOperators::TimeEvolutionType::PSEUDOSPECTRAL:
-				advancePhaseOS(t - ct, (v[vdpL] + v[vdpR])/2.0);
+				advancePhaseOS(t - ct, v[vdpL], phsL);
+				advancePhaseOS(t - ct, v[vdpR], phsR);
 				break;
 			case KineticOperators::TimeEvolutionType::CRANK_NICOLSON:
-				advancePhaseCN(t - ct, (v[vdpL] + v[vdpR])/2.0);
+				advancePhaseCN(t - ct, v[vdpL], phsL);
+				advancePhaseCN(t - ct, v[vdpR], phsR);
 				break;
 			default:
 				throw std::runtime_error("Unknown time evolution type in VDFluxSpec measurer.");
 		}
-
-			/*		ORIGINAL, WORKS FOR PSEUDOSPECTRAL
-		//exp(i t dw (idx))*cumPotPhs*winMul, expanded to hopefully vectorize better
-		cblas_zcopy(nSamp, phaseCalcExpMul, 1, phss, 1); 	// phss = 		i dw (idx)
-		cblas_zdscal(nSamp, t, phss, 1); 					// phss = 		i dw (idx) t
-		for(size_t i = 0; i < nSamp; i++)
-			phss[i] = std::exp(phss[i]);					// phss = exp(	i dw (idx) t)
-		std::complex<double> cpwm = cumPotPhs * winMul;
-		cblas_zscal(nSamp, &cpwm, phss, 1);
-			*/
+		// apply the window function to the phase
+		vtls::scaMulArray(nSamp, winMul, phsL, scaledPhsL);
+		vtls::scaMulArray(nSamp, winMul, phsR, scaledPhsR);
 
 		for(size_t i = 0; i < *nElec; i++){
 			//wfcs0[i0 + i] += psip0 * phss[i]
 			//wfcs1[i0 + i] += psip1 * phss[i]
-			cblas_zaxpy(nSamp, &psi[i*nPts + vdpL], phss, 1, &wfcs0[i*nSamp], 1);
-			cblas_zaxpy(nSamp, &psi[i*nPts + vdpR], phss, 1, &wfcs1[i*nSamp], 1);
+			cblas_zaxpy(nSamp, &psi[i*nPts + vdpL], scaledPhsL, 1, &wfcsL[i*nSamp], 1);
+			cblas_zaxpy(nSamp, &psi[i*nPts + vdpR], scaledPhsR, 1, &wfcsR[i*nSamp], 1);
 		}
 
 		ct = t;

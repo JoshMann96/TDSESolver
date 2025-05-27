@@ -572,17 +572,17 @@ namespace Measurers {
 		double ct;
 		double tmax, tukeyAl=0.05;
 		static constexpr const char* fname = "fluxspecvd";
-		std::complex<double>* wfcs0 = nullptr, * wfcs1 = nullptr, *phss;
+		std::complex<double>* wfcsL = nullptr, * wfcsR = nullptr, *phsL, *phsR, *scaledPhsL, *scaledPhsR;
 		double *kineticEnergies;
 
 		KineticOperators::KineticOperator ** kinOp;
 
-		void advancePhaseOS(double dt, double v) {
+		void advancePhaseOS(double dt, double v, std::complex<double>* phss) {
 			for(size_t i = 0; i < nSamp; i++)
 				phss[i] *= std::exp(std::complex<double>(0.0, (kineticEnergies[i]+v) * dt / PhysCon::hbar));
 		}
 
-		void advancePhaseCN(double dt, double v){
+		void advancePhaseCN(double dt, double v, std::complex<double>* phss){
 			for(size_t i = 0; i < nSamp; i++)
 				phss[i] *= 	std::complex<double>(1.0, 0.5 * dt * (kineticEnergies[i]+v) / PhysCon::hbar) / 
 							std::complex<double>(1.0,-0.5 * dt * (kineticEnergies[i]+v) / PhysCon::hbar);
