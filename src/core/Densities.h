@@ -214,6 +214,7 @@ namespace Densities {
 		size_t startIndex, endIndex;
 		double* thinning=nullptr;
 		bool first = true;
+		size_t mynPts = 0;
 		/**
 		 * Initializes the calculation.
 		 * @param nPts The number of grid points in the spatial domain.
@@ -236,8 +237,9 @@ namespace Densities {
 	// TODO: Make version which is not periodic
 	/**
 	 * Smooths the density by convolution against a Gaussian.
+	 * Uses FFTs to perform the convolution efficiently. This is therefore only suitable for periodic boundary conditions.
 	 */
-	class GaussianSmoothedDensity :
+	class GaussianSmoothedDensityPBC :
 		public Density
 	{
 	private:
@@ -245,21 +247,51 @@ namespace Densities {
 		double *tempRho=nullptr, sig;
 		vtls::MaskConvolver<double>* conv = nullptr;
 		Density* baseDens = nullptr;
+		size_t mynPts = 0;
 	public:
 		/**
-		 * Constructor for GaussianSmoothedDensity.
+		 * Constructor for GaussianSmoothedDensityPBC.
 		 * @param sig The standard deviation of the Gaussian used for smoothing.
 		 */
-		GaussianSmoothedDensity(double sig) : sig(sig) {}
+		GaussianSmoothedDensityPBC(double sig) : sig(sig) {}
 
 		/**
-		 * Constructor for GaussianSmoothedDensity.
+		 * Constructor for GaussianSmoothedDensityPBC.
 		 * @param sig The standard deviation of the Gaussian used for smoothing.
 		 * @param baseDens The base density calculator to use for the raw density calculation.
 		 */
-		GaussianSmoothedDensity(double sig, Density* baseDens) : sig(sig), baseDens(baseDens) {}
+		GaussianSmoothedDensityPBC(double sig, Density* baseDens) : sig(sig), baseDens(baseDens) {}
 
-		~GaussianSmoothedDensity();
+		~GaussianSmoothedDensityPBC();
+		void calcRho(size_t nPts, size_t nElec, double dx, double* rho);
+	};
+
+	class SmallKernelConvolver :
+		public Density
+	{
+	private:
+		double* mask = nullptr, *temp = nullptr;
+		size_t maskLen = 0;
+		size_t mynPts = 0;
+		Density* baseDens = nullptr;
+	public:
+		/**
+		 * Constructor for SmallKernelConvolver.
+		 * Uses a cosine-squared kernel which is centered about the middle of the mask.
+		 * @param maskLen The length of the kernel mask.
+		 */
+		SmallKernelConvolver(size_t maskLen);
+
+		/**
+		 * Constructor for SmallKernelConvolver.
+		 * Uses a cosine-squared kernel which is centered about the middle of the mask.
+		 * @param maskLen The length of the kernel mask.
+		 * @param baseDens The base density calculator to use for the raw density calculation.
+		 */
+		SmallKernelConvolver(size_t maskLen, Density* baseDens);
+
+		~SmallKernelConvolver();
+
 		void calcRho(size_t nPts, size_t nElec, double dx, double* rho);
 	};
 }

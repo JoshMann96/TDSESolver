@@ -123,6 +123,8 @@ void SimulationManager::calcWeights(){
 		wght->calcWeights(nElec, energies, weights, normScheme);
 		sq_free(energies);
 	}
+
+	weightsCalculated = true;
 }
 
 void SimulationManager::findEigenStates(double emin, double emax) {
@@ -234,6 +236,7 @@ size_t SimulationManager::calculatePotential(double* rho, const std::complex<dou
 		dens->calcRho(nPts, nElec, dx, weights, psi, rho);
 	}
 	pot->getV(rho, psi, t, v);
+	potentialAvailable = true;
 	auto end = std::chrono::high_resolution_clock::now();
 	auto dur = std::chrono::duration_cast<std::chrono::microseconds>(end - strt);
 	return dur.count();
@@ -243,6 +246,7 @@ size_t SimulationManager::calculatePotentialFromRawRho(double* rho, const std::c
 	auto strt = std::chrono::high_resolution_clock::now();
 	dens->calcRho(nPts, nElec, dx, rho);
 	pot->getV(rho, nullptr, t, v);
+	potentialAvailable = true;
 	auto end = std::chrono::high_resolution_clock::now();
 	auto dur = std::chrono::duration_cast<std::chrono::microseconds>(end - strt);
 	return dur.count();

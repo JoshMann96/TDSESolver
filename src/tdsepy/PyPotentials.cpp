@@ -57,7 +57,7 @@ void init_Potentials(py::module &m) {
     py::class_<ElectricFieldProfiles::ElectricFieldProfile>(m, "FieldProfile");
 
     py::class_<ElectricFieldProfiles::FileFieldProfile, ElectricFieldProfiles::ElectricFieldProfile>(m, "FileFieldProfile")
-        .def(py::init([](PySimulation* sim, double offset, double rightDecayPos, double leftDecayPos, double decayLength, double emax, std::string fil){
+        .def(py::init([](SimulationManager* sim, double offset, double rightDecayPos, double leftDecayPos, double decayLength, double emax, std::string fil){
             return std::unique_ptr<ElectricFieldProfiles::FileFieldProfile>(new ElectricFieldProfiles::FileFieldProfile(
                 sim->getNumPoints(), sim->getX(), offset, rightDecayPos, leftDecayPos, decayLength, emax, fil
             ));
@@ -93,7 +93,7 @@ void init_Potentials(py::module &m) {
     py::class_<Potential>(m, "Potential");
 
     py::class_<FilePotential, Potential>(m, "FilePotential")
-        .def(py::init([](PySimulation* sim, double offset, const std::string fil, double refPoint){
+        .def(py::init([](SimulationManager* sim, double offset, const std::string fil, double refPoint){
             return std::unique_ptr<FilePotential>(new FilePotential(
                 sim->getNumPoints(), sim->getX(), offset, fil, sim->findXIdx(refPoint)
             ));
@@ -119,7 +119,7 @@ void init_Potentials(py::module &m) {
 
 
     py::class_<JelliumPotentialBacked, Potential>(m, "JelliumPotentialBacked")
-        .def(py::init([](PySimulation* sim, double center, double ef, double w, double backStart, double backWidth, double refPoint){
+        .def(py::init([](SimulationManager* sim, double center, double ef, double w, double backStart, double backWidth, double refPoint){
             return std::unique_ptr<JelliumPotentialBacked>(new JelliumPotentialBacked(
                 sim->getNumPoints(), sim->getX(), center, ef, w, backStart, backWidth, sim->findXIdx(refPoint)
             ));
@@ -149,7 +149,7 @@ void init_Potentials(py::module &m) {
             "sim"_a, "center"_a, "ef"_a, "w"_a, "backStart"_a, "backWidth"_a, "refPoint"_a);
 
     py::class_<JelliumPotential, Potential>(m, "JelliumPotential")
-        .def(py::init([](PySimulation* sim, double center, double ef, double w, double refPoint){
+        .def(py::init([](SimulationManager* sim, double center, double ef, double w, double refPoint){
             return std::unique_ptr<JelliumPotential>(new JelliumPotential(
                 sim->getNumPoints(), sim->getX(), center, ef, w, sim->findXIdx(refPoint)
             ));
@@ -175,7 +175,7 @@ void init_Potentials(py::module &m) {
             "sim"_a, "center"_a, "ef"_a, "w"_a, "refPoint"_a);
 
     py::class_<FiniteBox, Potential>(m, "FiniteBox")
-        .def(py::init([](PySimulation* sim, double left, double right, double vin, double refPoint){
+        .def(py::init([](SimulationManager* sim, double left, double right, double vin, double refPoint){
             return std::unique_ptr<FiniteBox>(new FiniteBox(
                 sim->getNumPoints(), sim->getX(), left, right, vin, sim->findXIdx(refPoint)
             ));
@@ -201,7 +201,7 @@ void init_Potentials(py::module &m) {
             "sim"_a, "left"_a, "right"_a, "vin"_a, "refPoint"_a);
 
     py::class_<ElectricFieldProfileToPotential, Potential>(m, "PulsePotential")
-        .def(py::init([](PySimulation* sim, ElectricFieldProfiles::ElectricFieldProfile* fieldProfile, Envelopes::Envelope* env, double phase, double tmax, double lam, double refPoint){
+        .def(py::init([](SimulationManager* sim, ElectricFieldProfiles::ElectricFieldProfile* fieldProfile, Envelopes::Envelope* env, double phase, double tmax, double lam, double refPoint){
             return std::unique_ptr<ElectricFieldProfileToPotential>(new ElectricFieldProfileToPotential(
                 sim->getNumPoints(), fieldProfile, sim->getDX(), phase, tmax, lam, env, sim->findXIdx(refPoint)
             ));
@@ -232,7 +232,7 @@ void init_Potentials(py::module &m) {
     
 
     py::class_<CylindricalImageCharge, Potential>(m, "CylindricalImagePotential")
-        .def(py::init([](PySimulation* sim, double ef, double w, double rad, double posMin, double posMax, double surfPos, double refPoint){
+        .def(py::init([](SimulationManager* sim, double ef, double w, double rad, double posMin, double posMax, double surfPos, double refPoint){
             return std::unique_ptr<CylindricalImageCharge>(new CylindricalImageCharge(
                 sim->getNumPoints(), sim->getX(), sim->getDX(), ef, w, rad, sim->findXIdx(surfPos), sim->getNElecPtr(), sim->getWeightsPtr(), sim->getRho(), sim->findXIdx(posMin), sim->findXIdx(posMax), sim->findXIdx(refPoint)
             ));
@@ -266,7 +266,7 @@ void init_Potentials(py::module &m) {
             "sim"_a, "ef"_a, "w"_a, "rad"_a, "posMin"_a, "posMax"_a, "surfPos"_a, "refPoint"_a);
 
     py::class_<PlanarToCylindricalHartree,Potential>(m, "PlanarToCylindricalHartreePotential")
-        .def(py::init([](PySimulation* sim, bool mimickOpenSystem, double rad, double posMin, double posMax, double surfPos, double refPoint){
+        .def(py::init([](SimulationManager* sim, bool mimickOpenSystem, double rad, double posMin, double posMax, double surfPos, double refPoint){
             return std::unique_ptr<PlanarToCylindricalHartree>(new PlanarToCylindricalHartree(
                 mimickOpenSystem, sim->getNumPoints(), sim->getDX(), rad, sim->findXIdx(surfPos), sim->getNElecPtr(), sim->getWeightsPtr(), sim->wavefunctionIsInitialized() ? sim->getRho() : nullptr, sim->findXIdx(posMin), sim->findXIdx(posMax), sim->findXIdx(refPoint)
             ));
@@ -303,7 +303,7 @@ void init_Potentials(py::module &m) {
             "sim"_a, "mimickOpenSystem"_a, "rad"_a, "posMin"_a, "posMax"_a, "surfPos"_a, "refPoint"_a);
 
     py::class_<LDAFunctional, Potential>(m, "LDAFunctional")
-        .def(py::init([](PySimulation* sim, LDAFunctionalType typ, double refPoint){
+        .def(py::init([](SimulationManager* sim, LDAFunctionalType typ, double refPoint){
             return std::unique_ptr<LDAFunctional>(new LDAFunctional(
                 typ, sim->getNumPoints(), sim->getDX(), sim->wavefunctionIsInitialized() ? sim->getRho() : nullptr, sim->findXIdx(refPoint)
             ));
@@ -329,7 +329,7 @@ void init_Potentials(py::module &m) {
             "sim"_a, "typ"_a, "refPoint"_a);
     
     py::class_<MeasuredPotential, Potential>(m, "MeasuredPotential")
-        .def(py::init([](PySimulation* sim, Potential* pot, Measurers::Measurer* meas, size_t numSteps){
+        .def(py::init([](SimulationManager* sim, Potential* pot, Measurers::Measurer* meas, size_t numSteps){
             return std::unique_ptr<MeasuredPotential>(new MeasuredPotential(
                 pot, meas, numSteps, numSteps*sim->getDT()
             ));

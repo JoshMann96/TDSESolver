@@ -18,7 +18,7 @@ void init_Kinetics(py::module &m) {
     py::class_<FDBCs::TimeIndependentBC, FDBCs::CommonBC>(m, "TimeIndependentBC");
 
     py::class_<FDBCs::NeumannBC, FDBCs::TimeIndependentBC>(m, "NeumannBC")
-        .def(py::init([](PySimulation* sim, std::complex<double> bdDer, FDBCs::BCSide side){
+        .def(py::init([](SimulationManager* sim, std::complex<double> bdDer, FDBCs::BCSide side){
             return std::unique_ptr<FDBCs::NeumannBC>(new FDBCs::NeumannBC(bdDer, sim->getDX(), side));
         }), R"V0G0N(
             Neumann boundary condition.
@@ -52,7 +52,7 @@ void init_Kinetics(py::module &m) {
             "coeff"_a);
 
     py::class_<FDBCs::UniformHDTransparentBC, FDBCs::BoundaryCondition>(m, "UniformHDTransparentBC")
-        .def(py::init([](PySimulation* sim, size_t order, size_t nElec){
+        .def(py::init([](SimulationManager* sim, size_t order, size_t nElec){
             return std::unique_ptr<FDBCs::UniformHDTransparentBC>(new FDBCs::UniformHDTransparentBC(order, nElec, sim->getDX(), sim->getDT()));
         }), R"V0G0N(
             Uniform homogeneous discrete transparent boundary condition.
@@ -79,7 +79,7 @@ void init_Kinetics(py::module &m) {
             "sim"_a, "order"_a, "nElec"_a);
 
     py::class_<FDBCs::UniformIDTransparentBC, FDBCs::UniformHDTransparentBC>(m, "UniformIDTransparentBC")
-        .def(py::init([](PySimulation* sim, size_t order, size_t nElec,
+        .def(py::init([](SimulationManager* sim, size_t order, size_t nElec,
             py::array_t<double, py::array::c_style | py::array::forcecast> energies, 
             double m_eff, double vb){
                 
@@ -146,7 +146,7 @@ void init_Kinetics(py::module &m) {
             "bc"_a, "side"_a);
 
     py::class_<KineticOperators::GenDisp_PSM_FreeElec, KineticOperators::KineticOperator_PSM>(m, "PSM_FreeElec")
-        .def(py::init([](PySimulation* sim, double meff){
+        .def(py::init([](SimulationManager* sim, double meff){
             return std::unique_ptr<KineticOperators::GenDisp_PSM_FreeElec>(new KineticOperators::GenDisp_PSM_FreeElec(sim->getNumPoints(), sim->getDX(), sim->getDT(), meff));
         }), R"V0G0N(
             Free electron dispersion relation with uniform effective mass using pseudospectral derivatives.
@@ -164,7 +164,7 @@ void init_Kinetics(py::module &m) {
             "sim"_a, "meff"_a);
     
     py::class_<KineticOperators::CrankNicolson, KineticOperators::KineticOperator_FDM>(m, "CrankNicolson")
-        .def(py::init([](PySimulation* sim, double meff, FDBCs::BoundaryCondition* leftBC, FDBCs::BoundaryCondition* rightBC, bool useCuda){
+        .def(py::init([](SimulationManager* sim, double meff, FDBCs::BoundaryCondition* leftBC, FDBCs::BoundaryCondition* rightBC, bool useCuda){
             return std::unique_ptr<KineticOperators::CrankNicolson>(new KineticOperators::CrankNicolson(sim->getNumPoints(), sim->getDX(), sim->getDT(), meff, leftBC, rightBC, useCuda));
         }), py::keep_alive<1,4>(), py::keep_alive<1,5>(),
         R"V0G0N(

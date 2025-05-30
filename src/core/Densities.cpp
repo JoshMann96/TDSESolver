@@ -163,20 +163,28 @@ namespace Densities {
 	}
 
 	void CylindricalDensity::calcRho(size_t nPts, size_t nElec, double dx, double* rho) {
+		if(mynPts == 0)
+			mynPts = nPts;
+		assert(mynPts == nPts); // must be called with the same nPts as first
+
 		if (first)
 			doFirst(nPts, dx);
 
 		vtls::seqMulArrays(endIndex-startIndex, &thinning[startIndex], &rho[startIndex]);
 	}
 	
-	GaussianSmoothedDensity::~GaussianSmoothedDensity(){
+	GaussianSmoothedDensityPBC::~GaussianSmoothedDensityPBC(){
 		if(tempRho)
 			sq_free(tempRho);
 		if(conv)
 			delete conv;
 	}
 
-	void GaussianSmoothedDensity::calcRho(size_t nPts, size_t nElec, double dx, double* rho) {
+	void GaussianSmoothedDensityPBC::calcRho(size_t nPts, size_t nElec, double dx, double* rho) {
+		if(mynPts == 0)
+			mynPts = nPts;
+		assert(mynPts == nPts); // must be called with the same nPts as first
+
 		if (first) {
 			//Initialize variables
 			if(tempRho)
@@ -207,5 +215,48 @@ namespace Densities {
 			baseDens->calcRho(nPts, nElec, dx, rho);
 
 		conv->compute(rho);
+	}
+
+
+	SmallKernelConvolver::SmallKernelConvolver(size_t maskLen) : maskLen(maskLen) {
+		assert(maskLen > 0);
+		assert(maskLen % 2 == 1); // mask must be odd length
+
+		mask = (double*) sq_malloc(sizeof(double) * maskLen);
+		for(size_t i = 0; i < maskLen; i++)
+			mask[i] = std::pow(std::sin(PhysCon::pi * (i + 0.5) / maskLen), 2.0);
+		// ensure normalization
+		vtls::scaMulArray(maskLen, 1.0 / vtlsInt::sum(maskLen, mask, 1.0), mask);
+	}
+
+	SmallKernelConvolver::SmallKernelConvolver(size_t maskLen, Density* baseDens) : SmallKernelConvolver(maskLen) { this->baseDens = baseDens; }
+
+	SmallKernelConvolver::~SmallKernelConvolver() {
+		if (mask)
+			sq_free(mask);
+		if (temp)
+			sq_free(temp);
+	}
+
+	void SmallKernelConvolver::calcRho(size_t nPts, size_t nElec, double dx, double* rho) {
+		if(mynPts == 0)
+			mynPts = nPts;
+		assert(mynPts == nPts); // must be called with the same nPts as first
+		
+		size_t nPtsExt = nPts + maskLen - 1; // extended length for convolution
+		if(!temp)
+			temp = (double*) sq_malloc(sizeof(double) * nPtsExt);
+
+		if(baseDens) // if a base density calculator is provided, use it to calculate the raw density
+			baseDens->calcRho(nPts, nElec, dx, rho);
+
+		vtls::copyArray(nPts, rho, temp + maskLen / 2); // center the original data in the extended array
+		std::fill_n(temp, maskLen/2, rho[0]); // fill the left side with the first value
+		std::fill_n(temp + nPtsExt - maskLen / 2, maskLen/2, rho[nPts-1]); // fill the right side with the last value
+		
+		// Convolve with mask
+		std::fill_n(rho, nPts, 0.0);
+		for(size_t i = 0; i < maskLen; i++)
+			vtls::scaMulAddArrays(nPts, mask[i], temp + i, rho);
 	}
 }

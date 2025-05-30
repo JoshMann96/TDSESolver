@@ -115,6 +115,8 @@ private:
 	std::complex<double> *scratch1, *scratch2;
 
 	bool wavefunctionInitialized = false;
+	bool potentialAvailable = false;
+	bool weightsCalculated = false;
 
 	Densities::NormalizationScheme normScheme = Densities::UNNORMALIZED;
 
@@ -289,9 +291,14 @@ public:
 
 	/**
 	 * Returns a pointer to the weights presently being used.
+	 * If the weights have not been calculated yet, it will try to calculate them first.
 	 * @return A pointer to the weights.
 	 */
-	double* getWeightValues() const { return weights; }
+	double* getWeightValues() { 
+		if(!weightsCalculated)
+			calcWeights();
+		return weights;
+	}
 
 	/**
 	 * Sets the kinetic operator to be used in the simulation.
@@ -450,6 +457,22 @@ public:
 				dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
 		return rhos[index];
 	};
+
+	/**
+	 * Returns a pointer to the potential at the present index.
+	 * If the potential is not yet calculated, it will be calculated using the current density and wavefunction.
+	 * If the wavefunction is not initialized, it will calculate the bare potential.
+	 * @return The potential, \a npts elements.
+	 */
+	double* getV() {
+		if(!potentialAvailable){ // potential not yet calculated -- calculate it!
+			if(wavefunctionInitialized) // states set but potential not yet calculated
+				calculatePotential(rhos[index], psis[index], ts[index], vs[index]);
+			else // states not set, calculate initial potential
+				pot->getVBare(ts[index], vs[index]);
+		}
+		return vs[index];
+	}
 
 	/**
 	 * Gets the number of electrons currently in the simulation.

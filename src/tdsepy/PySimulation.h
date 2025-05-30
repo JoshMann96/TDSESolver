@@ -40,7 +40,39 @@ class PySimulation
             SimulationManager::findInhomogeneousEigenStates(nElec, energies.data());
         }
 
-        std::vector<double> getXVec(){return std::vector<double>(SimulationManager::getX(), SimulationManager::getX() + getNumPoints());}
+        std::vector<double> getX(){return std::vector<double>(SimulationManager::getX(), SimulationManager::getX() + getNumPoints());}
+
+        std::vector<double> getRho(){
+            try{
+                return std::vector<double>(SimulationManager::getRho(), SimulationManager::getRho() + getNumPoints());
+            } catch (const std::runtime_error &e) {
+                throw py::value_error(e.what());
+            }
+        }
+
+        py::array_t<std::complex<double>> getPsi(){
+            try{
+                return py::array_t<std::complex<double>>(getNumPoints() * getNElec(), SimulationManager::getPsi());
+            } catch (const std::runtime_error &e) {
+                throw py::value_error(e.what());
+            }
+        }
+
+        std::vector<double> getV(){
+            try{
+                return std::vector<double>(SimulationManager::getV(), SimulationManager::getV() + getNumPoints());
+            } catch (const std::runtime_error &e) {
+                throw py::value_error(e.what());
+            }
+        }
+
+        std::vector<double> getWeightValues(){
+            try{
+                return std::vector<double>(SimulationManager::getWeightValues(), SimulationManager::getWeightValues() + getNElec());
+            } catch (const std::runtime_error &e) {
+                throw py::value_error(e.what());
+            }
+        }
 
         size_t findElectricalSurfaceCentroidRule(double minPos, double maxPos){
             return SimulationManager::findElectricalSurfaceCentroidRule(findXIdx(minPos), findXIdx(maxPos));

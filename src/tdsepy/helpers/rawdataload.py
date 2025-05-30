@@ -136,11 +136,10 @@ def getFluxSpecVD(fol:str, vdNum:int=0):
         name = readData(fil, "char", 4)
         posIdx = readData(fil, "int", INT_SIZE=INT_SIZE)
         nSamp = readData(fil, "int", INT_SIZE=INT_SIZE)
-        maxE = readData(fil, "double")
-        
-        dftl = readData(fil, "complex", (nElec, nSamp))
-        dftr = readData(fil, "complex", (nElec, nSamp))
-    return dftl, dftr, maxE, posIdx, name, typ
+        energies = readData(fil, "double", (nSamp*2-1))
+        momenta = readData(fil, "double", (nSamp*2-1))
+        psik = readData(fil, "complex", (nElec, nSamp*2-1))
+    return energies, momenta, psik, posIdx, name, typ
 
 def getExpectE0(fol:str):
     nElec,_ = getConstant("nElec", fol)

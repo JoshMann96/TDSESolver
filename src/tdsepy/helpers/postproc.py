@@ -108,39 +108,18 @@ def get1DStateFluxSpectrum(fol:str, vdNum:int = 0, minE:float = 0, maxE:float = 
         es [eV]: Signed kinetic energy, shape (nSamp).
         yld [ 1 / m^2 eV ]: Weighed bidirectional flux spectrum, shape (nElec, nSamp).
     """
-    dftl, dftr, maxE_ = getFluxSpecVD(fol, vdNum)[0:3]
-    #maxE_ = maxE_ / 1.602e-19 #why convert to eV?
-    dx,_ = getConstant("dx", fol)
-    dt,_ = getConstant("dt", fol)
+    nes, momenta, psik = getFluxSpecVD(fol, vdNum)[:3]
     wghts,_ = getWghts(fol)
     
-    nSamp = dftl.shape[1]
-    
-    ces = maxE_/nSamp * np.arange(1, nSamp)
-    ces = ces[ces <= max(abs(minE), abs(maxE))]
-    ks = np.sqrt(2*cons.m_e*ces/cons.hbar**2)
-    ces = ces[ks < np.pi/dx]
-    ks = ks[ks < np.pi/dx]
-    
-    dftl = dftl[:,1:len(ces)+1]*dt
-    dftr = dftr[:,1:len(ces)+1]*dt
-    
-    phi = np.exp(0.5j*dx*ks)
-    phist = np.conj(phi)
-    muldiv = 1.0/(-2.0j*np.sin(dx*ks))
-    
-    r = (phist*dftl - phi  *dftr)*muldiv
-    l = (-phi *dftl + phist*dftr)*muldiv
-    
-    nes = np.concatenate((np.flip(-ces), np.array([0]), ces))
-    ces_exp = np.broadcast_to(ces[None,:]**(0.25), (len(wghts), len(ces)))
-    yld = (cons.e)**(3.0/2) / (np.pi*cons.hbar*np.sqrt(2*cons.m_e)) * np.abs(np.concatenate((\
-        np.flip(l*ces_exp  , axis=1), np.zeros((len(wghts),1)), r*ces_exp),\
-        axis=1))
+    # convert from momentum diff spec to energy
+    # dN/dE = dN/dk * dk/dE
+    with np.errstate(divide='ignore', invalid='ignore'):
+        yld = abs(psik)**2 * np.broadcast_to(abs(np.gradient(momenta, axis=0) / np.gradient(abs(nes), axis=0))[None,:], (len(wghts), len(nes)))
+    yld[:, nes == 0.0] = 0  # zero flux for zero momentum
     
     es = nes[(nes < maxE) & (nes > minE)]
-    yld = interp1d(nes, yld, axis=-1)(es)*np.broadcast_to(wghts[:,None], (len(wghts), len(es)))
-    
+    yld = interp1d(nes, yld, axis=-1)(es)*np.broadcast_to(wghts[:,None], (len(wghts), len(es))) * cons.e
+
     return es/cons.e, yld
    
 def get1DTotalFluxSpectrum(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0, maxE:float = 500*cons.e):

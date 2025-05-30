@@ -89,6 +89,7 @@ if(USE_CUDA)
 endif()
 
 if(DEBUG)
+    message(STATUS "Building in debug mode")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ggdb3 -O0 -fPIC -fopenmp")
 else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lstdc++ -O3 -march=${CPU_MARCH} -mtune=native -fPIC -fopenmp")

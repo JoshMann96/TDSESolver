@@ -125,7 +125,7 @@ namespace KineticOperators {
 		 */
 		GenDisp_PSM(size_t nPts, double dx, double dt, uint fftwPlanPolicy=FFTW_PATIENT) : nPts(nPts), dx(dx), dt(dt), osKineticEnergy((std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts)), KineticOperator_PSM(fftwPlanPolicy) {};
 	public:
-		~GenDisp_PSM();
+		virtual ~GenDisp_PSM();
 		
 		/// @copydoc KineticOperator_PSM::stepOS_UW2T
 		void stepOS_UW2T(const std::complex<double>* psi0, const double* v, const double* spatialDamp, std::complex<double>* targ, size_t nElec);
@@ -165,6 +165,7 @@ namespace KineticOperators {
 		size_t nPts, nElec;
 		std::complex<double> *osKineticPhase = nullptr, * osPotentialPhase = nullptr, *opMat = nullptr;
 		std::complex<double>* osKineticEnergy = nullptr;
+		std::complex<double> *temp1 = nullptr, *temp2 = nullptr;
 		double dx, dt;
 
 		/// Allocates and calculates the full kinetic part of the Hamiltonian (a dense matrix).
@@ -659,7 +660,7 @@ namespace KineticOperators {
 			else{
 				double cosine = 1.0 - scaleE ;
 				if(std::abs(cosine) > 1.0)
-					throw std::runtime_error("Crank-Nicolson iteration phase is too large.");
+					throw std::runtime_error("Crank-Nicolson energy is too large for grid spacing.");
 				return 1.0/dx/PhysCon::a0 * std::acos(cosine);
 			}
 		}
@@ -684,6 +685,28 @@ namespace KineticOperators {
 		 */
 		double wavenumberFromEnergy(double energy, double v){
 			return wavenumberFromEnergy(energy, v, dx, m_eff);
+		};
+
+		/**
+		 * Calculates the wavenumber associated with a given positive \a kinetic energy according to the Crank-Nicolson dispersion relation.
+		 * @param kin The kinetic energy to use for the calculation
+		 * @return The wavenumber associated with the given energy
+		 */
+		double wavenumberFromKineticEnergy(double kin){
+			return wavenumberFromKineticEnergy(kin, dx, m_eff);
+		};
+
+		/**
+		 * Calculates the kinetic energy associated with a given wavenumber according to the Crank-Nicolson dispersion relation.
+		 * @param k0 The wavenumber to use for the calculation
+		 * @param dx The spatial grid spacing
+		 * @param m_eff The effective mass of the electron (in atomic units, so 1 is the free electron mass)
+		 * @return The kinetic energy associated with the given wavenumber
+		 */
+		static double kineticEnergyFromWavenumber(double k0, double dx, double m_eff){
+			k0 *= PhysCon::a0;
+			dx /= PhysCon::a0;
+			return PhysCon::auE_ha / (m_eff * dx*dx) * (1.0 - std::cos(k0*dx));
 		};
 
 		/**
@@ -713,6 +736,26 @@ namespace KineticOperators {
 		static std::complex<double> phaseAdvanceFromEnergy(double e, double dt){
 			std::complex<double> num = 1.0-0.5*dt*PhysCon::im*e/PhysCon::hbar;
 			return num/std::conj(num);
+		};
+
+		/**
+		 * Calculates the group velocity associated with a given wavenumber according to the Crank-Nicolson dispersion relation.
+		 * @param k0 The wavenumber to use for the calculation
+		 * @param v The potential
+		 * @param dx The spatial grid spacing
+		 * @param dt The time step size
+		 * @param m_eff The effective mass of the electron (in atomic units, so 1 is the free electron mass)
+		 * @return The group velocity associated with the given wavenumber
+		 */
+		static double groupVelocityFromWavenumber(double k0, double v, double dx, double dt, double m_eff){
+			k0 *= PhysCon::a0;
+			v /= PhysCon::auE_ha;
+			dx /= PhysCon::a0;
+			dt *= PhysCon::auE_ha/PhysCon::hbar;
+			return std::sin(k0*dx) / (m_eff*dx) / (1.0 + std::pow(
+				0.5*dt*( v + 1.0/(m_eff*dx*dx) * (1.0 - std::cos(k0*dx)) ),
+				2.0)
+			);
 		};
 
 		/// @copydoc KineticOperator::getTimeEvolutionType

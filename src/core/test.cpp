@@ -842,16 +842,17 @@ int main(int argc, char** argv){
 	//testIterationMethods(4, 2048*2);
 	//testIterationMethods(5, 2048);
 
-	uint n = 1U<<20;
-	std::complex<double>* d1 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*n);
-	std::complex<double>* d2 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*n);
-	for(uint i = 0; i < n; i++){
-		d1[i] = std::exp(std::complex<double>(0.0, 2.0*M_PI*std::rand()/RAND_MAX));
-		d2[i] = std::complex(8.01e-19, (std::rand()-RAND_MAX/2)*1e-30/RAND_MAX) * d1[i];
-	}
+	// test SmallKernelConvolver
+	Densities::SmallKernelConvolver* conv = new Densities::SmallKernelConvolver(5);
 
-	std::cout << "n : " << n << std::endl;
-	std::cout << "<d1,d2> : " << vtlsInt::conjugateInnerProduct(n, d1, d2, 1.0)/(double)n << std::endl;
+	size_t nPts = 10;
+	double* dat0 = (double*)sq_malloc(sizeof(double)*nPts);
+	for(size_t i = 0; i < nPts; i++)
+		dat0[i] = (i % 2 == 0) ? 3.0 : -3.0;
 
-    return 0;
+	vtlsPrnt::printArray(nPts, dat0);
+	conv->calcRho(nPts, 0, 0, dat0);
+	vtlsPrnt::printArray(nPts, dat0);
+
+	sq_free(dat0);
 }

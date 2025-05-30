@@ -65,11 +65,12 @@ void init_Densities(py::module &m) {
             -------
             DirectDensity)V0G0N");
 
-    py::class_<Densities::GaussianSmoothedDensity, Densities::Density>(m, "GaussianSmoothedDensity")
+    py::class_<Densities::GaussianSmoothedDensityPBC, Densities::Density>(m, "GaussianSmoothedDensityPBC")
         .def(py::init<double>(), R"V0G0N(
             Uses a Gaussian smoothing function to calculate the final density.
             Density = sum over states (weight x psi*psi) * Gaussian
                 (* = convolution)
+            This is only suitable for periodic boundary conditions.
 
             Parameters
             ----------
@@ -78,7 +79,7 @@ void init_Densities(py::module &m) {
 
             Returns
             -------
-            GaussianSmoothedDensity)V0G0N",
+            GaussianSmoothedDensityPBC)V0G0N",
             "sigma"_a)
         .def(py::init<double, Densities::Density*>(), py::keep_alive<1,3>(), R"V0G0N(
             Uses a Gaussian smoothing function to calculate the final density.
@@ -94,8 +95,41 @@ void init_Densities(py::module &m) {
 
             Returns
             -------
-            GaussianSmoothedDensity)V0G0N",
+            GaussianSmoothedDensityPBC)V0G0N",
             "sigma"_a, "baseDens"_a);
+    
+    py::class_<Densities::SmallKernelConvolver, Densities::Density>(m, "SmallKernelConvolver")
+        .def(py::init<size_t>(), R"V0G0N(
+            Uses a small kernel to convolve the raw density.
+            The kernel is a cosine-squared function, centered about the middle of the mask.
+            This is suitable for non-periodic boundary conditions.
+
+            Parameters
+            ----------
+            maskLen : size_t
+                Length of the kernel mask. Must be odd.
+
+            Returns
+            -------
+            SmallKernelConvolver)V0G0N",
+            "maskLen"_a)
+        .def(py::init<size_t, Densities::Density*>(), py::keep_alive<1,3>(), R"V0G0N(
+            Uses a small kernel to convolve the raw density.
+            The kernel is a cosine-squared function, centered about the middle of the mask.
+            This is suitable for non-periodic boundary conditions.
+            The base density calculator is used to calculate the raw density before convolution.
+
+            Parameters
+            ----------
+            maskLen : size_t
+                Length of the kernel mask. Must be odd.
+            baseDens : Density
+                Base density calculator to use for the raw density. This is applied first, then the convolution is applied.
+
+            Returns
+            -------
+            SmallKernelConvolver)V0G0N",
+            "maskLen"_a, "baseDens"_a);
     
     py::class_<Densities::CylindricalDensity, Densities::Density>(m, "CylindricalDensity")
         .def(py::init<double, double, double>(), R"V0G0N(

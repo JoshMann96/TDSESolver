@@ -24,7 +24,7 @@ void init_Measurers(py::module &m) {
             "c"_a, "fileName"_a, "fol"_a);
     
     py::class_<BasicMeasurers, Measurer, std::unique_ptr<BasicMeasurers, py::nodelete>>(m, "Basic")
-        .def(py::init([](PySimulation* sim, std::string fol){
+        .def(py::init([](SimulationManager* sim, std::string fol){
             return std::unique_ptr<BasicMeasurers, py::nodelete>(new BasicMeasurers(
                 sim->getNumPoints(), sim->getDX(), sim->getDT(), fol
             ));
@@ -48,7 +48,7 @@ void init_Measurers(py::module &m) {
             "sim"_a, "fol"_a);
     
     py::class_<XS, Measurer, std::unique_ptr<XS, py::nodelete>>(m, "Xs")
-        .def(py::init([](PySimulation* sim, std::string fol){
+        .def(py::init([](SimulationManager* sim, std::string fol){
             return std::unique_ptr<XS, py::nodelete>(new XS(
                 sim->getNumPoints(), sim->getX(), fol
             ));
@@ -82,7 +82,7 @@ void init_Measurers(py::module &m) {
             "fol"_a);
 
     py::class_<OrigPot, Measurer, std::unique_ptr<OrigPot, py::nodelete>>(m, "OrigPot")
-        .def(py::init([](PySimulation* sim, std::string fol){
+        .def(py::init([](SimulationManager* sim, std::string fol){
             return std::unique_ptr<OrigPot, py::nodelete>(new OrigPot(
                 sim->getNumPoints(), fol
             ));
@@ -102,7 +102,7 @@ void init_Measurers(py::module &m) {
             "sim"_a, "fol"_a);
     
     py::class_<NElec, Measurer, std::unique_ptr<NElec, py::nodelete>>(m, "NElec")
-        .def(py::init([](PySimulation* sim, std::string fol){
+        .def(py::init([](SimulationManager* sim, std::string fol){
             return std::unique_ptr<NElec, py::nodelete>(new NElec(
                 sim->getNElecPtr(), fol
             ));
@@ -122,7 +122,7 @@ void init_Measurers(py::module &m) {
             "sim"_a, "fol"_a);
 
     py::class_<WfcRhoWeights, Measurer, std::unique_ptr<WfcRhoWeights, py::nodelete>>(m, "Weights")
-        .def(py::init([](PySimulation* sim, std::string fol){
+        .def(py::init([](SimulationManager* sim, std::string fol){
             return std::unique_ptr<WfcRhoWeights, py::nodelete>(new WfcRhoWeights(
                 sim->getNElecPtr(), sim->getWeightsPtr(), fol
             ));
@@ -142,7 +142,7 @@ void init_Measurers(py::module &m) {
             "sim"_a, "fol"_a);
 
     py::class_<Psi2t, Measurer, std::unique_ptr<Psi2t, py::nodelete>>(m, "Psi2t")
-        .def(py::init([](PySimulation* sim, size_t nx, size_t nt, size_t numSteps, std::string fol){
+        .def(py::init([](SimulationManager* sim, size_t nx, size_t nt, size_t numSteps, std::string fol){
             return std::unique_ptr<Psi2t, py::nodelete>(new Psi2t(
                 sim->getNumPoints(), nx, nt, numSteps, sim->getX(), sim->getNElecPtr(), fol
             ));
@@ -169,7 +169,7 @@ void init_Measurers(py::module &m) {
             "sim"_a, "nx"_a, "nt"_a, "numSteps"_a, "fol"_a);
 
     py::class_<Vfunct, Measurer, std::unique_ptr<Vfunct, py::nodelete>>(m, "Vfunct")
-        .def(py::init([](PySimulation* sim, size_t nx, size_t nt, size_t numSteps, std::string fol, int idx){
+        .def(py::init([](SimulationManager* sim, size_t nx, size_t nt, size_t numSteps, std::string fol, int idx){
             return std::unique_ptr<Vfunct, py::nodelete>(new Vfunct(
                 idx, sim->getNumPoints(), nx, nt, numSteps, numSteps*sim->getDT(), sim->getX(), fol
             ));
@@ -197,7 +197,7 @@ void init_Measurers(py::module &m) {
             "sim"_a, "nx"_a, "nt"_a, "numSteps"_a, "fol"_a, "idx"_a=-1);
 
     py::class_<ExpectE, Measurer, std::unique_ptr<ExpectE, py::nodelete>>(m, "ExpectE")
-        .def(py::init([](PySimulation* sim, std::string fol){
+        .def(py::init([](SimulationManager* sim, std::string fol){
             return std::unique_ptr<ExpectE, py::nodelete>(new ExpectE(
                 sim->getNumPoints(), sim->getDX(), sim->getNElecPtr(), fol, sim->getKin()
             ));
@@ -217,7 +217,7 @@ void init_Measurers(py::module &m) {
             "sim"_a, "fol"_a);
     
     py::class_<ExpectE0, Measurer, std::unique_ptr<ExpectE0, py::nodelete>>(m, "ExpectE0")
-        .def(py::init([](PySimulation* sim, std::string fol){
+        .def(py::init([](SimulationManager* sim, std::string fol){
             return std::unique_ptr<ExpectE0, py::nodelete>(new ExpectE0(
                 sim->getNumPoints(), sim->getDX(), sim->getNElecPtr(), fol, sim->getKin()
             ));
@@ -237,7 +237,7 @@ void init_Measurers(py::module &m) {
             "sim"_a, "fol"_a);
     
     py::class_<ExpectX, Measurer, std::unique_ptr<ExpectX, py::nodelete>>(m, "ExpectX")
-        .def(py::init([](PySimulation* sim, std::string fol){
+        .def(py::init([](SimulationManager* sim, std::string fol){
             return std::unique_ptr<ExpectX, py::nodelete>(new ExpectX(
                 sim->getNumPoints(), sim->getX(), sim->getDX(), sim->getNElecPtr(), fol
             ));
@@ -257,7 +257,7 @@ void init_Measurers(py::module &m) {
             "sim"_a, "fol"_a);
 
     py::class_<ExpectP, Measurer, std::unique_ptr<ExpectP, py::nodelete>>(m, "ExpectP")
-        .def(py::init([](PySimulation* sim, std::string fol){
+        .def(py::init([](SimulationManager* sim, std::string fol){
             return std::unique_ptr<ExpectP, py::nodelete>(new ExpectP(
                 sim->getNumPoints(), sim->getDX(), sim->getNElecPtr(), fol
             ));
@@ -277,7 +277,7 @@ void init_Measurers(py::module &m) {
             "sim"_a, "fol"_a);
 
     py::class_<ExpectA, Measurer, std::unique_ptr<ExpectA, py::nodelete>>(m, "ExpectA")
-        .def(py::init([](PySimulation* sim, std::string fol){
+        .def(py::init([](SimulationManager* sim, std::string fol){
             return std::unique_ptr<ExpectA, py::nodelete>(new ExpectA(
                 sim->getNumPoints(), sim->getDX(), sim->getNElecPtr(), fol
             ));
@@ -298,7 +298,7 @@ void init_Measurers(py::module &m) {
             "sim"_a, "fol"_a);
 
     py::class_<TotProb, Measurer, std::unique_ptr<TotProb, py::nodelete>>(m, "TotProb")
-        .def(py::init([](PySimulation* sim, std::string fol){
+        .def(py::init([](SimulationManager* sim, std::string fol){
             return std::unique_ptr<TotProb, py::nodelete>(new TotProb(
                 sim->getNumPoints(), sim->getDX(), sim->getNElecPtr(), fol
             ));
@@ -318,7 +318,7 @@ void init_Measurers(py::module &m) {
             "sim"_a, "fol"_a);
 
     py::class_<VDProbCurrent, Measurer, std::unique_ptr<VDProbCurrent, py::nodelete>>(m, "VDProbCurrent")
-        .def(py::init([](PySimulation* sim, double vdPos, int vdNum, std::string name, std::string fol){
+        .def(py::init([](SimulationManager* sim, double vdPos, int vdNum, std::string name, std::string fol){
             return std::unique_ptr<VDProbCurrent, py::nodelete>(new VDProbCurrent(
                 sim->getNumPoints(), sim->getDX(), sim->getNElecPtr(), sim->findXIdx(vdPos), vdNum, name, fol
             ));
@@ -344,7 +344,7 @@ void init_Measurers(py::module &m) {
             "sim"_a, "vdPos"_a, "vdNum"_a, "name"_a, "fol"_a);
 
     py::class_<VDPsi, Measurer, std::unique_ptr<VDPsi, py::nodelete>>(m, "VDPsi")
-        .def(py::init([](PySimulation* sim, double vdPos, int vdNum, std::string name, std::string fol){
+        .def(py::init([](SimulationManager* sim, double vdPos, int vdNum, std::string name, std::string fol){
             return std::unique_ptr<VDPsi, py::nodelete>(new VDPsi(
                 sim->getNElecPtr(), sim->findXIdx(vdPos), vdNum, name, fol
             ));
@@ -370,7 +370,7 @@ void init_Measurers(py::module &m) {
             "sim"_a, "vdPos"_a, "vdNum"_a, "name"_a, "fol"_a);
 
     py::class_<VDPot, Measurer, std::unique_ptr<VDPot, py::nodelete>>(m, "VDPot")
-        .def(py::init([](PySimulation* sim, double vdPos, int vdNum, std::string name, std::string fol){
+        .def(py::init([](SimulationManager* sim, double vdPos, int vdNum, std::string name, std::string fol){
             return std::unique_ptr<VDPot, py::nodelete>(new VDPot(
                 sim->findXIdx(vdPos), vdNum, name, fol
             ));
@@ -396,9 +396,9 @@ void init_Measurers(py::module &m) {
             "sim"_a, "vdPos"_a, "vdNum"_a, "name"_a, "fol"_a);
 
     py::class_<VDFluxSpec, Measurer, std::unique_ptr<VDFluxSpec, py::nodelete>>(m, "VDFluxSpec")
-        .def(py::init([](PySimulation* sim, double vdPos, int vdNum, size_t nSamp, double emax, double maxT, std::string name, std::string fol){
+        .def(py::init([](SimulationManager* sim, double vdPos, int vdNum, size_t nSamp, double emax, double maxT, std::string name, std::string fol){
             return std::unique_ptr<VDFluxSpec, py::nodelete>(new VDFluxSpec(
-                sim->getNumPoints(), sim->findXIdx(vdPos), vdNum, sim->getNElecPtr(), nSamp, emax, sim->getKin(), maxT, name, fol
+                sim->getNumPoints(), sim->getDX(), sim->getDT(), sim->findXIdx(vdPos), vdNum, sim->getNElecPtr(), nSamp, emax, sim->getKin(), maxT, name, fol
             ));
         }), R"V0G0N(
             Virtual detector which measures the bidirectional flux spectrum of the state passing through a point for each state.
@@ -429,7 +429,7 @@ void init_Measurers(py::module &m) {
             "sim"_a, "vdPos"_a, "vdNum"_a, "nSamp"_a, "emax"_a, "maxT"_a, "name"_a, "fol"_a);
 
     py::class_<PsiT, Measurer, std::unique_ptr<PsiT, py::nodelete>>(m, "PsiT")
-        .def(py::init([](PySimulation* sim, double meaT, int vdNum, std::string name, std::string fol){
+        .def(py::init([](SimulationManager* sim, double meaT, int vdNum, std::string name, std::string fol){
             return std::unique_ptr<PsiT, py::nodelete>(new PsiT(
                 sim->getNumPoints(), meaT, sim->getNElecPtr(), vdNum, name, fol
             ));
@@ -455,7 +455,7 @@ void init_Measurers(py::module &m) {
             "sim"_a, "meaT"_a, "vdNum"_a, "name"_a, "fol"_a);
 
     py::class_<PotT, Measurer, std::unique_ptr<PotT, py::nodelete>>(m, "PotT")
-        .def(py::init([](PySimulation* sim, double meaT, int vdNum, std::string name, std::string fol){
+        .def(py::init([](SimulationManager* sim, double meaT, int vdNum, std::string name, std::string fol){
             return std::unique_ptr<PotT, py::nodelete>(new PotT(
                 sim->getNumPoints(), meaT, vdNum, name, fol
             ));
@@ -481,7 +481,7 @@ void init_Measurers(py::module &m) {
             "sim"_a, "meaT"_a, "vdNum"_a, "name"_a, "fol"_a);
     
     py::class_<DensityPlotter, Measurer, std::unique_ptr<DensityPlotter, py::nodelete>>(m, "DensityPlotter")
-        .def(py::init([](PySimulation* sim, int stepsPerPlot, bool pause){
+        .def(py::init([](SimulationManager* sim, int stepsPerPlot, bool pause){
             return std::unique_ptr<DensityPlotter, py::nodelete>(new DensityPlotter(sim->getNumPoints(), sim->getNElecPtr(), sim->getDX(), sim->getX(), sim->getDensity(), sim->getWeightsPtr(), stepsPerPlot, pause));
         }), R"V0G0N(
             Plots the density of the wavefunction with a gnuplot window as the simulation runs.
@@ -501,7 +501,7 @@ void init_Measurers(py::module &m) {
             "sim"_a, "stepsPerPlot"_a, "pause"_a);
     
     py::class_<PotentialPlotter, Measurer, std::unique_ptr<PotentialPlotter, py::nodelete>>(m, "PotentialPlotter")
-        .def(py::init([](PySimulation* sim, int stepsPerPlot, bool pause){
+        .def(py::init([](SimulationManager* sim, int stepsPerPlot, bool pause){
             return std::unique_ptr<PotentialPlotter, py::nodelete>(new PotentialPlotter(sim->getNumPoints(), sim->getX(), stepsPerPlot, pause));
         }), R"V0G0N(
             Plots the potential with a gnuplot window as the simulation runs.

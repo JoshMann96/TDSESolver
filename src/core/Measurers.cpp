@@ -372,8 +372,8 @@ namespace Measurers {
 	}
 
 
-	VDFluxSpec::VDFluxSpec(size_t nPts, size_t vdPos, int vdNum, const size_t* nElec, size_t nSamp, double emax, KineticOperators::KineticOperator** kinOp, double tmax, const std::string name, const std::string fol) :
-		nElec(nElec), nSamp(nSamp), tmax(tmax), nPts(nPts), kinOp(kinOp),
+	VDFluxSpec::VDFluxSpec(size_t nPts, double dx, double dt, size_t vdPos, int vdNum, const size_t* nElec, size_t nSamp, double emax, KineticOperators::KineticOperator** kinOp, double tmax, const std::string name, const std::string fol) :
+		nElec(nElec), dx(dx), dt(dt), emax(emax), nSamp(nSamp), tmax(tmax), nPts(nPts), kinOp(kinOp),
 		Measurer(24, fol, std::to_string(vdNum) + fname)
 	 {
 		assert(name.length() == 4);
@@ -393,6 +393,7 @@ namespace Measurers {
 		scaledPhsL = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nSamp);
 		scaledPhsR = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nSamp);
 		kineticEnergies = (double*) sq_malloc(sizeof(double)*nSamp);
+		sqrtGroupVelocities = (double*) sq_malloc(sizeof(double)*nSamp);
 
 		std::fill_n(phsL, nSamp, 1.0);
 		std::fill_n(phsR, nSamp, 1.0);
@@ -402,12 +403,50 @@ namespace Measurers {
 		write(name.c_str(), 4);
 		write(&vdPos, sizeof(size_t));
 		write(&nSamp, sizeof(size_t));
-		write(&emax, sizeof(double));
 	}
 
 	VDFluxSpec::~VDFluxSpec() {
-		write(wfcsL, *nElec * nSamp * sizeof(std::complex<double>));
-		write(wfcsR, *nElec * nSamp * sizeof(std::complex<double>));
+		// combine left and right vds for directional flux
+		// calculate wavenumbers
+		double* ks = (double*) sq_malloc(sizeof(double) * nSamp);
+		for(int i = 0; i < nSamp; i++)
+			ks[i] = getWavenumber(kineticEnergies[i]);
+
+		// momentum space wavefunctions
+		std::complex<double>* psik = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * (2*nSamp-1) * *nElec);
+		for(size_t i = 0; i < *nElec; i++){
+			// negative wavenumbers
+			for(size_t j = 1; j < nSamp; j++)
+				psik[i*(2*nSamp-1) + (nSamp-1)-j] = -std::complex<double>(0,0.5) / std::sin(ks[j]*dx) * ( // is ks supposed to be in the numerator?
+					std::exp(0.5*PhysCon::im*ks[j]*dx) * wfcsL[i*nSamp + j] - std::exp(-0.5*PhysCon::im*ks[j]*dx) * wfcsR[i*nSamp + j]);
+			// zero wavenumber
+			psik[i*(2*nSamp-1) + nSamp-1] = 0.5 * (wfcsL[i*nSamp] + wfcsR[i*nSamp]); // zero wavenumber is average of left and right wavefunctions... gets overwritten by velocity anyway
+			// positive wavenumbers (flip sign in exponent)
+			for(size_t j = 1; j < nSamp; j++)
+				psik[i*(2*nSamp-1) + (nSamp-1) + j] = std::complex<double>(0,0.5) / std::sin(ks[j]*dx) * ( 
+					std::exp(-0.5*PhysCon::im*ks[j]*dx) * wfcsL[i*nSamp + j] - std::exp(0.5*PhysCon::im*ks[j]*dx) * wfcsR[i*nSamp + j]);
+		}
+
+		// array of signed momenta
+		double* signedMomenta = (double*) sq_malloc(sizeof(double) * (2*nSamp-1));
+		for(size_t i = 1; i < nSamp; i++){
+			signedMomenta[nSamp-1-i] = -ks[i];
+			signedMomenta[nSamp-1+i] = ks[i];
+		}
+		signedMomenta[nSamp-1] = 0.0;
+
+		// array of signed kinetic energies
+		double* signedEnergies = (double*) sq_malloc(sizeof(double) * (2*nSamp-1));
+		for(size_t i = 1; i < nSamp; i++){
+			signedEnergies[nSamp-1-i] = -getEnergy(ks[i]);
+			signedEnergies[nSamp-1+i] = getEnergy(ks[i]);
+		}
+		signedEnergies[nSamp-1] = 0.0;
+
+		// write to file
+		write(signedEnergies, sizeof(double) * (2*nSamp-1));
+		write(signedMomenta, sizeof(double) * (2*nSamp-1));
+		write(psik, sizeof(std::complex<double>) * (2*nSamp-1) * *nElec);
 
 		if(wfcsL)
 			sq_free(wfcsL); wfcsL = nullptr;
@@ -418,6 +457,11 @@ namespace Measurers {
 		sq_free(phsR);
 		sq_free(scaledPhsR);
 		sq_free(kineticEnergies);
+		sq_free(ks);
+		sq_free(psik);
+		sq_free(signedMomenta);
+		sq_free(signedEnergies);
+		sq_free(sqrtGroupVelocities);
 	}
 
 	MeasurerStatus VDFluxSpec::measure(size_t step, const std::complex<double> * psi, const double* v, double t) {
@@ -434,6 +478,22 @@ namespace Measurers {
 			
 			first = false;
 			ct = t;
+			tstart = t;
+
+			timeEvolutionType = (*kinOp)->getTimeEvolutionType();
+
+			// ensure max kinetic energy does not exceed grid density
+			try{
+				if(getWavenumber(emax)*dx > PhysCon::pi/2.0)
+					emax = getEnergy(PhysCon::pi/(2.0*dx)*0.9999);
+			}
+			catch(const std::runtime_error& e){
+				emax = getEnergy(PhysCon::pi/(2.0*dx)*0.9999);
+			}
+
+			std::fill_n(phsL, nSamp, 1.0);
+			std::fill_n(phsR, nSamp, 1.0);
+			vtls::linspace(nSamp, 0.0, emax, kineticEnergies);
 		}
 
 		// calculate Tukey window value
@@ -446,7 +506,7 @@ namespace Measurers {
 			winMul = 1.0;
 
 		// accumulate phase for each kinetic energy
-		switch((*kinOp)->getTimeEvolutionType()){
+		switch(timeEvolutionType){
 			case KineticOperators::TimeEvolutionType::PSEUDOSPECTRAL:
 				advancePhaseOS(t - ct, v[vdpL], phsL);
 				advancePhaseOS(t - ct, v[vdpR], phsR);
@@ -458,9 +518,13 @@ namespace Measurers {
 			default:
 				throw std::runtime_error("Unknown time evolution type in VDFluxSpec measurer.");
 		}
-		// apply the window function to the phase
-		vtls::scaMulArray(nSamp, winMul, phsL, scaledPhsL);
-		vtls::scaMulArray(nSamp, winMul, phsR, scaledPhsR);
+		// apply the window function and time step to the phase
+		vtls::scaMulArray(nSamp, winMul*(t-ct), phsL, scaledPhsL);
+		vtls::scaMulArray(nSamp, winMul*(t-ct), phsR, scaledPhsR);
+		// apply the square-root group velocity to the phase
+		fillSqrtGroupVelocities((v[vdpL] + v[vdpR])/2.0);
+		vtls::seqMulArrays(nSamp, sqrtGroupVelocities, scaledPhsL);
+		vtls::seqMulArrays(nSamp, sqrtGroupVelocities, scaledPhsR);
 
 		for(size_t i = 0; i < *nElec; i++){
 			//wfcs0[i0 + i] += psip0 * phss[i]

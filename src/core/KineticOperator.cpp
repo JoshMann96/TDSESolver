@@ -18,6 +18,10 @@ namespace KineticOperators {
 			sq_free(opMat);
 		if (osKineticEnergy)
 			sq_free(osKineticEnergy);
+		if (temp1)
+			sq_free(temp1);
+		if (temp2)
+			sq_free(temp2);
 
 		mtx.lock();
 		if(fftwOneForward)
@@ -291,8 +295,10 @@ namespace KineticOperators {
 	double GenDisp_PSM::evaluateEnergy(const std::complex<double>* psi, const double* v) {
 		initializeOneFFT();
 
-		std::complex<double>* temp1 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nPts);
-		std::complex<double>* temp2 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nPts);
+		if(!temp1)
+			temp1 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nPts);
+		if(!temp2)
+			temp2 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nPts);
 
 		// kinetic energy
 		vtls::copyArray(nPts, psi, temp1);
@@ -305,12 +311,8 @@ namespace KineticOperators {
 		double res = std::real(vtlsInt::innerProduct(nPts, temp1, temp2, 1.0) / vtls::getNorm(nPts, temp1, 1.0));
 
 		// potential energy
-		vtls::copyArray(nPts, psi, temp1);
-		vtls::seqMulArrays(nPts, v, temp1);
-		res += std::real(vtlsInt::conjugateInnerProduct(nPts, psi, temp1, 1.0) / vtls::getNorm(nPts, temp1, 1.0));
-
-		sq_free(temp1);
-		sq_free(temp2);
+		vtls::seqMulArrays(nPts, v, psi, temp1);
+		res += std::real(vtlsInt::conjugateInnerProduct(nPts, psi, temp1, 1.0) / vtls::getNorm(nPts, psi, 1.0));
 
 		return res;
 	}

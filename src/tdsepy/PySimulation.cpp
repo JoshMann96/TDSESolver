@@ -7,7 +7,9 @@
 #include <pybind11/pytypes.h>
 
 void init_Simulation(py::module &m) {
-    py::class_<PySimulation>(m, "Simulation")
+    py::class_<SimulationManager>(m, "SimulationManager");
+
+    py::class_<PySimulation, SimulationManager>(m, "Simulation")
         .def(py::init<double, double, double, double, const std::optional<std::function<void(double)>>, std::optional<size_t>>(), R"V0G0N(
             Manages TDSE simulations.
 
@@ -31,8 +33,50 @@ void init_Simulation(py::module &m) {
             -------
             Simulation)V0G0N",
             "xmin"_a, "xmax"_a, "dx"_a, "dt"_a, "callback"_a = py::none(), "numCallbackCalls"_a = 101)
-        .def("getXVec", &PySimulation::getXVec)
+        .def("getX", &PySimulation::getX)
         .def("getDX", &PySimulation::getDX)
+        .def("getDT", &PySimulation::getDT)
+        .def("getNumPoints", &PySimulation::getNumPoints, R"V0G0N(
+            Returns the number of grid points in the simulation.
+
+            Returns
+            -------
+            uint : Number of grid points.)V0G0N")
+        .def("getNumStates", &PySimulation::getNElec, R"V0G0N(
+            Returns the number of states in the simulation.
+
+            Returns
+            -------
+            uint : Number of states.)V0G0N")
+        .def("getRho", &PySimulation::getRho, R"V0G0N(
+            Returns the electron density of the simulation.
+
+            Returns
+            -------
+            float array : Electron density at each grid point.)V0G0N")
+        .def("getPsi", &PySimulation::getPsi, R"V0G0N(
+            Returns the wavefunction of the simulation.
+            If the wavefunction is not yet set an error will be raised.
+
+            Returns
+            -------
+            complex array : Wavefunction at each grid point for each state.
+            The array is of size nPts * nStates, where nPts is the number of grid points and nStates is the number of states.)V0G0N")
+        .def("getWeights", &PySimulation::getWeightValues, R"V0G0N(
+            Returns the weights of the states in the simulation.
+            If the weights are not yet calculated, they will be calculated using the current wavefunction.
+
+            Returns
+            -------
+            float array : Weights of each state.)V0G0N")
+        .def("getV", &PySimulation::getV, R"V0G0N(
+            Returns the potential of the simulation.
+            If the potential is not yet calculated, it will be calculated using the current density and wavefunction.
+            If the wavefunction is not initialized, it will calculate the bare potential.
+
+            Returns
+            -------
+            float array : Potential at each grid point.)V0G0N")
         .def("findXIdx", &PySimulation::findXIdx, R"V0G0N(
             Finds index of position in grid.
 
