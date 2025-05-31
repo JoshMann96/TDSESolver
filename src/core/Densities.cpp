@@ -148,12 +148,12 @@ namespace Densities {
 		std::fill_n(thinning, nPts, 1.0);
 
 		if(radius > dx/2){
-			startIndex = std::max((size_t)0, (size_t)std::floor((center + radius - minX) / dx));
+			startIndex = std::max((size_t)0, (size_t)std::ceil((center + radius - minX) / dx));
 			endIndex = nPts;
 		}
 		else if(radius < -dx/2){
 			startIndex = 0;
-			endIndex = std::min(nPts, (size_t)std::ceil((center + radius - minX) / dx));
+			endIndex = std::min(nPts, (size_t)std::floor((center + radius - minX) / dx));
 		}
 		else
 			throw std::runtime_error("CylindricalDensity: Radius must be larger than half of grid size.");
