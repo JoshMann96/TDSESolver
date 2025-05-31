@@ -485,6 +485,22 @@ namespace vtls {
 	}
 
 	/**
+	 * Averages two arrays, storing the result in a third array.
+	 * @tparam T The type of the first array.
+	 * @tparam U The type of the second array.
+	 * @tparam V The type of the target array.
+	 * @param len The length of the arrays.
+	 * @param arr1 (in) The first array to average.
+	 * @param arr2 (in) The second array to average.
+	 * @param targ (out) The target array to store the result.
+	 */
+	template <typename T, typename U, typename V>
+	void averageArrays(size_t len, const T* __restrict arr1, const U* __restrict arr2, V* __restrict targ) {
+		for (size_t i = 0; i < len; i++)
+			targ[i] = (arr1[i] + arr2[i])*0.5;
+	}
+
+	/**
 	 * Adds the elements of one array to another, storing the result in the second array.
 	 * @tparam T The type of the first array.
 	 * @tparam U The type of the second array.

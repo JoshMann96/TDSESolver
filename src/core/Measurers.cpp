@@ -273,7 +273,7 @@ namespace Measurers {
 		double sum;
 		for(size_t i = 0; i < *nElec; i++){	
 			vtls::normSqr(nPts, &psi[i*nPts], psi2);
-			sum = vtlsInt::simps(nPts, psi2, dx);
+			sum = vtlsInt::sum(nPts, psi2, dx);
 			write(&sum, sizeof(double));
 		}
 		return MeasurerStatus::SUCCESS;

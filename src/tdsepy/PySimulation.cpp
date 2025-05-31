@@ -180,8 +180,16 @@ void init_Simulation(py::module &m) {
                 Eigenstate energies. The boundary conditions must be consistent with these energies.)V0G0N",
             "nElec"_a, "energies"_a)
         .def("run", &PySimulation::run, R"V0G0N(
-            Runs simulation using the appropriate method for the kinetic operator and potential.)V0G0N",
-            "nSteps"_a)
+            Runs simulation using the appropriate method for the kinetic operator and potential.
+            
+            Parameters
+            ----------
+            nSteps : uint
+                Number of steps to run the simulation for.
+            scfIts : uint, optional
+                Number of self-consistent field iterations to perform. Default is 1.
+                Only used for nonlinear potentials with the CrankNicolson iterator.)V0G0N",
+            "nSteps"_a, "scfIts"_a = 1)
         .def("runEPS_U2TU", &PySimulation::runEPS_U2TU, R"V0G0N(
             Runs simulation using operator splitting method. Potential is not updated between kinetic operator propagation steps.)V0G0N",
             "nSteps"_a)
@@ -193,7 +201,7 @@ void init_Simulation(py::module &m) {
             "nSteps"_a)
         .def("runCN_NL", &PySimulation::runCN_NL, R"V0G0N(
             Runs simulation using Crank-Nicolson method. Potential is updated between kinetic operator propagation steps.)V0G0N",
-            "nSteps"_a)
+            "nSteps"_a, "scfIts"_a = 1)
         .def("setNumCallbackCalls", &PySimulation::setNumCallbackCalls, R"V0G0N(
             Sets the number of times throughout a run that the callback function will be called.
 

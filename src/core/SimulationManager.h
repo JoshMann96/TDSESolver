@@ -310,18 +310,19 @@ public:
 	 * Runs the simulation for \a nSteps iterations.
 	 * This function evaluates the type of KineticOperator and Potential and calls the appropriate run function.
 	 * @param nSteps The number of steps to run the simulation for.
+	 * @param scfIts The number of self-consistent field iterations to perform. Presently only applies to nonlinear Crank-Nicolson calculations. Default is 1.
 	 * @throw std::runtime_error if the kinetic operator is not a valid type.
 	 * @details If the kinetic operator is the KineticOperators::CrankNicolson method, it will call #runCN_L for linear potentials or #runCN_NL for nonlinear potentials.
 	 * If the kinetic operator is a pseudospectral method (KineticOperators::KineticOperator_PSM), it will call #runEPS_U2TU for linear potentials or #runEPS_UW2TUW for nonlinear potentials.
 	 */
-	void run(size_t nSteps){
+	void run(size_t nSteps, size_t scfIts = 1){
 		// is the kinetic operator Crank-Nicolson?
 		KineticOperators::CrankNicolson* kin_fdm = dynamic_cast<KineticOperators::CrankNicolson*>(kin);
 		if(kin_fdm != nullptr){
 			if (canAsyncCalcPot())
 				runCN_L(nSteps);
 			else
-				runCN_NL(nSteps);
+				runCN_NL(nSteps, scfIts);
 			return;
 		}
 
@@ -370,8 +371,9 @@ public:
 	 * The potential is then recalculated using the new wavefunction, and the average is then taken.
 	 * Only measurements are done with task parallelism.
 	 * @param nSteps The number of steps to run the simulation for.
+	 * @param scfIts The number of self-consistent field iterations to perform. Default is 1.
 	 */
-	void runCN_NL(size_t nSteps);
+	void runCN_NL(size_t nSteps, size_t scfIts = 1);
 
 	/**
 	 * Finds the eigenstates of the system using the given energy range.

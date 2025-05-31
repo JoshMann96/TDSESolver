@@ -153,8 +153,8 @@ def getTs(fol:str):
     nt,_ = getConstant("nSteps", fol)
     try:
         with open(combinePath(fol, "ts.dat"), 'rb') as fil:
-            INT_SIZE = readData(fil, 'int32', None)
-            typ = readData(fil, 'int32', None)
+            INT_SIZE = readData(fil, 'int32')
+            typ = readData(fil, 'int32')
             ts = readData(fil, "double", nt)
     except FileNotFoundError:
         dt,_ = getConstant("dt", fol)
@@ -162,20 +162,24 @@ def getTs(fol:str):
         typ = 0
     return ts, typ
 
-def getExpectA(fol:str):
-    nElec,_ = getConstant("nElec", fol)
-    ts,_ = getTs(fol)
-    with open(combinePath(fol, "expectA.dat"), 'rb') as fil:
-        INT_SIZE = readData(fil, 'int32', None)
-        typ = readData(fil, 'int32', None)
-        a = readData(fil, "double", (len(ts), nElec))
-    return ts, a, typ
+SIMPLE_ARRAY_PERWF_QUANTITIES = Literal["expectA", "expectE", "expectX", "expectP", "totProb"]
 
-def getExpectE(fol:str):
+def getSimpleArrayPerWFData(fol:str, quantity:SIMPLE_ARRAY_PERWF_QUANTITIES):
     nElec,_ = getConstant("nElec", fol)
     ts,_ = getTs(fol)
-    with open(combinePath(fol, "expectE.dat"), 'rb') as fil:
-        INT_SIZE = readData(fil, 'int32', None)
-        typ = readData(fil, 'int32', None)
-        e = readData(fil, "double", (len(ts), nElec))
-    return ts, e, typ
+    with open(combinePath(fol, f"{quantity}.dat"), 'rb') as fil:
+        INT_SIZE = readData(fil, 'int32')
+        typ = readData(fil, 'int32')
+        dat = readData(fil, "double", (len(ts), nElec))
+    return ts, dat, typ
+
+def getExpectA(fol:str):
+    return getSimpleArrayPerWFData(fol, "expectA")
+def getExpectX(fol:str):
+    return getSimpleArrayPerWFData(fol, "expectX")
+def getExpectE(fol:str):
+    return getSimpleArrayPerWFData(fol, "expectE")
+def getExpectP(fol:str):
+    return getSimpleArrayPerWFData(fol, "expectP")
+def getTotProb(fol:str):
+    return getSimpleArrayPerWFData(fol, "totProb")

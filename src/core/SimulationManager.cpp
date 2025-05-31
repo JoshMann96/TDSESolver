@@ -443,7 +443,7 @@ void SimulationManager::runCN_L(size_t nSteps){
 	sq_free(tv);
 }
 
-void SimulationManager::runCN_NL(size_t nSteps){
+void SimulationManager::runCN_NL(size_t nSteps, size_t scfIts){
 	assert(wavefunctionInitialized);
 	
 	KineticOperators::CrankNicolson* kin_cn = dynamic_cast<KineticOperators::CrankNicolson*>(kin);
@@ -462,22 +462,30 @@ void SimulationManager::runCN_NL(size_t nSteps){
 		// evaluate potential n
 		updatePotential(index);
 
-		// estimate the density at the next step using the present potential (virtual step)
-		kin_cn->stepVirtual(psis[index], vs[index], spatialDamp, psis[index+1], nElec);
+		// SCF iterations
+		for(size_t j = 0; j < scfIts; j++){
+			// estimate the wavefunction at the next step using the present potential (virtual step)
+			if(j == 0) // first iteration, use the present potential
+				kin_cn->stepVirtual(psis[index], vs[index], spatialDamp, psis[index+1], nElec);
+			else // subsequent iterations, use the averaged potential
+				kin_cn->stepVirtual(psis[index], tv, spatialDamp, psis[index+1], nElec);
 
-		// evaluate estimated potential n+1
-		// 	try to calculate the raw density from the device then post-process, otherwise calculate rho normally
-		if (kin_cn->calcRawRhoByDevice(weights, rhos[index + 1], true)) // if the device can calculate raw density
-			calculatePotentialFromRawRho(rhos[index + 1], psis[index + 1], ts[index] + dt, vs[index+1]);
-		else // otherwise calculate density on CPU
-			updatePotential(index + 1);
-
-		// averaged potential
-		vtls::addArrays(nPts, vs[index], vs[index + 1], tv);
-		vtls::scaMulArray(nPts, 0.5, tv);
+			// evaluate estimated potential n+1
+			// try to calculate the raw density from the device then post-process, otherwise calculate rho normally
+			if (kin_cn->calcRawRhoByDevice(weights, rhos[index + 1], true)) // if the device can calculate raw density
+				calculatePotentialFromRawRho(rhos[index + 1], psis[index + 1], ts[index] + dt, vs[index+1]);
+			else // otherwise calculate density on CPU
+				updatePotential(index + 1);
+				
+			// averaged potential
+			vtls::averageArrays(nPts, vs[index], vs[index + 1], tv);
+		}
 
 		// true step n -> n+1
-		kin_cn->step(psis[index], tv, spatialDamp, psis[index + 1], nElec);
+		if (scfIts == 0) // no SCF, use present potential
+			kin_cn->step(psis[index], vs[index], spatialDamp, psis[index + 1], nElec);
+		else // use SCF potential
+			kin_cn->step(psis[index], tv, spatialDamp, psis[index + 1], nElec);
 
 		// measure step n while n+1->n+2 begins
 		if(i != 0)
