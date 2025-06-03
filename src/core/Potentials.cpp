@@ -1,4 +1,5 @@
 #include "Potentials.h"
+#include "Densities.h"
 #include <bits/types/FILE.h>
 #include <stdexcept>
 #include "MathTools.h"
@@ -390,8 +391,10 @@ namespace Potentials {
 		for (size_t i = surfPos; i < nPts; i++)
 			nsMask[i] = 1.0 - std::exp(-2 * std::sqrt(2.0 * PhysCon::me * w) / PhysCon::hbar * (i - surfPos) * dx);
 
+		size_t temp1,temp2;
+		Densities::CylindricalDensity::calcThinning(nPts, x[surfPos]-rad, rad, x[0], dx, dethin, &temp1, &temp2);
 		for (size_t i = 0; i < nPts; i++)
-			dethin[i] = i >= surfPos ? 1.0 + (i-surfPos)*dx/rad : 1.0;
+			dethin[i] = 1.0/dethin[i];
 
 		if (rho0 != nullptr)
 			calcPot(rho0, nullptr, 0.0, origPot);
@@ -477,8 +480,10 @@ namespace Potentials {
 			fieldScaler[i] = i >= surfPos ? rad / (rad + ((i-surfPos)+0.5)*dx) : 1.0;
 		
 		// Calculate dethin (1 in material, z/R in vacuum)
+		size_t temp1, temp2;
+		Densities::CylindricalDensity::calcThinning(nPts, dx*surfPos-rad, rad, 0.0, dx, dethin, &temp1, &temp2);
 		for (size_t i = 0; i < nPts; i++)
-			dethin[i] = i >= surfPos ? 1.0 + (i-surfPos)*dx/rad : 1.0;
+			dethin[i] = 1.0 / dethin[i];
 
 		if (rho0 != nullptr){
 			calcPot(rho0, nullptr, 0.0, origPot);

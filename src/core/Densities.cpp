@@ -139,27 +139,31 @@ namespace Densities {
 			sq_free(thinning);
 	}
 
+	void CylindricalDensity::calcThinning(size_t nPts, double center, double radius, double minX, double dx, double* thinning, size_t* startIndex, size_t* endIndex) {
+		std::fill_n(thinning, nPts, 1.0);
+
+		if(radius > dx/2){
+			*startIndex = std::max((size_t)0, (size_t)std::ceil((center + radius - minX) / dx));
+			*endIndex = nPts;
+		}
+		else if(radius < -dx/2){
+			*startIndex = 0;
+			*endIndex = std::min(nPts, (size_t)std::floor((center + radius - minX) / dx));
+		}
+		else
+			throw std::runtime_error("CylindricalDensity::calcThinning: Radius must be larger than half of grid size.");
+		
+		for(size_t i = *startIndex; i < *endIndex; i++)
+			thinning[i] = radius / (i * dx - (center - minX));
+	}
+
 	void CylindricalDensity::doFirst(size_t nPts, double dx) {
 		first = false;
 		if(thinning)
 			sq_free(thinning);
 		thinning = (double*) sq_malloc(sizeof(double)*nPts);
-
-		std::fill_n(thinning, nPts, 1.0);
-
-		if(radius > dx/2){
-			startIndex = std::max((size_t)0, (size_t)std::ceil((center + radius - minX) / dx));
-			endIndex = nPts;
-		}
-		else if(radius < -dx/2){
-			startIndex = 0;
-			endIndex = std::min(nPts, (size_t)std::floor((center + radius - minX) / dx));
-		}
-		else
-			throw std::runtime_error("CylindricalDensity: Radius must be larger than half of grid size.");
 		
-		for(size_t i = startIndex; i < endIndex; i++)
-			thinning[i] = radius / (i * dx - (center - minX));
+		calcThinning(nPts, center, radius, minX, dx, thinning, &startIndex, &endIndex);
 	}
 
 	void CylindricalDensity::calcRho(size_t nPts, size_t nElec, double dx, double* rho) {

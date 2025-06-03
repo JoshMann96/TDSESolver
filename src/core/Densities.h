@@ -232,9 +232,21 @@ namespace Densities {
 
 		~CylindricalDensity();
 		void calcRho(size_t nPts, size_t nElec, double dx, double* rho);
+
+		/**
+		 * Calculates the thinning factor for a cylindrical density profile.
+		 * @param nPts The number of grid points in the spatial domain.
+		 * @param center The center of the cylindrical region along the x-axis.
+		 * @param radius The radius of the cylindrical region. Positive values indicate a region where the cylindrical region is to the right of the center, negative values indicate a region to the left.
+		 * @param minX The minimum x-coordinate of the grid, used to reference the center and radius values.
+		 * @param dx The grid spacing in the spatial domain.
+		 * @param thinning (out) Array to store the thinning factors, size nPts.
+		 * @param startIndex (out) Pointer to store the starting index for thinning.
+		 * @param endIndex (out) Pointer to store the ending index for thinning.
+		 */
+		static void calcThinning(size_t nPts, double center, double radius, double minX, double dx, double* thinning, size_t* startIndex, size_t* endIndex);
 	};
 
-	// TODO: Make version which is not periodic
 	/**
 	 * Smooths the density by convolution against a Gaussian.
 	 * Uses FFTs to perform the convolution efficiently. This is therefore only suitable for periodic boundary conditions.
