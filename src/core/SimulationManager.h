@@ -126,9 +126,10 @@ private:
 	 * @param psi The wavefunction array to be used for potential calculation. It should be of size nPts * nElec. It will contain the wavefunction at the current time step.
 	 * @param t The current time in the simulation.
 	 * @param v The output array to store the calculated potential.
+	 * @param virt If true, the potential is calculated for a virtual step (i.e., it does not affect future calls to getV*).
 	 * @return Time in microseconds taken to calculate the potential.
 	 */
-	size_t calculatePotential(double* rho, const std::complex<double>* psi, double t, double* v);
+	size_t calculatePotential(double* rho, const std::complex<double>* psi, double t, double* v, bool virt);
 
 	/**
 	 * Calculate the potential from the raw density array.
@@ -136,16 +137,18 @@ private:
 	 * @param psi The wavefunction array to be used for potential calculation. It should be of size nPts * nElec.
 	 * @param t The current time in the simulation.
 	 * @param v The output array to store the calculated potential.
+	 * @param virt If true, the potential is calculated for a virtual step (i.e., it does not affect future calls to getV*).
 	 * @return Time in microseconds taken to calculate the potential.
 	 */
-	size_t calculatePotentialFromRawRho(double* rho, const std::complex<double>* psi, double t, double* v);
+	size_t calculatePotentialFromRawRho(double* rho, const std::complex<double>* psi, double t, double* v, bool virt);
 
 	/**
 	 * Updates the potential for the given index.
 	 * @param idx The index of the potential to be updated. It should be in the range [0, HISTORY_LENGTH).
+	 * @param virt If true, the potential is updated for a virtual step.
 	 * @return Time in microseconds taken to update the potential.
 	 */
-	size_t updatePotential(int idx);
+	size_t updatePotential(int idx, bool virt);
 
 	/**
 	 * Measures the wavefunction and potential at the given index.
@@ -462,14 +465,15 @@ public:
 
 	/**
 	 * Returns a pointer to the potential at the present index.
-	 * If the potential is not yet calculated, it will be calculated using the current density and wavefunction.
+	 * If the potential is not yet calculated, it will be calculated using the current density and wavefunction. 
+	 * The call will be virtual and will not alter the potentials' internal states.
 	 * If the wavefunction is not initialized, it will calculate the bare potential.
 	 * @return The potential, \a npts elements.
 	 */
 	double* getV() {
 		if(!potentialAvailable){ // potential not yet calculated -- calculate it!
 			if(wavefunctionInitialized) // states set but potential not yet calculated
-				calculatePotential(rhos[index], psis[index], ts[index], vs[index]);
+				calculatePotential(rhos[index], psis[index], ts[index], vs[index], true);
 			else // states not set, calculate initial potential
 				pot->getVBare(ts[index], vs[index]);
 		}

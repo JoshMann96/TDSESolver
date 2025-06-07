@@ -228,31 +228,39 @@ void SimulationManager::setPsi(std::complex<double>* npsi, Densities::Normalizat
 	wavefunctionInitialized = true;
 }
 
-size_t SimulationManager::calculatePotential(double* rho, const std::complex<double>* psi, double t, double* v){
+size_t SimulationManager::calculatePotential(double* rho, const std::complex<double>* psi, double t, double* v, bool virt){
 	auto strt = std::chrono::high_resolution_clock::now();
 	if(calcDensity){
 		if(dens == nullptr)
 			throw std::runtime_error("SimulationManager::calculatePotential: Density not set!");
 		dens->calcRho(nPts, nElec, dx, weights, psi, rho);
 	}
-	pot->getV(rho, psi, t, v);
+
+	if(virt)
+		pot->getVVirtual(rho, psi, t, v);
+	else
+		pot->getV(rho, psi, t, v);
+
 	potentialAvailable = true;
 	auto end = std::chrono::high_resolution_clock::now();
 	auto dur = std::chrono::duration_cast<std::chrono::microseconds>(end - strt);
 	return dur.count();
 }
 
-size_t SimulationManager::calculatePotentialFromRawRho(double* rho, const std::complex<double>* psi, double t, double* v){
+size_t SimulationManager::calculatePotentialFromRawRho(double* rho, const std::complex<double>* psi, double t, double* v, bool virt){
 	auto strt = std::chrono::high_resolution_clock::now();
 	dens->calcRho(nPts, nElec, dx, rho);
-	pot->getV(rho, nullptr, t, v);
+	if(virt)
+		pot->getVVirtual(rho, psi, t, v);
+	else
+		pot->getV(rho, psi, t, v);
 	potentialAvailable = true;
 	auto end = std::chrono::high_resolution_clock::now();
 	auto dur = std::chrono::duration_cast<std::chrono::microseconds>(end - strt);
 	return dur.count();
 }
 
-size_t SimulationManager::updatePotential(int idx) {return calculatePotential(rhos[idx], psis[idx], ts[idx], vs[idx]);}
+size_t SimulationManager::updatePotential(int idx, bool virt) {return calculatePotential(rhos[idx], psis[idx], ts[idx], vs[idx], virt);}
 
 size_t SimulationManager::measure(int idx) {
 	auto strt = std::chrono::high_resolution_clock::now();
@@ -286,13 +294,13 @@ void SimulationManager::runEPS_U2TU(size_t nSteps) {
 		// evaluate potential n
 		if(asyncCalc){
 			if (i == 0)
-				updatePotential(index); // directly calculate
+				updatePotential(index, false); // directly calculate
 			else
 				fUP.get(); // gather result
-			fUP = std::async(rUpdatePotential, this, index + 1); // start n+1
+			fUP = std::async(rUpdatePotential, this, index + 1, false); // start n+1
 		}
 		else{
-			updatePotential(index);
+			updatePotential(index, false);
 		}
 
 		// evalute n->n+1
@@ -315,7 +323,7 @@ void SimulationManager::runEPS_U2TU(size_t nSteps) {
 
 	// perform last measurement
 	if (!asyncCalc)
-		updatePotential(index);
+		updatePotential(index, false);
 	measure(index);
 
 	progTracker.update(nSteps);
@@ -343,7 +351,7 @@ void SimulationManager::runEPS_UW2TUW(size_t nSteps) {
 
 	for(size_t i = 0; i < nSteps; i++){
 		// step n->n+1/2
-		updatePotential(index);
+		updatePotential(index, false);
 		kin_psm->stepOS_UW2T(psis[index], vs[index], spatialDamp, tpsi, nElec);
 
 		// measure step n while n+1/2->n+1 begins
@@ -352,7 +360,7 @@ void SimulationManager::runEPS_UW2TUW(size_t nSteps) {
 		fM = std::async(rMeasure, this, index);
 
 		// step n+1/2->n+1
-		calculatePotential(trho, tpsi, ts[index] + dt / 2.0, tv);
+		calculatePotential(trho, tpsi, ts[index] + dt / 2.0, tv, true); // virtual step
 		kin_psm->stepOS_UW(tpsi, tv, spatialDamp, psis[index + 1], nElec);
 		
 		progTracker.update(i);
@@ -364,7 +372,7 @@ void SimulationManager::runEPS_UW2TUW(size_t nSteps) {
 	fM.get();
 
 	// perform last measurement
-	updatePotential(index);
+	updatePotential(index, false);
 	measure(index);
 
 	progTracker.update(nSteps);
@@ -382,7 +390,7 @@ void SimulationManager::runCN_L(size_t nSteps){
 		throw std::runtime_error("SimulationManager::runCN_L: Kinetic operator is not CrankNicolson!");
 	assert(nElec > 0);
 
-	double* tv = (double*) sq_malloc(sizeof(double) * nPts);
+	double* meanPot = (double*) sq_malloc(sizeof(double) * nPts);
 	auto rMeasure = &SimulationManager::measure;
 	auto rUpdatePotential = &SimulationManager::updatePotential;
 	std::future<size_t> fM, fUP;
@@ -398,25 +406,24 @@ void SimulationManager::runCN_L(size_t nSteps){
 		// evaluate potential n+1 (n is already calculated)
 		if(asyncCalc){
 			if (i == 0){ // evaluate potential n, n+1 at beginning
-				updatePotential(index);
-				updatePotential(index + 1);
+				updatePotential(index, false);
+				updatePotential(index + 1, false);
 			}
 			else
 				fUP.get();
-			fUP = std::async(rUpdatePotential, this, index + 2); // get n+2 going
+			fUP = std::async(rUpdatePotential, this, index + 2, false); // get n+2 going
 		}
 		else{
 			if(i == 0)
-				updatePotential(index);
-			updatePotential(index + 1);
+				updatePotential(index, false);
+			updatePotential(index + 1, false);
 		}
 		// potentials n, n+1 are now calculated
 		// calculate averaged potential
-		vtls::addArrays(nPts, vs[index], vs[index + 1], tv);
-		vtls::scaMulArray(nPts, 0.5, tv);
+		vtls::averageArrays(nPts, vs[index], vs[index + 1], meanPot);
 
 		// evalute n->n+1
-		kin_cn->step(psis[index], tv, spatialDamp, psis[index+1], nElec);
+		kin_cn->step(psis[index], meanPot, spatialDamp, psis[index+1], nElec);
 		
 		// measure step n while n+1->n+2 begins
 		if(i != 0)
@@ -435,12 +442,12 @@ void SimulationManager::runCN_L(size_t nSteps){
 
 	// perform last measurement
 	if (!asyncCalc)
-		updatePotential(index);
+		updatePotential(index, false);
 	measure(index);
 
 	progTracker.update(nSteps);
 
-	sq_free(tv);
+	sq_free(meanPot);
 }
 
 void SimulationManager::runCN_NL(size_t nSteps, size_t scfIts){
@@ -451,41 +458,42 @@ void SimulationManager::runCN_NL(size_t nSteps, size_t scfIts){
 		throw std::runtime_error("SimulationManager::runCN_NL: Kinetic operator is not CrankNicolson!");
 	assert(nElec > 0);
 
-	double* tv = (double*) sq_malloc(sizeof(double) * nPts);
 	auto rMeasure = &SimulationManager::measure;
 	std::future<size_t> fM;
+
+	double* meanPot = (double*) sq_malloc(sizeof(double) * nPts);
 
 	// initialize progress tracker
 	progTracker.reset(nSteps);
 
 	for(size_t i = 0; i < nSteps; i++){
 		// evaluate potential n
-		updatePotential(index);
-
+		updatePotential(index, false);
+		
 		// SCF iterations
 		for(size_t j = 0; j < scfIts; j++){
 			// estimate the wavefunction at the next step using the present potential (virtual step)
 			if(j == 0) // first iteration, use the present potential
 				kin_cn->stepVirtual(psis[index], vs[index], spatialDamp, psis[index+1], nElec);
 			else // subsequent iterations, use the averaged potential
-				kin_cn->stepVirtual(psis[index], tv, spatialDamp, psis[index+1], nElec);
+				kin_cn->stepVirtual(psis[index], meanPot, spatialDamp, psis[index+1], nElec);
 
-			// evaluate estimated potential n+1
+			// evaluate estimated potential n+1, virtual step
 			// try to calculate the raw density from the device then post-process, otherwise calculate rho normally
 			if (kin_cn->calcRawRhoByDevice(weights, rhos[index + 1], true)) // if the device can calculate raw density
-				calculatePotentialFromRawRho(rhos[index + 1], psis[index + 1], ts[index] + dt, vs[index+1]);
+				calculatePotentialFromRawRho(rhos[index + 1], psis[index + 1], ts[index] + dt, vs[index+1], true);
 			else // otherwise calculate density on CPU
-				updatePotential(index + 1);
-				
+				updatePotential(index + 1, true);
+
 			// averaged potential
-			vtls::averageArrays(nPts, vs[index], vs[index + 1], tv);
+			vtls::averageArrays(nPts, vs[index], vs[index + 1], meanPot);
 		}
 
 		// true step n -> n+1
 		if (scfIts == 0) // no SCF, use present potential
 			kin_cn->step(psis[index], vs[index], spatialDamp, psis[index + 1], nElec);
 		else // use SCF potential
-			kin_cn->step(psis[index], tv, spatialDamp, psis[index + 1], nElec);
+			kin_cn->step(psis[index], meanPot, spatialDamp, psis[index + 1], nElec);
 
 		// measure step n while n+1->n+2 begins
 		if(i != 0)
@@ -501,12 +509,12 @@ void SimulationManager::runCN_NL(size_t nSteps, size_t scfIts){
 	fM.get();
 
 	// perform last measurement
-	updatePotential(index);
+	updatePotential(index, false);
 	measure(index);
 
-	progTracker.update(nSteps);
+	sq_free(meanPot);
 
-	sq_free(tv);
+	progTracker.update(nSteps);
 }
 
 void SimulationManager::iterateIndex() {

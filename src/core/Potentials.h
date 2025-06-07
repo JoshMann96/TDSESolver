@@ -272,10 +272,28 @@ namespace Potentials {
 		virtual void getV(const double * rho, const std::complex<double> * psi, double t, double * targ) = 0;
 
 		/**
+		 * Get the potential energy at time \a t. If the potential is nonlocal in time, this will not affect future calls to getV*.
+		 * @param rho (in) Density.
+		 * @param psi (in) Wavefunction.
+		 * @param t Time.
+		 * @param targ (out) Array to store the potential.
+		 */
+		virtual void getVVirtual(const double * rho, const std::complex<double> * psi, double t, double * targ) = 0;
+
+		/**
 		 * Get the complexity of the potential.
 		 * @return The complexity.
 		 */
 		virtual PotentialComplexity getComplexity() = 0;
+	};
+
+	class TimeLocalPotential :
+		public Potential
+	{
+		public:
+		void getVVirtual(const double * rho, const std::complex<double> * psi, double t, double * targ) override {
+			getV(rho, psi, t, targ);
+		}
 	};
 
 	/**
@@ -285,7 +303,7 @@ namespace Potentials {
 	 * The next n doubles are the (energy) potentials.
 	 */
 	class FilePotential :
-		public Potential
+		public TimeLocalPotential
 	{
 	private:
 		double * v;
@@ -313,7 +331,7 @@ namespace Potentials {
 	 * The field is linearly ramped up from zero to the bias field strength over a buffer region.
 	 */
 	class BiasFieldPotential :
-		public Potential
+		public TimeLocalPotential
 	{
 	private:
 		double * v;
@@ -340,7 +358,7 @@ namespace Potentials {
 
 	/// Coulomb potential. The depth of the potential is capped by a separation distance of dx.
 	class CoulombPotential :
-		public Potential
+		public TimeLocalPotential
 	{
 	private:
 		double * v;
@@ -368,7 +386,7 @@ namespace Potentials {
 	 * Potential which models a finite box.
 	 */
 	class FiniteBox :
-		public Potential
+		public TimeLocalPotential
 	{
 	private:
 		double * v;
@@ -393,7 +411,7 @@ namespace Potentials {
 
 	/// Wachter's Jellium potential.
 	class JelliumPotential :
-		public Potential
+		public TimeLocalPotential
 	{
 	private:
 		double * v;
@@ -418,7 +436,7 @@ namespace Potentials {
 
 	/// Jellium potential with a backing such that it smoothly returns to vacuum level on the left side.
 	class JelliumPotentialBacked :
-		public Potential
+		public TimeLocalPotential
 	{
 	private:
 		double * v;
@@ -445,7 +463,7 @@ namespace Potentials {
 
 	/// Shielded atomic potential, averaged across an infinite plane parallel to surface.
 	class ShieldedAtomicPotential :
-		public Potential {
+		public TimeLocalPotential {
 	private:
 		double * v;
 		size_t nPts;
@@ -469,7 +487,7 @@ namespace Potentials {
 
 	/// Converts an electric field profile and envelope to a potential.
 	class ElectricFieldProfileToPotential :
-		public Potential
+		public TimeLocalPotential
 	{
 	private:
 		size_t nPts;
@@ -577,6 +595,7 @@ namespace Potentials {
 		~CylindricalImageCharge();
 		void getVBare(double t, double* targ);
 		void getV(const double* rho, const std::complex<double>* psi, double t, double* targ);
+		void getVVirtual(const double* rho, const std::complex<double>* psi, double t, double* targ);
 		PotentialComplexity getComplexity(){return PotentialComplexity::WAVEFUNCTION_DEPENDENT;};
 	};
 
@@ -621,6 +640,30 @@ namespace Potentials {
 		~PlanarToCylindricalHartree();
 		void getVBare(double t, double* targ);
 		void getV(const double* rho, const std::complex<double>* psi, double t, double* targ);
+		void getVVirtual(const double* rho, const std::complex<double>* psi, double t, double* targ);
+		PotentialComplexity getComplexity(){return PotentialComplexity::WAVEFUNCTION_DEPENDENT;};
+	};
+
+	class PlanarHartree :
+		public TimeLocalPotential
+	{
+	private:
+		size_t nPts, refPoint;
+		double * origPot, *temp, dx;
+		void calcPot(const double* rho, double* targ);
+	public:
+		/**
+		 * Constructor. #assemble must be called before using the potential. See #_assemble for details.
+		 * @param nPts Number of points.
+		 * @param dx Grid spacing.
+		 * @param rho0 (in) Initial density array, used to initialize the potential so that future calls to #getV will return the change in potential. If nullptr, the initial density is zero and #getV returns the full potential.
+		 * @param refPoint Reference point (index) for the potential.
+		 */
+		PlanarHartree(size_t nPts, double dx, const double* rho0, size_t refPoint);
+		
+		~PlanarHartree();
+		void getVBare(double t, double* targ);
+		void getV(const double* rho, const std::complex<double>* psi, double t, double* targ);
 		PotentialComplexity getComplexity(){return PotentialComplexity::WAVEFUNCTION_DEPENDENT;};
 	};
 		
@@ -634,7 +677,7 @@ namespace Potentials {
 	};
 	
 	class LDAFunctional :
-		public Potential
+		public TimeLocalPotential
 	{
 	private:
 		size_t nPts, refPoint, * nElec;
@@ -695,6 +738,7 @@ namespace Potentials {
 		~CompositePotential();
 		void getVBare(double t, double * targ);
 		void getV(const double* rho, const std::complex<double> * psi, double t, double * targ);
+		void getVVirtual(const double* rho, const std::complex<double> * psi, double t, double * targ);
 		PotentialComplexity getComplexity();
 	};
 
@@ -729,6 +773,7 @@ namespace Potentials {
 
 		void getVBare(double t, double * targ);
 		void getV(const double* rho, const std::complex<double> * psi, double t, double * targ);
+		void getVVirtual(const double* rho, const std::complex<double> * psi, double t, double * targ);
 		PotentialComplexity getComplexity(){return myComplex;};
 	};
 
@@ -757,6 +802,10 @@ namespace Potentials {
 		void getVBare(double t, double * targ){pot->getVBare(t, targ);};
 		void getV(const double* rho, const std::complex<double> * psi, double t, double * targ){
 			pot->getV(rho, psi, t, targ);
+			meas->measure((size_t)(t/maxT*numSteps), psi, targ, t);
+		};
+		void getVVirtual(const double* rho, const std::complex<double> * psi, double t, double * targ){
+			pot->getVVirtual(rho, psi, t, targ);
 			meas->measure((size_t)(t/maxT*numSteps), psi, targ, t);
 		};
 		PotentialComplexity getComplexity(){return pot->getComplexity();};

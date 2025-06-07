@@ -842,17 +842,80 @@ int main(int argc, char** argv){
 	//testIterationMethods(4, 2048*2);
 	//testIterationMethods(5, 2048);
 
-	// test SmallKernelConvolver
-	Densities::SmallKernelConvolver* conv = new Densities::SmallKernelConvolver(5);
+	// test cylindrical density
+	/*
+	size_t nPts = 200;
+	Densities::CylindricalDensity* cylDens = new Densities::CylindricalDensity(-20e-9, 20e-9, -100e-9);
+	double* rho = (double*)sq_malloc(sizeof(double)*nPts);
+	std::fill_n(rho, nPts, 1.0);
+	cylDens->calcRho(nPts, 1, 1e-9, rho);
 
-	size_t nPts = 10;
-	double* dat0 = (double*)sq_malloc(sizeof(double)*nPts);
+	plotting::GNUPlotter* plotter = new plotting::GNUPlotter();
+	plotter->update(nPts, 1, rho);
+	std::cin.get();
+	
+	delete plotter;
+	delete cylDens;
+	sq_free(rho);
+	*/
+
+	/*
+	// test planar cylindrical hartree
+	size_t nPts = 1000;
+	double xmin = -100e-9;
+	double dx = 2.0*std::abs(xmin)/(nPts-1);
+	size_t nElec = 1;
+	double* weights = new double[1]; *weights = 1.0;
+	double* rho0 = (double*) sq_malloc(sizeof(double)*nPts);
+	std::fill_n(rho0, nPts, 0.0);
+
+	Densities::CylindricalDensity* dens = new Densities::CylindricalDensity(-20e-9, 20e-9, xmin);
+
+	Potentials::PlanarToCylindricalHartree* pot = new Potentials::PlanarToCylindricalHartree(false, nPts, dx, 20e-9, nPts/2, &nElec, &weights, rho0, 0, nPts-1, 0);
+	//Potentials::PlanarHartree* pot = new Potentials::PlanarHartree(nPts, dx, nullptr, 0);
+
+	plotting::GNUPlotter* plotter = new plotting::GNUPlotter();
+
+	// try "delta" function densities
+	double* v = (double*)sq_malloc(sizeof(double)*nPts);
+	double* f = (double*)sq_malloc(sizeof(double)*nPts);
+	size_t numSteps = 10;
+	for(size_t i = 0; i < numSteps; i++){
+		std::fill_n(rho0, nPts, 0.0);
+		rho0[(i*nPts)/numSteps] = 1.0/(dx);
+		dens->calcRho(nPts, 1, dx, rho0);
+		pot->getV(rho0, nullptr, 0.0, v);
+		vtls::firstDerivative(nPts, v, f, dx);
+		plotter->update(nPts, 1, f);
+		std::cout << "Press enter to continue..." << std::endl;
+		std::cin.get();
+	}
+	*/
+
+	// test aperiodic convolving
+	size_t nPts = 20;
+	double dx = 0.05;
+	double* rho = (double*)sq_malloc(sizeof(double)*nPts);
+	/*// fill with alternating values
 	for(size_t i = 0; i < nPts; i++)
-		dat0[i] = (i % 2 == 0) ? 3.0 : -3.0;
+		rho[i] = (i % 2 == 0) ? 1.0 : -1.0;
+	*/
+	std::fill_n(rho, nPts, 0.0);
+	rho[0] = 1.0/dx;
+	rho[1] = 0.5/dx;
+	rho[nPts-1] = -1.0/dx;
+	rho[nPts-2] = -0.5/dx;
 
-	vtlsPrnt::printArray(nPts, dat0);
-	conv->calcRho(nPts, 0, 0, dat0);
-	vtlsPrnt::printArray(nPts, dat0);
+	Densities::Density* dens = new Densities::GaussianSmoothedDensity(0.5*dx, false);
 
-	sq_free(dat0);
+	vtlsPrnt::printArray(nPts, rho);
+	std::cout << vtlsInt::sum(nPts, rho, dx) << std::endl;
+	for(int i = 0; i < 10; i++){
+		dens->calcRho(nPts, 1, dx, rho);
+		vtlsPrnt::printArray(nPts, rho);
+		std::cout << vtlsInt::sum(nPts, rho, dx) << std::endl;
+	}
+
+	sq_free(rho);
+	delete dens;
 }

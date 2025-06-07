@@ -19,8 +19,8 @@ namespace vtls{
 
 		assert(len <= INT_MAX);
 		int lenInt = static_cast<int>(len);
-		fp = fftw_plan_dft(1, &lenInt, reinterpret_cast<fftw_complex*>(temp1), reinterpret_cast<fftw_complex*>(temp1), FFTW_FORWARD, FFTW_PATIENT);
-		bp = fftw_plan_dft(1, &lenInt, reinterpret_cast<fftw_complex*>(temp2), reinterpret_cast<fftw_complex*>(temp2), FFTW_BACKWARD, FFTW_PATIENT);
+		fp = fftw_plan_dft(1, &lenInt, reinterpret_cast<fftw_complex*>(temp1), reinterpret_cast<fftw_complex*>(temp1), FFTW_FORWARD, FFTW_ESTIMATE);
+		bp = fftw_plan_dft(1, &lenInt, reinterpret_cast<fftw_complex*>(temp2), reinterpret_cast<fftw_complex*>(temp2), FFTW_BACKWARD, FFTW_ESTIMATE);
 
 		mtx.unlock();
 	}
@@ -66,8 +66,8 @@ namespace vtls{
 
 		assert(len <= INT_MAX);
 		int lenInt = static_cast<int>(len);
-		fp = fftw_plan_dft(1, &lenInt, reinterpret_cast<fftw_complex*>(mask), reinterpret_cast<fftw_complex*>(mask), FFTW_FORWARD, FFTW_PATIENT);
-		bp = fftw_plan_dft(1, &lenInt, reinterpret_cast<fftw_complex*>(temp), reinterpret_cast<fftw_complex*>(temp), FFTW_BACKWARD, FFTW_PATIENT);
+		fp = fftw_plan_dft(1, &lenInt, reinterpret_cast<fftw_complex*>(mask), reinterpret_cast<fftw_complex*>(mask), FFTW_FORWARD, FFTW_ESTIMATE);
+		bp = fftw_plan_dft(1, &lenInt, reinterpret_cast<fftw_complex*>(temp), reinterpret_cast<fftw_complex*>(temp), FFTW_BACKWARD, FFTW_ESTIMATE);
 
 		mtx.unlock();
 

@@ -301,6 +301,28 @@ void init_Potentials(py::module &m) {
             -------
             PlanarToCylindricalHartreePotential)V0G0N",
             "sim"_a, "mimickOpenSystem"_a, "rad"_a, "posMin"_a, "posMax"_a, "surfPos"_a, "refPoint"_a);
+    
+    py::class_<PlanarHartree, Potential>(m, "PlanarHartreePotential")
+        .def(py::init([](SimulationManager* sim, double refPoint){
+            return std::unique_ptr<PlanarHartree>(new PlanarHartree(
+                sim->getNumPoints(), sim->getDX(), sim->wavefunctionIsInitialized() ? sim->getRho() : nullptr, sim->findXIdx(refPoint)
+            ));
+        }), R"V0G0N(
+            Nonlocal Hartree potential assuming charge is distributed on a planar geometry.
+            If the wavefunction has not been initialized upon construction then the potential will be returned as-is (with reference to refPoint).
+            If the wavefunction has been initialized, then the potential will be returned as the change in potential with respect to the initial density.
+
+            Parameters
+            ----------
+            sim : Simulation
+                Associated simulation.
+            refPoint : float
+                Potential reference point.
+
+            Returns
+            -------
+            PlanarHartreePotential)V0G0N",
+            "sim"_a, "refPoint"_a);
 
     py::class_<LDAFunctional, Potential>(m, "LDAFunctional")
         .def(py::init([](SimulationManager* sim, LDAFunctionalType typ, double refPoint){

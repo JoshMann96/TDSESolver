@@ -419,12 +419,15 @@ namespace Potentials {
 			targ[i] = 0.0;
 	}
 
-	void CylindricalImageCharge::getV(const double* rho, const std::complex<double>* psi, double t, double* targ) {
+	void CylindricalImageCharge::getVVirtual(const double* rho, const std::complex<double>* psi, double t, double* targ) {
 		calcPot(rho, psi, t, targ);
 		double ref = targ[refPoint] - origPot[refPoint];
 		for (size_t i = 0; i < nPts; i++)
 			targ[i] -= origPot[i] + ref;
+	}
 
+	void CylindricalImageCharge::getV(const double* rho, const std::complex<double>* psi, double t, double* targ) {
+		getVVirtual(rho, psi, t, targ);
 		curInt->integrate(psi, t);
 	}
 
@@ -512,7 +515,7 @@ namespace Potentials {
 		std::fill_n(targ, nPts, 0.0);
 	}
 
-	void PlanarToCylindricalHartree::getV(const double* rho, const std::complex<double>* psi, double t, double* targ) {
+	void PlanarToCylindricalHartree::getVVirtual(const double* rho, const std::complex<double>* psi, double t, double* targ) {
 		calcPot(rho, psi, t, targ); // evaluates totalCharge as part of calculation
 		if(mimickOpenSystem){
 			double lossFraction = -(originalCharge - totalCharge - curInt->getIntegratedFlux()) / originalCharge + 1.0; // charge that moved to left is lost, scale origPot by appropriate amount
@@ -528,6 +531,14 @@ namespace Potentials {
 		}
 	}
 
+	void PlanarToCylindricalHartree::getV(const double* rho, const std::complex<double>* psi, double t, double* targ) {
+		getVVirtual(rho, psi, t, targ);
+		if(mimickOpenSystem)
+			curInt->integrate(psi, t);
+	}
+
+
+
 	void PlanarToCylindricalHartree::calcPot(const double* rho, const std::complex<double>* psi, double t, double* targ) {
 		std::fill_n(targ, posMin, 0);
 
@@ -538,6 +549,41 @@ namespace Potentials {
 		vtlsInt::cumIntTrapzToLeft(nPts-posMin, &potTemp[posMin], dx * -PhysCon::qe * PhysCon::qe / PhysCon::e0, &targ[posMin]); // final integral for potential, times constants
 		//std::fill_n(&targ[posMax], nPts-posMax, targ[posMax-1]); // fill in right side with last value (zero field implied)
 	}
+
+
+	PlanarHartree::PlanarHartree(size_t nPts, double dx, const double* rho0, size_t refPoint) :
+		nPts(nPts), dx(dx), refPoint(refPoint){
+		origPot = (double*) sq_malloc(sizeof(double)*nPts);
+		temp = (double*) sq_malloc(sizeof(double)*nPts);
+
+		if(rho0 != nullptr)
+			calcPot(rho0, origPot);
+		else
+			std::fill_n(origPot, nPts, 0.0);
+	}
+
+	PlanarHartree::~PlanarHartree(){
+		sq_free(origPot);
+		sq_free(temp);
+	}
+
+	void PlanarHartree::getVBare(double t, double* targ) {
+		std::fill_n(targ, nPts, 0.0);
+	}
+
+	void PlanarHartree::getV(const double* rho, const std::complex<double>* psi, double t, double* targ) {
+		calcPot(rho, targ);
+
+		double ref = targ[refPoint] - origPot[refPoint];
+		for (size_t i = 0; i < nPts; i++)
+			targ[i] -= origPot[i] + ref;
+	}
+
+	void PlanarHartree::calcPot(const double* rho, double* targ) {
+		vtlsInt::cumIntTrapzToRight(nPts, rho, -PhysCon::qe * PhysCon::qe / PhysCon::e0*dx, temp);
+		vtlsInt::cumIntTrapzToLeft(nPts, temp, dx, targ);
+	}
+
 
 	LDAFunctional::LDAFunctional(LDAFunctionalType typ, size_t nPts, double dx, const double* rho0, size_t refPoint)
 	: typ(typ), nPts(nPts), dx(dx), refPoint(refPoint) {
@@ -642,6 +688,18 @@ namespace Potentials {
 		}
 	}
 
+	void CompositePotential::getVVirtual(const double* rho, const std::complex<double> * psi, double t, double * targ) {
+		vtls::copyArray(nPts, v0, targ);
+		for (size_t i = 0; i < numDPots; i++) {
+			dynamicPots[i]->getVVirtual(rho, psi, t, nv);
+			vtls::addArrays(nPts, nv, targ);
+		}
+		for (size_t i = 0; i < numWPots; i++) {
+			waveFuncDependentPots[i]->getVVirtual(rho, psi, t, nv);
+			vtls::addArrays(nPts, nv, targ);
+		}
+	}
+
 	PotentialComplexity CompositePotential::getComplexity() {
 		if (numWPots > 0)
 			return PotentialComplexity::WAVEFUNCTION_DEPENDENT;
@@ -717,6 +775,12 @@ namespace Potentials {
 		if(!compositeRefreshed)
 			refreshCompositePotential();
 		pot->getV(rho, psi, t, targ);
+	}
+
+	void PotentialManager::getVVirtual(const double* rho, const std::complex<double> * psi, double t, double * targ) {
+		if(!compositeRefreshed)
+			refreshCompositePotential();
+		pot->getVVirtual(rho, psi, t, targ);
 	}
 
 	namespace ElectricFieldProfiles {

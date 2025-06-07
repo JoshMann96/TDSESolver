@@ -501,6 +501,20 @@ namespace vtls {
 	}
 
 	/**
+	 * Averages an array with a target array, storing the result in the target array.
+	 * @tparam T The type of the first array.
+	 * @tparam U The type of the target array.
+	 * @param len The length of the arrays.
+	 * @param arr1 (in) The first array to average.
+	 * @param arr2targ (in/out) The target array, which will contain the result of the averaging.
+	 */
+	template <typename T, typename U>
+	void averageArrays(size_t len, const T* __restrict arr1, U* __restrict arr2targ) {
+		for (size_t i = 0; i < len; i++)
+			arr2targ[i] = (arr1[i] + arr2targ[i]) * 0.5;
+	}
+
+	/**
 	 * Adds the elements of one array to another, storing the result in the second array.
 	 * @tparam T The type of the first array.
 	 * @tparam U The type of the second array.
@@ -955,6 +969,37 @@ namespace vtls {
 			if (arr[i] < mn)
 				mn = arr[i];
 		return mn;
+	}
+
+	/**
+	 * Checks if an array contains any NaN (Not a Number) values.
+	 * @tparam T The type of the array elements.
+	 * @param len The length of the array.
+	 * @param arr (in) The array to check for NaN values.
+	 * @return True if the array contains any NaN values, false otherwise.
+	 */
+	template <typename T>
+	bool hasNaN(size_t len, const T* __restrict arr) {
+		for (size_t i = 0; i < len; i++)
+			if (std::isnan(arr[i]))
+				return true;
+		return false;
+	}
+
+	/// @copydoc hasNaN(size_t len, const T* __restrict arr)
+	inline bool hasNaN(size_t len, const std::complex<double>* __restrict arr) {
+		for (size_t i = 0; i < len; i++)
+			if (std::isnan(std::real(arr[i])) || std::isnan(std::imag(arr[i])))
+				return true;
+		return false;
+	}
+
+	template <typename T>
+	bool hasNegative(size_t len, const T* __restrict arr) {
+		for (size_t i = 0; i < len; i++)
+			if (arr[i] < 0)
+				return true;
+		return false;
 	}
 
 	/**
