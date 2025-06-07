@@ -222,7 +222,7 @@ public:
 	SimulationManager(double xMin, double xMax, size_t nPts, double dt, std::function<void(double)> callback = nullptr, size_t numCallbackCalls = 101) :
 		SimulationManager(nPts, xMin, (double)((xMax - xMin) / (nPts-1)), dt, callback, numCallbackCalls) {};
 
-	~SimulationManager();
+	virtual ~SimulationManager();
 
 	/**
 	 * Adds a Measurer to the simulation.

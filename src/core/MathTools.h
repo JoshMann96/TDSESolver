@@ -319,7 +319,7 @@ namespace vtls {
 		std::complex<double> *temp1, *temp2;
 	public:
 		/// Default constructor for Convolver. Do not call this constructor directly.
-		Convolver<T>(){}
+		Convolver<T>();
 
 		/**
 		 * Constructor for Convolver.
@@ -345,8 +345,7 @@ namespace vtls {
 	 * The mask is only transformed into reciprocal space once at construction.
 	 */
 	template <class T>
-	class MaskConvolver :
-		public Convolver<T>{
+	class MaskConvolver{
 	private:
 		size_t len;
 		fftw_plan fp, bp;

@@ -21,7 +21,6 @@ class PySimulation
 
         ~PySimulation(){
             fftw_export_wisdom_to_filename(wisdomFile);
-            fftw_cleanup_threads();
             delete[] wisdomFile;
         }
 
