@@ -32,7 +32,7 @@ namespace Measurers {
 
 	NElec::NElec(size_t* nElec, const std::string fol) : nElec(nElec), fol(fol), Measurer(22) {}
 
-	MeasurerStatus NElec::measure(size_t step, const std::complex<double> * psi, const double* v, double t) { 
+	MeasurerStatus NElec::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t) { 
 		if(first && *nElec > 0){
 			first = false;
 			
@@ -67,7 +67,7 @@ namespace Measurers {
 		write(&steps, sizeof(size_t));
 	}
 
-	MeasurerStatus NSteps::measure(size_t step, const std::complex<double> * psi, const double* v, double t) {
+	MeasurerStatus NSteps::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t) {
 		steps++;
 		return MeasurerStatus::SUCCESS;
 	}
@@ -93,7 +93,7 @@ namespace Measurers {
 	
 	TS::TS(const std::string fol) : Measurer(5, fol, fname){}
 
-	MeasurerStatus TS::measure(size_t step, const std::complex<double> * psi, const double* v, double t) {
+	MeasurerStatus TS::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t) {
 		write(&t, sizeof(double));
 		return MeasurerStatus::SUCCESS;
 	}
@@ -103,7 +103,7 @@ namespace Measurers {
 		write(&n, sizeof(size_t));
 	}
 
-	MeasurerStatus OrigPot::measure(size_t step, const std::complex<double> * psi, const double* v, double t) {
+	MeasurerStatus OrigPot::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t) {
 		write(v, sizeof(double)*n);
 		return MeasurerStatus::ALL_DONE;
 	}
@@ -149,7 +149,7 @@ namespace Measurers {
 		sq_free(measSteps);
 	}
 
-	MeasurerStatus Psi2t::measure(size_t step, const std::complex<double> * psi, const double* v, double t) {
+	MeasurerStatus Psi2t::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t) {
 		while(step == measSteps[curIdx]){
 			for(size_t i = 0; i < *nElec; i++){
 				vtls::normSqr(nPts, &psi[i*nPts], psi2b);
@@ -177,7 +177,7 @@ namespace Measurers {
 		sq_free(rho);
 	}
 
-	MeasurerStatus ExpectE::measure(size_t step, const std::complex<double> * psi, const double* v, double t) {
+	MeasurerStatus ExpectE::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t) {
 		double ex;
 		for(size_t i = 0; i < *nElec; i++){
 			ex = (*kin)->evaluateEnergy(&psi[i*nPts], v);
@@ -199,7 +199,7 @@ namespace Measurers {
 		sq_free(scratch);
 	}
 
-	MeasurerStatus ExpectX::measure(size_t step, const std::complex<double> * psi, const double* v, double t) {
+	MeasurerStatus ExpectX::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t) {
 		for(size_t i = 0; i < *nElec; i++){
 			vtls::normSqr(nPts, &psi[i*nPts], scratch);
 			double ex = vtlsInt::simpsMul(nPts, x, scratch, dx);
@@ -221,7 +221,7 @@ namespace Measurers {
 		sq_free(scratch2);
 	}
 
-	MeasurerStatus ExpectP::measure(size_t step, const std::complex<double> * psi, const double* v, double t) {
+	MeasurerStatus ExpectP::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t) {
 		double ex;
 		for(size_t i = 0; i < *nElec; i++){
 			vtls::firstDerivative(nPts, &psi[i*nPts], scratch1, dx);
@@ -246,7 +246,7 @@ namespace Measurers {
 		sq_free(scratch2);
 	}
 
-	MeasurerStatus ExpectA::measure(size_t step, const std::complex<double> * psi, const double* v, double t) {
+	MeasurerStatus ExpectA::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t) {
 		double ex;
 		vtls::firstDerivative(nPts, v, scratch1, dx);
 		for(size_t i = 0; i < *nElec; i++){
@@ -269,7 +269,7 @@ namespace Measurers {
 		sq_free(psi2);
 	}
 
-	MeasurerStatus TotProb::measure(size_t step, const std::complex<double> * psi, const double* v, double t) {
+	MeasurerStatus TotProb::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t) {
 		double sum;
 		for(size_t i = 0; i < *nElec; i++){	
 			vtls::normSqr(nPts, &psi[i*nPts], psi2);
@@ -289,7 +289,7 @@ namespace Measurers {
 		write(&vdPos, sizeof(size_t));
 	}
 
-	MeasurerStatus VDProbCurrent::measure(size_t step, const std::complex<double> * psi, const double* v, double t) {
+	MeasurerStatus VDProbCurrent::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t) {
 		std::complex<double> der;
 		double j;
 		for(size_t i = 0; i < *nElec; i++){
@@ -311,7 +311,7 @@ namespace Measurers {
 		write(&meaT, sizeof(double));
 	}
 
-	MeasurerStatus PsiT::measure(size_t step, const std::complex<double> * psi, const double* v, double t) {
+	MeasurerStatus PsiT::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t) {
 		if ((!done && t >= meaT)) {
 			write(psi, sizeof(std::complex<double>)* nPts * *nElec);
 			done = true;
@@ -331,7 +331,7 @@ namespace Measurers {
 		write(&meaT, sizeof(double));
 	}
 
-	MeasurerStatus PotT::measure(size_t step, const std::complex<double> * psi, const double* v, double t) {
+	MeasurerStatus PotT::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t) {
 		if (!done && t >= meaT) {
 			write(v, sizeof(double)*n);
 			done = true;
@@ -350,7 +350,7 @@ namespace Measurers {
 		write(&vdPos, sizeof(size_t));
 	}
 
-	MeasurerStatus VDPsi::measure(size_t step, const std::complex<double> * psi, const double* v, double t) {
+	MeasurerStatus VDPsi::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t) {
 		for(size_t i = 0; i < *nElec; i++)
 			write(&psi[i*nPts + vdPos], sizeof(std::complex<double>));
 		return MeasurerStatus::SUCCESS;
@@ -366,7 +366,7 @@ namespace Measurers {
 		write(&vdPos, sizeof(size_t));
 	}
 
-	MeasurerStatus VDPot::measure(size_t step, const std::complex<double> * psi, const double* v, double t) {
+	MeasurerStatus VDPot::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t) {
 		write(&v[vdPos], sizeof(double));
 		return MeasurerStatus::SUCCESS;
 	}
@@ -464,7 +464,7 @@ namespace Measurers {
 		sq_free(sqrtGroupVelocities);
 	}
 
-	MeasurerStatus VDFluxSpec::measure(size_t step, const std::complex<double> * psi, const double* v, double t) {
+	MeasurerStatus VDFluxSpec::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t) {
 		if (first) {
 			if(wfcsL)
 				sq_free(wfcsL);
@@ -578,7 +578,7 @@ namespace Measurers {
 		sq_free(measSteps);
 	}
 
-	MeasurerStatus Vfunct::measure(size_t step, const std::complex<double> * psi, const double* v, double t) {
+	MeasurerStatus Vfunct::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t) {
 		while(step == measSteps[curIdx]){
 			vtls::linearInterpolateEdge(nPts, v, nx, vs);
 			write(vs, sizeof(double)*nx);
@@ -602,7 +602,7 @@ namespace Measurers {
 	}
 
 	
-	MeasurerStatus ExpectE0::measure(size_t step, const std::complex<double> * psi, const double* v, double t) {
+	MeasurerStatus ExpectE0::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t) {
 		if(first){
 			first = false;
 			double ex;
@@ -618,7 +618,7 @@ namespace Measurers {
 	WfcRhoWeights::WfcRhoWeights(const size_t* nElec, double * const * weights, const std::string fol) : 
 		nElec(nElec), weights(weights), Measurer(18, fol, fname){}
 
-	MeasurerStatus WfcRhoWeights::measure(size_t step, const std::complex<double> * psi, const double* v, double t) {
+	MeasurerStatus WfcRhoWeights::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t) {
 		if (first) {
 			if (*weights){
 				first = false;
@@ -647,9 +647,9 @@ namespace Measurers {
 		meas.clear();
 	}
 
-	MeasurerStatus BasicMeasurers::measure(size_t step, const std::complex<double> * psi, const double* v, double t) {
+	MeasurerStatus BasicMeasurers::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t) {
 		for ( auto it = meas.begin(); it != meas.end(); ){
-			if( (*it)->measure(step, psi, v, t) == MeasurerStatus::ALL_DONE) {
+			if( (*it)->measure(step, psi, rho, v, t) == MeasurerStatus::ALL_DONE) {
 				delete (*it);
 				it = meas.erase(it);
 			}
@@ -665,17 +665,14 @@ namespace Measurers {
 	{
 		needsDens = true;
 		plotter = new plotting::GNUPlotter();
-		rho = (double*) sq_malloc(sizeof(double)*nPts);
 	}
 
 	DensityPlotter::~DensityPlotter(){
 		delete plotter;
-		sq_free(rho);
 	}
 	
-	MeasurerStatus DensityPlotter::measure(size_t step, const std::complex<double> * psi, const double* v, double t){
+	MeasurerStatus DensityPlotter::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t){
 		if(step%stepsPerPlot == 0){
-			dens->calcRho(nPts, *nElec, dx, *wght, psi, rho);
 			plotter->update(nPts, 1, xs, rho);
 
 			if(pause)
@@ -696,7 +693,7 @@ namespace Measurers {
 		delete plotter;
 	}
 
-	MeasurerStatus PotentialPlotter::measure(size_t step, const std::complex<double> * psi, const double* v, double t){
+	MeasurerStatus PotentialPlotter::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t){
 		if(step%stepsPerPlot == 0){
 			plotter->update(nPts, 1, xs, v);
 
@@ -720,9 +717,9 @@ namespace Measurers {
 		meas.push_back(m);
 	}
 
-	MeasurerStatus MeasurementManager::measure(size_t step, const std::complex<double> * psi, const double* v, double t) {
+	MeasurerStatus MeasurementManager::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t) {
 		for ( auto it = meas.begin(); it != meas.end(); ){
-			if( (*it)->measure(step, psi, v, t) == MeasurerStatus::ALL_DONE) {
+			if( (*it)->measure(step, psi, rho, v, t) == MeasurerStatus::ALL_DONE) {
 				delete (*it);
 				it = meas.erase(it);
 			}

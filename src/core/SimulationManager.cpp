@@ -264,7 +264,7 @@ size_t SimulationManager::updatePotential(int idx, bool virt) {return calculateP
 
 size_t SimulationManager::measure(int idx) {
 	auto strt = std::chrono::high_resolution_clock::now();
-	meas->measure(step[idx], psis[idx], vs[idx], ts[idx]);
+	meas->measure(step[idx], psis[idx], rhos[idx], vs[idx], ts[idx]);
 	auto end = std::chrono::high_resolution_clock::now();
 	auto dur = std::chrono::duration_cast<std::chrono::microseconds>(end - strt);
 	return dur.count();

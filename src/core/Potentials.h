@@ -802,11 +802,11 @@ namespace Potentials {
 		void getVBare(double t, double * targ){pot->getVBare(t, targ);};
 		void getV(const double* rho, const std::complex<double> * psi, double t, double * targ){
 			pot->getV(rho, psi, t, targ);
-			meas->measure((size_t)(t/maxT*numSteps), psi, targ, t);
+			meas->measure((size_t)(t/maxT*numSteps), psi, rho, targ, t);
 		};
 		void getVVirtual(const double* rho, const std::complex<double> * psi, double t, double * targ){
 			pot->getVVirtual(rho, psi, t, targ);
-			meas->measure((size_t)(t/maxT*numSteps), psi, targ, t);
+			meas->measure((size_t)(t/maxT*numSteps), psi, rho, targ, t);
 		};
 		PotentialComplexity getComplexity(){return pot->getComplexity();};
 	};
