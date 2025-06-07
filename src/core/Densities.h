@@ -249,32 +249,34 @@ namespace Densities {
 
 	/**
 	 * Smooths the density by convolution against a Gaussian.
-	 * Uses FFTs to perform the convolution efficiently. This is therefore only suitable for periodic boundary conditions.
+	 * Uses FFTs to perform the convolution efficiently.
 	 */
-	class GaussianSmoothedDensityPBC :
+	class GaussianSmoothedDensity :
 		public Density
 	{
 	private:
-		bool first = true;
-		double *tempRho=nullptr, sig;
+		bool first = true, periodic;
+		double *paddedRho=nullptr, sig;
 		vtls::MaskConvolver<double>* conv = nullptr;
 		Density* baseDens = nullptr;
-		size_t mynPts = 0;
+		size_t mynPts = 0, fullnPts, bufferSize;
 	public:
 		/**
-		 * Constructor for GaussianSmoothedDensityPBC.
+		 * Constructor for GaussianSmoothedDensity.
 		 * @param sig The standard deviation of the Gaussian used for smoothing.
+		 * @param periodic Whether the density is periodic (true) or not (false).
 		 */
-		GaussianSmoothedDensityPBC(double sig) : sig(sig) {}
+		GaussianSmoothedDensity(double sig, bool periodic) : sig(sig), periodic(periodic) {}
 
 		/**
-		 * Constructor for GaussianSmoothedDensityPBC.
+		 * Constructor for GaussianSmoothedDensity.
 		 * @param sig The standard deviation of the Gaussian used for smoothing.
+		 * @param periodic Whether the density is periodic (true) or not (false).
 		 * @param baseDens The base density calculator to use for the raw density calculation.
 		 */
-		GaussianSmoothedDensityPBC(double sig, Density* baseDens) : sig(sig), baseDens(baseDens) {}
+		GaussianSmoothedDensity(double sig, bool periodic, Density* baseDens) : sig(sig), periodic(periodic), baseDens(baseDens) {}
 
-		~GaussianSmoothedDensityPBC();
+		~GaussianSmoothedDensity();
 		void calcRho(size_t nPts, size_t nElec, double dx, double* rho);
 	};
 

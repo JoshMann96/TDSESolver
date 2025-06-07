@@ -65,23 +65,26 @@ void init_Densities(py::module &m) {
             -------
             DirectDensity)V0G0N");
 
-    py::class_<Densities::GaussianSmoothedDensityPBC, Densities::Density>(m, "GaussianSmoothedDensityPBC")
-        .def(py::init<double>(), R"V0G0N(
+    py::class_<Densities::GaussianSmoothedDensity, Densities::Density>(m, "GaussianSmoothedDensity")
+        .def(py::init<double, bool>(), R"V0G0N(
             Uses a Gaussian smoothing function to calculate the final density.
             Density = sum over states (weight x psi*psi) * Gaussian
                 (* = convolution)
-            This is only suitable for periodic boundary conditions.
 
             Parameters
             ----------
             sigma : float
                 Standard deviation of Gaussian. Typically the inverse of the Thomas-Fermi wavenumber.
+            periodic : bool
+                Whether the density is periodic (true) or not (false). 
+                If true, the convolution is applied in a periodic manner.
+                If false, the convolution is padded with the left- and right-most values of the density.
 
             Returns
             -------
-            GaussianSmoothedDensityPBC)V0G0N",
-            "sigma"_a)
-        .def(py::init<double, Densities::Density*>(), py::keep_alive<1,3>(), R"V0G0N(
+            GaussianSmoothedDensity)V0G0N",
+            "sigma"_a, "periodic"_a)
+        .def(py::init<double, bool, Densities::Density*>(), py::keep_alive<1,4>(), R"V0G0N(
             Uses a Gaussian smoothing function to calculate the final density.
             Density = sum over states (weight x psi*psi) * Gaussian
                 (* = convolution)
@@ -90,13 +93,17 @@ void init_Densities(py::module &m) {
             ----------
             sigma : float
                 Standard deviation of Gaussian. Typically the inverse of the Thomas-Fermi wavenumber.
+            periodic : bool
+                Whether the density is periodic (true) or not (false). 
+                If true, the convolution is applied in a periodic manner.
+                If false, the convolution is padded with the left- and right-most values of the density.
             baseDens : Density
                 Base density calculator to use for the raw density. This is applied first, then the smoothing is applied.
 
             Returns
             -------
             GaussianSmoothedDensityPBC)V0G0N",
-            "sigma"_a, "baseDens"_a);
+            "sigma"_a, "periodic"_a, "baseDens"_a);
     
     py::class_<Densities::SmallKernelConvolver, Densities::Density>(m, "SmallKernelConvolver")
         .def(py::init<size_t>(), R"V0G0N(

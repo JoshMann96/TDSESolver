@@ -177,40 +177,43 @@ namespace Densities {
 		vtls::seqMulArrays(endIndex-startIndex, &thinning[startIndex], &rho[startIndex]);
 	}
 	
-	GaussianSmoothedDensityPBC::~GaussianSmoothedDensityPBC(){
-		if(tempRho)
-			sq_free(tempRho);
+	GaussianSmoothedDensity::~GaussianSmoothedDensity(){
+		if(paddedRho)
+			sq_free(paddedRho);
 		if(conv)
 			delete conv;
 	}
 
-	void GaussianSmoothedDensityPBC::calcRho(size_t nPts, size_t nElec, double dx, double* rho) {
-		if(mynPts == 0)
+	void GaussianSmoothedDensity::calcRho(size_t nPts, size_t nElec, double dx, double* rho) {
+		if(mynPts == 0){
 			mynPts = nPts;
+			fullnPts = periodic ? nPts : 2 * nPts + nPts%2;
+			bufferSize = (fullnPts - nPts)/2;
+		}
 		assert(mynPts == nPts); // must be called with the same nPts as first
 
 		if (first) {
 			//Initialize variables
-			if(tempRho)
-				sq_free(tempRho);
-			double* mask = (double*)sq_malloc(sizeof(double)*nPts);
-			tempRho = (double*)sq_malloc(sizeof(double)*nPts);
+			if(paddedRho)
+				sq_free(paddedRho);
+			double* mask = (double*)sq_malloc(sizeof(double)*fullnPts);
+			paddedRho = (double*)sq_malloc(sizeof(double)*fullnPts);
 			first = false;
 
-			//Initialize Gaussian mask (in k space)
-			for (size_t i = 0; i < nPts / 2; i++) {
+			//Initialize Gaussian mask
+			for (size_t i = 0; i < fullnPts / 2; i++) {
 				mask[i] = 1.0 / (sig/dx * std::sqrt(2.0 * PhysCon::pi)) * std::exp(-0.5 / (sig * sig) * (i * i * dx * dx));
-				mask[nPts - i - 1] = 1.0 / (sig/dx * std::sqrt(2.0 * PhysCon::pi)) * std::exp(-0.5 / (sig * sig) * ((i+1) * (i+1) * dx * dx));
+				mask[fullnPts - i - 1] = 1.0 / (sig/dx * std::sqrt(2.0 * PhysCon::pi)) * std::exp(-0.5 / (sig * sig) * ((i+1) * (i+1) * dx * dx));
 			}
-			if(nPts%2)
-				mask[nPts/2] = 1.0 / (sig/dx * std::sqrt(2.0 * PhysCon::pi)) * std::exp(-0.5 / (sig * sig) * (nPts * nPts / 4.0 * dx * dx));
-			
-			vtls::scaMulArray(nPts, 1.0 / vtlsInt::sum(nPts, mask, dx), mask); //normalize
+			if(fullnPts % 2)
+				mask[fullnPts/2] = 1.0 / (sig/dx * std::sqrt(2.0 * PhysCon::pi)) * std::exp(-0.5 / (sig * sig) * (fullnPts * fullnPts / 4.0 * dx * dx));
 
-			//Initialize FFT for convolution
+			vtls::scaMulArray(fullnPts, 1.0 / vtlsInt::sum(fullnPts, mask, 1.0), mask); //normalize
+
+			//Initialize convolver
 			if(conv)
 				delete conv;
-			conv = new vtls::MaskConvolver<double>(nPts, mask);
+			conv = new vtls::MaskConvolver<double>(fullnPts, mask);
 
 			sq_free(mask);
 		}
@@ -218,7 +221,29 @@ namespace Densities {
 		if(baseDens)
 			baseDens->calcRho(nPts, nElec, dx, rho);
 
-		conv->compute(rho);
+		if(periodic)
+			conv->compute(rho);
+		else{
+			vtls::copyArray(nPts, rho, paddedRho + bufferSize); // copy original density to paddedRho
+			//std::fill_n(paddedRho, bufferSize, rho[0]); // fill the left side with the first value
+			//std::fill_n(paddedRho + (bufferSize + nPts), bufferSize, rho[nPts-1]); // fill the right side with the last value
+			// mirror values
+			for(size_t i = 0; i < bufferSize; i++){
+				paddedRho[bufferSize - i - 1] = rho[i+1];
+				paddedRho[bufferSize + nPts + i] = rho[nPts - i - 2];
+			}
+
+			conv->compute(paddedRho);
+
+			vtls::copyArray(nPts, paddedRho + bufferSize, rho); // copy the convolved density back to rho
+		}
+
+		// set any negative values to zero
+		#pragma omp parallel for
+		for(size_t i = 0; i < nPts; i++){
+			if(rho[i] < 0.0)
+				rho[i] = 0.0;
+		}
 	}
 
 
