@@ -24,9 +24,6 @@ namespace vtlsInt {
 	 */
 	template <typename T, typename U>
 	decltype(std::declval<T&>()* std::declval<U&>()) sum(size_t len, const T* __restrict arr, U dx) {
-		if (len <= 0)
-			return 0;
-
 		T sum = 0;
 		for (size_t i = 0; i < len; i++) {
 			sum += arr[i];
@@ -46,9 +43,6 @@ namespace vtlsInt {
 	 */
 	template <typename T, typename U, typename V>
 	decltype(std::declval<T&>()* std::declval<U&>()* std::declval<V&>()) innerProduct(size_t len, const T* __restrict arr1, const U* __restrict arr2, V dx) {
-		if (len <= 0)
-			return 0;
-
 		decltype(std::declval<T&>() * std::declval<U&>()) sum = 0;
 		for (size_t i = 0; i < len; i++)
 			sum += arr1[i] * arr2[i];
@@ -74,9 +68,6 @@ namespace vtlsInt {
 	 */
 	template <typename T, typename U, typename V>
 	decltype(std::declval<T&>()* std::declval<U&>()* std::declval<V&>()) conjugateInnerProduct(size_t len, const T* __restrict arr1, const U* __restrict arr2, V dx) {
-		if (len <= 0)
-			return 0;
-
 		decltype(std::declval<T&>() * std::declval<U&>()) sum = 0;
 		for (size_t i = 0; i < len; i++)
 			sum += std::conj(arr1[i]) * arr2[i];
@@ -101,9 +92,6 @@ namespace vtlsInt {
 	 */
 	template <typename T, typename U>
 	decltype(std::declval<T&>() * std::declval<U&>()) trapz(size_t len, const T* __restrict arr, U dx) {
-		if (len < 1)
-			return 0;
-
 		T sum = (arr[0] + arr[len - 1]) / 2.0;
 		for (size_t i = 1; i < len - 1; i++) {
 			sum += arr[i];
@@ -124,9 +112,6 @@ namespace vtlsInt {
 	 */
 	template <typename T, typename U, typename V>
 	decltype(std::declval<T&>()* std::declval<U&>()* std::declval<V&>()) trapzMul(size_t len, const T* __restrict arr1, const U* __restrict arr2, V dx) {
-		if (len <= 1)
-			return 0;
-
 		decltype(std::declval<T&>() * std::declval<U&>()) sum = (arr1[0] * arr2[0] + arr1[len - 1] * arr2[len - 1]) / 2.0;
 		for (size_t i = 1; i < len - 1; i++)
 			sum += arr1[i] * arr2[i];

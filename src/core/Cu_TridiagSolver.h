@@ -50,17 +50,17 @@ private:
 
     cuDoubleComplex *bdyRHSL = nullptr, *bdyRHSR = nullptr; // boundary condition values for the LHS and RHS
 
-    void cudaStatCheck(cudaError_t status){
+    static void cudaStatCheck(cudaError_t status){
         #ifdef USE_CUDA
         if (status != cudaSuccess)
             throw std::runtime_error("cudaTridiagonalSolverSystem : cuda error with status: " + std::string(cudaGetErrorString(status)));
         #endif
     }
-    void cudaStatCheck(cublasStatus_t status){
+    static void cudaStatCheck(cublasStatus_t status){
         if (status != CUBLAS_STATUS_SUCCESS)
             throw std::runtime_error("cudaTridiagonalSolverSystem : cublas error with status: " + std::string(cublasGetStatusString(status)));
     }
-    void cudaStatCheck(cusparseStatus_t status){
+    static void cudaStatCheck(cusparseStatus_t status){
         if (status != CUSPARSE_STATUS_SUCCESS)
             throw std::runtime_error("cudaTridiagonalSolverSystem : cusparse error with status: " + std::string(cusparseGetErrorString(status)));
     }

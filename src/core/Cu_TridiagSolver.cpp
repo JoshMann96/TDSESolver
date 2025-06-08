@@ -106,7 +106,7 @@ void cudaTridiagonalSolverSystem::setX(const std::complex<double>* x, bool virt,
     myX.status = state;
 }
 
-void cudaTridiagonalSolverSystem::gatherX(std::complex<double>* x, bool virt) {
+void cudaTridiagonalSolverSystem::gatherX(std::complex<double>* x, bool virt){
     CudaVector& myX = virt ? cXV : cX;
     if (myX.status != BARE)
         throw std::runtime_error("cudaTridiagonalSolverSystem::gatherX : Stored state is not BARE.");
@@ -114,7 +114,7 @@ void cudaTridiagonalSolverSystem::gatherX(std::complex<double>* x, bool virt) {
     cudaStatCheck(  cudaMemcpy(x, myX.data, n * nrhs * sizeof(cuDoubleComplex), cudaMemcpyDeviceToHost));
 }
 
-void cudaTridiagonalSolverSystem::gatherRHS(std::complex<double>* x, bool virt) {
+void cudaTridiagonalSolverSystem::gatherRHS(std::complex<double>* x, bool virt){
     CudaVector& myX = virt ? cXV : cX;
     if (myX.status != OPERATED)
         throw std::runtime_error("cudaTridiagonalSolverSystem::gatherRHS : Stored state is not OPERATED.");

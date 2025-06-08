@@ -347,15 +347,19 @@ namespace Potentials {
 		case 1: // right-side derivative
 			for (size_t i = 0; i < *nElec; i++){
 				pt0 = i * nPts + evalPoint;
-				integratedFlux += (t - tPrev) * PhysCon::hbar / PhysCon::me * std::imag(std::conj(psi[pt0]) * \
-					(-psi[pt0 + 2] + 4.0*psi[pt0+1] - 3.0*psi[pt0]) / (2.0*dx)) * (*weights)[i];
+				//integratedFlux += (t - tPrev) * PhysCon::hbar / PhysCon::me * std::imag(std::conj(psi[pt0]) * \
+				//	(-psi[pt0 + 2] + 4.0*psi[pt0+1] - 3.0*psi[pt0]) / (2.0*dx)) * (*weights)[i];
+				integratedFlux += (t - tPrev) * PhysCon::hbar / PhysCon::me * 0.5 * std::imag(std::conj(psi[pt0] + psi[pt0 + 1]) * \
+					(psi[pt0 + 1] - psi[pt0]) / (dx)) * (*weights)[i];
 			}
 			break;
 		case -1: // left-side derivative
 			for (size_t i = 0; i < *nElec; i++){
 				pt0 = i * nPts + evalPoint;
-				integratedFlux += (t - tPrev) * PhysCon::hbar / PhysCon::me * std::imag(std::conj(psi[pt0]) * \
-					(3.0*psi[pt0] - 4.0*psi[pt0-1] + psi[pt0-2]) / (2.0*dx)) * (*weights)[i];
+				//integratedFlux += (t - tPrev) * PhysCon::hbar / PhysCon::me * std::imag(std::conj(psi[pt0]) * \
+				//	(3.0*psi[pt0] - 4.0*psi[pt0-1] + psi[pt0-2]) / (2.0*dx)) * (*weights)[i];
+				integratedFlux += (t - tPrev) * PhysCon::hbar / PhysCon::me * 0.5 * std::imag(std::conj(psi[pt0] + psi[pt0 - 1]) * \
+					(psi[pt0] - psi[pt0 - 1]) / (dx)) * (*weights)[i];
 			}
 			break;
 		}
@@ -700,7 +704,7 @@ namespace Potentials {
 		}
 	}
 
-	PotentialComplexity CompositePotential::getComplexity() {
+	PotentialComplexity CompositePotential::getComplexity() const {
 		if (numWPots > 0)
 			return PotentialComplexity::WAVEFUNCTION_DEPENDENT;
 		else if (numDPots > 0)

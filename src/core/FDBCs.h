@@ -32,7 +32,7 @@ namespace FDBCs
 		 * @return The local index in the cyclic array, wrapping around if necessary.
 		 */ 
 		template <typename U>
-		size_t localIdx(U i) {
+		size_t localIdx(U i) const {
 			static_assert(std::is_integral<U>::value, "Template parameter U must be an integral type.");
 			return (idx + i) % size;
 		};
@@ -91,7 +91,7 @@ namespace FDBCs
 		 * @return The value of the i-th element
 		 */
 		template <typename U>
-        T get(U i) { 
+        T get(U i) const { 
 			static_assert(std::is_integral<U>::value, "Template parameter U must be an integral type.");
 			return arr[localIdx(i)]; 
 		};
@@ -100,7 +100,7 @@ namespace FDBCs
 		 * Print the array
 		 * @details Prints the array in order, starting from the present index.
 		 */
-        void print() { for (size_t i = 0; i < size; i++) std::cout << arr[i] << " "; std::cout << std::endl; };
+        void print() const { for (size_t i = 0; i < size; i++) std::cout << arr[i] << " "; std::cout << std::endl; };
 
 		/**
 		 * Multiply the array by a scalar
@@ -115,7 +115,7 @@ namespace FDBCs
 		 * @throws std::invalid_argument If the arrays are not the same size
 		 */
 		template <typename U>
-		decltype(std::declval<T&>()* std::declval<U&>()) inner(CyclicArray<U>* arr) {
+		decltype(std::declval<T&>()* std::declval<U&>()) inner(CyclicArray<U>* arr) const {
 			if (this->size != arr->size)
 				throw std::invalid_argument("Arrays must be of the same size.");
 
@@ -137,7 +137,7 @@ namespace FDBCs
 		 * @throws std::invalid_argument If the arrays are not the same size
 		 */
 		template <typename U>
-		decltype(std::declval<T&>()* std::declval<U&>()) aligned_inner(CyclicArray<U>* arr) {
+		decltype(std::declval<T&>()* std::declval<U&>()) aligned_inner(CyclicArray<U>* arr) const {
 			if (this->size != arr->size)
 				throw std::invalid_argument("Arrays must be of the same size.");
 
@@ -157,7 +157,7 @@ namespace FDBCs
 		 * @return The inner product
 		 */
 		template <typename U>
-		decltype(std::declval<T&>()* std::declval<U&>()) inner(U* arr) {
+		decltype(std::declval<T&>()* std::declval<U&>()) inner(U* arr) const {
 			decltype(std::declval<T&>()* std::declval<U&>()) sum = 0;
 			if constexpr (std::is_same_v<U, T>) //types are the same
 				if constexpr (std::is_same_v<T, std::complex<double>>){ // complex double inner product
@@ -187,7 +187,7 @@ namespace FDBCs
 	{
 	public:
 		/// Get the diagonal element of the LHS matrix at the boundary position
-		virtual std::complex<double> getLHSEle() = 0;
+		virtual std::complex<double> getLHSEle() const = 0;
 		
 		/// Get the element of the LHS matrix adjacent to the boundary position
 		virtual std::complex<double> getLHSAdjEle() = 0;
@@ -308,7 +308,7 @@ namespace FDBCs
 		DirichletBC(std::complex<double> bdVal) : bdVal(bdVal) {};
 
 		/// @copydoc TimeIndependentBC::getLHSEle
-		std::complex<double> getLHSEle() { return 1.0; };
+		std::complex<double> getLHSEle() const { return 1.0; };
 
 		/// @copydoc TimeIndependentBC::getLHSAdjEle
 		std::complex<double> getLHSAdjEle() { return 0.0; };
@@ -335,7 +335,7 @@ namespace FDBCs
 		NeumannBC(std::complex<double> bdDer, double dx, BCSide side) : bdDer(bdDer), dx(dx), direction(side == BCSide::LEFT ? 1 : -1) {};
 		
 		/// @copydoc TimeIndependentBC::getLHSEle
-		std::complex<double> getLHSEle() { return -1.0 / dx * direction; };
+		std::complex<double> getLHSEle() const { return -1.0 / dx * direction; };
 		
 		/// @copydoc TimeIndependentBC::getLHSAdjEle
 		std::complex<double> getLHSAdjEle() { return 1.0 / dx * direction; };
@@ -383,7 +383,7 @@ namespace FDBCs
 		~UniformHDTransparentBC();
 
 		/// @copydoc BoundaryCondition::getLHSEle
-		std::complex<double> getLHSEle() { 
+		std::complex<double> getLHSEle() const { 
 			if(kernelCalculated) 
 				return -kernel0;
 			else

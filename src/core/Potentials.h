@@ -38,7 +38,7 @@ namespace Potentials {
 			/**
 			 * Destructor.
 			 */
-			~ElectricFieldProfile(){if(fs) sq_free(fs);};
+			virtual ~ElectricFieldProfile(){if(fs) sq_free(fs);};
 		};
 
 		/// Constant field between minX and maxX of strength e.
@@ -284,7 +284,7 @@ namespace Potentials {
 		 * Get the complexity of the potential.
 		 * @return The complexity.
 		 */
-		virtual PotentialComplexity getComplexity() = 0;
+		virtual PotentialComplexity getComplexity() const = 0;
 	};
 
 	class TimeLocalPotential :
@@ -322,7 +322,7 @@ namespace Potentials {
 		~FilePotential();
 		void getVBare(double t, double * targ);
 		void getV(const double* rho, const std::complex<double> * psi, double t, double * targ);
-		PotentialComplexity getComplexity(){return PotentialComplexity::STATIC;};
+		PotentialComplexity getComplexity() const {return PotentialComplexity::STATIC;};
 	};
 
 	/**
@@ -353,7 +353,7 @@ namespace Potentials {
 		~BiasFieldPotential();
 		void getVBare(double t, double * targ);
 		void getV(const double* rho, const std::complex<double> *  psi, double t, double * targ);
-		PotentialComplexity getComplexity(){return PotentialComplexity::STATIC;};
+		PotentialComplexity getComplexity() const {return PotentialComplexity::STATIC;};
 	};
 
 	/// Coulomb potential. The depth of the potential is capped by a separation distance of dx.
@@ -379,7 +379,7 @@ namespace Potentials {
 		~CoulombPotential();
 		void getVBare(double t, double * targ);
 		void getV(const double* rho, const std::complex<double> *  psi, double t, double * targ);
-		PotentialComplexity getComplexity(){return PotentialComplexity::STATIC;};
+		PotentialComplexity getComplexity() const {return PotentialComplexity::STATIC;};
 	};
 
 	/**
@@ -406,7 +406,7 @@ namespace Potentials {
 		~FiniteBox();
 		void getVBare(double t, double * targ);
 		void getV(const double* rho, const std::complex<double> * psi, double t, double * targ);
-		PotentialComplexity getComplexity(){return PotentialComplexity::STATIC;};
+		PotentialComplexity getComplexity() const {return PotentialComplexity::STATIC;};
 	};
 
 	/// Wachter's Jellium potential.
@@ -431,7 +431,7 @@ namespace Potentials {
 		~JelliumPotential();
 		void getVBare(double t, double * targ);
 		void getV(const double* rho, const std::complex<double> * psi, double t, double * targ);
-		PotentialComplexity getComplexity(){return PotentialComplexity::STATIC;};
+		PotentialComplexity getComplexity() const {return PotentialComplexity::STATIC;};
 	};
 
 	/// Jellium potential with a backing such that it smoothly returns to vacuum level on the left side.
@@ -458,7 +458,7 @@ namespace Potentials {
 		~JelliumPotentialBacked();
 		void getVBare(double t, double * targ);
 		void getV(const double* rho, const std::complex<double> * psi, double t, double * targ);
-		PotentialComplexity getComplexity(){return PotentialComplexity::STATIC;};
+		PotentialComplexity getComplexity() const {return PotentialComplexity::STATIC;};
 	};
 
 	/// Shielded atomic potential, averaged across an infinite plane parallel to surface.
@@ -482,7 +482,7 @@ namespace Potentials {
 		~ShieldedAtomicPotential();
 		void getVBare(double t, double * targ);
 		void getV(const double* rho, const std::complex<double> * psi, double t, double * targ);
-		PotentialComplexity getComplexity(){return PotentialComplexity::STATIC;};
+		PotentialComplexity getComplexity() const {return PotentialComplexity::STATIC;};
 	};
 
 	/// Converts an electric field profile and envelope to a potential.
@@ -513,7 +513,7 @@ namespace Potentials {
 		~ElectricFieldProfileToPotential();
 		void getVBare(double t, double * targ);
 		void getV(const double* rho, const std::complex<double> * psi, double t, double * targ);
-		PotentialComplexity getComplexity(){return PotentialComplexity::DYNAMIC;};
+		PotentialComplexity getComplexity() const {return PotentialComplexity::DYNAMIC;};
 	};
 
 	/// Tool which integrates the current which passes through a point.
@@ -596,7 +596,7 @@ namespace Potentials {
 		void getVBare(double t, double* targ);
 		void getV(const double* rho, const std::complex<double>* psi, double t, double* targ);
 		void getVVirtual(const double* rho, const std::complex<double>* psi, double t, double* targ);
-		PotentialComplexity getComplexity(){return PotentialComplexity::WAVEFUNCTION_DEPENDENT;};
+		PotentialComplexity getComplexity() const {return PotentialComplexity::WAVEFUNCTION_DEPENDENT;};
 	};
 
 	/**
@@ -641,7 +641,7 @@ namespace Potentials {
 		void getVBare(double t, double* targ);
 		void getV(const double* rho, const std::complex<double>* psi, double t, double* targ);
 		void getVVirtual(const double* rho, const std::complex<double>* psi, double t, double* targ);
-		PotentialComplexity getComplexity(){return PotentialComplexity::WAVEFUNCTION_DEPENDENT;};
+		PotentialComplexity getComplexity() const {return PotentialComplexity::WAVEFUNCTION_DEPENDENT;};
 	};
 
 	class PlanarHartree :
@@ -664,7 +664,7 @@ namespace Potentials {
 		~PlanarHartree();
 		void getVBare(double t, double* targ);
 		void getV(const double* rho, const std::complex<double>* psi, double t, double* targ);
-		PotentialComplexity getComplexity(){return PotentialComplexity::WAVEFUNCTION_DEPENDENT;};
+		PotentialComplexity getComplexity() const {return PotentialComplexity::WAVEFUNCTION_DEPENDENT;};
 	};
 		
 
@@ -705,7 +705,7 @@ namespace Potentials {
 		~LDAFunctional();
 		void getVBare(double t, double* targ);
 		void getV(const double* rho, const std::complex<double>* psi, double t, double* targ);
-		PotentialComplexity getComplexity(){return PotentialComplexity::WAVEFUNCTION_DEPENDENT;};
+		PotentialComplexity getComplexity() const {return PotentialComplexity::WAVEFUNCTION_DEPENDENT;};
 	};
 
 	/// Combines multiple potentials into a single potential. The complexity of this potential is the most complex of its constituents.
@@ -739,7 +739,7 @@ namespace Potentials {
 		void getVBare(double t, double * targ);
 		void getV(const double* rho, const std::complex<double> * psi, double t, double * targ);
 		void getVVirtual(const double* rho, const std::complex<double> * psi, double t, double * targ);
-		PotentialComplexity getComplexity();
+		PotentialComplexity getComplexity() const ;
 	};
 
 	/// Dynamically manages multiple potentials, combining them into a CompositePotential for evaluation.
@@ -774,7 +774,7 @@ namespace Potentials {
 		void getVBare(double t, double * targ);
 		void getV(const double* rho, const std::complex<double> * psi, double t, double * targ);
 		void getVVirtual(const double* rho, const std::complex<double> * psi, double t, double * targ);
-		PotentialComplexity getComplexity(){return myComplex;};
+		PotentialComplexity getComplexity() const {return myComplex;};
 	};
 
 	/**
@@ -808,6 +808,6 @@ namespace Potentials {
 			pot->getVVirtual(rho, psi, t, targ);
 			meas->measure((size_t)(t/maxT*numSteps), psi, rho, targ, t);
 		};
-		PotentialComplexity getComplexity(){return pot->getComplexity();};
+		PotentialComplexity getComplexity() const {return pot->getComplexity();};
 	};
 }

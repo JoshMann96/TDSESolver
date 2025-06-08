@@ -161,7 +161,7 @@ private:
 
 	/// Frees the memory contained in the psis multidimensional array.
 	void freePsis(){
-		for(int i = 0; i < 4; i++){
+		for(int i = 0; i < HISTORY_LENGTH; i++){
 			if(psis[i]){
 				sq_free(psis[i]);
 				psis[i] = nullptr;
@@ -175,7 +175,7 @@ private:
 	/// Calculate the weights. 
 	void calcWeights();
 
-	const int HISTORY_LENGTH = 4; // TODO: See how much history is necessary for each scheme (psi/pot/mea asynchronous vs pot/mea asynchronous vs only mea asynchronous)
+	static constexpr int HISTORY_LENGTH = 4;
 
 	ProgressTracker progTracker;
 

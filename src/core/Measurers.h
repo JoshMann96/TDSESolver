@@ -36,12 +36,12 @@ namespace Measurers {
 	class Measurer
 	{
 	protected:
-		bool needsDens = false;
+		const bool needsDens = false;
 		std::fstream fil;
 		static constexpr const char* ext = ".dat";
 		int index;
 		bool preambleWritten = false;
-	public:;
+	public:
 		/// Default constructor.
 		Measurer() = default;
 
@@ -146,13 +146,13 @@ namespace Measurers {
 		 * Gets the index of the measurer.
 		 * @return The index.
 		 */
-		int getIndex(){return index;};
+		int const getIndex(){return index;};
 
 		/**
 		 * Checks if the measurer requires that the density be calculated.
 		 * @return True if the density is needed, false if not.
 		 */
-		bool needsDensity(){return needsDens;};
+		bool const needsDensity(){return needsDens;};
 	};
 
 	/// Records a constant value to file.
@@ -824,7 +824,7 @@ namespace Measurers {
 	class DensityPlotter :
 		public Measurer {
 	private:
-		bool needsDens = true; // this measurer needs the density to be calculated
+		const bool needsDens = true; // this measurer needs the density to be calculated
 		
 		plotting::GNUPlotter* plotter=nullptr;
 		size_t nPts, stepsPerPlot;
