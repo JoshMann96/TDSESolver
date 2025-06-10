@@ -7,11 +7,14 @@
 #include <pybind11/pytypes.h>
 
 void init_Simulation(py::module &m) {
-    py::class_<SimulationManager>(m, "SimulationManager");
+    py::class_<SimulationManager>(m, "SimulationManager", R"V0G0N(
+        DO NOT USE DIRECTLY. C++ class for managing TDSE simulations.
+    )V0G0N");
 
     py::class_<PySimulation, SimulationManager>(m, "Simulation")
         .def(py::init<double, double, double, double, const std::optional<std::function<void(double)>>, std::optional<size_t>>(), R"V0G0N(
             Manages TDSE simulations.
+            This constructor initializes the simulation with a specified spatial range, step size, and time step.
 
             Parameters
             ----------
@@ -33,6 +36,54 @@ void init_Simulation(py::module &m) {
             -------
             Simulation)V0G0N",
             "xmin"_a, "xmax"_a, "dx"_a, "dt"_a, "callback"_a = py::none(), "numCallbackCalls"_a = 101)
+        .def(py::init<size_t, double, double, double, const std::optional<std::function<void(double)>>, std::optional<size_t>>(), R"V0G0N(
+            Manages TDSE simulations.
+            This constructor initializes the simulation with a specified number of grid points, left boundary position, step size, and time step.
+
+            Parameters
+            ----------
+            nPts : int
+                Number of grid points in the simulation.
+            xmin : float
+                Left boundary position.
+            dx : float
+                Spatial step size.
+            dt : float
+                Temporal step size.
+            callback : function
+                Callback function. Takes in a float between 0 and 1.0 for the progress of the present calculation. Default is None (no callback).
+            numCallbackCalls : int
+                Number of times to call the callback function. Default is 101.
+                The callback function will be called with doubles ranging from 0 to 1.0, inclusive.
+
+            Returns
+            -------
+            Simulation)V0G0N",
+            "nPts"_a, "xmin"_a, "dx"_a, "dt"_a, "callback"_a = py::none(), "numCallbackCalls"_a = 101)
+        .def(py::init<double, double, size_t, double, const std::optional<std::function<void(double)>>, std::optional<size_t>>(), R"V0G0N(
+            Manages TDSE simulations.
+            This constructor initializes the simulation with a specified spatial range, number of grid points, and time step.
+
+            Parameters
+            ----------
+            xmin : float
+                Left boundary position.
+            xmax : float
+                Right boundary position.
+            nPts : int
+                Number of grid points in the simulation.
+            dt : float
+                Temporal step size.
+            callback : function
+                Callback function. Takes in a float between 0 and 1.0 for the progress of the present calculation. Default is None (no callback).
+            numCallbackCalls : int
+                Number of times to call the callback function. Default is 101.
+                The callback function will be called with doubles ranging from 0 to 1.0, inclusive.
+
+            Returns
+            -------
+            Simulation)V0G0N",
+            "xmin"_a, "xmax"_a, "nPts"_a, "dt"_a, "callback"_a = py::none(), "numCallbackCalls"_a = 101)
         .def("getX", &PySimulation::getX)
         .def("getDX", &PySimulation::getDX)
         .def("getDT", &PySimulation::getDT)
@@ -129,6 +180,16 @@ void init_Simulation(py::module &m) {
             nkin : KineticOperator
                 Kinetic operator to be used.)V0G0N",
             "nkin"_a)
+        .def("setPsi", &PySimulation::setPsi, R"V0G0N(
+            Sets the wavefunction for the simulation.
+            The wavefunction must be of size nPts, where nPts is the number of grid points.
+            It is assumed that there is only one state.
+
+            Parameters
+            ----------
+            psi : complex array
+                Wavefunction to be set.)V0G0N",
+            "psi"_a)
         .def("addLeftAbsBdy", &PySimulation::addLeftAbsBdy, R"V0G0N(
             Adds absorptive boundary to left side of simulation.
             Decay is applied by multiplying states near boundary by a number of magnitude less than one.
@@ -187,9 +248,16 @@ void init_Simulation(py::module &m) {
             nSteps : uint
                 Number of steps to run the simulation for.
             scfIts : uint, optional
-                Number of self-consistent field iterations to perform. Default is 1.
-                Only used for nonlinear potentials with the CrankNicolson iterator.)V0G0N",
-            "nSteps"_a, "scfIts"_a = 1)
+                Number of self-consistent field iterations to perform. Default is 8.
+            scfTol : float, optional
+                Tolerance for the self-consistent field iterations. Default is 1e-6.
+            
+            SCF is only performed for nonlinear Crank-Nicolson calculations. The logic is as follows:
+            - If `scfTol > 0.0` (default behavior), SCF iterations continue until $\frac{\Delta t}{\hbar}\max_j{|V_j'-V_j|} < scfTol$ or if `scfIts` is reached.
+            - If `scfTol = 0.0` and `scfIts = 0`, no SCF iterations are performed.
+            - If `scfTol = 0.0` and `scfIts != 0`, SCF is performed for `scfIts` iterations.
+            )V0G0N",
+            "nSteps"_a, "scfIts"_a = 8, "scfTol"_a = 1e-6)
         .def("runEPS_U2TU", &PySimulation::runEPS_U2TU, R"V0G0N(
             Runs simulation using operator splitting method. Potential is not updated between kinetic operator propagation steps.)V0G0N",
             "nSteps"_a)
@@ -201,7 +269,7 @@ void init_Simulation(py::module &m) {
             "nSteps"_a)
         .def("runCN_NL", &PySimulation::runCN_NL, R"V0G0N(
             Runs simulation using Crank-Nicolson method. Potential is updated between kinetic operator propagation steps.)V0G0N",
-            "nSteps"_a, "scfIts"_a = 1)
+            "nSteps"_a, "scfIts"_a = 0, "scfTol"_a = 1e-6)
         .def("setNumCallbackCalls", &PySimulation::setNumCallbackCalls, R"V0G0N(
             Sets the number of times throughout a run that the callback function will be called.
 

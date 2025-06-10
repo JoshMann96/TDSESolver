@@ -606,10 +606,10 @@ namespace Potentials {
 		public Potential
 	{
 	protected:
-		size_t nPts, refPoint, * nElec, posMin, posMax, surfPos;
+		size_t nPts, refPoint, * nElec, posMin, posMax, surfPos, ghostPos;
 		double dx, rad, * origPot, * potTemp, * fieldScaler, *myRho, *dethin;
 		double originalCharge;
-		bool mimickOpenSystem;
+		int mimicOpenSystem, ghostCharge;
 		/**
 		 * Calculate the potential at time \a t.
 		 * @param rho (in) Density.
@@ -618,12 +618,13 @@ namespace Potentials {
 		 * @param targ (out) Array to store the potential.
 		 */
 		void calcPot(const double* rho, const std::complex<double>* psi, double t, double* targ);
-		CurrentIntegrator * curInt = nullptr;
+		CurrentIntegrator * curIntOpen = nullptr, *curIntGhost = nullptr;
 		double totalCharge;
 	public:
 		/**
 		 * Constructor. The surface position must be passed through #assemble. See #_assemble for details.
-		 * @param mimickOpenSystem If true, the charge is scaled to conserve the total charge, minus what leaves the right boundary.
+		 * @param mimicOpenSystem If nonzero, the charge is scaled to conserve the total charge, minus what leaves the selected boundary (-1 for left, 1 for right).
+		 * @param ghostCharge If nonzero, charge lost on either boundary is replaced by a "ghost" of itself to preserve total charge even in truly open systems. -1 for left, 1 for right, 0 for no ghost charge.
 		 * @param nPts Number of points.
 		 * @param dx Grid spacing.
 		 * @param rad Radius of the cylinder.
@@ -635,7 +636,7 @@ namespace Potentials {
 		 * @param posMax Maximum x (index) to apply the field.
 		 * @param refPoint Reference point (index) for the potential.
 		 */
-		PlanarToCylindricalHartree(bool mimickOpenSystem, size_t nPts, double dx, double rad, size_t surfPos, const size_t* nElec, double * const * weights,
+		PlanarToCylindricalHartree(int mimickOpenSystem, int ghostCharge, size_t nPts, double dx, double rad, size_t surfPos, const size_t* nElec, double * const * weights,
 			 const double* rho0, size_t posMin, size_t posMax, size_t refPoint);
 		~PlanarToCylindricalHartree();
 		void getVBare(double t, double* targ);
@@ -788,6 +789,7 @@ namespace Potentials {
 		Measurers::Measurer * meas;
 		size_t numSteps;
 		double maxT;
+		bool measureVirtual;
 	public:
 		/**
 		 * Constructor.
@@ -795,8 +797,9 @@ namespace Potentials {
 		 * @param meas The measurer to use.
 		 * @param numSteps Number of steps to measure.
 		 * @param maxT Maximum time to measure. This is used to find the present step index for the measurer.
+		 * @param measureVirtual If true, the potential is also measured during virtual steps.
 		 */
-		MeasuredPotential(Potential * pot, Measurers::Measurer * meas, size_t numSteps, double maxT) : pot(pot), meas(meas), numSteps(numSteps), maxT(maxT){};
+		MeasuredPotential(Potential * pot, Measurers::Measurer * meas, size_t numSteps, double maxT, bool measureVirtual) : pot(pot), meas(meas), numSteps(numSteps), maxT(maxT), measureVirtual(measureVirtual){};
 		
 		~MeasuredPotential(){};
 		void getVBare(double t, double * targ){pot->getVBare(t, targ);};
@@ -806,7 +809,8 @@ namespace Potentials {
 		};
 		void getVVirtual(const double* rho, const std::complex<double> * psi, double t, double * targ){
 			pot->getVVirtual(rho, psi, t, targ);
-			meas->measure((size_t)(t/maxT*numSteps), psi, rho, targ, t);
+			if(measureVirtual)
+				meas->measure((size_t)(t/maxT*numSteps), psi, rho, targ, t);
 		};
 		PotentialComplexity getComplexity() const {return pot->getComplexity();};
 	};

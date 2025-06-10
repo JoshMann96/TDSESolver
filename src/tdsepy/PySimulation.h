@@ -11,13 +11,23 @@ class PySimulation
     : public SimulationManager {
     private:
         char* wisdomFile = new char[50];
-    public:
-        PySimulation(double xmin, double xmax, double dx, double dt, const std::optional<std::function<void(double)>> &callback, std::optional<size_t> numCallbackCalls)
-            : SimulationManager(xmin, xmax, dx, dt, callback.has_value() ? callback.value() : nullptr, numCallbackCalls.has_value() ? numCallbackCalls.value() : 101){
-			    std::snprintf(wisdomFile, 50, "fftw_nt_%04d.wisdom", omp_get_max_threads());
+        void initFFTW(){
+            std::snprintf(wisdomFile, 50, "fftw_nt_%04d.wisdom", omp_get_max_threads());
                 fftw_init_threads();
 				fftw_import_wisdom_from_filename(wisdomFile);
         }
+    public:
+        PySimulation(double xmin, double xmax, double dx, double dt, const std::optional<std::function<void(double)>> &callback, std::optional<size_t> numCallbackCalls)
+            : SimulationManager(xmin, xmax, dx, dt, callback.has_value() ? callback.value() : nullptr, numCallbackCalls.has_value() ? numCallbackCalls.value() : 101)
+            {initFFTW();}
+
+        PySimulation(size_t nPts, double xmin, double dx, double dt, const std::optional<std::function<void(double)>> &callback, std::optional<size_t> numCallbackCalls)
+            : SimulationManager(nPts, xmin, dx, dt, callback.has_value() ? callback.value() : nullptr, numCallbackCalls.has_value() ? numCallbackCalls.value() : 101)
+            {initFFTW();}
+        
+        PySimulation(double xmin, double xmax, size_t nPts, double dt, const std::optional<std::function<void(double)>> &callback, std::optional<size_t> numCallbackCalls)
+            : SimulationManager(xmin, xmax, nPts, dt, callback.has_value() ? callback.value() : nullptr, numCallbackCalls.has_value() ? numCallbackCalls.value() : 101)
+            {initFFTW();}
 
         ~PySimulation(){
             fftw_export_wisdom_to_filename(wisdomFile);
@@ -55,6 +65,13 @@ class PySimulation
             } catch (const std::runtime_error &e) {
                 throw py::value_error(e.what());
             }
+        }
+
+        void setPsi(const py::array_t<std::complex<double>, py::array::c_style | py::array::forcecast> &psi){
+            if (psi.size() != getNumPoints()) {
+                throw py::value_error("Wavefunction size does not match the number of grid points and states.");
+            }
+            SimulationManager::setPsi(psi.data());
         }
 
         std::vector<double> getV(){

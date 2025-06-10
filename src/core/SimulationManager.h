@@ -40,8 +40,7 @@ public:
 	inline cyclic_int operator+(int n) { cyclic_int c(max); c.val = (val + n) % max; return c; };
 	inline cyclic_int& operator+=(T n) { val = (val + n) % max; return *this; };
 	inline cyclic_int& operator=(T n) { val = n % max; return *this; };
-	inline operator int() const { return val; };
-	inline operator long() const { return val; };
+	inline operator size_t() const { return val; };
 };
 
 /// Tool for tracking progress, calling a callback function wit the current progress (as a double) of the current run call.
@@ -109,7 +108,8 @@ private:
 	double *ts, *x, dt, dx;
 	double **vs, **rhos, *spatialDamp;
 	size_t nPts, nElec;
-	bool calcDensity = false;
+	bool calcDensityForPot = false;
+	bool calcDensityForMeas = false;
 	cyclic_int<size_t> index;
 	size_t* step;
 	std::complex<double> *scratch1, *scratch2;
@@ -156,6 +156,14 @@ private:
 	 * @return Time in microseconds taken to perform the measurement.
 	 */
 	size_t measure(int idx);
+
+	/**
+	 * Helper function for nonlinear Crank-Nicolson SCF iterations for updating the mean potential.
+	 * Accounts for the possibile usage of GPU acceleration.
+	 * @param kin_cn The Crank-Nicolson kinetic operator to be used for the SCF iterations.
+	 * @param meanPot The array to store the mean potential. It should be of size nPts.
+	 */
+    void updateMeanPotCNNL(KineticOperators::CrankNicolson *kin_cn, double *meanPot);
 
 	std::complex<double> **psis;
 
@@ -313,29 +321,43 @@ public:
 	 * Runs the simulation for \a nSteps iterations.
 	 * This function evaluates the type of KineticOperator and Potential and calls the appropriate run function.
 	 * @param nSteps The number of steps to run the simulation for.
-	 * @param scfIts The number of self-consistent field iterations to perform. Presently only applies to nonlinear Crank-Nicolson calculations. Default is 1.
+	 * @param scfIts The number of self-consistent field iterations to perform. Presently only applies to nonlinear Crank-Nicolson calculations. Default is 8.
+	 * @param scfTol The tolerance for the self-consistent field iterations. Default is 1e-6.
 	 * @throw std::runtime_error if the kinetic operator is not a valid type.
 	 * @details If the kinetic operator is the KineticOperators::CrankNicolson method, it will call #runCN_L for linear potentials or #runCN_NL for nonlinear potentials.
 	 * If the kinetic operator is a pseudospectral method (KineticOperators::KineticOperator_PSM), it will call #runEPS_U2TU for linear potentials or #runEPS_UW2TUW for nonlinear potentials.
+	 * 
+	 * For nonlinear potentials with the Crank-Nicolson method, SCF logic is as follows:
+	 * If \a scfTol > 0.0 (default behavior) then SCF iterations continue until $\frac{\Delta t}{\hbar}\max_j{|V_j'-V_j|} < scfTol$ or if \a scfIts is reached.
+	 * If \a scfTol = 0.0 and scfIts = 0 then no SCF iterations are performed.
+	 * If \a scfTol = 0.0 and scfIts != 0 then SCF is performed for \a scfIts iterations.
 	 */
-	void run(size_t nSteps, size_t scfIts = 1){
+	void run(size_t nSteps, size_t scfIts = 8, double scfTol = 1e-6) {
 		// is the kinetic operator Crank-Nicolson?
 		KineticOperators::CrankNicolson* kin_fdm = dynamic_cast<KineticOperators::CrankNicolson*>(kin);
 		if(kin_fdm != nullptr){
-			if (canAsyncCalcPot())
+			if (canAsyncCalcPot()){
+				std::cout << "SimulationManager::run: Using linear Crank-Nicolson." << std::endl;
 				runCN_L(nSteps);
-			else
-				runCN_NL(nSteps, scfIts);
+			}
+			else{
+				std::cout << "SimulationManager::run: Using nonlinear Crank-Nicolson." << std::endl;
+				runCN_NL(nSteps, scfIts, scfTol);
+			}
 			return;
 		}
 
 		// is the kinetic operator [explicit] pseudospectral?
 		KineticOperators::KineticOperator_PSM* kin_ps = dynamic_cast<KineticOperators::KineticOperator_PSM*>(kin);
 		if(kin_ps != nullptr){
-			if (canAsyncCalcPot())
+			if (canAsyncCalcPot()){
+				std::cout << "SimulationManager::run: Using linear explicit pseudospectral method." << std::endl;
 				runEPS_U2TU(nSteps);
-			else
+			}
+			else{
+				std::cout << "SimulationManager::run: Using nonlinear explicit pseudospectral method." << std::endl;
 				runEPS_UW2TUW(nSteps);
+			}
 			return;
 		}
 		
@@ -374,11 +396,17 @@ public:
 	 * The potential is then recalculated using the new wavefunction, and the average is then taken.
 	 * Only measurements are done with task parallelism.
 	 * @param nSteps The number of steps to run the simulation for.
-	 * @param scfIts The number of self-consistent field iterations to perform. Default is 1.
+	 * @param scfIts The number of self-consistent field iterations to perform. Default is 8.
+	 * @param scfTol The tolerance for the self-consistent field iterations. Default is 1e-6.
+	 * 
+	 * @details
+	 * If \a scfTol > 0.0 (default behavior) then SCF iterations continue until $\frac{\Delta t}{\hbar}\max_j{|V_j'-V_j|} < scfTol$ or if \a scfIts is reached.
+	 * If \a scfTol = 0.0 and scfIts = 0 then no SCF iterations are performed.
+	 * If \a scfTol = 0.0 and scfIts != 0 then SCF is performed for \a scfIts iterations.
 	 */
-	void runCN_NL(size_t nSteps, size_t scfIts = 1);
+    void runCN_NL(size_t nSteps, size_t scfIts = 8, double scfTol = 1e-6);
 
-	/**
+    /**
 	 * Finds the eigenstates of the system using the given energy range.
 	 * Nonlinear potentials assume a neutral charge distribution -- this function does not find a self-consistent solution.
 	 * @param emin The minimum energy of the eigenstates to be found.
@@ -398,11 +426,11 @@ public:
 	void findInhomogeneousEigenStates(size_t nElec, const double* energies);
 
 	/**
-	 * Sets the wavefunction to be used in the simulation. If nElec is not set, it will assume there is only 1 electron.
+	 * Sets the wavefunction to be used in the simulation. If nElec is not set, it will assume there is only 1 state.
 	 * @param npsi The wavefunction to be used in the simulation.
 	 * @param norm The normalization scheme to be used for the wavefunction. Default is Densities::UNNORMALIZED.
 	 */
-	void setPsi(std::complex<double>* npsi, Densities::NormalizationScheme norm = Densities::UNNORMALIZED);
+	void setPsi(const std::complex<double>* npsi, Densities::NormalizationScheme norm = Densities::UNNORMALIZED);
 
 	/// Iterates the simulation index.
 	void iterateIndex();
@@ -455,7 +483,7 @@ public:
 	 */
 	double* getRho() {
 		assert(wavefunctionInitialized);
-		if(!calcDensity)
+		if(!calcDensityForPot)
 			if(!dens)
 				throw std::runtime_error("SimulationManager::getRho: Density not set!");
 			else
@@ -496,7 +524,7 @@ public:
 	 * Determines if the potential can be calculated asynchronously (if it is linear).
 	 * @return True if the potential can be calculated asynchronously, false otherwise.
 	 */
-	bool canAsyncCalcPot() const { return pot->getComplexity() != Potentials::PotentialComplexity::WAVEFUNCTION_DEPENDENT; }
+	bool canAsyncCalcPot() const { return !calcDensityForPot; }
 
 	/**
 	 * Returns a pointer to the weights in the simulation.

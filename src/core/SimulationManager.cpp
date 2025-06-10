@@ -71,13 +71,13 @@ SimulationManager::~SimulationManager()
 void SimulationManager::addMeasurer(Measurers::Measurer* m) {
 	meas->addMeasurer(m);
 	if (m->needsDensity())
-		calcDensity = true;
+		calcDensityForMeas = true;
 }
 
 void SimulationManager::addPotential(Potentials::Potential* p) {
 	pot->addPotential(p);
 	if(p->getComplexity() == Potentials::PotentialComplexity::WAVEFUNCTION_DEPENDENT)
-		calcDensity = true;
+		calcDensityForPot = true;
 }
 
 void SimulationManager::addSpatialDamp(const double* arr) {
@@ -128,6 +128,8 @@ void SimulationManager::calcWeights(){
 }
 
 void SimulationManager::findEigenStates(double emin, double emax) {
+	assert(wavefunctionInitialized == false);
+
 	normScheme = Densities::NormalizationScheme::NORMALIZED;
 	
 	pot->getVBare(0.0, vs[index]);
@@ -154,7 +156,7 @@ void SimulationManager::findEigenStates(double emin, double emax) {
 	wavefunctionInitialized = true;
 
 	calcWeights();
-	if(calcDensity){
+	if(calcDensityForPot){
 		if(dens == nullptr)
 			throw std::runtime_error("SimulationManager::findEigenStates: Density not set!");
 		dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
@@ -162,6 +164,8 @@ void SimulationManager::findEigenStates(double emin, double emax) {
 }
 
 void SimulationManager::findInhomogeneousEigenStates(size_t nElec, const double* energies){
+	assert(wavefunctionInitialized == false);
+
 	KineticOperators::KineticOperator_FDM* kin_fdm = dynamic_cast<KineticOperators::KineticOperator_FDM*>(kin);
 	if(kin_fdm == nullptr)
 		throw std::runtime_error("SimulationManager::findInhomogeneousEigenStates: Kinetic operator is not a finite difference method!");
@@ -195,7 +199,7 @@ void SimulationManager::findInhomogeneousEigenStates(size_t nElec, const double*
 		sq_free(realWfcs);
 		throw e;
 	}
-	if(calcDensity){
+	if(calcDensityForPot){
 		if(dens == nullptr)
 			throw std::runtime_error("SimulationManager::findInhomogeneousEigenStates: Density not set!");
 		dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
@@ -204,22 +208,24 @@ void SimulationManager::findInhomogeneousEigenStates(size_t nElec, const double*
 	normScheme = Densities::NormalizationScheme::UNNORMALIZED;
 }
 
-void SimulationManager::setPsi(std::complex<double>* npsi, Densities::NormalizationScheme norm) {
+void SimulationManager::setPsi(const std::complex<double>* npsi, Densities::NormalizationScheme norm) {
+	assert(wavefunctionInitialized == false);
+	
 	normScheme = norm;
 
-	if (!nElec) {
-		nElec = 1;
-		freePsis();
-		for (size_t i = 0; i < HISTORY_LENGTH; i++) {
-			psis[i] = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts);
-		}
+	nElec = 1;
+	freePsis();
+	for (size_t i = 0; i < HISTORY_LENGTH; i++) {
+		psis[i] = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts);
+		vtls::copyArray(nPts, npsi, psis[i]);
 	}
-	vtls::copyArray(nPts, npsi, psis[index]);
 
 	if(normScheme == Densities::NormalizationScheme::NORMALIZED)
 		vtls::normalizeSqrNorm(nPts, psis[index], dx);
 
-	if(calcDensity){
+	calcWeights();
+
+	if(calcDensityForPot){
 		if(dens == nullptr)
 			throw std::runtime_error("SimulationManager::setPsi: Density not set!");
 		dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
@@ -230,7 +236,7 @@ void SimulationManager::setPsi(std::complex<double>* npsi, Densities::Normalizat
 
 size_t SimulationManager::calculatePotential(double* rho, const std::complex<double>* psi, double t, double* v, bool virt){
 	auto strt = std::chrono::high_resolution_clock::now();
-	if(calcDensity){
+	if(calcDensityForPot){
 		if(dens == nullptr)
 			throw std::runtime_error("SimulationManager::calculatePotential: Density not set!");
 		dens->calcRho(nPts, nElec, dx, weights, psi, rho);
@@ -263,6 +269,11 @@ size_t SimulationManager::calculatePotentialFromRawRho(double* rho, const std::c
 size_t SimulationManager::updatePotential(int idx, bool virt) {return calculatePotential(rhos[idx], psis[idx], ts[idx], vs[idx], virt);}
 
 size_t SimulationManager::measure(int idx) {
+	if(calcDensityForMeas && !calcDensityForPot) { // if density is measured but it wasn't already calculated for potential
+		if(dens == nullptr)
+			throw std::runtime_error("SimulationManager::measure: Density not set!");
+		dens->calcRho(nPts, nElec, dx, weights, psis[idx], rhos[idx]);
+	}
 	auto strt = std::chrono::high_resolution_clock::now();
 	meas->measure(step[idx], psis[idx], rhos[idx], vs[idx], ts[idx]);
 	auto end = std::chrono::high_resolution_clock::now();
@@ -400,7 +411,7 @@ void SimulationManager::runCN_L(size_t nSteps){
 
 	bool asyncCalc = canAsyncCalcPot();
 	if(!asyncCalc)
-		std::cout << "Warning: Potential is not wavefunction independent! It is recommended to use runCN_NL to more accurately account for the nonlinearity." << std::endl;
+		std::cerr << "Warning: Potential is not wavefunction independent! It is recommended to use runCN_NL to more accurately account for the nonlinearity." << std::endl;
 
 	for(size_t i = 0; i < nSteps; i++){
 		// evaluate potential n+1 (n is already calculated)
@@ -424,7 +435,7 @@ void SimulationManager::runCN_L(size_t nSteps){
 
 		// evalute n->n+1
 		kin_cn->step(psis[index], meanPot, spatialDamp, psis[index+1], nElec);
-		
+
 		// measure step n while n+1->n+2 begins
 		if(i != 0)
 			fM.get();
@@ -450,7 +461,7 @@ void SimulationManager::runCN_L(size_t nSteps){
 	sq_free(meanPot);
 }
 
-void SimulationManager::runCN_NL(size_t nSteps, size_t scfIts){
+void SimulationManager::runCN_NL(size_t nSteps, size_t scfIts, double scfTol){
 	assert(wavefunctionInitialized);
 	
 	KineticOperators::CrankNicolson* kin_cn = dynamic_cast<KineticOperators::CrankNicolson*>(kin);
@@ -463,6 +474,8 @@ void SimulationManager::runCN_NL(size_t nSteps, size_t scfIts){
 
 	double* meanPot = (double*) sq_malloc(sizeof(double) * nPts);
 
+	double* oldPot = (double*) sq_malloc(sizeof(double) * nPts); // for auto SCF convergence
+
 	// initialize progress tracker
 	progTracker.reset(nSteps);
 
@@ -471,26 +484,41 @@ void SimulationManager::runCN_NL(size_t nSteps, size_t scfIts){
 		updatePotential(index, false);
 		
 		// SCF iterations
-		for(size_t j = 0; j < scfIts; j++){
-			// estimate the wavefunction at the next step using the present potential (virtual step)
-			if(j == 0) // first iteration, use the present potential
-				kin_cn->stepVirtual(psis[index], vs[index], spatialDamp, psis[index+1], nElec);
-			else // subsequent iterations, use the averaged potential
-				kin_cn->stepVirtual(psis[index], meanPot, spatialDamp, psis[index+1], nElec);
+		if(scfTol == 0.0 && scfIts != 0){ // explicit number of SCF iterations
+			for(size_t j = 0; j < scfIts; j++){
+				// estimate the wavefunction at the next step using the present potential (virtual step)
+				if(j == 0) // first iteration, use the present potential
+					kin_cn->stepVirtual(psis[index], vs[index], spatialDamp, psis[index+1], nElec);
+				else // subsequent iterations, use the averaged potential
+					kin_cn->stepVirtual(psis[index], meanPot, spatialDamp, psis[index+1], nElec);
 
-			// evaluate estimated potential n+1, virtual step
-			// try to calculate the raw density from the device then post-process, otherwise calculate rho normally
-			if (kin_cn->calcRawRhoByDevice(weights, rhos[index + 1], true)) // if the device can calculate raw density
-				calculatePotentialFromRawRho(rhos[index + 1], psis[index + 1], ts[index] + dt, vs[index+1], true);
-			else // otherwise calculate density on CPU
-				updatePotential(index + 1, true);
-
-			// averaged potential
-			vtls::averageArrays(nPts, vs[index], vs[index + 1], meanPot);
+                updateMeanPotCNNL(kin_cn, meanPot);
+            }
 		}
+		else if(scfTol > 0.0){ // automatic SCF convergence up to scfIts, if scfIts = 0 then no limit
+			size_t totalSCFIts = 0;
+			size_t errPrints = 0;
+			vtls::copyArray(nPts, vs[index], meanPot);
+			do{
+				vtls::copyArray(nPts, meanPot, oldPot);
+				kin_cn->stepVirtual(psis[index], meanPot, spatialDamp, psis[index + 1], nElec);
+				updateMeanPotCNNL(kin_cn, meanPot);
+				totalSCFIts++;
+			} while(( !scfIts || totalSCFIts < scfIts) && vtls::testMaxAbsDiffExceedsThresh(nPts, meanPot, oldPot, scfTol * PhysCon::hbar / dt));
+			if(i % 100 == 0)
+				std::cout << "SCF converged after " << totalSCFIts << " iterations." << std::endl;
+			if(errPrints < 10 && totalSCFIts == scfIts){
+				vtls::averageArrays(nPts, oldPot, meanPot); // average the last two potentials to avoid possible oscillations
+				std::cerr << "Warning: SCF did not converge after " << scfIts << " iterations! Using averaged potential of last two steps." << std::endl;
+				errPrints++;
+				if(errPrints == 10)
+					std::cerr << "Further warnings will not be printed." << std::endl;
+			}
+		}
+		else {} // no SCF, explicit potential step
 
 		// true step n -> n+1
-		if (scfIts == 0) // no SCF, use present potential
+		if (scfIts == 0 && scfTol == 0.0) // no SCF, use present potential
 			kin_cn->step(psis[index], vs[index], spatialDamp, psis[index + 1], nElec);
 		else // use SCF potential
 			kin_cn->step(psis[index], meanPot, spatialDamp, psis[index + 1], nElec);
@@ -515,6 +543,19 @@ void SimulationManager::runCN_NL(size_t nSteps, size_t scfIts){
 	sq_free(meanPot);
 
 	progTracker.update(nSteps);
+}
+
+void SimulationManager::updateMeanPotCNNL(KineticOperators::CrankNicolson *kin_cn, double *meanPot)
+{
+    // evaluate estimated potential n+1, virtual step
+    // try to calculate the raw density from the device then post-process, otherwise calculate rho normally
+    if (kin_cn->calcRawRhoByDevice(weights, rhos[index + 1], true)) // if the device can calculate raw density
+        calculatePotentialFromRawRho(rhos[index + 1], psis[index + 1], ts[index] + dt, vs[index + 1], true);
+    else // otherwise calculate density on CPU
+        updatePotential(index + 1, true);
+
+    // averaged potential
+    vtls::averageArrays(nPts, vs[index], vs[index + 1], meanPot);
 }
 
 void SimulationManager::iterateIndex() {

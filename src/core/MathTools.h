@@ -453,6 +453,24 @@ namespace vtls {
 	}
 
 	/**
+	 * Adds a scalar multiple of one array to another array, storing the result in a target array.
+	 * @tparam T The type of the scalar.
+	 * @tparam U The type of the first array.
+	 * @tparam V The type of the second array.
+	 * @tparam W The type of the target array.
+	 * @param len The length of the arrays.
+	 * @param scalar The scalar value to multiply the first array by.
+	 * @param arr1 (in) The first array, which will be multiplied by the scalar.
+	 * @param arr2 (in) The second array, which will be added to the scaled first array.
+	 * @param targ (out) The target array to store the result.
+	 */
+	template <typename T, typename U, typename V, typename W>
+	void scaMulAddArrays(size_t len, T scalar, const U* __restrict arr1, const V* __restrict arr2, W* __restrict targ) {
+		for (size_t i = 0; i < len; i++)
+			targ[i] = arr1[i] * scalar + arr2[i];
+	}
+
+	/**
 	 * Adds two arrays together, storing the result in a third array.
 	 * @tparam T The type of the first array.
 	 * @tparam U The type of the second array.
@@ -953,6 +971,23 @@ namespace vtls {
 			if (arr[i] < mn)
 				mn = arr[i];
 		return mn;
+	}
+
+	/**
+	 * Tests if the maximum absolute difference between two arrays exceeds a specified threshold.
+	 * @tparam T The type of the array elements.
+	 * @param len The length of the arrays.
+	 * @param arr1 (in) The first array to compare.
+	 * @param arr2 (in) The second array to compare.
+	 * @param maxDiff The maximum allowed absolute difference.
+	 * @return True if the maximum absolute difference exceeds maxDiff, false otherwise.
+	 */
+	template <typename T>
+	bool testMaxAbsDiffExceedsThresh(size_t len, const T* __restrict arr1, const T* __restrict arr2, decltype(std::abs(std::declval<T&>())) maxDiff) {
+		for (size_t i = 0; i < len; i++)
+			if (std::abs(arr1[i] - arr2[i]) > maxDiff)
+				return true;
+		return false;
 	}
 
 	/**

@@ -403,6 +403,7 @@ void init_Measurers(py::module &m) {
         }), R"V0G0N(
             Virtual detector which measures the bidirectional flux spectrum of the state passing through a point for each state.
             Useful for obtaining electron emission spectra without saving the entire wavefunction history.
+            This is the BWVD (Bidirection Wave Virtual Detector) from Joshua Mann's thesis.
 
             Parameters
             ----------
@@ -481,8 +482,8 @@ void init_Measurers(py::module &m) {
             "sim"_a, "meaT"_a, "vdNum"_a, "name"_a, "fol"_a);
     
     py::class_<DensityPlotter, Measurer, std::unique_ptr<DensityPlotter, py::nodelete>>(m, "DensityPlotter")
-        .def(py::init([](SimulationManager* sim, int stepsPerPlot, bool pause){
-            return std::unique_ptr<DensityPlotter, py::nodelete>(new DensityPlotter(sim->getNumPoints(), sim->getNElecPtr(), sim->getDX(), sim->getX(), sim->getDensity(), sim->getWeightsPtr(), stepsPerPlot, pause));
+        .def(py::init([](SimulationManager* sim, bool plotChange, int stepsPerPlot, bool pause){
+            return std::unique_ptr<DensityPlotter, py::nodelete>(new DensityPlotter(sim->getNumPoints(), sim->getNElecPtr(), sim->getDX(), sim->getX(), sim->getDensity(), sim->getWeightsPtr(), plotChange, stepsPerPlot, pause));
         }), R"V0G0N(
             Plots the density of the wavefunction with a gnuplot window as the simulation runs.
 
@@ -490,6 +491,8 @@ void init_Measurers(py::module &m) {
             ----------
             sim : Simulation
                 Associated simulation.
+            plotChange : bool
+                Whether to plot the change in density (i.e. the difference between the current and initial density) instead of the absolute density.
             stepsPerPlot : int
                 Number of steps between plots.
             pause : bool
@@ -498,7 +501,7 @@ void init_Measurers(py::module &m) {
             Returns
             -------
             DensityPlotter)V0G0N",
-            "sim"_a, "stepsPerPlot"_a, "pause"_a);
+            "sim"_a, "plotChange"_a, "stepsPerPlot"_a, "pause"_a);
     
     py::class_<PotentialPlotter, Measurer, std::unique_ptr<PotentialPlotter, py::nodelete>>(m, "PotentialPlotter")
         .def(py::init([](SimulationManager* sim, int stepsPerPlot, bool pause){

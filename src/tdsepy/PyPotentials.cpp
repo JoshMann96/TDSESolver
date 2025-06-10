@@ -266,9 +266,9 @@ void init_Potentials(py::module &m) {
             "sim"_a, "ef"_a, "w"_a, "rad"_a, "posMin"_a, "posMax"_a, "surfPos"_a, "refPoint"_a);
 
     py::class_<PlanarToCylindricalHartree,Potential>(m, "PlanarToCylindricalHartreePotential")
-        .def(py::init([](SimulationManager* sim, bool mimickOpenSystem, double rad, double posMin, double posMax, double surfPos, double refPoint){
+        .def(py::init([](SimulationManager* sim, int mimickOpenSystem, int ghostCharge, double rad, double posMin, double posMax, double surfPos, double refPoint){
             return std::unique_ptr<PlanarToCylindricalHartree>(new PlanarToCylindricalHartree(
-                mimickOpenSystem, sim->getNumPoints(), sim->getDX(), rad, sim->findXIdx(surfPos), sim->getNElecPtr(), sim->getWeightsPtr(), sim->wavefunctionIsInitialized() ? sim->getRho() : nullptr, sim->findXIdx(posMin), sim->findXIdx(posMax), sim->findXIdx(refPoint)
+                mimickOpenSystem, ghostCharge, sim->getNumPoints(), sim->getDX(), rad, sim->findXIdx(surfPos), sim->getNElecPtr(), sim->getWeightsPtr(), sim->wavefunctionIsInitialized() ? sim->getRho() : nullptr, sim->findXIdx(posMin), sim->findXIdx(posMax), sim->findXIdx(refPoint)
             ));
         }), R"V0G0N(
             Nonlocal Hartree potential assuming charge is distributed on a planar geometry for x <= surfPos 
@@ -283,9 +283,10 @@ void init_Potentials(py::module &m) {
             ----------
             sim : Simulation
                 Associated simulation.
-            mimickOpenSystem : bool
-                If true, the charge is scaled to conserve the total charge, minus what leaves the left boundary at posMax.
-                This can only be used if the density/wavefunction is initialized.
+            mimickOpenSystem : int
+                If nonzero, the charge is scaled to conserve the total charge, minus what leaves the selected boundary (-1 for left, 1 for right).
+            ghostCharge : int
+                If nonzero, charge lost on either boundary is replaced by a "ghost" of itself to preserve total charge even in truly open systems. -1 for left, 1 for right, 0 for no ghost charge.
             rad : float
                 Cylinder radius of curvature.
             posMin : float
@@ -300,7 +301,7 @@ void init_Potentials(py::module &m) {
             Returns
             -------
             PlanarToCylindricalHartreePotential)V0G0N",
-            "sim"_a, "mimickOpenSystem"_a, "rad"_a, "posMin"_a, "posMax"_a, "surfPos"_a, "refPoint"_a);
+            "sim"_a, "mimickOpenSystem"_a, "ghostCharge"_a, "rad"_a, "posMin"_a, "posMax"_a, "surfPos"_a, "refPoint"_a);
     
     py::class_<PlanarHartree, Potential>(m, "PlanarHartreePotential")
         .def(py::init([](SimulationManager* sim, double refPoint){
@@ -351,9 +352,9 @@ void init_Potentials(py::module &m) {
             "sim"_a, "typ"_a, "refPoint"_a);
     
     py::class_<MeasuredPotential, Potential>(m, "MeasuredPotential")
-        .def(py::init([](SimulationManager* sim, Potential* pot, Measurers::Measurer* meas, size_t numSteps){
+        .def(py::init([](SimulationManager* sim, Potential* pot, Measurers::Measurer* meas, size_t numSteps, bool measureVirtual){
             return std::unique_ptr<MeasuredPotential>(new MeasuredPotential(
-                pot, meas, numSteps, numSteps*sim->getDT()
+                pot, meas, numSteps, numSteps*sim->getDT(), measureVirtual
             ));
         }), py::keep_alive<1,3>(), py::keep_alive<1,4>(), R"V0G0N(
             A potential which is also measured when it is called.
@@ -369,11 +370,14 @@ void init_Potentials(py::module &m) {
                 Measurer to use.
             numSteps : uint
                 Number of time steps to measure.
+            measureVirtual : bool
+                If true, the potential is also measured during virtual steps (i.e., when getVVirtual is called).
+                Defaults to false.
 
             Returns
             -------
             MeasuredPotential)V0G0N",
-            "sim"_a, "pot"_a, "meas"_a, "numSteps"_a);
+            "sim"_a, "pot"_a, "meas"_a, "numSteps"_a, "measureVirtual"_a = false);
             
     py::enum_<LDAFunctionalType>(m, "LDAFunctionalType")
         .value("X_SLATER", LDAFunctionalType::X_SLATER)

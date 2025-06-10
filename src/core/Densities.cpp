@@ -119,6 +119,9 @@ namespace Densities {
 	}
 
 	void Density::calcRawRho(size_t nPts, size_t nElec, const double* weights, const std::complex<double>* psi, double* psi2_work, double* rho){
+		if (!psi2_work) 
+			psi2_work = (double*)sq_malloc(sizeof(double) * nPts * nElec);
+			
 		std::fill_n(rho, nPts, 0);
 		vtls::normSqr(nPts * nElec, psi, psi2_work);
 		for (size_t i = 0; i < nElec; i++) {

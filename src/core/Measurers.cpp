@@ -660,19 +660,36 @@ namespace Measurers {
 	}
 
 
-	DensityPlotter::DensityPlotter(size_t nPts, const size_t *nElec, double dx, const double *xs, Densities::Density *const dens, double * const * wght, size_t stepsPerPlot, bool pause):
+	DensityPlotter::DensityPlotter(size_t nPts, const size_t *nElec, double dx, const double *xs, Densities::Density *const dens, double * const * wght, bool plotChange, size_t stepsPerPlot, bool pause):
 		nPts(nPts), nElec(nElec), dens(dens), wght(wght), dx(dx), xs(xs), pause(pause), stepsPerPlot(stepsPerPlot)
 	{
+		if(plotChange){
+			rho0 = (double*) sq_malloc(sizeof(double)*nPts);
+			tempRho = (double*) sq_malloc(sizeof(double)*nPts);
+		}
 		plotter = new plotting::GNUPlotter();
 	}
 
 	DensityPlotter::~DensityPlotter(){
+		if(rho0)
+			sq_free(rho0);
+		if(tempRho)
+			sq_free(tempRho);
 		delete plotter;
 	}
 	
 	MeasurerStatus DensityPlotter::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t){
 		if(step%stepsPerPlot == 0){
-			plotter->update(nPts, 1, xs, rho);
+			if(rho0){ // plot difference
+				if(first){
+					vtls::copyArray(nPts, rho, rho0);
+					first = false;
+				}
+				vtls::scaMulAddArrays(nPts, -1.0, rho0, rho, tempRho);
+				plotter->update(nPts, 1, xs, tempRho);
+			}
+			else
+				plotter->update(nPts, 1, xs, rho);
 
 			if(pause)
 				std::cin.get();

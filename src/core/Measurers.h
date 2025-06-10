@@ -36,7 +36,6 @@ namespace Measurers {
 	class Measurer
 	{
 	protected:
-		const bool needsDens = false;
 		std::fstream fil;
 		static constexpr const char* ext = ".dat";
 		int index;
@@ -146,13 +145,13 @@ namespace Measurers {
 		 * Gets the index of the measurer.
 		 * @return The index.
 		 */
-		int const getIndex(){return index;};
+		int getIndex() const {return index;};
 
 		/**
 		 * Checks if the measurer requires that the density be calculated.
 		 * @return True if the density is needed, false if not.
 		 */
-		bool const needsDensity(){return needsDens;};
+		virtual bool needsDensity() const {return false;};
 	};
 
 	/// Records a constant value to file.
@@ -559,6 +558,7 @@ namespace Measurers {
 	 * This is a memory and disk friendly method of recording the flux spectrum. The discrete Fourier transform is updated at each step, and only saved at the end.
 	 * Applies a temporal Tukey window (alpha = 0.05) according to the maximum time provided.
 	 * Output file is {vdNum}fluxspecvd.dat.
+	 * This is the "Bidirectional Wave Virtual Detector" in Joshua Mann's thesis.
 	 */
 	class VDFluxSpec :
 		public Measurer {
@@ -824,16 +824,15 @@ namespace Measurers {
 	class DensityPlotter :
 		public Measurer {
 	private:
-		const bool needsDens = true; // this measurer needs the density to be calculated
-		
 		plotting::GNUPlotter* plotter=nullptr;
 		size_t nPts, stepsPerPlot;
 		const size_t* nElec;
 		Densities::Density *const dens;
 		double *const*wght;
 		const double *xs;
+		double* rho0 = nullptr, *tempRho = nullptr; // initial density, used for plotting change in density
 		double dx;
-		bool pause;
+		bool pause, first=true;
 	public:
 		
 
@@ -845,13 +844,16 @@ namespace Measurers {
 		 * @param xs (in) The array of spatial positions.
 		 * @param dens (in) The density calculator object.
 		 * @param wght (in) Pointer to the weights of the wave functions.
+		 * @param plotChange Whether to plot the change in density (i.e. the difference between the current and initial density) instead of the absolute density. Default is false.
 		 * @param stepsPerPlot The number of time steps to wait before updating the plot. Default is 1.
 		 * @param pause Whether to pause and wait for user input after each plot. Default is true.
 		 */
-		DensityPlotter(size_t nPts, const size_t* nElec, double dx, const double* xs, Densities::Density *const dens, double * const * wght, size_t stepsPerPlot=1, bool pause=true);
+		DensityPlotter(size_t nPts, const size_t* nElec, double dx, const double* xs, Densities::Density *const dens, double * const * wght, bool plotChange = false, size_t stepsPerPlot=1, bool pause=true);
 		
 		~DensityPlotter();
 		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
+
+		bool needsDensity() const override { return true; };
 	};
 	
 	/// Uses the GNUPlotter to plot the potential during the simulation. Output is a plot window.
