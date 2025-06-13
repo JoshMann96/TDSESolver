@@ -33,15 +33,6 @@ find_package(pybind11 REQUIRED)
 #OMP
 find_package(OpenMP REQUIRED)
 
-#MPI
-if(NOT MPI_PATH)
-    find_package(MPI REQUIRED)
-else()
-    find_package(MPI REQUIRED
-        HINTS ${MPI_PATH})
-endif()
-include_directories(SYSTEM ${MPI_INCLUDE_PATH})
-
 #BOOST
 find_package(Boost REQUIRED
     COMPONENTS system filesystem iostreams)

@@ -4,16 +4,16 @@ set -e
 # This script is used to build the project and create a Python virtual environment (venv).
 # To install to a custom venv, cd to build/lib/tdsepy and run `pip install -e .`
 
-# This project uses CMake's find_package functionality for the following (required) packages
+# This project uses CMake's find_package functionality for the following required packages
 # OpenMP
-# MPI
 # Boost
 # FFTW3 & FFTW3_OMP (Double) [-DFFTW_ROOT=path]
 # OpenBLAS (highly recommend OMP version, only the library is needed) [-DBLAS_HINTS=path/to/lib]
 
-#if [ -d .venv ]; 
-#then echo ".venv folder already exists. Deleting..." & rm -r .venv
-#fi
+# You can also specify the following optional parameters:
+# Cuda                      [-DUSE_CUDA=ON|OFF]
+# Disable Python bindings   [--disablePython]
+# Debugging comp. flags     [-DDEBUG=ON|OFF]
 
 original_params=("$@")
 echo "${original_params[@]}"

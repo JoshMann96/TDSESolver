@@ -38,11 +38,10 @@ file(GLOB EXTRN "${EXTERN_DIR}/*.h")
 add_library(core SHARED ${SRC} ${IMP} ${HRP} ${HDR} ${EXTRN} ${CUHDR})
 target_include_directories(core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}" Boost::boost PkgConfig::FFTW "${EXTERN_DIR}")
 if(USE_CUDA)
-    target_link_libraries(core PUBLIC myCuda MPI::MPI_CXX OpenMP::OpenMP_CXX ${Boost_LIBRARIES} PkgConfig::FFTW ${FFTW_DOUBLE_OMP_LIB} ${BLAS_LIBRARIES} ${CUDA_cusparse_LIBRARY} ${CUDA_LIBRARIES} ${CUDA_cublas_LIBRARY})
+    target_link_libraries(core PUBLIC myCuda OpenMP::OpenMP_CXX ${Boost_LIBRARIES} PkgConfig::FFTW ${FFTW_DOUBLE_OMP_LIB} ${BLAS_LIBRARIES} ${CUDA_cusparse_LIBRARY} ${CUDA_LIBRARIES} ${CUDA_cublas_LIBRARY})
 else()
-    target_link_libraries(core PUBLIC MPI::MPI_CXX OpenMP::OpenMP_CXX ${Boost_LIBRARIES} PkgConfig::FFTW ${FFTW_DOUBLE_OMP_LIB} ${BLAS_LIBRARIES})
+    target_link_libraries(core PUBLIC OpenMP::OpenMP_CXX ${Boost_LIBRARIES} PkgConfig::FFTW ${FFTW_DOUBLE_OMP_LIB} ${BLAS_LIBRARIES})
 endif()
-
 
 add_executable(test ${TEST_SRC})
 target_include_directories(test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" Boost::boost PkgConfig::FFTW "${EXTERN_DIR}")
