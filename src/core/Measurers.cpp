@@ -417,13 +417,13 @@ namespace Measurers {
 		for(size_t i = 0; i < *nElec; i++){
 			// negative wavenumbers
 			for(size_t j = 1; j < nSamp; j++)
-				psik[i*(2*nSamp-1) + (nSamp-1)-j] = -std::complex<double>(0,0.5) / std::sin(ks[j]*dx) * ( // is ks supposed to be in the numerator?
+				psik[i*(2*nSamp-1) + (nSamp-1)-j] = -std::complex<double>(0,0.5) / std::sin(ks[j]*dx) / std::sqrt(2.0*PhysCon::pi * PhysCon::hbar) * ( // is ks supposed to be in the numerator?
 					std::exp(0.5*PhysCon::im*ks[j]*dx) * wfcsL[i*nSamp + j] - std::exp(-0.5*PhysCon::im*ks[j]*dx) * wfcsR[i*nSamp + j]);
 			// zero wavenumber
-			psik[i*(2*nSamp-1) + nSamp-1] = 0.5 * (wfcsL[i*nSamp] + wfcsR[i*nSamp]); // zero wavenumber is average of left and right wavefunctions... gets overwritten by velocity anyway
+			psik[i*(2*nSamp-1) + nSamp-1] = 0.5 / std::sqrt(2.0*PhysCon::pi * PhysCon::hbar) * (wfcsL[i*nSamp] + wfcsR[i*nSamp]); // zero wavenumber is average of left and right wavefunctions... gets overwritten by velocity anyway
 			// positive wavenumbers (flip sign in exponent)
 			for(size_t j = 1; j < nSamp; j++)
-				psik[i*(2*nSamp-1) + (nSamp-1) + j] = std::complex<double>(0,0.5) / std::sin(ks[j]*dx) * ( 
+				psik[i*(2*nSamp-1) + (nSamp-1) + j] = std::complex<double>(0,0.5) / std::sin(ks[j]*dx) / std::sqrt(2.0*PhysCon::pi * PhysCon::hbar) * ( 
 					std::exp(-0.5*PhysCon::im*ks[j]*dx) * wfcsL[i*nSamp + j] - std::exp(0.5*PhysCon::im*ks[j]*dx) * wfcsR[i*nSamp + j]);
 		}
 
@@ -488,7 +488,7 @@ namespace Measurers {
 					emax = getEnergy(PhysCon::pi/(2.0*dx)*0.9999);
 			}
 			catch(const std::runtime_error& e){
-				emax = getEnergy(PhysCon::pi/(2.0*dx)*0.9999);
+				emax = std::clamp(emax, 0.0, getEnergy(PhysCon::pi/(2.0*dx)*0.9999));
 			}
 
 			std::fill_n(phsL, nSamp, 1.0);
@@ -538,6 +538,79 @@ namespace Measurers {
 		return MeasurerStatus::SUCCESS;
 	}
 
+	VDClassicalFlux::VDClassicalFlux(size_t nPts, double dx, double dt, size_t vdPos, int vdNum, const size_t* nElec, size_t nSamp, double emax, const std::string name, const std::string fol) :
+		nElec(nElec), dx(dx), dt(dt), emax(emax), nSamp(nSamp), nPts(nPts),
+		Measurer(24, fol, std::to_string(vdNum) + fname)
+	 {
+		assert(name.length() == 4);
+
+		// set right-sided derivative by default, left-sided if on right boundary
+		if(vdPos == nPts-1){
+			vdpL = nPts-2;
+			vdpR = nPts-1;
+		}
+		else{
+			vdpL = vdPos;
+			vdpR = vdPos+1;
+		}
+		momenta = (double*) sq_malloc(sizeof(double)*(2*nSamp-1));
+
+		mommax = std::sqrt(2.0*PhysCon::me*emax)/PhysCon::hbar;
+		vtls::linspace(2*nSamp-1, -mommax, mommax, momenta);
+		dk = momenta[1] - momenta[0];
+
+		write(&vdNum, sizeof(int));
+		write(name.c_str(), 4);
+		write(&vdPos, sizeof(size_t));
+		write(&nSamp, sizeof(size_t));
+	}
+
+	VDClassicalFlux::~VDClassicalFlux() {
+		// write momenta
+		write(momenta, sizeof(double)*(2*nSamp-1));
+		
+		// write yields
+		if(!yields){
+			std::cerr << "Warning: VDClassicalFlux measurer terminated before measurements were made. Zeros will be written." << std::endl;
+			yields = (double*) sq_malloc(sizeof(double)*(2*nSamp-1)*(*nElec));
+			std::fill_n(yields, (2*nSamp-1)*(*nElec), 0.0);
+		}
+		write(yields, sizeof(double)*(2*nSamp-1)*(*nElec));
+
+		if(momenta)
+			sq_free(momenta); momenta = nullptr;
+		if(yields)
+			sq_free(yields); yields = nullptr;
+	}
+
+	MeasurerStatus VDClassicalFlux::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t){
+		if(first){
+			if(yields)
+				sq_free(yields);
+			yields = (double*) sq_malloc(sizeof(double)*(2*nSamp-1)*(*nElec));
+			std::fill_n(yields, (2*nSamp-1)* (*nElec), 0.0);
+			ct = t;
+			first = false;
+		}
+		double dt = t - ct;
+		double ccur, crho, cmom;
+		for(size_t i = 0; i < *nElec; i++){
+			// calculate probability current
+			ccur = 0.5 * PhysCon::hbar / PhysCon::me * std::imag(
+				std::conj(psi[i*nPts+vdpL] + psi[i*nPts+vdpR])*
+				(psi[i*nPts+vdpR] - psi[i*nPts+vdpL]) / (dx));
+			// density
+			crho = 0.25*std::norm(psi[i*nPts+vdpL] + psi[i*nPts+vdpR]);
+			// momentum
+			cmom = PhysCon::me / PhysCon::hbar * ccur / crho;
+
+			if(std::abs(cmom) <= mommax) // map momentum to index, integrate
+				yields[i*(2*nSamp-1) + (size_t)(((cmom + mommax) * (2*nSamp-2)) / (2*mommax) + 0.5)] += ccur * dt / dk;
+		}
+		ct = t;
+
+		return MeasurerStatus::SUCCESS;
+	}
 
 	Vfunct::Vfunct(int potNum, size_t nPts, size_t nx, size_t nt, size_t numSteps, double maxT, const double * x, const std::string fol) :
 		nPts(nPts), nx(nx), nt(nt), maxT(maxT), curIdx(0), Measurer(17, fol, (potNum < 0 ? std::string("") : std::to_string(potNum)) + fname)

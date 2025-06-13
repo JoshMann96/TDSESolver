@@ -755,7 +755,7 @@ namespace KineticOperators {
 			return std::sin(k0*dx) / (m_eff*dx) / (1.0 + std::pow(
 				0.5*dt*( v + 1.0/(m_eff*dx*dx) * (1.0 - std::cos(k0*dx)) ),
 				2.0)
-			);
+			) * PhysCon::a0 * PhysCon::auE_ha/PhysCon::hbar;
 		};
 
 		/// @copydoc KineticOperator::getTimeEvolutionType

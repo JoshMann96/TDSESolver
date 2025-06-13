@@ -428,6 +428,37 @@ void init_Measurers(py::module &m) {
             -------
             VDFluxSpec)V0G0N",
             "sim"_a, "vdPos"_a, "vdNum"_a, "nSamp"_a, "emax"_a, "maxT"_a, "name"_a, "fol"_a);
+    
+    py::class_<VDClassicalFlux, Measurer, std::unique_ptr<VDClassicalFlux, py::nodelete>>(m, "VDClassicalFlux")
+        .def(py::init([](SimulationManager* sim, double vdPos, int vdNum, size_t nSamp, double emax, std::string name, std::string fol){
+            return std::unique_ptr<VDClassicalFlux, py::nodelete>(new VDClassicalFlux(
+                sim->getNumPoints(), sim->getDX(), sim->getDT(), sim->findXIdx(vdPos), vdNum, sim->getNElecPtr(), nSamp, emax, name, fol
+            ));
+        }), R"V0G0N(
+            Virtual detector which measures the classical flux of the state passing through a point for each state.
+            Mostly for comparing to literature -- for real calculations, us VDFluxSpec instead.
+
+            Parameters
+            ----------
+            sim : Simulation
+                Associated simulation.
+            vdPos : float
+                Position of virtual detector.
+            vdNum : int
+                Index of virtual detector.
+            nSamp : uint
+                Number of energy samples.
+            emax : float
+                Maximum energy of spectrum.
+            name : str
+                Name of virtual detector (4 characters)
+            fol : str
+                Directory to contain file.
+
+            Returns
+            -------
+            VDClassicalFlux)V0G0N",
+            "sim"_a, "vdPos"_a, "vdNum"_a, "nSamp"_a, "emax"_a, "name"_a, "fol"_a);
 
     py::class_<PsiT, Measurer, std::unique_ptr<PsiT, py::nodelete>>(m, "PsiT")
         .def(py::init([](SimulationManager* sim, double meaT, int vdNum, std::string name, std::string fol){

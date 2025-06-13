@@ -661,6 +661,23 @@ namespace Measurers {
 		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
 	};
 
+	class VDClassicalFlux :
+		public Measurer {
+	private:
+		std::fstream fil;
+		static constexpr const char* fname = "classicalFlux";
+		size_t vdpL, vdpR;
+		size_t nSamp, nPts;
+		bool first = true;
+		const size_t* nElec;
+		double dx, dt, emax, ct, mommax, dk;
+		double* momenta = nullptr, *yields = nullptr;
+	public:
+		VDClassicalFlux(size_t nPts, double dx, double dt, size_t vdPos, int vdNum, const size_t* nElec, size_t nSamp, double emax, const std::string name, const std::string fol);
+		~VDClassicalFlux();
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
+	};
+	
 	/// Records the entire wave function at a sample time. Output file is {vdNum}psit.dat.
 	class PsiT :
 		public Measurer {

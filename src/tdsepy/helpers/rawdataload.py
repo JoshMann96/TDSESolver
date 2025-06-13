@@ -141,6 +141,19 @@ def getFluxSpecVD(fol:str, vdNum:int=0):
         psik = readData(fil, "complex", (nElec, nSamp*2-1))
     return energies, momenta, psik, posIdx, name, typ
 
+def getClassicalSpecVD(fol:str, vdNum:int=0):
+    nElec,_ = getConstant("nElec", fol)
+    with open(combinePath(fol, f"{vdNum:d}" + "classicalFlux.dat"), 'rb') as fil:
+        INT_SIZE = readData(fil, 'int32')
+        typ = readData(fil, 'int32')
+        readData(fil, "int32") #skip VD index
+        name = readData(fil, "char", 4)
+        posIdx = readData(fil, "int", INT_SIZE=INT_SIZE)
+        nSamp = readData(fil, "int", INT_SIZE=INT_SIZE)
+        momenta = readData(fil, "double", (nSamp*2-1))
+        yields = readData(fil, "double", (nElec, nSamp*2-1))
+    return momenta, yields, posIdx, name, typ
+
 def getExpectE0(fol:str):
     nElec,_ = getConstant("nElec", fol)
     with open(combinePath(fol, "expectE0.dat"), 'rb') as fil:
