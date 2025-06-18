@@ -429,14 +429,50 @@ void init_Measurers(py::module &m) {
             VDFluxSpec)V0G0N",
             "sim"_a, "vdPos"_a, "vdNum"_a, "nSamp"_a, "emax"_a, "maxT"_a, "name"_a, "fol"_a);
     
-    py::class_<VDClassicalFlux, Measurer, std::unique_ptr<VDClassicalFlux, py::nodelete>>(m, "VDClassicalFlux")
+    py::class_<VDUnidirectionalFluxSpec, Measurer, std::unique_ptr<VDUnidirectionalFluxSpec, py::nodelete>>(m, "VDUnidirectionalFluxSpec")
+        .def(py::init([](SimulationManager* sim, double vdPos, int vdNum, size_t nSamp, double emax, double maxT, std::string name, std::string fol){
+            return std::unique_ptr<VDUnidirectionalFluxSpec, py::nodelete>(
+                new VDUnidirectionalFluxSpec(
+                    sim->getNumPoints(), sim->getDX(), sim->getDT(), sim->findXIdx(vdPos), vdNum, sim->getNElecPtr(), nSamp, emax, sim->getKin(), maxT, name, fol
+                ));
+        }), R"V0G0N(
+            Virtual detector which measures the Fourier transform in time of the wavefunction sampled at a single point.
+            Mostly for comparing to literature -- for real calculations, use VDFluxSpec instead.
+            This is the WVD (Wave Virtual Detector) from Joshua Mann's thesis.
+
+            Parameters
+            ----------
+            sim : Simulation
+                Associated simulation.
+            vdPos : float
+                Position of virtual detector.
+            vdNum : int
+                Index of virtual detector.
+            nSamp : uint
+                Number of energy samples.
+            emax : float
+                Maximum energy of spectrum.
+            maxT : float
+                Maximum time of simulation.
+            name : str
+                Name of virtual detector (4 characters)
+            fol : str
+                Directory to contain file.
+
+            Returns
+            -------
+            VDUnidirectionalFluxSpec)V0G0N",
+            "sim"_a, "vdPos"_a, "vdNum"_a, "nSamp"_a, "emax"_a, "maxT"_a, "name"_a, "fol"_a);
+
+    py::class_<VDClassicalFluxSpec, Measurer, std::unique_ptr<VDClassicalFluxSpec, py::nodelete>>(m, "VDClassicalFluxSpec")
         .def(py::init([](SimulationManager* sim, double vdPos, int vdNum, size_t nSamp, double emax, std::string name, std::string fol){
-            return std::unique_ptr<VDClassicalFlux, py::nodelete>(new VDClassicalFlux(
+            return std::unique_ptr<VDClassicalFluxSpec, py::nodelete>(new VDClassicalFluxSpec(
                 sim->getNumPoints(), sim->getDX(), sim->getDT(), sim->findXIdx(vdPos), vdNum, sim->getNElecPtr(), nSamp, emax, name, fol
             ));
         }), R"V0G0N(
             Virtual detector which measures the classical flux of the state passing through a point for each state.
             Mostly for comparing to literature -- for real calculations, us VDFluxSpec instead.
+            This is the CVD (Classical Virtual Detector) from Joshua Mann's thesis.
 
             Parameters
             ----------
@@ -457,7 +493,7 @@ void init_Measurers(py::module &m) {
 
             Returns
             -------
-            VDClassicalFlux)V0G0N",
+            VDClassicalFluxSpec)V0G0N",
             "sim"_a, "vdPos"_a, "vdNum"_a, "nSamp"_a, "emax"_a, "name"_a, "fol"_a);
 
     py::class_<PsiT, Measurer, std::unique_ptr<PsiT, py::nodelete>>(m, "PsiT")

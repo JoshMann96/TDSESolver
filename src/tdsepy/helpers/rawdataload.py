@@ -195,6 +195,35 @@ def getFluxSpecVD(fol:str, vdNum:int=0):
         psik = readData(fil, "complex", (nElec, nSamp*2-1))
     return energies, momenta, psik, posIdx, name, typ
 
+def getUnidirectionalFluxSpecVD(fol:str, vdNum:int=0):
+    """
+    Reads the unidirectional flux spectrum data from a unifluxspecvd.dat file.
+    Args:
+        fol (str): Folder where the unifluxspecvd.dat file is located.
+        vdNum (int, optional): Index of the virtual detector. Defaults to 0.
+    Returns:
+        momenta (np.ndarray): Momentum (wavenumber) grid points with shape (nSamp,).
+        energies (np.ndarray): Energy grid points with shape (nSamp,).
+        psift (np.ndarray): Wavefunction in energy space with shape (nElec, nSamp). 
+            The normalization is chosen such that the integral of |psift|^2 over the energies provides the total probability flux.
+            Therefore, |psift|^2 = dP/dE.
+        posIdx (int): Position index of the virtual detector.
+        name (str): Name of the virtual detector.
+        typ (int): Index identifier of the measurer type.
+    """
+    nElec,_ = getConstant("nElec", fol)
+    with open(combinePath(fol, f"{vdNum:d}" + "unifluxspecvd.dat"), 'rb') as fil:
+        INT_SIZE = readData(fil, 'int32')
+        typ = readData(fil, 'int32')
+        readData(fil, "int32") #skip VD index
+        name = readData(fil, "char", 4)
+        posIdx = readData(fil, "int", INT_SIZE=INT_SIZE)
+        nSamp = readData(fil, "int", INT_SIZE=INT_SIZE)
+        energies = readData(fil, "double", (nSamp))
+        momenta = readData(fil, "double", (nSamp))
+        psift = readData(fil, "complex", (nElec, nSamp))
+    return energies, momenta, psift, posIdx, name, typ
+
 def getClassicalSpecVD(fol:str, vdNum:int=0):
     """
     Reads the classical flux spectrum data from a classicalFlux.dat file.
@@ -211,7 +240,7 @@ def getClassicalSpecVD(fol:str, vdNum:int=0):
         typ (int): Index identifier of the measurer type.
     """
     nElec,_ = getConstant("nElec", fol)
-    with open(combinePath(fol, f"{vdNum:d}" + "classicalFlux.dat"), 'rb') as fil:
+    with open(combinePath(fol, f"{vdNum:d}" + "classicalfluxspecvd.dat"), 'rb') as fil:
         INT_SIZE = readData(fil, 'int32')
         typ = readData(fil, 'int32')
         readData(fil, "int32") #skip VD index

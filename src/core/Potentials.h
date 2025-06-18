@@ -356,6 +356,66 @@ namespace Potentials {
 		PotentialComplexity getComplexity() const {return PotentialComplexity::STATIC;};
 	};
 
+	/// Potential offset for the entire domain.
+	class UniformPotential :
+		public TimeLocalPotential
+	{
+	private:
+		double * v;
+		size_t nPts;
+	public:
+	    /**
+		 * Constructor.
+		 * @param nPts Number of points.
+		 * @param v0 Uniform potential value.
+		 */
+		UniformPotential(size_t nPts, double v0) : nPts(nPts) {
+			v = (double*) sq_malloc(sizeof(double)*nPts);
+			std::fill_n(v, nPts, v0);
+		};
+		~UniformPotential(){if(v) sq_free(v);};
+		void getVBare(double t, double * targ){ vtls::copyArray(nPts, v, targ); };
+		void getV(const double* rho, const std::complex<double> *  psi, double t, double * targ){ getVBare(t, targ); };
+		PotentialComplexity getComplexity() const {return PotentialComplexity::STATIC;};
+	};
+
+	/// Potentials which takes in another potential and applies a sinusoidal scalar product to it.
+	class OscillatingPotential :
+		public TimeLocalPotential
+	{
+	private:
+		Potential * basePot;
+		double omega, phase;
+		size_t nPts;
+	public:
+	    /**
+		 * Constructor. The scalar product is \f$\sin(\omega t + \phi)\f$.
+		 * @param nPts Number of points.
+		 * @param basePot Base potential to apply the oscillation to.
+		 * @param omega Oscillation frequency.
+		 * @param phase Oscillation phase.
+		 */
+		OscillatingPotential(size_t nPts, Potential * basePot, double omega, double phase) : basePot(basePot), omega(omega), phase(phase), nPts(nPts) {};
+		~OscillatingPotential(){};
+		void getVBare(double t, double * targ){
+			basePot->getVBare(t, targ);
+			double factor = std::sin(omega*t + phase);
+			vtls::scaMulArray(nPts, factor, targ);
+		};
+		void getV(const double* rho, const std::complex<double> *  psi, double t, double * targ){ 
+			basePot->getV(rho, psi, t, targ);
+			double factor = std::sin(omega*t + phase);
+			vtls::scaMulArray(nPts, factor, targ);
+		};
+		PotentialComplexity getComplexity() const {
+			if(basePot->getComplexity() == PotentialComplexity::STATIC)
+				return PotentialComplexity::DYNAMIC; // at least dynamic
+			else
+				return basePot->getComplexity();
+		};
+	};
+
+
 	/// Coulomb potential. The depth of the potential is capped by a separation distance of dx.
 	class CoulombPotential :
 		public TimeLocalPotential

@@ -508,12 +508,12 @@ namespace Measurers {
 		// accumulate phase for each kinetic energy
 		switch(timeEvolutionType){
 			case KineticOperators::TimeEvolutionType::PSEUDOSPECTRAL:
-				advancePhaseOS(t - ct, v[vdpL], phsL);
-				advancePhaseOS(t - ct, v[vdpR], phsR);
+				advancePhaseOS(nSamp, t - ct, v[vdpL], kineticEnergies, phsL);
+				advancePhaseOS(nSamp, t - ct, v[vdpR], kineticEnergies, phsR);
 				break;
 			case KineticOperators::TimeEvolutionType::CRANK_NICOLSON:
-				advancePhaseCN(t - ct, v[vdpL], phsL);
-				advancePhaseCN(t - ct, v[vdpR], phsR);
+				advancePhaseCN(nSamp, t - ct, v[vdpL], kineticEnergies, phsL);
+				advancePhaseCN(nSamp, t - ct, v[vdpR], kineticEnergies, phsR);
 				break;
 			default:
 				throw std::runtime_error("Unknown time evolution type in VDFluxSpec measurer.");
@@ -538,7 +538,110 @@ namespace Measurers {
 		return MeasurerStatus::SUCCESS;
 	}
 
-	VDClassicalFlux::VDClassicalFlux(size_t nPts, double dx, double dt, size_t vdPos, int vdNum, const size_t* nElec, size_t nSamp, double emax, const std::string name, const std::string fol) :
+
+	VDUnidirectionalFluxSpec::VDUnidirectionalFluxSpec(size_t nPts, double dx, double dt, size_t vdPos, int vdNum, const size_t* nElec, size_t nSamp, double emax, KineticOperators::KineticOperator** kinOp, double tmax, std::string name, const std::string fol) :
+		nElec(nElec), dx(dx), dt(dt), emax(emax), nSamp(nSamp), nPts(nPts), tmax(tmax), kinOp(kinOp),
+		Measurer(24, fol, std::to_string(vdNum) + fname)
+	 {
+		assert(name.length() == 4);
+		assert(vdPos <= nPts-1 && vdPos >= 0);
+		vdp = vdPos;
+
+		kineticEnergies = (double*) sq_malloc(sizeof(double)*nSamp);
+		phs = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nSamp);
+		scaledPhs = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nSamp);
+		sqrtGroupVelocities = (double*) sq_malloc(sizeof(double)*nSamp);
+
+		write(&vdNum, sizeof(int));
+		write(name.c_str(), 4);
+		write(&vdPos, sizeof(size_t));
+		write(&nSamp, sizeof(size_t));
+	}
+
+	VDUnidirectionalFluxSpec::~VDUnidirectionalFluxSpec(){
+		// write energies
+		write(kineticEnergies, sizeof(double)*nSamp);
+
+		// write wavenumbers
+		double* ks = (double*) sq_malloc(sizeof(double) * nSamp);
+		for(int i = 0; i < nSamp; i++)
+			ks[i] = getWavenumber(kineticEnergies[i]);
+		write(ks, sizeof(double)*nSamp);
+		sq_free(ks);
+
+		// write scaled Fourier transform
+		vtls::scaMulArray(nSamp, 1.0/std::sqrt(2.0*PhysCon::pi * PhysCon::hbar), psift);
+		write(psift, sizeof(std::complex<double>)*nSamp * *nElec);
+
+		if(psift)
+			sq_free(psift);
+		sq_free(kineticEnergies);
+		sq_free(phs);
+		sq_free(scaledPhs);
+		sq_free(sqrtGroupVelocities);
+	}
+
+	MeasurerStatus VDUnidirectionalFluxSpec::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t) {
+		if (first) {
+			if(psift)
+				sq_free(psift);
+			psift = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*nSamp * *nElec);
+			std::fill_n(psift, nSamp * *nElec, 0.0);
+
+			first = false;
+			ct = t;
+			tstart = t;
+
+			timeEvolutionType = (*kinOp)->getTimeEvolutionType();
+
+			try{
+				if(getWavenumber(emax)*dx > PhysCon::pi/2.0)
+					emax = getEnergy(PhysCon::pi/(2.0*dx)*0.9999);
+			}
+			catch(const std::runtime_error& e){
+				emax = std::clamp(emax, 0.0, getEnergy(PhysCon::pi/(2.0*dx)*0.9999));
+			}
+
+			std::fill_n(phs, nSamp, 1.0);
+			vtls::linspace(nSamp, 0.0, emax, kineticEnergies);
+		}
+
+		// calculate Tukey window value
+		double winMul;
+		if (t < tukeyAl / 2 * tmax)
+			winMul = 0.5 * (1 - std::cos(2.0 * PhysCon::pi * t / (tukeyAl * tmax)));
+		else if (t > (1.0 - tukeyAl / 2) * tmax)
+			winMul = 0.5 * (1 - std::cos(2.0 * PhysCon::pi * (tmax - t) / (tukeyAl * tmax)));
+		else
+			winMul = 1.0;
+
+		// accumulate phase for each kinetic energy
+		switch(timeEvolutionType){
+			case KineticOperators::TimeEvolutionType::PSEUDOSPECTRAL:
+				VDFluxSpec::advancePhaseOS(nSamp, t - ct, v[vdp], kineticEnergies, phs);
+				break;
+			case KineticOperators::TimeEvolutionType::CRANK_NICOLSON:
+				VDFluxSpec::advancePhaseCN(nSamp, t - ct, v[vdp], kineticEnergies, phs);
+				break;
+			default:
+				throw std::runtime_error("Unknown time evolution type in VDFluxSpec measurer.");
+		}
+		// apply the window function and time step to the phase
+		vtls::scaMulArray(nSamp, winMul*(t-ct), phs, scaledPhs);
+		// apply the square-root group velocity to the phase
+		fillSqrtGroupVelocities(v[vdp]);
+		vtls::seqMulArrays(nSamp, sqrtGroupVelocities, scaledPhs);
+
+		for(size_t i = 0; i < *nElec; i++)
+			cblas_zaxpy(nSamp, &psi[i*nPts + vdp], scaledPhs, 1, &psift[i*nSamp], 1);
+
+		ct = t;
+
+		return MeasurerStatus::SUCCESS;
+	}
+
+
+	VDClassicalFluxSpec::VDClassicalFluxSpec(size_t nPts, double dx, double dt, size_t vdPos, int vdNum, const size_t* nElec, size_t nSamp, double emax, const std::string name, const std::string fol) :
 		nElec(nElec), dx(dx), dt(dt), emax(emax), nSamp(nSamp), nPts(nPts),
 		Measurer(24, fol, std::to_string(vdNum) + fname)
 	 {
@@ -565,13 +668,13 @@ namespace Measurers {
 		write(&nSamp, sizeof(size_t));
 	}
 
-	VDClassicalFlux::~VDClassicalFlux() {
+	VDClassicalFluxSpec::~VDClassicalFluxSpec() {
 		// write momenta
 		write(momenta, sizeof(double)*(2*nSamp-1));
 		
 		// write yields
 		if(!yields){
-			std::cerr << "Warning: VDClassicalFlux measurer terminated before measurements were made. Zeros will be written." << std::endl;
+			std::cerr << "Warning: VDClassicalFluxSpec measurer terminated before measurements were made. Zeros will be written." << std::endl;
 			yields = (double*) sq_malloc(sizeof(double)*(2*nSamp-1)*(*nElec));
 			std::fill_n(yields, (2*nSamp-1)*(*nElec), 0.0);
 		}
@@ -583,7 +686,7 @@ namespace Measurers {
 			sq_free(yields); yields = nullptr;
 	}
 
-	MeasurerStatus VDClassicalFlux::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t){
+	MeasurerStatus VDClassicalFluxSpec::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t){
 		if(first){
 			if(yields)
 				sq_free(yields);

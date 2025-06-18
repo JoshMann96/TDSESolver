@@ -581,17 +581,6 @@ namespace Measurers {
 		KineticOperators::KineticOperator ** kinOp;
 		KineticOperators::TimeEvolutionType timeEvolutionType;
 
-		void advancePhaseOS(double dt, double v, std::complex<double>* phss) {
-			for(size_t i = 0; i < nSamp; i++)
-				phss[i] *= std::exp(std::complex<double>(0.0, (kineticEnergies[i]+v) * dt / PhysCon::hbar));
-		}
-
-		void advancePhaseCN(double dt, double v, std::complex<double>* phss){
-			for(size_t i = 0; i < nSamp; i++)
-				phss[i] *= 	std::complex<double>(1.0, 0.5 * dt * (kineticEnergies[i]+v) / PhysCon::hbar) / 
-							std::complex<double>(1.0,-0.5 * dt * (kineticEnergies[i]+v) / PhysCon::hbar);
-		}
-
 		double getWavenumber(double kineticEnergy){
 			switch(timeEvolutionType){
 				case KineticOperators::TimeEvolutionType::PSEUDOSPECTRAL:
@@ -659,13 +648,96 @@ namespace Measurers {
 
 		~VDFluxSpec();
 		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
+
+		static void advancePhaseOS(size_t nSamp, double dt, double v, double* kineticEnergies, std::complex<double>* phss) {
+			for(size_t i = 0; i < nSamp; i++)
+				phss[i] *= std::exp(std::complex<double>(0.0, (kineticEnergies[i]+v) * dt / PhysCon::hbar));
+		}
+
+		static void advancePhaseCN(size_t nSamp, double dt, double v, double* kineticEnergies, std::complex<double>* phss){
+			for(size_t i = 0; i < nSamp; i++)
+				phss[i] *= 	std::complex<double>(1.0, 0.5 * dt * (kineticEnergies[i]+v) / PhysCon::hbar) / 
+							std::complex<double>(1.0,-0.5 * dt * (kineticEnergies[i]+v) / PhysCon::hbar);
+		}
 	};
 
-	class VDClassicalFlux :
+	class VDUnidirectionalFluxSpec :
 		public Measurer {
 	private:
 		std::fstream fil;
-		static constexpr const char* fname = "classicalFlux";
+		static constexpr const char* fname = "unifluxspecvd";
+		size_t vdp;
+		size_t nSamp, nPts;
+		bool first = true;
+		bool vgStaticFilled = false, vgDynamicFilled = false;
+		const size_t* nElec;
+		double dx, dt, emax, ct, mommax, dE;
+		double tstart, tmax, tukeyAl=0.05, vgDynamicLastV = 0.0;
+		double* kineticEnergies = nullptr, *sqrtGroupVelocities = nullptr;
+		std::complex<double> *psift = nullptr, *phs = nullptr, *scaledPhs = nullptr;
+
+		KineticOperators::KineticOperator ** kinOp;
+		KineticOperators::TimeEvolutionType timeEvolutionType;
+
+
+		double getWavenumber(double kineticEnergy){
+			switch(timeEvolutionType){
+				case KineticOperators::TimeEvolutionType::PSEUDOSPECTRAL:
+					return std::sqrt(2.0*PhysCon::me * kineticEnergy)/PhysCon::hbar;
+					break;
+				case KineticOperators::TimeEvolutionType::CRANK_NICOLSON:
+					return KineticOperators::CrankNicolson::wavenumberFromKineticEnergy(kineticEnergy, dx, 1.0);
+					break;
+				default:
+					throw std::runtime_error("Unknown time evolution type in VDFluxSpec measurer.");
+			}
+		}
+
+		double getEnergy(double wavenumber){
+			switch(timeEvolutionType){
+				case KineticOperators::TimeEvolutionType::PSEUDOSPECTRAL:
+					return PhysCon::hbar * PhysCon::hbar * wavenumber * wavenumber / (2.0 * PhysCon::me);
+					break;
+				case KineticOperators::TimeEvolutionType::CRANK_NICOLSON:
+					return KineticOperators::CrankNicolson::kineticEnergyFromWavenumber(wavenumber, dx, 1.0);
+					break;
+				default:
+					throw std::runtime_error("Unknown time evolution type in VDFluxSpec measurer.");
+			}
+		}
+
+		void fillSqrtGroupVelocities(double v){
+			switch(timeEvolutionType){
+				case KineticOperators::TimeEvolutionType::PSEUDOSPECTRAL:
+					if (!vgStaticFilled){
+						for(size_t i = 0; i < nSamp; i++)
+							sqrtGroupVelocities[i] = std::sqrt(PhysCon::hbar * getWavenumber(kineticEnergies[i]) / PhysCon::me);
+						vgStaticFilled = true;
+					}
+					break;
+				case KineticOperators::TimeEvolutionType::CRANK_NICOLSON:
+					if(!vgDynamicFilled || std::abs(v-vgDynamicLastV)*dt/PhysCon::hbar > 1e-6){ // hasn't yet been filled or potential has changed
+						for(size_t i = 0; i < nSamp; i++)
+							sqrtGroupVelocities[i] = std::sqrt(KineticOperators::CrankNicolson::groupVelocityFromWavenumber(getWavenumber(kineticEnergies[i]), v, dx, dt, 1.0));
+						vgDynamicLastV = v;
+						vgDynamicFilled = true;
+						}
+					break;
+				default:
+					throw std::runtime_error("Unknown time evolution type in VDFluxSpec measurer.");
+			}
+		}
+	public:
+		VDUnidirectionalFluxSpec(size_t nPts, double dx, double dt, size_t vdPos, int vdNum, const size_t* nElec, size_t nSamp, double emax, KineticOperators::KineticOperator** kinOp, double tmax, const std::string name, const std::string fol);
+		~VDUnidirectionalFluxSpec();
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
+	};
+
+	class VDClassicalFluxSpec :
+		public Measurer {
+	private:
+		std::fstream fil;
+		static constexpr const char* fname = "classicalfluxspecvd";
 		size_t vdpL, vdpR;
 		size_t nSamp, nPts;
 		bool first = true;
@@ -673,8 +745,8 @@ namespace Measurers {
 		double dx, dt, emax, ct, mommax, dk;
 		double* momenta = nullptr, *yields = nullptr;
 	public:
-		VDClassicalFlux(size_t nPts, double dx, double dt, size_t vdPos, int vdNum, const size_t* nElec, size_t nSamp, double emax, const std::string name, const std::string fol);
-		~VDClassicalFlux();
+		VDClassicalFluxSpec(size_t nPts, double dx, double dt, size_t vdPos, int vdNum, const size_t* nElec, size_t nSamp, double emax, const std::string name, const std::string fol);
+		~VDClassicalFluxSpec();
 		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
 	};
 	

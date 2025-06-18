@@ -92,6 +92,51 @@ void init_Potentials(py::module &m) {
 
     py::class_<Potential>(m, "Potential");
 
+    py::class_<UniformPotential, Potential>(m, "UniformPotential")
+        .def(py::init([](SimulationManager* sim, double v0){
+            return std::unique_ptr<UniformPotential>(new UniformPotential(
+                sim->getNumPoints(), v0
+            ));
+        }), R"V0G0N(
+            Static uniform potential.
+
+            Parameters
+            ----------
+            sim : Simulation
+                Associated simulation.
+            v0 : float
+                Potential value.
+
+            Returns
+            -------
+            UniformPotential)V0G0N",
+            "sim"_a, "v0"_a);
+    
+    py::class_<OscillatingPotential, Potential>(m, "OscillatingPotential")
+        .def(py::init([](SimulationManager* sim, Potential* basePot, double omega, double phase){
+            return std::unique_ptr<OscillatingPotential>(new OscillatingPotential(
+                sim->getNumPoints(), basePot, omega, phase
+            ));
+        }), py::keep_alive<1,3>(), R"V0G0N(
+            Static potential with sinusoidal oscillation applied to it.
+            The scalar product is $\sin(\omega t + \phi)$.
+
+            Parameters
+            ----------
+            sim : Simulation
+                Associated simulation.
+            basePot : Potential
+                Base potential to apply the oscillation to.
+            omega : float
+                Oscillation frequency.
+            phase : float
+                Oscillation phase.
+
+            Returns
+            -------
+            OscillatingPotential)V0G0N",
+            "sim"_a, "basePot"_a, "omega"_a, "phase"_a);
+
     py::class_<FilePotential, Potential>(m, "FilePotential")
         .def(py::init([](SimulationManager* sim, double offset, const std::string fil, double refPoint){
             return std::unique_ptr<FilePotential>(new FilePotential(
