@@ -12,7 +12,7 @@ void init_Simulation(py::module &m) {
     )V0G0N");
 
     py::class_<PySimulation, SimulationManager>(m, "Simulation")
-        .def(py::init<double, double, double, double, const std::optional<std::function<void(double)>>, std::optional<size_t>>(), R"V0G0N(
+        .def(py::init<double, double, double, double, const std::optional<std::function<void(double)>>, std::optional<size_t>, std::optional<std::string>>(), R"V0G0N(
             Manages TDSE simulations.
             This constructor initializes the simulation with a specified spatial range, step size, and time step.
 
@@ -31,12 +31,15 @@ void init_Simulation(py::module &m) {
             numCallbackCalls : int
                 Number of times to call the callback function. Default is 101.
                 The callback function will be called with doubles ranging from 0 to 1.0, inclusive.
+            fftwWisdomPrefix : str
+                Prefix for the FFTW wisdom file. Default is an empty string. If the filesystem is shared between nodes on a server, this should
+                include some information discerning which node is being run to avoid conflicts where one node overwrites the wisdom file of another.
 
             Returns
             -------
             Simulation)V0G0N",
-            "xmin"_a, "xmax"_a, "dx"_a, "dt"_a, "callback"_a = py::none(), "numCallbackCalls"_a = 101)
-        .def(py::init<size_t, double, double, double, const std::optional<std::function<void(double)>>, std::optional<size_t>>(), R"V0G0N(
+            "xmin"_a, "xmax"_a, "dx"_a, "dt"_a, "callback"_a = py::none(), "numCallbackCalls"_a = 101, "fftwWisdomPrefix"_a = "")
+        .def(py::init<size_t, double, double, double, const std::optional<std::function<void(double)>>, std::optional<size_t>, std::optional<std::string>>(), R"V0G0N(
             Manages TDSE simulations.
             This constructor initializes the simulation with a specified number of grid points, left boundary position, step size, and time step.
 
@@ -55,12 +58,15 @@ void init_Simulation(py::module &m) {
             numCallbackCalls : int
                 Number of times to call the callback function. Default is 101.
                 The callback function will be called with doubles ranging from 0 to 1.0, inclusive.
+            fftwWisdomPrefix : str
+                Prefix for the FFTW wisdom file. Default is an empty string. If the filesystem is shared between nodes on a server, this should
+                include some information discerning which node is being run to avoid conflicts where one node overwrites the wisdom file of another.
 
             Returns
             -------
             Simulation)V0G0N",
-            "nPts"_a, "xmin"_a, "dx"_a, "dt"_a, "callback"_a = py::none(), "numCallbackCalls"_a = 101)
-        .def(py::init<double, double, size_t, double, const std::optional<std::function<void(double)>>, std::optional<size_t>>(), R"V0G0N(
+            "nPts"_a, "xmin"_a, "dx"_a, "dt"_a, "callback"_a = py::none(), "numCallbackCalls"_a = 101, "fftwWisdomPrefix"_a = "")
+        .def(py::init<double, double, size_t, double, const std::optional<std::function<void(double)>>, std::optional<size_t>, std::optional<std::string>>(), R"V0G0N(
             Manages TDSE simulations.
             This constructor initializes the simulation with a specified spatial range, number of grid points, and time step.
 
@@ -79,11 +85,14 @@ void init_Simulation(py::module &m) {
             numCallbackCalls : int
                 Number of times to call the callback function. Default is 101.
                 The callback function will be called with doubles ranging from 0 to 1.0, inclusive.
+            fftwWisdomPrefix : str
+                Prefix for the FFTW wisdom file. Default is an empty string. If the filesystem is shared between nodes on a server, this should
+                include some information discerning which node is being run to avoid conflicts where one node overwrites the wisdom file of another.
 
             Returns
             -------
             Simulation)V0G0N",
-            "xmin"_a, "xmax"_a, "nPts"_a, "dt"_a, "callback"_a = py::none(), "numCallbackCalls"_a = 101)
+            "xmin"_a, "xmax"_a, "nPts"_a, "dt"_a, "callback"_a = py::none(), "numCallbackCalls"_a = 101, "fftwWisdomPrefix"_a = "")
         .def("getX", &PySimulation::getX)
         .def("getDX", &PySimulation::getDX)
         .def("getDT", &PySimulation::getDT)

@@ -8,7 +8,7 @@ from scipy.fft import fft
 plt.rcParams['text.usetex'] = True
 plt.rcParams['font.size'] = 16
 
-def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=-11, vmax:float=-4, cmap="magma", ax = None, difference=False):
+def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=-11, vmax:float=-4, cmap="magma", ax = None, difference=False) -> tuple[plt.Figure, plt.Axes]|None:
     """Plots the 1-D collective electron density as a function of time for a selection of states.
     AXIS | VAR | UNIT
        x |  x  | nm
@@ -65,7 +65,7 @@ def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=-11, vmax:float=
     else:
         return im
 
-def plotPotential(fol:str, ax = None, potIndex = -1):
+def plotPotential(fol:str, ax = None, potIndex = -1) -> plt.pcolormesh|tuple[plt.pcolormesh, plt.Figure, plt.Axes]:
     """Plots the potential as a function of time.
     AXIS | VAR | UNIT
        x |  x  | nm
@@ -76,6 +76,14 @@ def plotPotential(fol:str, ax = None, potIndex = -1):
         fol (str): Folder containing data.
         ax (axis, optional): Axis to plot on. Defaults to None (create own fig, ax and return).
         potIndex (int, optional): Index of potential file. Defaults to -1 (no index).
+    
+    Returns:
+        if plot is None:
+            im: Matplotlib pcolormesh object.
+            fig: Matplotlib figure.
+            ax: Matplotlib axis.
+        else:
+            im: Matplotlib pcolormesh object.
     """
     dat, xs, ts, _ = getVfunct(fol, potIndex)
     
@@ -96,7 +104,7 @@ def plotPotential(fol:str, ax = None, potIndex = -1):
         return im
     
     
-def get1DStateFluxSpectrum(fol:str, vdNum:int = 0, minE:float = 0, maxE:float = 500*cons.e):
+def get1DStateFluxSpectrum(fol:str, vdNum:int = 0, minE:float = 0, maxE:float = 500*cons.e) -> tuple[np.ndarray, np.ndarray]:
     """Gets the bidirectional density flux spectrum with respect to the signed kinetic energy (sgn(E) = sgn(k)) for each state.
 
     Args:
@@ -122,7 +130,7 @@ def get1DStateFluxSpectrum(fol:str, vdNum:int = 0, minE:float = 0, maxE:float = 
 
     return es/cons.e, yld
    
-def get1DTotalFluxSpectrum(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0, maxE:float = 500*cons.e):
+def get1DTotalFluxSpectrum(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0, maxE:float = 500*cons.e) -> tuple[np.ndarray, np.ndarray]:
     """Gets the bidirectional density flux spectrum with respect to the signed kinetic energy (sgn(E) = sgn(k)) summed over all states.
 
     Args:
@@ -147,7 +155,7 @@ def get1DTotalFluxSpectrum(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0,
     
     return es, spc
 
-def plot1DFluxSpectrum(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0, maxE:float = 500*cons.e, ax = None):
+def plot1DFluxSpectrum(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0, maxE:float = 500*cons.e, ax = None) -> tuple[plt.semilogy, plt.Figure, plt.Axes]|plt.semilogy:
     """Plots the bidirectional density flux spectrum with respect to the signed kinetic energy (sgn(E) = sgn(k))
     AXIS | VAR | UNIT
        x |  E  | eV
@@ -160,6 +168,14 @@ def plot1DFluxSpectrum(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0, max
         minE (float, optional) [J]: Minimum signed kinetic energy. Defaults to 0.
         maxE (float, optional) [J]: Maximum signed kinetic energy. Defaults to 500 eV.
         ax (axis, optional): Axis to plot on. Defaults to None (create own fig, ax and return).
+    
+    Returns:
+        if plot is None:
+            im: Matplotlib semilogy object.
+            fig: Matplotlib figure.
+            ax: Matplotlib axis.
+        else:
+            im: Matplotlib semilogy object.
     """
     es, spc = get1DTotalFluxSpectrum(fol, vdNum, elecNum, minE, maxE)
 
@@ -176,7 +192,7 @@ def plot1DFluxSpectrum(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0, max
     else:
         return im
     
-def get1DStateYield(fol:str, vdNum:int = 0, minE:float = 0, maxE:float=500*cons.e):
+def get1DStateYield(fol:str, vdNum:int = 0, minE:float = 0, maxE:float=500*cons.e) -> np.ndarray:
     """Gets yield for each 1-D state within energy range.
 
     Args:
@@ -191,7 +207,7 @@ def get1DStateYield(fol:str, vdNum:int = 0, minE:float = 0, maxE:float=500*cons.
     es, spc = get1DStateFluxSpectrum(fol, vdNum, minE, maxE)
     return np.trapezoid(x = es, y = spc, axis=1)
 
-def get1DTotalYield(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0, maxE:float = 500*cons.e):
+def get1DTotalYield(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0, maxE:float = 500*cons.e) -> float:
     """Gets total yield for selected 1-D states within energy range.
 
     Args:
@@ -215,7 +231,7 @@ def get1DTotalYield(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0, maxE:f
         
     return yld
 
-def getIntrinsicMTEs(fol:str):
+def getIntrinsicMTEs(fol:str) -> np.ndarray:
     """Gets intrinsic mean transverse energy (MTE) due to transverse crystal momentum in material, assuming the free electron gas model.
         Vacuum must be potential reference level.
 
@@ -233,7 +249,7 @@ def getIntrinsicMTEs(fol:str):
     mtes = 0.5*(ef - e0s)
     return mtes
 
-def getDipoleRadiationSpectrum(fol:str, tmin:float = None, tmax:float = None, tukeyAlpha:float = 0.1):
+def getDipoleRadiationSpectrum(fol:str, tmin:float = None, tmax:float = None, tukeyAlpha:float = 0.1) -> tuple[np.ndarray, np.ndarray]:
     """Gets the dipole radiation spectrum.
 
     Args:

@@ -25,7 +25,7 @@ _CONSTANT_DTYPES = {
     "abs_width" : "double"
 }
 
-def readData(fil:BufferedReader, dtype:_C_DTYPES, shape:int|tuple=1, INT_SIZE:int=None):
+def readData(fil:BufferedReader, dtype:_C_DTYPES, shape:int|tuple=1, INT_SIZE:int=None) -> np.ndarray|int|float|str:
     if shape is not tuple:
         shape = (shape)
         
@@ -62,26 +62,9 @@ def readData(fil:BufferedReader, dtype:_C_DTYPES, shape:int|tuple=1, INT_SIZE:in
             numel = (len(dat) // np.prod(shape[1:])) * np.prod(shape[1:])
             dat = np.reshape(dat[:numel], (-1,) + (shape[1:]))
         
-            
     return dat
 
-def combinePath(fol:str, fil:str):
-    """Combines path components, ensuring '/' between fol and fil.
-
-    Args:
-        fol (str): Folder, with or without final '/'.
-        fil (str): File name without slashes.
-
-    Returns:
-        str: Final path.
-    """    
-    if '/' in fil:
-        raise ValueError("fil must not be a path (contains '/')")
-    if fol[-1] != '/':
-        fol += '/'
-    return fol + fil
-
-def getConstant(name:_CONSTANT_NAMES, fol:str, dtype:_C_DTYPES = None):
+def getConstant(name:_CONSTANT_NAMES, fol:str, dtype:_C_DTYPES = None) -> tuple[int|float, int]:
     """
     Reads a constant (just a single value) from a .dat file.
     Args:
@@ -92,13 +75,13 @@ def getConstant(name:_CONSTANT_NAMES, fol:str, dtype:_C_DTYPES = None):
         value: The value of the constant.
         typ (int): Index identifier of the measurer type.
     """
-    with open(combinePath(fol, name + ".dat"), 'rb') as fil:
+    with open(os.path.join(fol, name+".dat"), 'rb') as fil:
         INT_SIZE = readData(fil, 'int32')
         typ = readData(fil, 'int32')
         dat = readData(fil, _CONSTANT_DTYPES[name] if dtype is None else dtype, INT_SIZE=INT_SIZE)
     return dat, typ
 
-def getPsi2t(fol:str):
+def getPsi2t(fol:str) -> tuple[np.ndarray, np.ndarray, np.ndarray, int]:
     """
     Reads the probability density vs time data from a psi2t.dat file.
     Args:
@@ -110,7 +93,7 @@ def getPsi2t(fol:str):
         typ (int): Index identifier of the measurer type.
     """
     nElec,_ = getConstant("nElec", fol)
-    with open(combinePath(fol, "psi2t.dat"), 'rb') as fil:
+    with open(os.path.join(fol, "psi2t.dat"), 'rb') as fil:
         INT_SIZE = readData(fil, 'int32')
         typ = readData(fil, 'int32')
         nx = readData(fil, "int", INT_SIZE=INT_SIZE)
@@ -124,7 +107,7 @@ def getPsi2t(fol:str):
             ts = np.linspace(0,dat.shape[-2] / nt, dat.shape[-2])
     return dat, xs, ts, typ
 
-def getVfunct(fol:str, index:int = -1):
+def getVfunct(fol:str, index:int = -1) -> tuple[np.ndarray, np.ndarray, np.ndarray, int]:
     """
     Reads the potential vs time data from a Vfunct.dat file.
     Args:
@@ -136,7 +119,7 @@ def getVfunct(fol:str, index:int = -1):
         ts (np.ndarray): Temporal grid points.
         typ (int): Index identifier of the measurer type.
     """
-    with open(combinePath(fol, "Vfunct.dat" if index < 0 else f"{index:d}Vfunct.dat"), 'rb') as fil:
+    with open(os.path.join(fol, "Vfunct.dat" if index < 0 else f"{index:d}Vfunct.dat"), 'rb') as fil:
         INT_SIZE = readData(fil, 'int32')
         typ = readData(fil, 'int32')
         nx = readData(fil, "int", INT_SIZE=INT_SIZE)
@@ -150,7 +133,7 @@ def getVfunct(fol:str, index:int = -1):
             ts = np.linspace(0,dat.shape[-2] / nt, dat.shape[-2])
     return dat, xs, ts, typ
 
-def getWghts(fol:str):
+def getWghts(fol:str) -> tuple[np.ndarray, int]:
     """
     Reads the orbital weights from a wghts.dat file.
     Args:
@@ -159,14 +142,14 @@ def getWghts(fol:str):
         wghts (np.ndarray): Weights of the orbitals with shape (nElec,).
         typ (int): Index identifier of the measurer type.
     """
-    with open(combinePath(fol, "wghts.dat"), 'rb') as fil:
+    with open(os.path.join(fol, "wghts.dat"), 'rb') as fil:
         INT_SIZE = readData(fil, 'int32')
         typ = readData(fil, 'int32')
         nElec = readData(fil, "int", INT_SIZE=INT_SIZE)
         wghts = readData(fil, "double", nElec)
     return wghts, typ
 
-def getFluxSpecVD(fol:str, vdNum:int=0):
+def getFluxSpecVD(fol:str, vdNum:int=0) -> tuple[np.ndarray, np.ndarray, np.ndarray, int, str, int]:
     """
     Reads the bidirectional flux spectrum data from a fluxspecvd.dat file.
     Args:
@@ -183,7 +166,7 @@ def getFluxSpecVD(fol:str, vdNum:int=0):
         typ (int): Index identifier of the measurer type.
     """
     nElec,_ = getConstant("nElec", fol)
-    with open(combinePath(fol, f"{vdNum:d}" + "fluxspecvd.dat"), 'rb') as fil:
+    with open(os.path.join(fol, f"{vdNum:d}" + "fluxspecvd.dat"), 'rb') as fil:
         INT_SIZE = readData(fil, 'int32')
         typ = readData(fil, 'int32')
         readData(fil, "int32") #skip VD index
@@ -195,7 +178,7 @@ def getFluxSpecVD(fol:str, vdNum:int=0):
         psik = readData(fil, "complex", (nElec, nSamp*2-1))
     return energies, momenta, psik, posIdx, name, typ
 
-def getUnidirectionalFluxSpecVD(fol:str, vdNum:int=0):
+def getUnidirectionalFluxSpecVD(fol:str, vdNum:int=0) -> tuple[np.ndarray, np.ndarray, np.ndarray, int, str, int]:
     """
     Reads the unidirectional flux spectrum data from a unifluxspecvd.dat file.
     Args:
@@ -212,7 +195,7 @@ def getUnidirectionalFluxSpecVD(fol:str, vdNum:int=0):
         typ (int): Index identifier of the measurer type.
     """
     nElec,_ = getConstant("nElec", fol)
-    with open(combinePath(fol, f"{vdNum:d}" + "unifluxspecvd.dat"), 'rb') as fil:
+    with open(os.path.join(fol, f"{vdNum:d}" + "unifluxspecvd.dat"), 'rb') as fil:
         INT_SIZE = readData(fil, 'int32')
         typ = readData(fil, 'int32')
         readData(fil, "int32") #skip VD index
@@ -224,7 +207,7 @@ def getUnidirectionalFluxSpecVD(fol:str, vdNum:int=0):
         psift = readData(fil, "complex", (nElec, nSamp))
     return energies, momenta, psift, posIdx, name, typ
 
-def getClassicalSpecVD(fol:str, vdNum:int=0):
+def getClassicalSpecVD(fol:str, vdNum:int=0) -> tuple[np.ndarray, np.ndarray, int, str, int]:
     """
     Reads the classical flux spectrum data from a classicalFlux.dat file.
     Args:
@@ -240,7 +223,7 @@ def getClassicalSpecVD(fol:str, vdNum:int=0):
         typ (int): Index identifier of the measurer type.
     """
     nElec,_ = getConstant("nElec", fol)
-    with open(combinePath(fol, f"{vdNum:d}" + "classicalfluxspecvd.dat"), 'rb') as fil:
+    with open(os.path.join(fol, f"{vdNum:d}" + "classicalfluxspecvd.dat"), 'rb') as fil:
         INT_SIZE = readData(fil, 'int32')
         typ = readData(fil, 'int32')
         readData(fil, "int32") #skip VD index
@@ -251,7 +234,7 @@ def getClassicalSpecVD(fol:str, vdNum:int=0):
         yields = readData(fil, "double", (nElec, nSamp*2-1))
     return momenta, yields, posIdx, name, typ
 
-def getExpectE0(fol:str):
+def getExpectE0(fol:str) -> tuple[np.ndarray, int]:
     """
     Reads the initial expectation values of energy from an expectE0.dat file.
     Args:
@@ -261,13 +244,13 @@ def getExpectE0(fol:str):
         typ (int): Index identifier of the measurer type.
     """
     nElec,_ = getConstant("nElec", fol)
-    with open(combinePath(fol, "expectE0.dat"), 'rb') as fil:
+    with open(os.path.join(fol, "expectE0.dat"), 'rb') as fil:
         INT_SIZE = readData(fil, 'int32')
         typ = readData(fil, 'int32')
         e0 = readData(fil, "double", nElec)
     return e0, typ
 
-def getTs(fol:str):
+def getTs(fol:str) -> tuple[np.ndarray, int]:
     """
     Reads the time value for each time step from a ts.dat file.
     Args:
@@ -278,7 +261,7 @@ def getTs(fol:str):
     """
     nt,_ = getConstant("nSteps", fol)
     try:
-        with open(combinePath(fol, "ts.dat"), 'rb') as fil:
+        with open(os.path.join(fol, "ts.dat"), 'rb') as fil:
             INT_SIZE = readData(fil, 'int32')
             typ = readData(fil, 'int32')
             ts = readData(fil, "double", nt)
@@ -290,7 +273,7 @@ def getTs(fol:str):
 
 SIMPLE_ARRAY_PERWF_QUANTITIES = Literal["expectA", "expectE", "expectX", "expectP", "totProb"]
 
-def getSimpleArrayPerWFData(fol:str, quantity:SIMPLE_ARRAY_PERWF_QUANTITIES):
+def getSimpleArrayPerWFData(fol:str, quantity:SIMPLE_ARRAY_PERWF_QUANTITIES) -> tuple[np.ndarray, np.ndarray, int]:
     """
     Reads simple array-per-wavefunction data from a .dat file.
     Intended for internal use, see getExpect* and getTotProb.
@@ -304,7 +287,7 @@ def getSimpleArrayPerWFData(fol:str, quantity:SIMPLE_ARRAY_PERWF_QUANTITIES):
     """
     nElec,_ = getConstant("nElec", fol)
     ts,_ = getTs(fol)
-    with open(combinePath(fol, f"{quantity}.dat"), 'rb') as fil:
+    with open(os.path.join(fol, f"{quantity}.dat"), 'rb') as fil:
         INT_SIZE = readData(fil, 'int32')
         typ = readData(fil, 'int32')
         dat = readData(fil, "double", (len(ts), nElec))
