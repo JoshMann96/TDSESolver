@@ -13,7 +13,6 @@ class PySimulation
         char* wisdomFile = new char[64];
         void initFFTW(const char* fftwWisdomPrefix){
             std::snprintf(wisdomFile, 64, "%sfftw_nt_%04d.wisdom", fftwWisdomPrefix, omp_get_max_threads());
-            std::cout << "Using FFTW wisdom file: " << wisdomFile << std::endl;
             fftw_init_threads();
 			fftw_import_wisdom_from_filename(wisdomFile);
         }

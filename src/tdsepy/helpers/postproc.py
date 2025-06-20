@@ -4,6 +4,7 @@ from scipy.interpolate import interp1d
 from scipy.signal import windows
 from scipy import constants as cons
 from scipy.fft import fft
+from typing import Any
 
 plt.rcParams['text.usetex'] = True
 plt.rcParams['font.size'] = 16
@@ -65,7 +66,7 @@ def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=-11, vmax:float=
     else:
         return im
 
-def plotPotential(fol:str, ax = None, potIndex = -1) -> plt.pcolormesh|tuple[plt.pcolormesh, plt.Figure, plt.Axes]:
+def plotPotential(fol:str, ax = None, potIndex = -1) -> Any|tuple[Any, plt.Figure, plt.Axes]:
     """Plots the potential as a function of time.
     AXIS | VAR | UNIT
        x |  x  | nm
@@ -155,7 +156,7 @@ def get1DTotalFluxSpectrum(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0,
     
     return es, spc
 
-def plot1DFluxSpectrum(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0, maxE:float = 500*cons.e, ax = None) -> tuple[plt.semilogy, plt.Figure, plt.Axes]|plt.semilogy:
+def plot1DFluxSpectrum(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0, maxE:float = 500*cons.e, ax = None) -> tuple[Any, plt.Figure, plt.Axes]|Any:
     """Plots the bidirectional density flux spectrum with respect to the signed kinetic energy (sgn(E) = sgn(k))
     AXIS | VAR | UNIT
        x |  E  | eV
