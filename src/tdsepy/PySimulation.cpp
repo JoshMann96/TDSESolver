@@ -32,8 +32,7 @@ void init_Simulation(py::module &m) {
                 Number of times to call the callback function. Default is 101.
                 The callback function will be called with doubles ranging from 0 to 1.0, inclusive.
             fftwWisdomPrefix : str
-                Prefix for the FFTW wisdom file. Default is an empty string. If the filesystem is shared between nodes on a server, this should
-                include some information discerning which node is being run to avoid conflicts where one node overwrites the wisdom file of another.
+                Prefix for the FFTW wisdom file. Default is an empty string. Wisdom filenames are already unique for each distinct HOST_NAME.
 
             Returns
             -------
@@ -59,8 +58,7 @@ void init_Simulation(py::module &m) {
                 Number of times to call the callback function. Default is 101.
                 The callback function will be called with doubles ranging from 0 to 1.0, inclusive.
             fftwWisdomPrefix : str
-                Prefix for the FFTW wisdom file. Default is an empty string. If the filesystem is shared between nodes on a server, this should
-                include some information discerning which node is being run to avoid conflicts where one node overwrites the wisdom file of another.
+                Prefix for the FFTW wisdom file. Default is an empty string. Wisdom filenames are already unique for each distinct HOST_NAME.
 
             Returns
             -------
@@ -86,8 +84,7 @@ void init_Simulation(py::module &m) {
                 Number of times to call the callback function. Default is 101.
                 The callback function will be called with doubles ranging from 0 to 1.0, inclusive.
             fftwWisdomPrefix : str
-                Prefix for the FFTW wisdom file. Default is an empty string. If the filesystem is shared between nodes on a server, this should
-                include some information discerning which node is being run to avoid conflicts where one node overwrites the wisdom file of another.
+                Prefix for the FFTW wisdom file. Default is an empty string. Wisdom filenames are already unique for each distinct HOST_NAME.
 
             Returns
             -------

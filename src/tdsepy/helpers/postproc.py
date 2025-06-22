@@ -6,9 +6,6 @@ from scipy import constants as cons
 from scipy.fft import fft
 from typing import Any
 
-plt.rcParams['text.usetex'] = True
-plt.rcParams['font.size'] = 16
-
 def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=-11, vmax:float=-4, cmap="magma", ax = None, difference=False) -> tuple[plt.Figure, plt.Axes]|None:
     """Plots the 1-D collective electron density as a function of time for a selection of states.
     AXIS | VAR | UNIT
@@ -120,14 +117,11 @@ def get1DStateFluxSpectrum(fol:str, vdNum:int = 0, minE:float = 0, maxE:float = 
     nes, momenta, psik = getFluxSpecVD(fol, vdNum)[:3]
     wghts,_ = getWghts(fol)
     
-    # convert from momentum diff spec to energy
-    # dN/dE = dN/dk * dk/dE
-    with np.errstate(divide='ignore', invalid='ignore'):
-        yld = abs(psik)**2 * np.broadcast_to(abs(np.gradient(momenta, axis=0) / np.gradient(abs(nes), axis=0))[None,:], (len(wghts), len(nes)))
+    yld = abs(psik)**2
     yld[:, nes == 0.0] = 0  # zero flux for zero momentum
     
     es = nes[(nes < maxE) & (nes > minE)]
-    yld = interp1d(nes, yld, axis=-1)(es)*np.broadcast_to(wghts[:,None], (len(wghts), len(es))) * cons.e
+    yld = interp1d(nes, yld, axis=-1)(es)*np.broadcast_to(wghts[:,None], (len(wghts), len(es)))
 
     return es/cons.e, yld
    

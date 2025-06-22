@@ -6,28 +6,41 @@
 #include "pybind11/functional.h"
 #include "SimulationManager.h"
 #include "Densities.h"
+#include <boost/asio/ip/host_name.hpp>
 
 class PySimulation 
     : public SimulationManager {
     private:
-        char* wisdomFile = new char[64];
-        void initFFTW(const char* fftwWisdomPrefix){
-            std::snprintf(wisdomFile, 64, "%sfftw_nt_%04d.wisdom", fftwWisdomPrefix, omp_get_max_threads());
+        char* wisdomFile = nullptr;
+        void initFFTW(const std::string &fftwWisdomPrefix) {
+            const size_t maxLen = 64 + boost::asio::ip::host_name().length() + fftwWisdomPrefix.length();
+
+            if (wisdomFile){
+                delete[] wisdomFile;
+                wisdomFile = nullptr;
+            }
+            wisdomFile = new char[maxLen];
+
+            std::snprintf(wisdomFile, maxLen, "%sfftw_nt_%04d_%s.wisdom", 
+                fftwWisdomPrefix.c_str(), 
+                omp_get_max_threads(), 
+                boost::asio::ip::host_name().c_str());
+
             fftw_init_threads();
 			fftw_import_wisdom_from_filename(wisdomFile);
         }
     public:
         PySimulation(double xmin, double xmax, double dx, double dt, const std::optional<std::function<void(double)>> &callback, std::optional<size_t> numCallbackCalls, std::optional<std::string> fftwWisdomPrefix)
             : SimulationManager(xmin, xmax, dx, dt, callback.has_value() ? callback.value() : nullptr, numCallbackCalls.has_value() ? numCallbackCalls.value() : 101)
-            {initFFTW(fftwWisdomPrefix.has_value() ? fftwWisdomPrefix.value().c_str() : "");}
+            {initFFTW(fftwWisdomPrefix.has_value() ? fftwWisdomPrefix.value() : "");}
 
         PySimulation(size_t nPts, double xmin, double dx, double dt, const std::optional<std::function<void(double)>> &callback, std::optional<size_t> numCallbackCalls, std::optional<std::string> fftwWisdomPrefix)
             : SimulationManager(nPts, xmin, dx, dt, callback.has_value() ? callback.value() : nullptr, numCallbackCalls.has_value() ? numCallbackCalls.value() : 101)
-            {initFFTW(fftwWisdomPrefix.has_value() ? fftwWisdomPrefix.value().c_str()  : "");}
+            {initFFTW(fftwWisdomPrefix.has_value() ? fftwWisdomPrefix.value()  : "");}
         
         PySimulation(double xmin, double xmax, size_t nPts, double dt, const std::optional<std::function<void(double)>> &callback, std::optional<size_t> numCallbackCalls, std::optional<std::string> fftwWisdomPrefix)
             : SimulationManager(xmin, xmax, nPts, dt, callback.has_value() ? callback.value() : nullptr, numCallbackCalls.has_value() ? numCallbackCalls.value() : 101)
-            {initFFTW(fftwWisdomPrefix.has_value() ? fftwWisdomPrefix.value().c_str()  : "");}
+            {initFFTW(fftwWisdomPrefix.has_value() ? fftwWisdomPrefix.value()  : "");}
 
         ~PySimulation(){
             fftw_export_wisdom_to_filename(wisdomFile);
