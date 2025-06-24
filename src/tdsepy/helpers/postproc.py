@@ -1,5 +1,6 @@
 from .rawdataload import *
 import matplotlib.pyplot as plt
+from matplotlib import colors
 from scipy.interpolate import interp1d
 from scipy.signal import windows
 from scipy import constants as cons
@@ -45,7 +46,7 @@ def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=-11, vmax:float=
         fig, ax = plt.subplots()
     
     if difference:
-        im = ax.pcolormesh(xs*1e9, ts*1e15, (np.tensordot(wghts, dat, (0,0)) - np.tensordot(wghts, dat[:,0,:], (0,0)))*(cons.physical_constants["atomic unit of length"][0]**3), cmap=cmap)
+        im = ax.pcolormesh(xs*1e9, ts*1e15, (np.tensordot(wghts, dat, (0,0)) - np.tensordot(wghts, dat[:,0,:], (0,0)))*(cons.physical_constants["atomic unit of length"][0]**3), cmap=cmap, norm = colors.CenteredNorm())
     else:
         im = ax.pcolormesh(xs*1e9, ts*1e15, np.log10(np.tensordot(wghts, dat, (0,0))*(cons.physical_constants["atomic unit of length"][0]**3)), cmap=cmap, vmin=vmin, vmax=vmax)
     
