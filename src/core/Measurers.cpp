@@ -150,7 +150,7 @@ namespace Measurers {
 	}
 
 	MeasurerStatus Psi2t::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t) {
-		while(step == measSteps[curIdx]){
+		while(step >= measSteps[curIdx]){
 			for(size_t i = 0; i < *nElec; i++){
 				vtls::normSqr(nPts, &psi[i*nPts], psi2b);
 				vtls::linearInterpolateEdge(nPts, psi2b, nx, psi2s);
@@ -189,8 +189,8 @@ namespace Measurers {
 	}
 
 
-	ExpectX::ExpectX(size_t nPts, const double* xs, double dx, const size_t* nElec, const std::string fol) :
-		nPts(nPts), dx(dx), nElec(nElec), x(xs), Measurer(11, fol, fname)
+	ExpectX::ExpectX(size_t nPts, const double* xs, double dx, const size_t* nElec, const std::string fol, size_t minPos, size_t maxPos) :
+		nPts(nPts), dx(dx), nElec(nElec), x(xs), minPos(minPos), maxPos(std::min(maxPos, nPts)), Measurer(11, fol, fname)
 	 {
 		scratch = (double*) sq_malloc(sizeof(double)*nPts);
 	}
@@ -201,16 +201,16 @@ namespace Measurers {
 
 	MeasurerStatus ExpectX::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t) {
 		for(size_t i = 0; i < *nElec; i++){
-			vtls::normSqr(nPts, &psi[i*nPts], scratch);
-			double ex = vtlsInt::simpsMul(nPts, x, scratch, dx);
+			vtls::normSqr(maxPos-minPos, &psi[i*nPts+minPos], scratch);
+			double ex = vtlsInt::simpsMul(maxPos-minPos, x+minPos, scratch, dx);
 			write(&ex, sizeof(double));
 		}
 		return MeasurerStatus::SUCCESS;
 	}
 
 
-	ExpectP::ExpectP(size_t len, double dx, const size_t* nElec, const std::string fol) :
-		nPts(len), dx(dx), nElec(nElec), Measurer(12, fol, fname)
+	ExpectP::ExpectP(size_t len, double dx, const size_t* nElec, const std::string fol, size_t minPos, size_t maxPos) :
+		nPts(len), dx(dx), nElec(nElec), minPos(minPos), maxPos(std::min(maxPos, nPts)), Measurer(12, fol, fname)
 	 {
 		scratch1 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*len);
 		scratch2 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*len);
@@ -224,18 +224,18 @@ namespace Measurers {
 	MeasurerStatus ExpectP::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t) {
 		double ex;
 		for(size_t i = 0; i < *nElec; i++){
-			vtls::firstDerivative(nPts, &psi[i*nPts], scratch1, dx);
-			for (size_t j = 0; j < nPts; j++)
-				scratch2[j] = std::conj(psi[i*nPts + j]);
-			ex = std::imag(vtlsInt::simpsMul(nPts, scratch2, scratch1, dx))*PhysCon::hbar;
+			vtls::firstDerivative(maxPos-minPos, &psi[i*nPts+minPos], scratch1, dx);
+			for (size_t j = 0; j < maxPos-minPos; j++)
+				scratch2[j] = std::conj(psi[i*nPts + j + minPos]);
+			ex = std::imag(vtlsInt::simpsMul(maxPos-minPos, scratch2, scratch1, dx))*PhysCon::hbar;
 			write(&ex, sizeof(double));
 		}
 		return MeasurerStatus::SUCCESS;
 	}
 
 
-	ExpectA::ExpectA(size_t nPts, double dx, const size_t* nElec, const std::string fol) :
-		nPts(nPts), dx(dx), nElec(nElec), Measurer(13, fol, fname)
+	ExpectA::ExpectA(size_t nPts, double dx, const size_t* nElec, const std::string fol, size_t minPos, size_t maxPos) :
+		nPts(nPts), dx(dx), nElec(nElec), minPos(minPos), maxPos(std::min(maxPos, nPts)), Measurer(13, fol, fname)
 		 {
 		scratch1 = (double*) sq_malloc(sizeof(double)*nPts);
 		scratch2 = (double*) sq_malloc(sizeof(double)*nPts);
@@ -248,10 +248,10 @@ namespace Measurers {
 
 	MeasurerStatus ExpectA::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t) {
 		double ex;
-		vtls::firstDerivative(nPts, v, scratch1, dx);
+		vtls::firstDerivative(maxPos-minPos, v+minPos, scratch1, dx);
 		for(size_t i = 0; i < *nElec; i++){
-			vtls::normSqr(nPts, &psi[i*nPts], scratch2);
-			ex = vtlsInt::simpsMul(nPts, scratch2, scratch1, dx)*(-1.0 / PhysCon::me);
+			vtls::normSqr(maxPos-minPos, &psi[i*nPts+minPos], scratch2);
+			ex = vtlsInt::simpsMul(maxPos-minPos, scratch2, scratch1, dx)*(-1.0 / PhysCon::me);
 			write(&ex, sizeof(double));
 		}
 
@@ -755,7 +755,7 @@ namespace Measurers {
 	}
 
 	MeasurerStatus Vfunct::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t) {
-		while(step == measSteps[curIdx]){
+		while(step >= measSteps[curIdx]){
 			vtls::linearInterpolateEdge(nPts, v, nx, vs);
 			write(vs, sizeof(double)*nx);
 			

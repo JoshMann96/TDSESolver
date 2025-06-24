@@ -850,6 +850,7 @@ namespace Potentials {
 		size_t numSteps;
 		double maxT;
 		bool measureVirtual;
+		bool measureDone = false;
 	public:
 		/**
 		 * Constructor.
@@ -865,12 +866,17 @@ namespace Potentials {
 		void getVBare(double t, double * targ){pot->getVBare(t, targ);};
 		void getV(const double* rho, const std::complex<double> * psi, double t, double * targ){
 			pot->getV(rho, psi, t, targ);
-			meas->measure((size_t)(t/maxT*numSteps), psi, rho, targ, t);
+			if(!measureDone){
+		    	Measurers::MeasurerStatus stat = meas->measure((size_t)(t/maxT*numSteps), psi, rho, targ, t);
+				measureDone == (stat == Measurers::MeasurerStatus::ALL_DONE);
+			}
 		};
 		void getVVirtual(const double* rho, const std::complex<double> * psi, double t, double * targ){
 			pot->getVVirtual(rho, psi, t, targ);
-			if(measureVirtual)
-				meas->measure((size_t)(t/maxT*numSteps), psi, rho, targ, t);
+			if(measureVirtual && !measureDone){
+				Measurers::MeasurerStatus stat = meas->measure((size_t)(t/maxT*numSteps), psi, rho, targ, t);
+				measureDone == (stat == Measurers::MeasurerStatus::ALL_DONE);
+			}
 		};
 		PotentialComplexity getComplexity() const {return pot->getComplexity();};
 	};

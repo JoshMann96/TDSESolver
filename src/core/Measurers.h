@@ -387,7 +387,7 @@ namespace Measurers {
 		
 		static constexpr const char* fname = "expectX";
 		const double* x;
-		size_t nPts;
+		size_t nPts, minPos, maxPos;
 		const size_t* nElec;
 		double* scratch;
 		double dx;
@@ -399,8 +399,11 @@ namespace Measurers {
 		 * @param dx The spatial spacing.
 		 * @param nElec (in) Pointer to the number of electrons. Must be determined by the time 'measure' is called.
 		 * @param fol The folder to write to.
+		 * @param minPos The minimum position index to consider (inclusive). Default is 0.
+		 * @param maxPos The maximum position index to consider (exclusive). Default is SIZE_MAX (all positions).
 		 */
-		ExpectX(size_t len, const double* xs, double dx, const size_t* nElec, const std::string fol);
+		ExpectX(size_t len, const double* xs, double dx, const size_t* nElec, const std::string fol,
+			size_t minPos = 0, size_t maxPos = SIZE_MAX);
 		~ExpectX();
 		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
 	};
@@ -412,7 +415,7 @@ namespace Measurers {
 		std::fstream fil;
 		
 		static constexpr const char* fname = "expectP";
-		size_t nPts;
+		size_t nPts, minPos, maxPos;
 		const size_t* nElec;
 		std::complex<double> *scratch1, *scratch2;
 		double dx;
@@ -423,8 +426,11 @@ namespace Measurers {
 		 * @param dx The spatial spacing.
 		 * @param nElec (in) Pointer to the number of electrons. Must be determined by the time 'measure' is called.
 		 * @param fol The folder to write to.
+		 * @param minPos The minimum position index to consider (inclusive). Default is 0.
+		 * @param maxPos The maximum position index to consider (exclusive). Default is SIZE_MAX (all positions).
 		 */
-		ExpectP(size_t len, double dx, const size_t* nElec, const std::string fol);
+		ExpectP(size_t len, double dx, const size_t* nElec, const std::string fol,
+			size_t minPos = 0, size_t maxPos = SIZE_MAX);
 
 		~ExpectP();
 		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
@@ -437,7 +443,7 @@ namespace Measurers {
 		std::fstream fil;
 		
 		static constexpr const char* fname = "expectA";
-		size_t nPts;
+		size_t nPts, minPos, maxPos;
 		const size_t* nElec;
 		double *scratch1, *scratch2;
 		double dx;
@@ -448,8 +454,11 @@ namespace Measurers {
 		 * @param dx The spatial spacing.
 		 * @param nElec (in) Pointer to the number of electrons. Must be determined by the time 'measure' is called.
 		 * @param fol The folder to write to.
+		 * @param minPos The minimum position index to consider (inclusive). Default is 0.
+		 * @param maxPos The maximum position index to consider (exclusive). Default is SIZE_MAX (all positions).
 		 */
-		ExpectA(size_t nPts, double dx, const size_t* nElec, const std::string fol);
+		ExpectA(size_t nPts, double dx, const size_t* nElec, const std::string fol,
+			size_t minPos = 0, size_t maxPos = SIZE_MAX);
 		~ExpectA();
 		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
 	};
