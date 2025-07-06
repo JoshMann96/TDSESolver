@@ -53,6 +53,15 @@ namespace KineticOperators {
 		virtual void findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs) = 0;
 	
 		/**
+		 * Calculate the raw probability current for a wavefunction.
+		 * @param psi (in) The wavefunction for which to calculate the current, \a nPts*nElec elements
+		 * @param weights (in) The weights to use for the calculation, \a nEigs elements
+		 * @param current (out) The output array for the current, \a nPts elements
+		 * @param nElec (in) The number of electrons in the system
+		 */
+		virtual void calcRawCurrent(const std::complex<double>* psi, const double* weights, double* current, size_t nElec) = 0;
+
+		/**
 		 * Returns the type of time evolution used by this kinetic operator.
 		 * @return The type of time evolution used by this kinetic operator, one of the TimeEvolutionType enum values.
 		 */
@@ -143,6 +152,9 @@ namespace KineticOperators {
 			needMat = true;
 		}
 
+		/// @copydoc KineticOperator::calcRawCurrent
+		void calcRawCurrent(const std::complex<double>* psi, const double* weights, double* current, size_t nElec);
+
 		/// @copydoc KineticOperator::findEigenStates
 		/// \a states will have \a nPts*nPts elements.
 		void findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs);
@@ -156,6 +168,14 @@ namespace KineticOperators {
 		 */
 		void set_osKineticEnergy(std::complex<double>* kinIn) {
 			vtls::copyArray(nPts, kinIn, osKineticEnergy); needMat = true;
+
+			// calculate group velocity
+			if (!groupVel) groupVel = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts);
+			double dp = PhysCon::hbar * 2.0 * PhysCon::pi / (nPts * dx);
+			groupVel[0] = (kinIn[1] - kinIn[0]) / dp;
+			for (size_t i = 1; i < nPts - 1; i++)
+				groupVel[i] = (kinIn[i + 1] - kinIn[i - 1]) / (2.0 * dp);
+			groupVel[nPts - 1] = (kinIn[nPts - 1] - kinIn[nPts - 2]) / dp;
 		}
 	private:
 		bool firstStepAll = true, firstStepOne = true, needMat = true;
@@ -165,6 +185,7 @@ namespace KineticOperators {
 		size_t nPts, nElec;
 		std::complex<double> *osKineticPhase = nullptr, * osPotentialPhase = nullptr, *opMat = nullptr;
 		std::complex<double>* osKineticEnergy = nullptr;
+		std::complex<double>* groupVel = nullptr, *psik=nullptr;
 		std::complex<double> *temp1 = nullptr, *temp2 = nullptr;
 		double dx, dt;
 
@@ -310,6 +331,9 @@ namespace KineticOperators {
 		/// @copydoc KineticOperator::evaluateEnergy
 		double evaluateEnergy(const std::complex<double>* psi, const double* v);
 
+		/// @copydoc KineticOperator::calcRawCurrent
+		void calcRawCurrent(const std::complex<double>* psi, const double* weights, double* current, size_t nElec);
+
 		/**
 		 * Defines the dispersion relation on the reciprocal (momentum-space) grid.
 		 * Takes in multiple dispersion relations for each region, and with a mask to define how much of that dispersion relation applies to a gridpoint:
@@ -323,6 +347,16 @@ namespace KineticOperators {
 			//take square root, as is required for this method
 			for (size_t i = 0; i < nPts * nDisp; i++)
 				osKineticEnergy[i] = std::sqrt(osKineticEnergy[i]);
+
+			// calculate group velocities
+			if (!groupVel) groupVel = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nPts * nDisp);
+			double dp = PhysCon::hbar * 2.0 * PhysCon::pi / (nPts * dx);
+			for (size_t d = 0; d < nDisp; d++) {
+				groupVel[d * nPts] = (kinIn[d * nPts + 1] - kinIn[d * nPts]) / dp;
+				for (size_t i = 1; i < nPts - 1; i++)
+					groupVel[d * nPts + i] = (kinIn[d * nPts + i + 1] - kinIn[d * nPts + i - 1]) / (2.0 * dp);
+				groupVel[d * nPts + nPts - 1] = (kinIn[d * nPts + nPts - 1] - kinIn[d * nPts + nPts - 2]) / dp;
+			}
 		}
 	private:
 		bool firstStepAll = true, firstStepOne = true, needMat = true;
@@ -333,6 +367,8 @@ namespace KineticOperators {
 		bool forceNorm;
 		std::complex<double>* osPotentialPhase = nullptr, * opMat = nullptr;
 		std::complex<double>* osKineticEnergy = nullptr;
+		std::complex<double>* groupVel = nullptr, *psik=nullptr;
+		double* tempCur = nullptr;
 		std::complex<double>* tempPsi = nullptr, *tempPsiCum = nullptr;
 		double* osKineticMask = nullptr, *norms = nullptr;
 		double dx, dt;
@@ -487,6 +523,16 @@ namespace KineticOperators {
 		virtual bool calcRawRhoByDevice(const double* weights, double* rho, bool virt) = 0;
 
 		/**
+		 * Calculates the (raw, unprojected) current of the system using the weights provided.
+		 * This uses the state stored on the GPU.
+		 * @param weights (in) The weights to use for the calculation, \a nElec elements
+		 * @param current (out) The current calculated, \a nPts elements
+		 * @param virt (in) Whether to calculate the current from the virtual state or the regular state on the GPU.
+		 * @return true if the calculation was successful, false otherwise (e.g. if the GPU is not being used, this will return false and one must use the CPU instead).
+		 */
+		virtual bool calcRawCurByDevice(const double* weights, double* current, bool virt) = 0;
+
+		/**
 		 * Sets the left and right boundary conditions for the system.
 		 * @param bc The boundary condition to set
 		 * @param side The side of the system to set the boundary condition for (left or right)
@@ -520,7 +566,7 @@ namespace KineticOperators {
 
 		std::complex<double> *rbct=nullptr, *lbct=nullptr, *bct1=nullptr, *bct2=nullptr;
 
-		std::complex<double> *tempPsi1 = nullptr;
+		std::complex<double> *tempPsi1 = nullptr, *tempPsi2 = nullptr;
 	
 		cudaTridiagonalSolverSystem *cuSolver = nullptr;
 
@@ -572,6 +618,8 @@ namespace KineticOperators {
 
 			if(tempPsi1)
 				sq_free(tempPsi1);
+			if(tempPsi2)
+				sq_free(tempPsi2);
 
 			#ifdef USE_CUDA
 			if(cuSolver)
@@ -619,6 +667,12 @@ namespace KineticOperators {
 
 		/// @copydoc KineticOperator_FDM::calcRawRhoByDevice
 		bool calcRawRhoByDevice(const double* weights, double* rho, bool virt);
+
+		/// @copydoc KineticOperator::calcRawCurrent
+		void calcRawCurrent(const std::complex<double>* psi, const double* weights, double* current, size_t nElec);
+
+		/// @copydoc KineticOperator_FDM::calcRawCurByDevice
+		bool calcRawCurByDevice(const double* weights, double* current, bool virt);
 
 		/**
 		 * Calculates the wavenumber associated with a given phase advance per time step according to the Crank-Nicolson dispersion relation.

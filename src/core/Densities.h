@@ -182,17 +182,17 @@ namespace Densities {
 			if (!psi2_work) 
 				psi2_work = (double*)sq_malloc(sizeof(double) * nPts * nElec);
 			calcRawRho(nPts, nElec, weights, psi, psi2_work, rho);
-			calcRho(nPts, nElec, dx, rho);
+			applyProfile(nPts, nElec, dx, rho);
 		};
 
 		/**
-		 * Takes the raw density and processes it to obtain the final electron density with any further geometric considerations.
+		 * Takes the raw density (current) and processes it to obtain the final electron density (current) with any further geometric considerations.
 		 * @param nPts Number of grid points in the spatial domain.
 		 * @param nElec Number of electrons (wavefunctions).
 		 * @param dx The grid spacing in the spatial domain.
-		 * @param rho (in/out) Array of raw density values, size nPts. This will be modified to contain the processed density.
+		 * @param rho (in/out) Array of raw density (current) values, size nPts. This will be modified to contain the processed density (current).
 		 */
-		virtual void calcRho(size_t nPts, size_t nElec, double dx, double* rho) = 0;
+		virtual void applyProfile(size_t nPts, size_t nElec, double dx, double* rho) = 0;
 	};
 
 	/// Performs no post-processing on the raw density, simply returning it as is.
@@ -202,7 +202,7 @@ namespace Densities {
 	private:
 		bool first = true;
 	public:
-		void calcRho(size_t nPts, size_t nElec, double dx, double* rho);
+		void applyProfile(size_t nPts, size_t nElec, double dx, double* rho);
 	};
 
 	/// A density calculator which models a region of cylindrical geometry such that the density decreases further away from the cylinder.
@@ -231,7 +231,7 @@ namespace Densities {
 		CylindricalDensity(double center, double radius, double minX);
 
 		~CylindricalDensity();
-		void calcRho(size_t nPts, size_t nElec, double dx, double* rho);
+		void applyProfile(size_t nPts, size_t nElec, double dx, double* rho);
 
 		/**
 		 * Calculates the thinning factor for a cylindrical density profile.
@@ -277,7 +277,7 @@ namespace Densities {
 		GaussianSmoothedDensity(double sig, bool periodic, Density* baseDens) : sig(sig), periodic(periodic), baseDens(baseDens) {}
 
 		~GaussianSmoothedDensity();
-		void calcRho(size_t nPts, size_t nElec, double dx, double* rho);
+		void applyProfile(size_t nPts, size_t nElec, double dx, double* rho);
 	};
 
 	class SmallKernelConvolver :
@@ -306,6 +306,6 @@ namespace Densities {
 
 		~SmallKernelConvolver();
 
-		void calcRho(size_t nPts, size_t nElec, double dx, double* rho);
+		void applyProfile(size_t nPts, size_t nElec, double dx, double* rho);
 	};
 }

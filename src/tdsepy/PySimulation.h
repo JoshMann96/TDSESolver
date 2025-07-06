@@ -72,6 +72,14 @@ class PySimulation
             }
         }
 
+        std::vector<double> getCur(){
+            try{
+                return std::vector<double>(SimulationManager::getCur(), SimulationManager::getCur() + getNumPoints());
+            } catch (const std::runtime_error &e) {
+                throw py::value_error(e.what());
+            }
+        }
+
         py::array_t<std::complex<double>> getPsi(){
             try{
                 return py::array_t<std::complex<double>>(getNumPoints() * getNElec(), SimulationManager::getPsi());

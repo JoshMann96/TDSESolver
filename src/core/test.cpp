@@ -819,6 +819,11 @@ void testCuTridiagSolver(){
 	#endif // USE_CUDA
 }
 
+// TODO: TESTING CURRENT CALCULATIONS
+// - OS method
+// - CN CPU
+// - CN GPU
+// - planar and cylindrical geometries
 
 int main(int argc, char** argv){
 	// char* wisdomFile = new char[64];
@@ -911,7 +916,7 @@ int main(int argc, char** argv){
 	vtlsPrnt::printArray(nPts, rho);
 	std::cout << vtlsInt::sum(nPts, rho, dx) << std::endl;
 	for(int i = 0; i < 10; i++){
-		dens->calcRho(nPts, 1, dx, rho);
+		dens->applyProfile(nPts, 1, dx, rho);
 		vtlsPrnt::printArray(nPts, rho);
 		std::cout << vtlsInt::sum(nPts, rho, dx) << std::endl;
 	}

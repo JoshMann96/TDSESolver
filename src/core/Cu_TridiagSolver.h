@@ -42,7 +42,7 @@ private:
     cublasHandle_t cbHandle;
     cuDoubleComplex *cDL, *cD, *cDU; // LHS matrix definition
     cuDoubleComplex *_cX, *_cXV, *cPBuf, *tempState = nullptr; // solution vector (data) and workspace
-    double *cRho, *cWeights, *cVec=nullptr; // density
+    double *cRho, *cCur, *cWeights, *cVec=nullptr; // density
 
     cuDoubleComplex *cRHSMat, *rhsTemp; // RHS matrix values
 
@@ -167,13 +167,23 @@ public:
     void solve(const std::complex<double> *D, bool destVirt = false, bool sourceVirt = false);
     
     /**
-     * Calculates the particle density according to weights on the GPU and returns it to the CPU.
+     * Calculates the density according to weights on the GPU and returns it to the CPU.
      * This reduces the amount of communication overhead between the CPU and GPU.
      * @param weights (in) weights of the states, \a nrhs elements.
      * @param rho (out) density, n elements.
      * @param virt true calculates the density from the virtual state, false calculates the density from the regular state.
      */
     void calcRawRho(const double* weights, double* rho, bool virt = false);
+
+    /**
+     * Calculates the current density according to weights on the GPU and returns it to the CPU.
+     * This reduces the amount of communication overhead between the CPU and GPU.
+     * @param weights (in) weights of the states, \a nrhs elements.
+     * @param cur (out) current density, n elements.
+     * @param prefactor includes the prefactor for the current density: \f$ \hbar/(m \Delta x) \f$
+     * @param virt true calculates the current density from the virtual state, false calculates the current density from the regular state.
+     */
+    void calcRawCur(const double* weights, double* cur, double prefactor, bool virt = false);
 
     /**
      * Calculates the Hadamard product of the current state vector with a given vector.

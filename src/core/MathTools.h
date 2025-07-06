@@ -471,6 +471,21 @@ namespace vtls {
 	}
 
 	/**
+	 * Adds the real component of a scalar multiple of one array to another array.
+	 * @tparam T The type of the scalar.
+	 * @tparam U The type of the first array.
+	 * @param len The length of the arrays.
+	 * @param scalar The scalar value to multiply the first array by.
+	 * @param arr (in) The first array, which will be multiplied by the scalar.
+	 * @param targ (out) The second array, which will be added to with the result.
+	 */
+	template <typename T, typename U>
+	void scaMulAddArraysRe(size_t len, T scalar, const U* __restrict arr, double* __restrict targ) {
+		for (size_t i = 0; i < len; i++)
+			targ[i] += std::real(arr[i] * scalar);
+	}
+
+	/**
 	 * Adds two arrays together, storing the result in a third array.
 	 * @tparam T The type of the first array.
 	 * @tparam U The type of the second array.
@@ -867,6 +882,17 @@ namespace vtls {
 	 */
 	template <typename T>
 	void copyArrayRe(size_t len, const T* __restrict arr1, double* __restrict arr2);
+
+	/**
+	 * Copies the elements of one array to another, taking the complex conjugate of the source array.
+	 * @param len The length of the arrays.
+	 * @param arr1 (in) The source array to copy from.
+	 * @param arr2 (out) The target array to copy to.
+	 */
+	inline void copyArrayConj(size_t len, const std::complex<double>* __restrict arr1, std::complex<double>* __restrict arr2) {
+		for (size_t i = 0; i < len; i++)
+			arr2[i] = std::conj(arr1[i]);
+	}
 
 	/**
 	 * Evaluates the first derivative of an array at a specified position.

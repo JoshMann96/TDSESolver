@@ -26,6 +26,20 @@ cudaError_t cudaNormSquare(const cuDoubleComplex* x, double* result, size_t n);
 cudaError_t cudaDensity(const double* weights, const cuDoubleComplex* x, double* result, size_t n, size_t nrhs);
 
 /**
+ * Compute the current density of a vector via CUDA. All arrays are assumed to be on the device.
+ * The calculated result is:
+ * j = p * Im(x^* * grad(x))
+ * @param weights (in) The weights.
+ * @param x (in) Wavefunctions.
+ * @param result (out) Result.
+ * @param p The prefactor, typically \f$ \hbar/(m \Delta x) \f$.
+ * @param n Number of gridpoints.
+ * @param nrhs Number of right-hand sides.
+ * @return cudaError code.
+ */
+cudaError_t cudaCurrent(const double* weights, const cuDoubleComplex* x, double* result, double p, size_t n, size_t nrhs);
+
+/**
  * Compute the Hadamard product of a vector and a matrix via CUDA. All arrays are assumed to be on the device.
  * @param vec (in) The which will multiply the elemtns of x. Size must be n.
  * @param x (in/out) The vectors to be modified. It will be multiplied element-wise by vec. Size must be n*nrhs.

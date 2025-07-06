@@ -111,6 +111,12 @@ void init_Simulation(py::module &m) {
             Returns
             -------
             float array : Electron density at each grid point.)V0G0N")
+        .def("getCur", &PySimulation::getCur, R"V0G0N(
+            Returns the current density of the simulation.
+
+            Returns
+            -------
+            float array : Current density at each grid point.)V0G0N")
         .def("getPsi", &PySimulation::getPsi, R"V0G0N(
             Returns the wavefunction of the simulation.
             If the wavefunction is not yet set an error will be raised.

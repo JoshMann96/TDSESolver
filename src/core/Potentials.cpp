@@ -35,7 +35,7 @@ namespace Potentials {
 		vtls::copyArray(nPts, v, targ);
 	}
 
-	void FilePotential::getV(const double* rho, const std::complex<double> * psi, double t, double * targ) {
+	void FilePotential::getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ) {
 		vtls::copyArray(nPts, v, targ);
 	}
 
@@ -110,7 +110,7 @@ namespace Potentials {
 			std::fill_n(targ, nPts, 0.0);
 	}
 
-	void BiasFieldPotential::getV(const double* rho, const std::complex<double> * psi, double t, double * targ) {
+	void BiasFieldPotential::getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ) {
 		getVBare(t, targ);
 	}
 
@@ -139,7 +139,7 @@ namespace Potentials {
 		vtls::copyArray(nPts, v, targ);
 	}
 
-	void CoulombPotential::getV(const double* rho, const std::complex<double> * psi, double t, double * targ) {
+	void CoulombPotential::getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ) {
 		vtls::copyArray(nPts, v, targ);
 	}
 
@@ -163,7 +163,7 @@ namespace Potentials {
 		vtls::copyArray(nPts, v, targ);
 	}
 
-	void FiniteBox::getV(const double* rho, const std::complex<double> * psi, double t, double * targ) {
+	void FiniteBox::getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ) {
 		getVBare(t, targ);
 	}
 
@@ -215,7 +215,7 @@ namespace Potentials {
 		vtls::copyArray(nPts, v, targ);
 	}
 
-	void JelliumPotential::getV(const double* rho, const std::complex<double> * psi, double t, double * targ) {
+	void JelliumPotential::getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ) {
 		getVBare(t, targ);
 	}
 
@@ -283,7 +283,7 @@ namespace Potentials {
 		vtls::copyArray(nPts, v, targ);
 	}
 
-	void JelliumPotentialBacked::getV(const double* rho, const std::complex<double> * psi, double t, double * targ) {
+	void JelliumPotentialBacked::getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ) {
 		getVBare(t, targ);
 	}
 
@@ -307,7 +307,7 @@ namespace Potentials {
 		vtls::scaMulArrayRe(nPts, std::exp(PhysCon::im*(w*(t-tmax)+phase))*env->getValue(t), potMask, targ);
 	}
 
-	void ElectricFieldProfileToPotential::getV(const double* rho, const std::complex<double> * psi, double t, double * targ) {
+	void ElectricFieldProfileToPotential::getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ) {
 		getVBare(t, targ);
 	}
 
@@ -327,7 +327,7 @@ namespace Potentials {
 		vtls::copyArray(nPts, v, targ);
 	}
 
-	void ShieldedAtomicPotential::getV(const double* rho, const std::complex<double> * psi, double t, double * targ) {
+	void ShieldedAtomicPotential::getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ) {
 		getVBare(t, targ);
 	}
 
@@ -423,15 +423,15 @@ namespace Potentials {
 			targ[i] = 0.0;
 	}
 
-	void CylindricalImageCharge::getVVirtual(const double* rho, const std::complex<double>* psi, double t, double* targ) {
+	void CylindricalImageCharge::getVVirtual(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ) {
 		calcPot(rho, psi, t, targ);
 		double ref = targ[refPoint] - origPot[refPoint];
 		for (size_t i = 0; i < nPts; i++)
 			targ[i] -= origPot[i] + ref;
 	}
 
-	void CylindricalImageCharge::getV(const double* rho, const std::complex<double>* psi, double t, double* targ) {
-		getVVirtual(rho, psi, t, targ);
+	void CylindricalImageCharge::getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ) {
+		getVVirtual(rho, cur, psi, t, targ);
 		curInt->integrate(psi, t);
 	}
 
@@ -540,7 +540,7 @@ namespace Potentials {
 		std::fill_n(targ, nPts, 0.0);
 	}
 
-	void PlanarToCylindricalHartree::getVVirtual(const double* rho, const std::complex<double>* psi, double t, double* targ) {
+	void PlanarToCylindricalHartree::getVVirtual(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ) {
 		calcPot(rho, psi, t, targ); // evaluates totalCharge as part of calculation
 		if(mimicOpenSystem != 0){
 			double lossFraction = -(originalCharge - totalCharge - mimicOpenSystem * curIntOpen->getIntegratedFlux()) / originalCharge + 1.0; // charge that left sim is lost, scale origPot by appropriate amount
@@ -556,8 +556,8 @@ namespace Potentials {
 		}
 	}
 
-	void PlanarToCylindricalHartree::getV(const double* rho, const std::complex<double>* psi, double t, double* targ) {
-		getVVirtual(rho, psi, t, targ);
+	void PlanarToCylindricalHartree::getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ) {
+		getVVirtual(rho, cur, psi, t, targ);
 		if(curIntOpen)
 			curIntOpen->integrate(psi, t);
 		if(curIntGhost)
@@ -600,7 +600,7 @@ namespace Potentials {
 		std::fill_n(targ, nPts, 0.0);
 	}
 
-	void PlanarHartree::getV(const double* rho, const std::complex<double>* psi, double t, double* targ) {
+	void PlanarHartree::getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ) {
 		calcPot(rho, targ);
 
 		double ref = targ[refPoint] - origPot[refPoint];
@@ -635,7 +635,7 @@ namespace Potentials {
 		std::fill_n(targ, nPts, 0.0);
 	}
 
-	void LDAFunctional::getV(const double* rho, const std::complex<double>* psi, double t, double* targ) {
+	void LDAFunctional::getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ) {
 		calcPot(rho, targ);
 		double ref = targ[refPoint] - origPot[refPoint];
 		for (size_t i = 0; i < nPts; i++)
@@ -677,9 +677,10 @@ namespace Potentials {
 
 	}
 
-	CompositePotential::CompositePotential(size_t nPts, size_t numSPots, size_t numDPots, size_t numWPots, Potential ** staticPots, Potential ** dynamicPots, Potential ** waveFuncDependentPots) :
-		nPts(nPts), numSPots(numSPots), numDPots(numDPots), numWPots(numWPots), staticPots(staticPots), dynamicPots(dynamicPots), waveFuncDependentPots(waveFuncDependentPots)
+	CompositePotential::CompositePotential(size_t nPts, size_t numSPots, size_t numDPots, Potential ** staticPots, Potential ** dynamicPots) :
+		nPts(nPts), numSPots(numSPots), numDPots(numDPots), staticPots(staticPots), dynamicPots(dynamicPots)
 	{
+		// calculate static part of potential
 		v0 = (double*) sq_malloc(sizeof(double)*nPts);
 		if (numSPots != 0)
 			staticPots[0]->getVBare(0.0, v0);
@@ -690,6 +691,10 @@ namespace Potentials {
 			staticPots[i]->getVBare(0.0, nv);
 			vtls::addArrays(nPts, nv, v0);
 		}
+
+		// calculate complexity
+		for (size_t i = 0; i < numDPots; i++)
+			myDepend |= dynamicPots[i]->getDependence();
 	}
 
 	CompositePotential::~CompositePotential(){
@@ -705,37 +710,24 @@ namespace Potentials {
 		}
 	}
 
-	void CompositePotential::getV(const double* rho, const std::complex<double> * psi, double t, double * targ) {
+	void CompositePotential::getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ) {
 		vtls::copyArray(nPts, v0, targ);
 		for (size_t i = 0; i < numDPots; i++) {
-			dynamicPots[i]->getV(rho, psi, t, nv);
-			vtls::addArrays(nPts, nv, targ);
-		}
-		for (size_t i = 0; i < numWPots; i++) {
-			waveFuncDependentPots[i]->getV(rho, psi, t, nv);
+			dynamicPots[i]->getV(rho, cur, psi, t, nv);
 			vtls::addArrays(nPts, nv, targ);
 		}
 	}
 
-	void CompositePotential::getVVirtual(const double* rho, const std::complex<double> * psi, double t, double * targ) {
+	void CompositePotential::getVVirtual(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ) {
 		vtls::copyArray(nPts, v0, targ);
 		for (size_t i = 0; i < numDPots; i++) {
-			dynamicPots[i]->getVVirtual(rho, psi, t, nv);
-			vtls::addArrays(nPts, nv, targ);
-		}
-		for (size_t i = 0; i < numWPots; i++) {
-			waveFuncDependentPots[i]->getVVirtual(rho, psi, t, nv);
+			dynamicPots[i]->getVVirtual(rho, cur, psi, t, nv);
 			vtls::addArrays(nPts, nv, targ);
 		}
 	}
 
-	PotentialComplexity CompositePotential::getComplexity() const {
-		if (numWPots > 0)
-			return PotentialComplexity::WAVEFUNCTION_DEPENDENT;
-		else if (numDPots > 0)
-			return PotentialComplexity::DYNAMIC;
-		else
-			return PotentialComplexity::STATIC;
+	Dependence CompositePotential::getDependence() const {
+		return myDepend;
 	}
 
 	PotentialManager::PotentialManager(size_t nPts) {
@@ -744,21 +736,11 @@ namespace Potentials {
 
 	void PotentialManager::addPotential(Potential * pot) {
 		compositeRefreshed = false;
-		switch(pot->getComplexity()){
-			case PotentialComplexity::STATIC:
-				staticPots.push_back(pot);
-				break;
-			case PotentialComplexity::DYNAMIC:
-				dynamicPots.push_back(pot);
-				if(myComplex == PotentialComplexity::STATIC)
-					myComplex = PotentialComplexity::DYNAMIC;
-				break;
-			case PotentialComplexity::WAVEFUNCTION_DEPENDENT:
-				waveFuncDependentPots.push_back(pot);
-				myComplex = PotentialComplexity::WAVEFUNCTION_DEPENDENT;
-				break;
-			default:
-				throw std::runtime_error("Potential does not fall into an enum PotentialComplexity (something is very wrong?)");
+		if (pot -> getDependence() == Dependence::STATIC)
+			staticPots.push_back(pot);
+		else{
+			dynamicPots.push_back(pot);
+			myDepend |= pot->getDependence();
 		}
 	}
 
@@ -766,30 +748,24 @@ namespace Potentials {
 		// copy vectors to pointer arrays
 		size_t ns = staticPots.size();
 		size_t nd = dynamicPots.size();
-		size_t nw = waveFuncDependentPots.size();
 
 		if (spots)
 			delete[] spots;
 		if (dpots)
 			delete[] dpots;
-		if (wpots)
-			delete[] wpots;
 
 		spots = new Potential*[ns > 0 ? ns : 1];
 		dpots = new Potential*[nd > 0 ? nd : 1];
-		wpots = new Potential*[nw > 0 ? nw : 1];
 
 		for (size_t i = 0; i < ns; i++)
 			spots[i] = staticPots[i];
 		for (size_t i = 0; i < nd; i++)
 			dpots[i] = dynamicPots[i];
-		for (size_t i = 0; i < nw; i++)
-			wpots[i] = waveFuncDependentPots[i];
 		
 		// recreate composite potential
 		if (pot)
 			delete pot;
-		pot = new CompositePotential(nPts, ns, nd, nw, spots, dpots, wpots);
+		pot = new CompositePotential(nPts, ns, nd, spots, dpots);
 
 		compositeRefreshed = true;
 	}
@@ -800,16 +776,16 @@ namespace Potentials {
 		pot->getVBare(t, targ);
 	}
 
-	void PotentialManager::getV(const double* rho, const std::complex<double> * psi, double t, double * targ) {
+	void PotentialManager::getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ) {
 		if(!compositeRefreshed)
 			refreshCompositePotential();
-		pot->getV(rho, psi, t, targ);
+		pot->getV(rho, cur, psi, t, targ);
 	}
 
-	void PotentialManager::getVVirtual(const double* rho, const std::complex<double> * psi, double t, double * targ) {
+	void PotentialManager::getVVirtual(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ) {
 		if(!compositeRefreshed)
 			refreshCompositePotential();
-		pot->getVVirtual(rho, psi, t, targ);
+		pot->getVVirtual(rho, cur, psi, t, targ);
 	}
 
 	namespace ElectricFieldProfiles {

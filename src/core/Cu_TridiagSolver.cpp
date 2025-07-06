@@ -18,6 +18,7 @@ cudaTridiagonalSolverSystem::cudaTridiagonalSolverSystem(size_t n, size_t nrhs) 
 
     // density
     cudaStatCheck(  cudaMalloc((void**)&cRho, n * sizeof(double)));
+    cudaStatCheck(  cudaMalloc((void**)&cCur, n * sizeof(double)));
     cudaStatCheck(  cudaMalloc((void**)&cWeights, nrhs * sizeof(double)));
 
     // workspace
@@ -48,6 +49,7 @@ cudaTridiagonalSolverSystem::~cudaTridiagonalSolverSystem() {
         cudaStatCheck(  cudaFree(tempState));
 
     cudaStatCheck(  cudaFree(cRho));
+    cudaStatCheck(  cudaFree(cCur));
     cudaStatCheck(  cudaFree(cWeights));
     if(cVec != nullptr)
         cudaStatCheck(  cudaFree(cVec));
@@ -208,6 +210,16 @@ void cudaTridiagonalSolverSystem::calcRawRho(const double* weights, double* rho,
     cudaStatCheck(  cudaMemcpy(cWeights, weights, nrhs * sizeof(double), cudaMemcpyHostToDevice));
     cudaStatCheck(  cudaDensity(cWeights, myX.data, cRho, n, nrhs));
     cudaStatCheck(  cudaMemcpy(rho, cRho, n * sizeof(double), cudaMemcpyDeviceToHost));
+}
+
+void cudaTridiagonalSolverSystem::calcRawCur(const double* weights, double* cur, double prefactor, bool virt) {
+    CudaVector& myX = virt ? cXV : cX;
+    if (myX.status != BARE)
+        throw std::runtime_error("cudaTridiagonalSolverSystem::calcRawCur : Stored state is not BARE.");
+    
+    cudaStatCheck(  cudaMemcpy(cWeights, weights, nrhs * sizeof(double), cudaMemcpyHostToDevice));
+    cudaStatCheck(  cudaCurrent(cWeights, myX.data, cCur, prefactor, n, nrhs));
+    cudaStatCheck(  cudaMemcpy(cur, cCur, n * sizeof(double), cudaMemcpyDeviceToHost));
 }
 
 void cudaTridiagonalSolverSystem::vectorHadamardProduct(const double* vec, bool virt){

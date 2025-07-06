@@ -139,7 +139,7 @@ namespace Measurers {
 		 * @param t The current time.
 		 * @return The status of the measurement. SUCCESS if successful, FAIL if not, ALL_DONE if all measurements are complete and this measurer is ready to be destructed.
 		 */
-		virtual MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double * v, double t) = 0;
+		virtual MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double * v, double t) = 0;
 		
 		/**
 		 * Gets the index of the measurer.
@@ -152,6 +152,12 @@ namespace Measurers {
 		 * @return True if the density is needed, false if not.
 		 */
 		virtual bool needsDensity() const {return false;};
+
+		/**
+		 * Checks if the measurer requires that the current be calculated.
+		 * @return True if the current is needed, false if not.
+		 */
+		virtual bool needsCurrent() const {return false;};
 	};
 
 	/// Records a constant value to file.
@@ -170,7 +176,7 @@ namespace Measurers {
 		 */
 		DoubleConst(double c, const std::string name, const std::string fol);
 
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t){return MeasurerStatus::ALL_DONE;};
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t){return MeasurerStatus::ALL_DONE;};
 	};
 
 	/// Writes text (8 chars required) to file. Output file is head.dat.
@@ -188,7 +194,7 @@ namespace Measurers {
 		 */
 		Header(const std::string title, const std::string fol);
 		
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t) { return MeasurerStatus::ALL_DONE; };
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t) { return MeasurerStatus::ALL_DONE; };
 	};
 
 	/// Records the number of grid points in a simulation. Output file is nPts.dat.
@@ -205,7 +211,7 @@ namespace Measurers {
 		 */
 		NPts(size_t nPts, const std::string fol);
 		
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t) { return MeasurerStatus::ALL_DONE; };
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t) { return MeasurerStatus::ALL_DONE; };
 	};
 
 	/// Records the number of time steps in simulation. Output file is nSteps.dat. Uses int dtype when writing.
@@ -225,7 +231,7 @@ namespace Measurers {
 		NSteps(const std::string fol);
 
 		~NSteps();
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
 	};
 
 	/// Records dx (spatial) spacing. Output file is dx.dat.
@@ -242,7 +248,7 @@ namespace Measurers {
 		 */
 		DX(double dx, const std::string fol);
 
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t) { return MeasurerStatus::ALL_DONE; };
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t) { return MeasurerStatus::ALL_DONE; };
 	};
 
 	/// Records dt (temporal) spacing. Output file is dt.dat.
@@ -259,7 +265,7 @@ namespace Measurers {
 		 */
 		DT(double dt, const std::string fol);
 
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t) { return MeasurerStatus::ALL_DONE; };
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t) { return MeasurerStatus::ALL_DONE; };
 	};
 
 	/// Records array of x positions. Output file is xs.dat.
@@ -277,7 +283,7 @@ namespace Measurers {
 		 */
 		XS(size_t len, const double* xs, const std::string fol);
 
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t) { return MeasurerStatus::ALL_DONE; };
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t) { return MeasurerStatus::ALL_DONE; };
 	};
 
 	/// Records array of time step times. Output file is ts.dat.
@@ -293,7 +299,7 @@ namespace Measurers {
 		 */
 		TS(const std::string fol);
 
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
 	};
 
 	/// Records the original potential at beginning of simulation. Output file is v0.dat.
@@ -312,7 +318,7 @@ namespace Measurers {
 		 */
 		OrigPot(size_t n, const std::string fol);
 
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
 	};
 
 	/// Records the absolute value squared of the wave function, downsampling in both space and time. Output file is psi2t.dat.
@@ -350,7 +356,7 @@ namespace Measurers {
 		Psi2t(size_t nPts, size_t nx, size_t nt, size_t numSteps, const double * x, const size_t* nElec, const std::string fol);
 
 		~Psi2t();
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
 	};
 
 	/// Records expectation value of energy for each wavefunction at each step. Output file is expectE.dat.
@@ -376,7 +382,7 @@ namespace Measurers {
 		 */
 		ExpectE(size_t len, double dx, const size_t* nElec, const std::string fol, KineticOperators::KineticOperator * const* kin);
 		~ExpectE();
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
 	};
 
 	/// Records expectation value of position for each wavefunction at each step. Output file is expectX.dat.
@@ -405,7 +411,7 @@ namespace Measurers {
 		ExpectX(size_t len, const double* xs, double dx, const size_t* nElec, const std::string fol,
 			size_t minPos = 0, size_t maxPos = SIZE_MAX);
 		~ExpectX();
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
 	};
 
 	/// Records expectation value of momentum (fairly computationally expensive) for each wavefunction at each step. Output file is expectP.dat.
@@ -433,7 +439,7 @@ namespace Measurers {
 			size_t minPos = 0, size_t maxPos = SIZE_MAX);
 
 		~ExpectP();
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
 	};
 
 	/// Records expectation value of acceleration for each wavefunction at each step. Output file is expectA.dat.
@@ -460,7 +466,7 @@ namespace Measurers {
 		ExpectA(size_t nPts, double dx, const size_t* nElec, const std::string fol,
 			size_t minPos = 0, size_t maxPos = SIZE_MAX);
 		~ExpectA();
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
 	};
 
 	/// Records the total probability remaining in simulation for each wavefunction at each step. Output file is totProb.dat.
@@ -485,7 +491,7 @@ namespace Measurers {
 		 */
 		TotProb(size_t n, double dx, const size_t* nElec, const std::string fol);
 		~TotProb();
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
 	};
 
 	/// Records the probability current at the virtual detector position (index) for each wavefunction at each step. Output file is {vdNum}jrd.dat.
@@ -512,7 +518,7 @@ namespace Measurers {
 		 */
 		VDProbCurrent(size_t n, double dx, const size_t *nElec, size_t vdPos, int vdNum, const std::string name, const std::string fol);
 
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
 	};
 
 	/// Records the wave function's value at the virtual detector position (index) for each wavefunction at each step. Output file is {vdNum}psird.dat.
@@ -536,7 +542,7 @@ namespace Measurers {
 		 */
 		VDPsi(const size_t* nElec, size_t vdPos, int vdNum, const std::string name, const std::string fol);
 
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
 	};
 
 	/// Records the potential at the virtual detector position (index) at each step. Output file is {vdNum}vrd.dat.
@@ -559,7 +565,7 @@ namespace Measurers {
 		 */
 		VDPot(size_t vdPos, int vdNum, const std::string name, const std::string fol);
 
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
 	};
 
 	/**
@@ -656,7 +662,7 @@ namespace Measurers {
 		VDFluxSpec(size_t nPts, double dx, double dt, size_t vdPos, int vdNum, const size_t* nElec, size_t nSamp, double emax, KineticOperators::KineticOperator** kinOp, double tmax, const std::string name, const std::string fol);
 
 		~VDFluxSpec();
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
 
 		static void advancePhaseOS(size_t nSamp, double dt, double v, double* kineticEnergies, std::complex<double>* phss) {
 			for(size_t i = 0; i < nSamp; i++)
@@ -739,7 +745,7 @@ namespace Measurers {
 	public:
 		VDUnidirectionalFluxSpec(size_t nPts, double dx, double dt, size_t vdPos, int vdNum, const size_t* nElec, size_t nSamp, double emax, KineticOperators::KineticOperator** kinOp, double tmax, const std::string name, const std::string fol);
 		~VDUnidirectionalFluxSpec();
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
 	};
 
 	class VDClassicalFluxSpec :
@@ -756,7 +762,7 @@ namespace Measurers {
 	public:
 		VDClassicalFluxSpec(size_t nPts, double dx, double dt, size_t vdPos, int vdNum, const size_t* nElec, size_t nSamp, double emax, const std::string name, const std::string fol);
 		~VDClassicalFluxSpec();
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
 	};
 	
 	/// Records the entire wave function at a sample time. Output file is {vdNum}psit.dat.
@@ -783,7 +789,7 @@ namespace Measurers {
 		 */
 		PsiT(size_t n, double meaT, const size_t* nElec, int vdNum, const std::string name, const std::string fol);
 
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
 	};
 
 	/// Records the entire potential at a sample time. Output file is {vdNum}pott.dat.
@@ -808,7 +814,7 @@ namespace Measurers {
 		 */
 		PotT(size_t n, double meaT, int vdNum, const std::string name, const std::string fol);
 
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
 	};
 
 	/// Records the potential, downsampling in both space and time. Output file is vfunct.dat.
@@ -843,7 +849,7 @@ namespace Measurers {
 		Vfunct(int potNum, size_t nPts, size_t nx, size_t nt, size_t numSteps, double maxT, const double * x, const std::string fol);
 
 		~Vfunct();
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
 	};
 
 	/// Records the total number of wavefunctions (electrons) in the simulation. Output file is nElec.dat.
@@ -864,7 +870,7 @@ namespace Measurers {
 		 */
 		NElec(size_t* nElec, const std::string fol);
 
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
 	};
 
 	/// Records the expectation value of the energy at the beginning of the simulation. Output file is expectE0.dat.
@@ -892,7 +898,7 @@ namespace Measurers {
 		 */
 		ExpectE0(size_t nPts, double dx, const size_t* nElec, const std::string fol, KineticOperators::KineticOperator * const* kin);
 		~ExpectE0();
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
 	};
 
 
@@ -915,7 +921,7 @@ namespace Measurers {
 		 */
 		WfcRhoWeights(const size_t* nElec, double * const * weights, const std::string fol);
 
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
 	};
 
 	/// Uses the GNUPlotter to plot the density during the simulation. Output is a plot window.
@@ -949,7 +955,7 @@ namespace Measurers {
 		DensityPlotter(size_t nPts, const size_t* nElec, double dx, const double* xs, Densities::Density *const dens, double * const * wght, bool plotChange = false, size_t stepsPerPlot=1, bool pause=true);
 		
 		~DensityPlotter();
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
 
 		bool needsDensity() const override { return true; };
 	};
@@ -975,7 +981,7 @@ namespace Measurers {
 		PotentialPlotter(size_t nPts, const double* xs, size_t stepsPerPlot=1, bool pause=true);
 
 		~PotentialPlotter();
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
 	};
 
 	/// Includes a few basic measurements: nPts, nSteps, dx, dt
@@ -994,7 +1000,7 @@ namespace Measurers {
 		BasicMeasurers(size_t nPts, double dx, double dt, const std::string fol);
 
 		~BasicMeasurers();
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
 	};
 
 	/// Manages multiple measurers. Intended for use by the SimulationManager.
@@ -1024,6 +1030,6 @@ namespace Measurers {
 		 */
 		void addMeasurer(Measurer * m);
 
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* v, double t);
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
 	};
 }

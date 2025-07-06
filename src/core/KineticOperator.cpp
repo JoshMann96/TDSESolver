@@ -22,6 +22,11 @@ namespace KineticOperators {
 			sq_free(temp1);
 		if (temp2)
 			sq_free(temp2);
+		if (groupVel)
+			sq_free(groupVel);
+		if (psik)
+			sq_free(psik);
+		
 
 		mtx.lock();
 		if(fftwOneForward)
@@ -317,6 +322,28 @@ namespace KineticOperators {
 		return res;
 	}
 
+	void GenDisp_PSM::calcRawCurrent(const std::complex<double>* psi, const double* weights, double* current, size_t nElec) {
+		assert(groupVel != nullptr);
+		initializeAllFFT(nElec);
+		if (!psik)
+			psik = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nPts * nElec);
+
+		// Fourier transform
+		vtls::copyArrayConj(nPts * nElec, psi, psik);
+		executeAllFFTForward(psik);
+		// apply group velocity
+		for(size_t i = 0; i < nElec; i++)
+			vtls::seqMulArrays(nPts, groupVel, &psik[i * nPts]);
+		// inverse Fourier transform
+		executeAllFFTBackward(psik);
+		// individual currents
+		vtls::seqMulArrays(nPts * nElec, psi, psik);
+		// sum over all states, apsply weight
+		std::fill_n(current, nPts, 0.0);
+		for(size_t i = 0; i < nElec; i++)
+			vtls::scaMulAddArraysRe(nPts, weights[i], &psik[i * nPts], current);
+	}
+
 
 	GenDisp_PSM_FreeElec::GenDisp_PSM_FreeElec(size_t nPts, double dx, double dt, double m_eff, uint fftwPlanPolicy) : GenDisp_PSM(nPts, dx, dt, fftwPlanPolicy) {
 		std::complex<double>* osKineticEnergy = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts);//new std::complex<double>[nPts];
@@ -383,6 +410,12 @@ namespace KineticOperators {
 			sq_free(osKineticMask);
 		if (norms)
 			sq_free(norms);
+		if (groupVel)
+			sq_free(groupVel);
+		if (psik)
+			sq_free(psik);
+		if (tempCur)
+			sq_free(tempCur);
 
 		mtx.lock();
 		if(fftwOneForward)
@@ -778,6 +811,34 @@ namespace KineticOperators {
 		return res;
 	}
 
+	void NonUnifGenDisp_PSM::calcRawCurrent(const std::complex<double>* psi, const double* weights, double* current, size_t nElec) {
+		assert(groupVel != nullptr);
+		initializeAllFFT(nElec);
+		if (!psik)
+			psik = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nPts * nElec);
+		if (!tempCur)
+			tempCur = (double*)sq_malloc(sizeof(double) * nPts);
+
+		std::fill_n(current, nPts, 0.0);
+		for(size_t d = 0; d < nDisp; d++){
+			// Fourier transform
+			vtls::copyArrayConj(nPts * nElec, psi, psik);
+			executeAllFFTForward(psik);
+			// apply group velocity
+			for (size_t i = 0; i < nElec; i++)
+				vtls::seqMulArrays(nPts, &groupVel[d*nPts], &psik[i * nPts]);
+			// inverse Fourier transform
+			executeAllFFTBackward(psik);
+			// individual currents
+			vtls::seqMulArrays(nPts * nElec, psi, psik);
+			// sum over all states, apply weight
+			std::fill_n(tempCur, nPts, 0.0);
+			for (size_t i = 0; i < nElec; i++)
+				vtls::scaMulAddArraysRe(nPts, weights[i], &psik[i * nPts], tempCur);
+			vtls::seqMulAddArrays(nPts, &osKineticMask[d * nPts], tempCur, current);
+		}
+	}
+
 
 	NonUnifGenDisp_PSM_EffMassBoundary::NonUnifGenDisp_PSM_EffMassBoundary(size_t nPts, double dx, double dt, size_t expOrder, bool forceNormalization, double meff_l, double meff_r, double transRate, size_t transPos, double edgeRate, uint fftwPlanPolicy) : NonUnifGenDisp_PSM(nPts, dx, dt, 2, expOrder, forceNormalization, fftwPlanPolicy) {
 		std::complex<double>* osKineticEnergy = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts*2);
@@ -1154,4 +1215,32 @@ namespace KineticOperators {
 		return true;
 	}
 
+	bool CrankNicolson::calcRawCurByDevice(const double* weights, double* cur, bool virt){
+		if(!useCuda)
+			return false;
+		#ifdef USE_CUDA
+		cuSolver->calcRawCur(weights, cur, virt);
+		#else // USE_CUDA
+		throw std::runtime_error("CUDA support not compiled in this build");
+		#endif // USE_CUDA
+		
+		return true;
+	}
+
+	void CrankNicolson::calcRawCurrent(const std::complex<double>* psi, const double* weights, double* current, size_t nElec) {
+		if(!tempPsi1)
+			tempPsi1 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nPts);
+		if(!tempPsi2)
+			tempPsi2 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nPts);
+
+		std::complex<double> dvdk = PhysCon::hbar/PhysCon::me/m_eff/PhysCon::im;
+
+		std::fill_n(current, nPts, 0.0);
+		for(size_t n = 0; n < nElec; n++) {
+			vtls::copyArrayConj(nPts, &psi[n*nPts], tempPsi1);
+			vtls::firstDerivative(nPts, tempPsi1, tempPsi2, dx);
+			vtls::seqMulArrays(nPts, psi, tempPsi2);
+			vtls::scaMulAddArraysRe(nPts, weights[n]*dvdk, tempPsi2, current);
+		}
+	}
 }

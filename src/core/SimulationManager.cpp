@@ -16,10 +16,12 @@ SimulationManager::SimulationManager(size_t nPts, double xMin, double dx, double
 
 	vs = (double**) sq_malloc(sizeof(double*)*HISTORY_LENGTH);
 	rhos = (double**) sq_malloc(sizeof(double*)*HISTORY_LENGTH);
+	curs = (double**) sq_malloc(sizeof(double*)*HISTORY_LENGTH);
 	ts = (double*) sq_malloc(sizeof(double)*HISTORY_LENGTH);
 	for (size_t i = 0; i < HISTORY_LENGTH; i++){
 		vs[i] = (double*) sq_malloc(sizeof(double) * nPts);
 		rhos[i] = (double*) sq_malloc(sizeof(double) * nPts);
+		curs[i] = (double*) sq_malloc(sizeof(double) * nPts);
 	}
 	std::fill_n(ts, HISTORY_LENGTH, 0.0);
 
@@ -45,9 +47,11 @@ SimulationManager::~SimulationManager()
 	for(size_t i = 0; i < HISTORY_LENGTH; i++){
 		sq_free(vs[i]);
 		sq_free(rhos[i]);
+		sq_free(curs[i]);
 	}
 	sq_free(vs);
 	sq_free(rhos);
+	sq_free(curs);
 	
 	freePsis();
 	sq_free(psis);
@@ -72,12 +76,16 @@ void SimulationManager::addMeasurer(Measurers::Measurer* m) {
 	meas->addMeasurer(m);
 	if (m->needsDensity())
 		calcDensityForMeas = true;
+	if (m->needsCurrent())
+		calcCurrentForMeas = true;
 }
 
 void SimulationManager::addPotential(Potentials::Potential* p) {
 	pot->addPotential(p);
-	if(p->getComplexity() == Potentials::PotentialComplexity::WAVEFUNCTION_DEPENDENT)
+	if(p->getDependence() & Potentials::Dependence::DENSITY_DEPENDENT)
 		calcDensityForPot = true;
+	if(p->getDependence() & Potentials::Dependence::CURRENT_DEPENDENT)
+		calcCurrentForPot = true;
 }
 
 void SimulationManager::addSpatialDamp(const double* arr) {
@@ -161,6 +169,12 @@ void SimulationManager::findEigenStates(double emin, double emax) {
 			throw std::runtime_error("SimulationManager::findEigenStates: Density not set!");
 		dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
 	}
+	if(calcCurrentForPot){
+		if(dens == nullptr)
+			throw std::runtime_error("SimulationManager::findEigenStates: Density not set!");
+		kin->calcRawCurrent(psis[index], weights, curs[index], nElec);
+		dens->applyProfile(nPts, nElec, dx, curs[index]);
+	}
 }
 
 void SimulationManager::findInhomogeneousEigenStates(size_t nElec, const double* energies){
@@ -204,6 +218,12 @@ void SimulationManager::findInhomogeneousEigenStates(size_t nElec, const double*
 			throw std::runtime_error("SimulationManager::findInhomogeneousEigenStates: Density not set!");
 		dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
 	}
+	if(calcCurrentForPot){
+		if(dens == nullptr)
+			throw std::runtime_error("SimulationManager::findInhomogeneousEigenStates: Density not set!");
+		kin->calcRawCurrent(psis[index], weights, curs[index], nElec);
+		dens->applyProfile(nPts, nElec, dx, curs[index]);
+	}
 
 	normScheme = Densities::NormalizationScheme::UNNORMALIZED;
 }
@@ -230,22 +250,34 @@ void SimulationManager::setPsi(const std::complex<double>* npsi, Densities::Norm
 			throw std::runtime_error("SimulationManager::setPsi: Density not set!");
 		dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
 	}
+	if(calcCurrentForPot){
+		if(dens == nullptr)
+			throw std::runtime_error("SimulationManager::setPsi: Density not set!");
+		kin->calcRawCurrent(psis[index], weights, curs[index], nElec);
+		dens->applyProfile(nPts, nElec, dx, curs[index]);
+	}
 
 	wavefunctionInitialized = true;
 }
 
-size_t SimulationManager::calculatePotential(double* rho, const std::complex<double>* psi, double t, double* v, bool virt){
+size_t SimulationManager::calculatePotential(double* rho, double* cur, const std::complex<double>* psi, double t, double* v, bool virt){
 	auto strt = std::chrono::high_resolution_clock::now();
 	if(calcDensityForPot){
 		if(dens == nullptr)
 			throw std::runtime_error("SimulationManager::calculatePotential: Density not set!");
 		dens->calcRho(nPts, nElec, dx, weights, psi, rho);
 	}
+	if(calcCurrentForPot){
+		if(dens == nullptr)
+			throw std::runtime_error("SimulationManager::calculatePotential: Density not set!");
+		kin->calcRawCurrent(psi, weights, cur, nElec);
+		dens->applyProfile(nPts, nElec, dx, cur);
+	}
 
 	if(virt)
-		pot->getVVirtual(rho, psi, t, v);
+		pot->getVVirtual(rho, cur, psi, t, v);
 	else
-		pot->getV(rho, psi, t, v);
+		pot->getV(rho, cur, psi, t, v);
 
 	potentialAvailable = true;
 	auto end = std::chrono::high_resolution_clock::now();
@@ -253,20 +285,30 @@ size_t SimulationManager::calculatePotential(double* rho, const std::complex<dou
 	return dur.count();
 }
 
-size_t SimulationManager::calculatePotentialFromRawRho(double* rho, const std::complex<double>* psi, double t, double* v, bool virt){
+size_t SimulationManager::calculatePotentialFromRawRhoCur(double* rho, double* cur, const std::complex<double>* psi, double t, double* v, bool virt){
 	auto strt = std::chrono::high_resolution_clock::now();
-	dens->calcRho(nPts, nElec, dx, rho);
+	if(calcDensityForPot){
+		if(dens == nullptr)
+			throw std::runtime_error("SimulationManager::calculatePotential: Density not set!");
+		dens->applyProfile(nPts, nElec, dx, rho);
+	}
+	if(calcCurrentForPot){
+		if(dens == nullptr)
+			throw std::runtime_error("SimulationManager::calculatePotential: Density not set!");
+		dens->applyProfile(nPts, nElec, dx, cur);
+	}
+		
 	if(virt)
-		pot->getVVirtual(rho, psi, t, v);
+		pot->getVVirtual(rho, cur, psi, t, v);
 	else
-		pot->getV(rho, psi, t, v);
+		pot->getV(rho, cur, psi, t, v);
 	potentialAvailable = true;
 	auto end = std::chrono::high_resolution_clock::now();
 	auto dur = std::chrono::duration_cast<std::chrono::microseconds>(end - strt);
 	return dur.count();
 }
 
-size_t SimulationManager::updatePotential(int idx, bool virt) {return calculatePotential(rhos[idx], psis[idx], ts[idx], vs[idx], virt);}
+size_t SimulationManager::updatePotential(int idx, bool virt) {return calculatePotential(rhos[idx], curs[idx], psis[idx], ts[idx], vs[idx], virt);}
 
 size_t SimulationManager::measure(int idx) {
 	if(calcDensityForMeas && !calcDensityForPot) { // if density is measured but it wasn't already calculated for potential
@@ -274,8 +316,14 @@ size_t SimulationManager::measure(int idx) {
 			throw std::runtime_error("SimulationManager::measure: Density not set!");
 		dens->calcRho(nPts, nElec, dx, weights, psis[idx], rhos[idx]);
 	}
+	if(calcCurrentForMeas && !calcCurrentForPot) { // if current is measured but it wasn't already calculated for potential
+		if(dens == nullptr)
+			throw std::runtime_error("SimulationManager::measure: Density not set!");
+		kin->calcRawCurrent(psis[idx], weights, curs[idx], nElec);
+		dens->applyProfile(nPts, nElec, dx, curs[idx]);
+	}
 	auto strt = std::chrono::high_resolution_clock::now();
-	meas->measure(step[idx], psis[idx], rhos[idx], vs[idx], ts[idx]);
+	meas->measure(step[idx], psis[idx], rhos[idx], curs[idx], vs[idx], ts[idx]);
 	auto end = std::chrono::high_resolution_clock::now();
 	auto dur = std::chrono::duration_cast<std::chrono::microseconds>(end - strt);
 	return dur.count();
@@ -352,6 +400,7 @@ void SimulationManager::runEPS_UW2TUW(size_t nSteps) {
 	// variables for the midpoint of step
 	std::complex<double>* tpsi = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nElec);
 	double* trho = (double*) sq_malloc(sizeof(double) * nPts);
+	double* tcur = (double*) sq_malloc(sizeof(double) * nPts);
 	double* tv = (double*) sq_malloc(sizeof(double) * nPts);
 
 	auto rMeasure = &SimulationManager::measure;
@@ -371,7 +420,7 @@ void SimulationManager::runEPS_UW2TUW(size_t nSteps) {
 		fM = std::async(rMeasure, this, index);
 
 		// step n+1/2->n+1
-		calculatePotential(trho, tpsi, ts[index] + dt / 2.0, tv, true); // virtual step
+		calculatePotential(trho, tcur, tpsi, ts[index] + dt / 2.0, tv, true); // virtual step
 		kin_psm->stepOS_UW(tpsi, tv, spatialDamp, psis[index + 1], nElec);
 		
 		progTracker.update(i);
@@ -549,8 +598,10 @@ void SimulationManager::updateMeanPotCNNL(KineticOperators::CrankNicolson *kin_c
 {
     // evaluate estimated potential n+1, virtual step
     // try to calculate the raw density from the device then post-process, otherwise calculate rho normally
-    if (kin_cn->calcRawRhoByDevice(weights, rhos[index + 1], true)) // if the device can calculate raw density
-        calculatePotentialFromRawRho(rhos[index + 1], psis[index + 1], ts[index] + dt, vs[index + 1], true);
+	bool canCalcRawRho = kin_cn->calcRawRhoByDevice(weights, rhos[index + 1], true);
+	bool canCalcRawCur = kin_cn->calcRawCurByDevice(weights, curs[index + 1], true);
+    if (canCalcRawRho && canCalcRawCur) // if the device can calculate raw density
+        calculatePotentialFromRawRhoCur(rhos[index + 1], curs[index + 1], psis[index + 1], ts[index] + dt, vs[index + 1], true);
     else // otherwise calculate density on CPU
         updatePotential(index + 1, true);
 

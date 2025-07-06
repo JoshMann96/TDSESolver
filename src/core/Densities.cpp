@@ -131,7 +131,7 @@ namespace Densities {
 		}
 	}
 
-	void DirectDensity::calcRho(size_t nPts, size_t nElec, double dx, double* rho) {
+	void DirectDensity::applyProfile(size_t nPts, size_t nElec, double dx, double* rho) {
 		return;
 	}
 
@@ -169,7 +169,7 @@ namespace Densities {
 		calcThinning(nPts, center, radius, minX, dx, thinning, &startIndex, &endIndex);
 	}
 
-	void CylindricalDensity::calcRho(size_t nPts, size_t nElec, double dx, double* rho) {
+	void CylindricalDensity::applyProfile(size_t nPts, size_t nElec, double dx, double* rho) {
 		if(mynPts == 0)
 			mynPts = nPts;
 		assert(mynPts == nPts); // must be called with the same nPts as first
@@ -187,7 +187,7 @@ namespace Densities {
 			delete conv;
 	}
 
-	void GaussianSmoothedDensity::calcRho(size_t nPts, size_t nElec, double dx, double* rho) {
+	void GaussianSmoothedDensity::applyProfile(size_t nPts, size_t nElec, double dx, double* rho) {
 		if(mynPts == 0){
 			mynPts = nPts;
 			fullnPts = periodic ? nPts : 2 * nPts + nPts%2;
@@ -222,7 +222,7 @@ namespace Densities {
 		}
 
 		if(baseDens)
-			baseDens->calcRho(nPts, nElec, dx, rho);
+			baseDens->applyProfile(nPts, nElec, dx, rho);
 
 		if(periodic)
 			conv->compute(rho);
@@ -270,7 +270,7 @@ namespace Densities {
 			sq_free(temp);
 	}
 
-	void SmallKernelConvolver::calcRho(size_t nPts, size_t nElec, double dx, double* rho) {
+	void SmallKernelConvolver::applyProfile(size_t nPts, size_t nElec, double dx, double* rho) {
 		if(mynPts == 0)
 			mynPts = nPts;
 		assert(mynPts == nPts); // must be called with the same nPts as first
@@ -280,7 +280,7 @@ namespace Densities {
 			temp = (double*) sq_malloc(sizeof(double) * nPtsExt);
 
 		if(baseDens) // if a base density calculator is provided, use it to calculate the raw density
-			baseDens->calcRho(nPts, nElec, dx, rho);
+			baseDens->applyProfile(nPts, nElec, dx, rho);
 
 		vtls::copyArray(nPts, rho, temp + maskLen / 2); // center the original data in the extended array
 		std::fill_n(temp, maskLen/2, rho[0]); // fill the left side with the first value

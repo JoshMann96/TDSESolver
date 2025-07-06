@@ -106,10 +106,12 @@ private:
 	KineticOperators::KineticOperator* kin = nullptr;
 
 	double *ts, *x, dt, dx;
-	double **vs, **rhos, *spatialDamp;
+	double **vs, **rhos, **curs, *spatialDamp;
 	size_t nPts, nElec;
 	bool calcDensityForPot = false;
 	bool calcDensityForMeas = false;
+	bool calcCurrentForPot = false;
+	bool calcCurrentForMeas = false;
 	cyclic_int<size_t> index;
 	size_t* step;
 	std::complex<double> *scratch1, *scratch2;
@@ -123,24 +125,26 @@ private:
 	/**
 	 * Calculate the potential with provided allocated memory.
 	 * @param rho The density array to be used for potential calculation. It should be of size nPts. It will contain the density after the operation of calcDensity is true.
+	 * @param cur The current density array to be used for potential calculation. It should be of size nPts. It will contain the current density at the current time step.
 	 * @param psi The wavefunction array to be used for potential calculation. It should be of size nPts * nElec. It will contain the wavefunction at the current time step.
 	 * @param t The current time in the simulation.
 	 * @param v The output array to store the calculated potential.
 	 * @param virt If true, the potential is calculated for a virtual step (i.e., it does not affect future calls to getV*).
 	 * @return Time in microseconds taken to calculate the potential.
 	 */
-	size_t calculatePotential(double* rho, const std::complex<double>* psi, double t, double* v, bool virt);
+	size_t calculatePotential(double* rho, double* cur, const std::complex<double>* psi, double t, double* v, bool virt);
 
 	/**
 	 * Calculate the potential from the raw density array.
 	 * @param rho The raw density array to be used for potential calculation. It should be of size nPts.
+	 * @param cur The current density array to be used for potential calculation. It should be of size nPts.
 	 * @param psi The wavefunction array to be used for potential calculation. It should be of size nPts * nElec.
 	 * @param t The current time in the simulation.
 	 * @param v The output array to store the calculated potential.
 	 * @param virt If true, the potential is calculated for a virtual step (i.e., it does not affect future calls to getV*).
 	 * @return Time in microseconds taken to calculate the potential.
 	 */
-	size_t calculatePotentialFromRawRho(double* rho, const std::complex<double>* psi, double t, double* v, bool virt);
+	size_t calculatePotentialFromRawRhoCur(double* rho, double* cur, const std::complex<double>* psi, double t, double* v, bool virt);
 
 	/**
 	 * Updates the potential for the given index.
@@ -472,7 +476,7 @@ public:
 	 */
 	std::complex<double>* getPsi() const {
 		if(!wavefunctionInitialized)
-			return nullptr;
+			throw std::runtime_error("SimulationManager::getPsi: Wavefunction not initialized!");
 		return psis[index];
 	};
 
@@ -485,10 +489,28 @@ public:
 		assert(wavefunctionInitialized);
 		if(!calcDensityForPot)
 			if(!dens)
-				throw std::runtime_error("SimulationManager::getRho: Density not set!");
+				throw std::runtime_error("SimulationManager::getRho: Density calculator not set!");
 			else
 				dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
 		return rhos[index];
+	};
+
+	/**
+	 * Returns a pointer to the current density at the present index.
+	 * The wavefunction must be initialized and the kinetic operator must be set.
+	 * If the current is not yet calculated, it will be calculated using the wavefunction and weights.
+	 * @return The current density, \a npts elements.
+	 */
+	double* getCur(){
+		assert(wavefunctionInitialized);
+		if(!calcCurrentForPot)
+			if(!dens)
+				throw std::runtime_error("SimulationManager::getCur: Density calculator not set!");
+			else{
+				kin->calcRawCurrent(psis[index], weights, curs[index], nElec);
+				dens->applyProfile(nPts, nElec, dx, curs[index]);
+			}
+		return curs[index];
 	};
 
 	/**
@@ -501,7 +523,7 @@ public:
 	double* getV() {
 		if(!potentialAvailable){ // potential not yet calculated -- calculate it!
 			if(wavefunctionInitialized) // states set but potential not yet calculated
-				calculatePotential(rhos[index], psis[index], ts[index], vs[index], true);
+				calculatePotential(rhos[index], curs[index], psis[index], ts[index], vs[index], true);
 			else // states not set, calculate initial potential
 				pot->getVBare(ts[index], vs[index]);
 		}
@@ -524,7 +546,7 @@ public:
 	 * Determines if the potential can be calculated asynchronously (if it is linear).
 	 * @return True if the potential can be calculated asynchronously, false otherwise.
 	 */
-	bool canAsyncCalcPot() const { return !calcDensityForPot; }
+	bool canAsyncCalcPot() const { return (!calcDensityForPot && !calcCurrentForPot); }
 
 	/**
 	 * Returns a pointer to the weights in the simulation.

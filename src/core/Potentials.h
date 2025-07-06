@@ -240,15 +240,31 @@ namespace Potentials {
 		};
 	}
 
-	/// Enum for potential complexity.
-	enum PotentialComplexity{
-		/// potential is a constant, only needs to be evaluated once
-		STATIC, 
-		/// potential changes with time but is independent of the wavefunction
-		DYNAMIC, 
-		/// the potential depends on the wavefunction (including density-functional potentials)
-		WAVEFUNCTION_DEPENDENT 
+	/// Enum for potential's dependence on the physical system.
+	enum Dependence{
+		/// the potential is a constant, only needs to be evaluated once
+		STATIC = 0, 
+		/// the potential depends explicitly with time
+		EXPLICIT_TIME_DEPENDENT = 	1<<0, 
+		/// the potential depends on the wavefunction
+		WAVEFUNCTION_DEPENDENT = 	1<<1,
+		/// the potential depends on the density
+		DENSITY_DEPENDENT = 		1<<2,
+		/// the potential depends on the current
+		CURRENT_DEPENDENT = 		1<<3,
+		
+		/// includes any dependence on time, wavefunction, density, or current
+		DYNAMIC = EXPLICIT_TIME_DEPENDENT | WAVEFUNCTION_DEPENDENT | DENSITY_DEPENDENT | CURRENT_DEPENDENT
 	};
+
+	inline Dependence operator|(Dependence a, Dependence b) {
+		return static_cast<Dependence>(static_cast<int>(a) | static_cast<int>(b));
+	}
+
+	inline Dependence& operator|=(Dependence& a, Dependence b) {
+		a = static_cast<Dependence>(static_cast<int>(a) | static_cast<int>(b));
+		return a;
+	}
 
 	/// Template class for potential.
 	class Potential {
@@ -269,7 +285,7 @@ namespace Potentials {
 		 * @param t Time.
 		 * @param targ (out) Array to store the potential.
 		 */
-		virtual void getV(const double * rho, const std::complex<double> * psi, double t, double * targ) = 0;
+		virtual void getV(const double* rho, const double* cur, const std::complex<double> * psi, double t, double * targ) = 0;
 
 		/**
 		 * Get the potential energy at time \a t. If the potential is nonlocal in time, this will not affect future calls to getV*.
@@ -278,21 +294,21 @@ namespace Potentials {
 		 * @param t Time.
 		 * @param targ (out) Array to store the potential.
 		 */
-		virtual void getVVirtual(const double * rho, const std::complex<double> * psi, double t, double * targ) = 0;
+		virtual void getVVirtual(const double* rho, const double* cur, const std::complex<double> * psi, double t, double * targ) = 0;
 
 		/**
-		 * Get the complexity of the potential.
-		 * @return The complexity.
+		 * Get the dependence of the potential on the physical system.
+		 * @return The dependence.
 		 */
-		virtual PotentialComplexity getComplexity() const = 0;
+		virtual Dependence getDependence() const = 0;
 	};
 
 	class TimeLocalPotential :
 		public Potential
 	{
 		public:
-		void getVVirtual(const double * rho, const std::complex<double> * psi, double t, double * targ) override {
-			getV(rho, psi, t, targ);
+		void getVVirtual(const double* rho, const double* cur, const std::complex<double> * psi, double t, double * targ) override {
+			getV(rho, cur, psi, t, targ);
 		}
 	};
 
@@ -321,8 +337,8 @@ namespace Potentials {
 
 		~FilePotential();
 		void getVBare(double t, double * targ);
-		void getV(const double* rho, const std::complex<double> * psi, double t, double * targ);
-		PotentialComplexity getComplexity() const {return PotentialComplexity::STATIC;};
+		void getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ);
+		Dependence getDependence() const {return Dependence::STATIC;};
 	};
 
 	/**
@@ -352,8 +368,8 @@ namespace Potentials {
 		
 		~BiasFieldPotential();
 		void getVBare(double t, double * targ);
-		void getV(const double* rho, const std::complex<double> *  psi, double t, double * targ);
-		PotentialComplexity getComplexity() const {return PotentialComplexity::STATIC;};
+		void getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ);
+		Dependence getDependence() const {return Dependence::STATIC;};
 	};
 
 	/// Potential offset for the entire domain.
@@ -375,8 +391,8 @@ namespace Potentials {
 		};
 		~UniformPotential(){if(v) sq_free(v);};
 		void getVBare(double t, double * targ){ vtls::copyArray(nPts, v, targ); };
-		void getV(const double* rho, const std::complex<double> *  psi, double t, double * targ){ getVBare(t, targ); };
-		PotentialComplexity getComplexity() const {return PotentialComplexity::STATIC;};
+		void getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ){ getVBare(t, targ); };
+		Dependence getDependence() const {return Dependence::STATIC;};
 	};
 
 	/// Potentials which takes in another potential and applies a sinusoidal scalar product to it.
@@ -402,16 +418,13 @@ namespace Potentials {
 			double factor = std::sin(omega*t + phase);
 			vtls::scaMulArray(nPts, factor, targ);
 		};
-		void getV(const double* rho, const std::complex<double> *  psi, double t, double * targ){ 
-			basePot->getV(rho, psi, t, targ);
+		void getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ){ 
+			basePot->getV(rho, cur, psi, t, targ);
 			double factor = std::sin(omega*t + phase);
 			vtls::scaMulArray(nPts, factor, targ);
 		};
-		PotentialComplexity getComplexity() const {
-			if(basePot->getComplexity() == PotentialComplexity::STATIC)
-				return PotentialComplexity::DYNAMIC; // at least dynamic
-			else
-				return basePot->getComplexity();
+		Dependence getDependence() const {
+			return Dependence::EXPLICIT_TIME_DEPENDENT | basePot->getDependence();
 		};
 	};
 
@@ -438,8 +451,8 @@ namespace Potentials {
 		
 		~CoulombPotential();
 		void getVBare(double t, double * targ);
-		void getV(const double* rho, const std::complex<double> *  psi, double t, double * targ);
-		PotentialComplexity getComplexity() const {return PotentialComplexity::STATIC;};
+		void getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ);
+		Dependence getDependence() const {return Dependence::STATIC;};
 	};
 
 	/**
@@ -465,8 +478,8 @@ namespace Potentials {
 		
 		~FiniteBox();
 		void getVBare(double t, double * targ);
-		void getV(const double* rho, const std::complex<double> * psi, double t, double * targ);
-		PotentialComplexity getComplexity() const {return PotentialComplexity::STATIC;};
+		void getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ);
+		Dependence getDependence() const {return Dependence::STATIC;};
 	};
 
 	/// Wachter's Jellium potential.
@@ -490,8 +503,8 @@ namespace Potentials {
 		
 		~JelliumPotential();
 		void getVBare(double t, double * targ);
-		void getV(const double* rho, const std::complex<double> * psi, double t, double * targ);
-		PotentialComplexity getComplexity() const {return PotentialComplexity::STATIC;};
+		void getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ);
+		Dependence getDependence() const {return Dependence::STATIC;};
 	};
 
 	/// Jellium potential with a backing such that it smoothly returns to vacuum level on the left side.
@@ -517,8 +530,8 @@ namespace Potentials {
 		
 		~JelliumPotentialBacked();
 		void getVBare(double t, double * targ);
-		void getV(const double* rho, const std::complex<double> * psi, double t, double * targ);
-		PotentialComplexity getComplexity() const {return PotentialComplexity::STATIC;};
+		void getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ);
+		Dependence getDependence() const {return Dependence::STATIC;};
 	};
 
 	/// Shielded atomic potential, averaged across an infinite plane parallel to surface.
@@ -541,8 +554,8 @@ namespace Potentials {
 		
 		~ShieldedAtomicPotential();
 		void getVBare(double t, double * targ);
-		void getV(const double* rho, const std::complex<double> * psi, double t, double * targ);
-		PotentialComplexity getComplexity() const {return PotentialComplexity::STATIC;};
+		void getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ);
+		Dependence getDependence() const {return Dependence::STATIC;};
 	};
 
 	/// Converts an electric field profile and envelope to a potential.
@@ -572,8 +585,8 @@ namespace Potentials {
 		
 		~ElectricFieldProfileToPotential();
 		void getVBare(double t, double * targ);
-		void getV(const double* rho, const std::complex<double> * psi, double t, double * targ);
-		PotentialComplexity getComplexity() const {return PotentialComplexity::DYNAMIC;};
+		void getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ);
+		Dependence getDependence() const {return Dependence::EXPLICIT_TIME_DEPENDENT;};
 	};
 
 	/// Tool which integrates the current which passes through a point.
@@ -654,9 +667,9 @@ namespace Potentials {
 		
 		~CylindricalImageCharge();
 		void getVBare(double t, double* targ);
-		void getV(const double* rho, const std::complex<double>* psi, double t, double* targ);
-		void getVVirtual(const double* rho, const std::complex<double>* psi, double t, double* targ);
-		PotentialComplexity getComplexity() const {return PotentialComplexity::WAVEFUNCTION_DEPENDENT;};
+		void getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ);
+		void getVVirtual(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ);
+		Dependence getDependence() const {return Dependence::WAVEFUNCTION_DEPENDENT | Dependence::DENSITY_DEPENDENT;};
 	};
 
 	/**
@@ -700,9 +713,9 @@ namespace Potentials {
 			 const double* rho0, size_t posMin, size_t posMax, size_t refPoint);
 		~PlanarToCylindricalHartree();
 		void getVBare(double t, double* targ);
-		void getV(const double* rho, const std::complex<double>* psi, double t, double* targ);
-		void getVVirtual(const double* rho, const std::complex<double>* psi, double t, double* targ);
-		PotentialComplexity getComplexity() const {return PotentialComplexity::WAVEFUNCTION_DEPENDENT;};
+		void getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ);
+		void getVVirtual(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ);
+		Dependence getDependence() const {return Dependence::WAVEFUNCTION_DEPENDENT | Dependence::DENSITY_DEPENDENT;};
 	};
 
 	class PlanarHartree :
@@ -724,8 +737,8 @@ namespace Potentials {
 		
 		~PlanarHartree();
 		void getVBare(double t, double* targ);
-		void getV(const double* rho, const std::complex<double>* psi, double t, double* targ);
-		PotentialComplexity getComplexity() const {return PotentialComplexity::WAVEFUNCTION_DEPENDENT;};
+		void getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ);
+		Dependence getDependence() const {return Dependence::DENSITY_DEPENDENT;};
 	};
 		
 
@@ -765,42 +778,40 @@ namespace Potentials {
 
 		~LDAFunctional();
 		void getVBare(double t, double* targ);
-		void getV(const double* rho, const std::complex<double>* psi, double t, double* targ);
-		PotentialComplexity getComplexity() const {return PotentialComplexity::WAVEFUNCTION_DEPENDENT;};
+		void getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ);
+		Dependence getDependence() const {return Dependence::DENSITY_DEPENDENT;};
 	};
 
-	/// Combines multiple potentials into a single potential. The complexity of this potential is the most complex of its constituents.
+	/// Combines multiple potentials into a single potential. The complexity of this potential is combination of its constituents.
+	/// Slightly improves performance by only calling static potentials once at construction.
 	class CompositePotential :
 		public Potential {
 	private:
 		size_t nPts;
 		size_t numSPots;
 		size_t numDPots;
-		size_t numWPots;
 		Potential ** staticPots;
 		Potential ** dynamicPots;
-		Potential ** waveFuncDependentPots;
 		double * v0;
 		double * nv;
+		Dependence myDepend = Dependence::STATIC;
 	public:
 		/**
 		 * Constructor.
 		 * @param nPts Number of points.
 		 * @param numSPots Number of static potentials.
 		 * @param numDPots Number of dynamic potentials.
-		 * @param numWPots Number of wavefunction-dependent potentials.
 		 * @param staticPots Array of static potentials.
 		 * @param dynamicPots Array of dynamic potentials.
-		 * @param waveFuncDependentPots Array of wavefunction-dependent potentials.
 		 * @note The arrays are not copied, so they must remain valid for the lifetime of this object.
 		 */
-		CompositePotential(size_t nPts, size_t numSPots, size_t numDPots, size_t numWPots, Potential ** staticPots, Potential ** dynamicPots, Potential ** waveFuncDependentPots);
+		CompositePotential(size_t nPts, size_t numSPots, size_t numDPots, Potential ** staticPots, Potential ** dynamicPots);
 		
 		~CompositePotential();
 		void getVBare(double t, double * targ);
-		void getV(const double* rho, const std::complex<double> * psi, double t, double * targ);
-		void getVVirtual(const double* rho, const std::complex<double> * psi, double t, double * targ);
-		PotentialComplexity getComplexity() const ;
+		void getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ);
+		void getVVirtual(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ);
+		Dependence getDependence() const ;
 	};
 
 	/// Dynamically manages multiple potentials, combining them into a CompositePotential for evaluation.
@@ -809,10 +820,10 @@ namespace Potentials {
 	private:
 		bool compositeRefreshed = false;
 		size_t nPts;
-		std::vector<Potential*> staticPots, dynamicPots, waveFuncDependentPots;
+		std::vector<Potential*> staticPots, dynamicPots;
 		CompositePotential * pot=nullptr;
-		PotentialComplexity myComplex = PotentialComplexity::STATIC;
-		Potential ** spots = nullptr, ** dpots = nullptr, ** wpots = nullptr;
+		Dependence myDepend = Dependence::STATIC;
+		Potential ** spots = nullptr, ** dpots = nullptr;
 	public:
 		/**
 		 * Constructor.
@@ -820,7 +831,7 @@ namespace Potentials {
 		 */
 		PotentialManager(size_t nPts);
 
-		~PotentialManager(){if(pot) delete pot; if(spots) delete[] spots; if(dpots) delete[] dpots; if(wpots) delete[] wpots;};
+		~PotentialManager(){if(pot) delete pot; if(spots) delete[] spots; if(dpots) delete[] dpots;};
 
 		/**
 		 * Add a potential to the manager.
@@ -833,9 +844,9 @@ namespace Potentials {
 		void refreshCompositePotential();
 
 		void getVBare(double t, double * targ);
-		void getV(const double* rho, const std::complex<double> * psi, double t, double * targ);
-		void getVVirtual(const double* rho, const std::complex<double> * psi, double t, double * targ);
-		PotentialComplexity getComplexity() const {return myComplex;};
+		void getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ);
+		void getVVirtual(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ);
+		Dependence getDependence() const {return myDepend;};
 	};
 
 	/**
@@ -864,20 +875,20 @@ namespace Potentials {
 		
 		~MeasuredPotential(){};
 		void getVBare(double t, double * targ){pot->getVBare(t, targ);};
-		void getV(const double* rho, const std::complex<double> * psi, double t, double * targ){
-			pot->getV(rho, psi, t, targ);
+		void getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ){
+			pot->getV(rho, cur, psi, t, targ);
 			if(!measureDone){
-		    	Measurers::MeasurerStatus stat = meas->measure((size_t)(t/maxT*numSteps), psi, rho, targ, t);
+		    	Measurers::MeasurerStatus stat = meas->measure((size_t)(t/maxT*numSteps), psi, rho, cur, targ, t);
 				measureDone == (stat == Measurers::MeasurerStatus::ALL_DONE);
 			}
 		};
-		void getVVirtual(const double* rho, const std::complex<double> * psi, double t, double * targ){
-			pot->getVVirtual(rho, psi, t, targ);
+		void getVVirtual(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ){
+			pot->getVVirtual(rho, cur, psi, t, targ);
 			if(measureVirtual && !measureDone){
-				Measurers::MeasurerStatus stat = meas->measure((size_t)(t/maxT*numSteps), psi, rho, targ, t);
+				Measurers::MeasurerStatus stat = meas->measure((size_t)(t/maxT*numSteps), psi, rho, cur, targ, t);
 				measureDone == (stat == Measurers::MeasurerStatus::ALL_DONE);
 			}
 		};
-		PotentialComplexity getComplexity() const {return pot->getComplexity();};
+		Dependence getDependence() const {return pot->getDependence();};
 	};
 }
