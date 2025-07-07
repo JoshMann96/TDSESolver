@@ -243,16 +243,16 @@ namespace Potentials {
 	/// Enum for potential's dependence on the physical system.
 	enum Dependence{
 		/// the potential is a constant, only needs to be evaluated once
-		STATIC = 0, 
+		STATIC = 0U, 
 		/// the potential depends explicitly with time
-		EXPLICIT_TIME_DEPENDENT = 	1<<0, 
+		EXPLICIT_TIME_DEPENDENT = 	1U<<0, 
 		/// the potential depends on the wavefunction
-		WAVEFUNCTION_DEPENDENT = 	1<<1,
+		WAVEFUNCTION_DEPENDENT = 	1U<<1,
 		/// the potential depends on the density
-		DENSITY_DEPENDENT = 		1<<2,
+		DENSITY_DEPENDENT = 		1U<<2,
 		/// the potential depends on the current
-		CURRENT_DEPENDENT = 		1<<3,
-		
+		CURRENT_DEPENDENT = 		1U<<3,
+
 		/// includes any dependence on time, wavefunction, density, or current
 		DYNAMIC = EXPLICIT_TIME_DEPENDENT | WAVEFUNCTION_DEPENDENT | DENSITY_DEPENDENT | CURRENT_DEPENDENT
 	};

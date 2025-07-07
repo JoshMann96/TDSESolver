@@ -925,63 +925,76 @@ namespace Measurers {
 	};
 
 	/// Uses the GNUPlotter to plot the density during the simulation. Output is a plot window.
-	class DensityPlotter :
+	class QuantityPlotter :
 		public Measurer {
 	private:
 		plotting::GNUPlotter* plotter=nullptr;
 		size_t nPts, stepsPerPlot;
-		const size_t* nElec;
-		Densities::Density *const dens;
-		double *const*wght;
 		const double *xs;
-		double* rho0 = nullptr, *tempRho = nullptr; // initial density, used for plotting change in density
-		double dx;
+		double* q0 = nullptr, *tq = nullptr; // initial quantity, temporary quantity for plotting
 		bool pause, first=true;
 	public:
-		
-
 		/**
 		 * Constructor.
 		 * @param nPts The number of grid points.
-		 * @param nElec (in) Pointer to the number of electrons. Must be determined by the time 'measure' is called.
-		 * @param dx The spatial spacing.
-		 * @param xs (in) The array of spatial positions.
-		 * @param dens (in) The density calculator object.
-		 * @param wght (in) Pointer to the weights of the wave functions.
-		 * @param plotChange Whether to plot the change in density (i.e. the difference between the current and initial density) instead of the absolute density. Default is false.
+		 * @param xs (in) The array of spatial positions. Must be accessible for the lifetime of the plotter.
+		 * @param ylabel Thethe label of the y axis.
+		 * @param plotChange Whether to plot the change in quantity (e.g. the difference between the current and initial density) instead of the absolute quantity. Default is false.
 		 * @param stepsPerPlot The number of time steps to wait before updating the plot. Default is 1.
 		 * @param pause Whether to pause and wait for user input after each plot. Default is true.
 		 */
-		DensityPlotter(size_t nPts, const size_t* nElec, double dx, const double* xs, Densities::Density *const dens, double * const * wght, bool plotChange = false, size_t stepsPerPlot=1, bool pause=true);
+		QuantityPlotter(size_t nPts, const double* xs, const char* ylabel, bool plotChange = false, size_t stepsPerPlot=1, bool pause=true);
 		
-		~DensityPlotter();
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
+		virtual ~QuantityPlotter();
+		//MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
 
-		bool needsDensity() const override { return true; };
+		void plotQuantity(size_t step, const double* quant);
 	};
 	
 	/// Uses the GNUPlotter to plot the potential during the simulation. Output is a plot window.
 	class PotentialPlotter :
-		public Measurer {
-	private:
-		plotting::GNUPlotter* plotter=nullptr;
-		size_t nPts, stepsPerPlot;
-		const double *xs;
-		bool pause;
+		public QuantityPlotter {
 	public:
+		/// @copydoc QuantityPlotter::QuantityPlotter
+		PotentialPlotter(size_t nPts, const double* xs, bool plotChange = false, size_t stepsPerPlot=1, bool pause=true) : 
+			QuantityPlotter(nPts, xs, "V", plotChange, stepsPerPlot, pause) {};
+
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t){
+			plotQuantity(step, v);
+			return MeasurerStatus::SUCCESS;
+		}
+	};
+
+	/// Uses the GNUPlotter to plot the density during the simulation. Output is a plot window.
+	class DensityPlotter :
+		public QuantityPlotter {
+	public:
+		/// @copydoc QuantityPlotter::QuantityPlotter
+		DensityPlotter(size_t nPts, const double* xs, bool plotChange = false, size_t stepsPerPlot=1, bool pause=true) : 
+			QuantityPlotter(nPts, xs, "\\rho", plotChange, stepsPerPlot, pause) {};
 		
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t){
+			plotQuantity(step, rho);
+			return MeasurerStatus::SUCCESS;
+		};
 
-		/**
-		 * Constructor.
-		 * @param nPts The number of grid points.
-		 * @param xs (in) The array of spatial positions.
-		 * @param stepsPerPlot The number of time steps to wait before updating the plot. Default is 1.
-		 * @param pause Whether to pause and wait for user input after each plot. Default is true.
-		 */
-		PotentialPlotter(size_t nPts, const double* xs, size_t stepsPerPlot=1, bool pause=true);
+		bool needsDensity() const override { return true; };
+	};
 
-		~PotentialPlotter();
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
+	/// Uses the GNUPlotter to plot the current during the simulation. Output is a plot window.
+	class CurrentPlotter :
+		public QuantityPlotter {
+	public:
+		/// @copydoc QuantityPlotter::QuantityPlotter
+		CurrentPlotter(size_t nPts, const double* xs, bool plotChange = false, size_t stepsPerPlot=1, bool pause=true) : 
+			QuantityPlotter(nPts, xs, "j", plotChange, stepsPerPlot, pause) {};
+		
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t){
+			plotQuantity(step, cur);
+			return MeasurerStatus::SUCCESS;
+		};
+
+		bool needsCurrent() const override { return true; };
 	};
 
 	/// Includes a few basic measurements: nPts, nSteps, dx, dt

@@ -836,64 +836,40 @@ namespace Measurers {
 	}
 
 
-	DensityPlotter::DensityPlotter(size_t nPts, const size_t *nElec, double dx, const double *xs, Densities::Density *const dens, double * const * wght, bool plotChange, size_t stepsPerPlot, bool pause):
-		nPts(nPts), nElec(nElec), dens(dens), wght(wght), dx(dx), xs(xs), pause(pause), stepsPerPlot(stepsPerPlot)
-	{
-		if(plotChange){
-			rho0 = (double*) sq_malloc(sizeof(double)*nPts);
-			tempRho = (double*) sq_malloc(sizeof(double)*nPts);
-		}
-		plotter = new plotting::GNUPlotter();
-	}
-
-	DensityPlotter::~DensityPlotter(){
-		if(rho0)
-			sq_free(rho0);
-		if(tempRho)
-			sq_free(tempRho);
-		delete plotter;
-	}
-	
-	MeasurerStatus DensityPlotter::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t){
-		if(step%stepsPerPlot == 0){
-			if(rho0){ // plot difference
-				if(first){
-					vtls::copyArray(nPts, rho, rho0);
-					first = false;
-				}
-				vtls::scaMulAddArrays(nPts, -1.0, rho0, rho, tempRho);
-				plotter->update(nPts, 1, xs, tempRho);
-			}
-			else
-				plotter->update(nPts, 1, xs, rho);
-
-			if(pause)
-				std::cin.get();
-		}
-		
-		return MeasurerStatus::SUCCESS;
-	}
-
-
-	PotentialPlotter::PotentialPlotter(size_t nPts, const double *xs, size_t stepsPerPlot, bool pause):
+	QuantityPlotter::QuantityPlotter(size_t nPts, const double *xs, const char* ylabel, bool plotChange, size_t stepsPerPlot, bool pause):
 		nPts(nPts), xs(xs), pause(pause), stepsPerPlot(stepsPerPlot)
 	{
-		plotter = new plotting::GNUPlotter();
+		if(plotChange){
+			q0 = (double*) sq_malloc(sizeof(double)*nPts);
+			tq = (double*) sq_malloc(sizeof(double)*nPts);
+		}
+		plotter = new plotting::GNUPlotter("x (m)", ylabel);
 	}
 
-	PotentialPlotter::~PotentialPlotter(){
+	QuantityPlotter::~QuantityPlotter(){
+		if(q0)
+			sq_free(q0);
+		if(tq)
+			sq_free(tq);
 		delete plotter;
 	}
 
-	MeasurerStatus PotentialPlotter::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t){
+	void QuantityPlotter::plotQuantity(size_t step, const double* quant){
 		if(step%stepsPerPlot == 0){
-			plotter->update(nPts, 1, xs, v);
+			if(q0){ // plot difference
+				if(first){
+					vtls::copyArray(nPts, quant, q0);
+					first = false;
+				}
+				vtls::scaMulAddArrays(nPts, -1.0, q0, quant, tq);
+				plotter->update(nPts, 1, xs, tq);
+			}
+			else
+				plotter->update(nPts, 1, xs, quant);
 
 			if(pause)
 				std::cin.get();
 		}
-		
-		return MeasurerStatus::SUCCESS;
 	}
 
 

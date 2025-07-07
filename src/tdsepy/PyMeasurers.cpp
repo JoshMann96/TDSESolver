@@ -569,7 +569,7 @@ void init_Measurers(py::module &m) {
     
     py::class_<DensityPlotter, Measurer, std::unique_ptr<DensityPlotter, py::nodelete>>(m, "DensityPlotter")
         .def(py::init([](SimulationManager* sim, bool plotChange, int stepsPerPlot, bool pause){
-            return std::unique_ptr<DensityPlotter, py::nodelete>(new DensityPlotter(sim->getNumPoints(), sim->getNElecPtr(), sim->getDX(), sim->getX(), sim->getDensity(), sim->getWeightsPtr(), plotChange, stepsPerPlot, pause));
+            return std::unique_ptr<DensityPlotter, py::nodelete>(new DensityPlotter(sim->getNumPoints(), sim->getX(), plotChange, stepsPerPlot, pause));
         }), R"V0G0N(
             Plots the density of the wavefunction with a gnuplot window as the simulation runs.
 
@@ -590,8 +590,8 @@ void init_Measurers(py::module &m) {
             "sim"_a, "plotChange"_a, "stepsPerPlot"_a, "pause"_a);
     
     py::class_<PotentialPlotter, Measurer, std::unique_ptr<PotentialPlotter, py::nodelete>>(m, "PotentialPlotter")
-        .def(py::init([](SimulationManager* sim, int stepsPerPlot, bool pause){
-            return std::unique_ptr<PotentialPlotter, py::nodelete>(new PotentialPlotter(sim->getNumPoints(), sim->getX(), stepsPerPlot, pause));
+        .def(py::init([](SimulationManager* sim, bool plotChange, int stepsPerPlot, bool pause){
+            return std::unique_ptr<PotentialPlotter, py::nodelete>(new PotentialPlotter(sim->getNumPoints(), sim->getX(), plotChange, stepsPerPlot, pause));
         }), R"V0G0N(
             Plots the potential with a gnuplot window as the simulation runs.
 
@@ -599,6 +599,8 @@ void init_Measurers(py::module &m) {
             ----------
             sim : Simulation
                 Associated simulation.
+            plotChange : bool
+                Whether to plot the change in potential (i.e. the difference between the current and initial potential) instead of the absolute potential.
             stepsPerPlot : int
                 Number of steps between plots.
             pause : bool
@@ -607,5 +609,27 @@ void init_Measurers(py::module &m) {
             Returns
             -------
             PotentialPlotter)V0G0N",
-            "sim"_a, "stepsPerPlot"_a, "pause"_a);
+            "sim"_a, "plotChange"_a, "stepsPerPlot"_a, "pause"_a);
+    
+    py::class_<CurrentPlotter, Measurer, std::unique_ptr<CurrentPlotter, py::nodelete>>(m, "CurrentPlotter")
+        .def(py::init([](SimulationManager* sim, bool plotChange, int stepsPerPlot, bool pause){
+            return std::unique_ptr<CurrentPlotter, py::nodelete>(new CurrentPlotter(sim->getNumPoints(), sim->getX(), plotChange, stepsPerPlot, pause));
+        }), R"V0G0N(
+            Plots the current with a gnuplot window as the simulation runs.
+
+            Parameters
+            ----------
+            sim : Simulation
+                Associated simulation.
+            plotChange : bool
+                Whether to plot the change in current (i.e. the difference between the current and initial current) instead of the absolute current.
+            stepsPerPlot : int
+                Number of steps between plots.
+            pause : bool
+                Whether to pause after each plot.
+
+            Returns
+            -------
+            CurrentPlotter)V0G0N",
+            "sim"_a, "plotChange"_a, "stepsPerPlot"_a, "pause"_a);
 }

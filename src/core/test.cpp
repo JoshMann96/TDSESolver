@@ -518,8 +518,8 @@ void testIterationMethods(int stepType=-1, size_t nPts=8192){
 		delete plotter;
 	}
 
-	sm->addMeasurer(new Measurers::DensityPlotter(nPts, sm->getNElecPtr(), dx, xs, sm->getDensity(), sm->getWeightsPtr(), 100, false));
-	sm->addMeasurer(new Measurers::PotentialPlotter(nPts, xs, 100, false));
+	sm->addMeasurer(new Measurers::DensityPlotter(nPts, xs, false, 100, false));
+	sm->addMeasurer(new Measurers::PotentialPlotter(nPts, xs, false, 100, false));
 
 	std::cout << "Testing the implemented iteration methods..." << std::endl;
 	std::cout << "\tFinding Eigenstates..." << std::endl;
@@ -818,37 +818,10 @@ void testCuTridiagSolver(){
 	sq_free(rho_c);
 	#endif // USE_CUDA
 }
-
-// TODO: TESTING CURRENT CALCULATIONS
-// - OS method
-// - CN CPU
-// - CN GPU
-// - planar and cylindrical geometries
-
-int main(int argc, char** argv){
-	// char* wisdomFile = new char[64];
-	// std::snprintf(wisdomFile, 64, "fftw_nt_%04d.wisdom", omp_get_max_threads());
-	// fftw_init_threads();
-	// fftw_import_wisdom_from_filename(wisdomFile);
-
-	// testIterationMethods(-1, 2048);
-	// testIterationMethods(-1, 4096);
-	// testIterationMethods(-1, 8192);
-	// testIterationMethods(-1, 16384);
-	// testIterationMethods(-1, 32768);
-
-	// fftw_export_wisdom_to_filename(wisdomFile);
-	// delete[] wisdomFile;
-
-	// std::cout << "Done" << std::endl;
-
-	//testIterationMethods(2, 2048);
-	//testIterationMethods(3, 2048);
-	//testIterationMethods(4, 2048*2);
-	//testIterationMethods(5, 2048);
+/*
+void variousDensityTests(){
 
 	// test cylindrical density
-	/*
 	size_t nPts = 200;
 	Densities::CylindricalDensity* cylDens = new Densities::CylindricalDensity(-20e-9, 20e-9, -100e-9);
 	double* rho = (double*)sq_malloc(sizeof(double)*nPts);
@@ -862,9 +835,7 @@ int main(int argc, char** argv){
 	delete plotter;
 	delete cylDens;
 	sq_free(rho);
-	*/
 
-	/*
 	// test planar cylindrical hartree
 	size_t nPts = 1000;
 	double xmin = -100e-9;
@@ -895,16 +866,15 @@ int main(int argc, char** argv){
 		std::cout << "Press enter to continue..." << std::endl;
 		std::cin.get();
 	}
-	*/
 
 	// test aperiodic convolving
 	size_t nPts = 20;
 	double dx = 0.05;
 	double* rho = (double*)sq_malloc(sizeof(double)*nPts);
-	/*// fill with alternating values
+	// fill with alternating values
 	for(size_t i = 0; i < nPts; i++)
 		rho[i] = (i % 2 == 0) ? 1.0 : -1.0;
-	*/
+	
 	std::fill_n(rho, nPts, 0.0);
 	rho[0] = 1.0/dx;
 	rho[1] = 0.5/dx;
@@ -923,4 +893,117 @@ int main(int argc, char** argv){
 
 	sq_free(rho);
 	delete dens;
+}
+*/
+// TODO: TESTING CURRENT CALCULATIONS
+// - OS method
+// - CN CPU
+// - CN GPU
+// - planar and cylindrical geometries
+
+int testCurrentDensityCalculations(int argc, char** argv){
+	size_t nPts = 8192, nSteps = 10000;
+	double dx = 0.16*PhysCon::a0;
+	double dt = 0.1*PhysCon::hbar/PhysCon::auE_ha;
+	double sigma = 10.0*PhysCon::a0;
+	double k = 2.0*PhysCon::pi/PhysCon::a0;
+
+	enum class TestType {
+		OS,
+		CN_CPU,
+		CN_GPU,
+	};
+
+	// get test type from command line argument
+	TestType testType = TestType::OS;
+	if(argc > 1){
+		if(std::string(argv[1]) == "OS")
+			testType = TestType::OS;
+		else if(std::string(argv[1]) == "CN_CPU")
+			testType = TestType::CN_CPU;
+		else if(std::string(argv[1]) == "CN_GPU")
+			testType = TestType::CN_GPU;
+		else{
+			std::cerr << "Unknown test type! Use 'OS', 'CN_CPU' or 'CN_GPU'." << std::endl;
+			return 1;
+		}
+	}
+
+	std::cout << "Testing simulation manager with " << nPts << " points, dx = " << dx << ", dt = " << dt << ", sigma = " << sigma << ", k = " << k << std::endl;
+	std::cout << "\tExpected probability current peak: " << PhysCon::hbar*k/(PhysCon::me) << std::endl;
+
+	// test OS method
+	SimulationManager *sm = new SimulationManager(nPts, -(double)nPts*dx/2.0, dx, dt);
+	
+	Potentials::Potential* pot = new Potentials::PlanarHartree(nPts, dx, nullptr, 0); // add (weak) potential to force GPU calculation of current
+	sm->addPotential(pot);
+
+	KineticOperators::KineticOperator* os;
+	switch(testType)
+	{
+		case TestType::OS:
+			os = new KineticOperators::GenDisp_PSM_FreeElec(nPts, dx, dt, 1.0, FFTW_ESTIMATE);
+			break;
+		case TestType::CN_CPU:
+			os = new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, new FDBCs::DirichletBC(0.0), new FDBCs::DirichletBC(0.0), false);
+			break;
+		case TestType::CN_GPU:
+			os = new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, new FDBCs::DirichletBC(0.0), new FDBCs::DirichletBC(0.0), true);
+			break;
+		default:
+			std::cerr << "Unknown test type!" << std::endl;
+			return 1;
+	}
+	sm->setKineticOperator(os);
+
+	Densities::Density *dens = new Densities::DirectDensity();
+	sm->setDensity(dens);
+
+	const double* xs = sm->getX(); // WARNING: memory managed by sm
+	std::complex<double>* wf0 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts);
+
+	// fill with Gaussian wavepacket
+	double x;
+	for(size_t i = 0; i < nPts; i++){
+		x = xs[i];
+		wf0[i] = std::exp(-x*x/(2.0*sigma*sigma)) * std::exp(std::complex<double>(0.0, k)*x);
+	}
+	sm->setPsi(wf0);
+
+	Measurers::Measurer* m1 = new Measurers::DensityPlotter(nPts, xs, false, 100, false);
+	Measurers::Measurer* m2 = new Measurers::CurrentPlotter(nPts, xs, false, 100, true);
+
+	sm->addMeasurer(m1);
+	sm->addMeasurer(m2);
+
+	sm->run(nSteps);
+
+	// free memory
+	sq_free(wf0);
+	delete m1;
+	delete m2;
+	delete pot;
+	delete dens;
+	delete os;
+	delete sm;
+}
+
+int main(int argc, char** argv){
+	testCurrentDensityCalculations(argc, argv);
+
+	// char* wisdomFile = new char[64];
+	// std::snprintf(wisdomFile, 64, "fftw_nt_%04d.wisdom", omp_get_max_threads());
+	// fftw_init_threads();
+	// fftw_import_wisdom_from_filename(wisdomFile);
+
+	// testIterationMethods(-1, 2048);
+	// testIterationMethods(-1, 4096);
+	// testIterationMethods(-1, 8192);
+	// testIterationMethods(-1, 16384);
+	// testIterationMethods(-1, 32768);
+
+	// fftw_export_wisdom_to_filename(wisdomFile);
+	// delete[] wisdomFile;
+
+	// std::cout << "Done" << std::endl;
 }

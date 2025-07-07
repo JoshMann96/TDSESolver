@@ -172,10 +172,10 @@ namespace KineticOperators {
 			// calculate group velocity
 			if (!groupVel) groupVel = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts);
 			double dp = PhysCon::hbar * 2.0 * PhysCon::pi / (nPts * dx);
-			groupVel[0] = (kinIn[1] - kinIn[0]) / dp;
+			groupVel[0] = (kinIn[1] - kinIn[nPts - 1]) / (2.0 * dp);
 			for (size_t i = 1; i < nPts - 1; i++)
 				groupVel[i] = (kinIn[i + 1] - kinIn[i - 1]) / (2.0 * dp);
-			groupVel[nPts - 1] = (kinIn[nPts - 1] - kinIn[nPts - 2]) / dp;
+			groupVel[nPts - 1] = (kinIn[0] - kinIn[nPts - 2]) / (2.0 * dp);
 		}
 	private:
 		bool firstStepAll = true, firstStepOne = true, needMat = true;

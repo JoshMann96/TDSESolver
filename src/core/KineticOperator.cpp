@@ -329,7 +329,7 @@ namespace KineticOperators {
 			psik = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nPts * nElec);
 
 		// Fourier transform
-		vtls::copyArrayConj(nPts * nElec, psi, psik);
+		vtls::copyArrayConj(nPts * nElec, -1.0, psi, psik);
 		executeAllFFTForward(psik);
 		// apply group velocity
 		for(size_t i = 0; i < nElec; i++)
@@ -1219,11 +1219,11 @@ namespace KineticOperators {
 		if(!useCuda)
 			return false;
 		#ifdef USE_CUDA
-		cuSolver->calcRawCur(weights, cur, virt);
+		cuSolver->calcRawCur(weights, cur, PhysCon::hbar/(PhysCon::me*m_eff*dx), virt);
 		#else // USE_CUDA
 		throw std::runtime_error("CUDA support not compiled in this build");
 		#endif // USE_CUDA
-		
+
 		return true;
 	}
 
@@ -1233,7 +1233,7 @@ namespace KineticOperators {
 		if(!tempPsi2)
 			tempPsi2 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nPts);
 
-		std::complex<double> dvdk = PhysCon::hbar/PhysCon::me/m_eff/PhysCon::im;
+		std::complex<double> dvdk = PhysCon::hbar/PhysCon::me/m_eff*PhysCon::im;
 
 		std::fill_n(current, nPts, 0.0);
 		for(size_t n = 0; n < nElec; n++) {

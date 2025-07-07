@@ -486,6 +486,21 @@ namespace vtls {
 	}
 
 	/**
+	 * Adds the imaginary component of a scalar multiple of one array to another array.
+	 * @tparam T The type of the scalar.
+	 * @tparam U The type of the first array.
+	 * @param len The length of the arrays.
+	 * @param scalar The scalar value to multiply the first array by.
+	 * @param arr (in) The first array, which will be multiplied by the scalar.
+	 * @param targ (out) The second array, which will be added to with the result.
+	 */
+	template <typename T, typename U>
+	void scaMulAddArraysIm(size_t len, T scalar, const U* __restrict arr, double* __restrict targ) {
+		for (size_t i = 0; i < len; i++)
+			targ[i] += std::imag(arr[i] * scalar);
+	}
+
+	/**
 	 * Adds two arrays together, storing the result in a third array.
 	 * @tparam T The type of the first array.
 	 * @tparam U The type of the second array.
@@ -895,6 +910,18 @@ namespace vtls {
 	}
 
 	/**
+	 * Copies the elements of one array to another, taking the complex conjugate of the source array and multiplying by a scalar.
+	 * @param len The length of the arrays.
+	 * @param s The scalar to multiply the conjugated elements by.
+	 * @param arr1 (in) The source array to copy from.
+	 * @param arr2 (out) The target array to copy to.
+	 */
+	inline void copyArrayConj(size_t len, std::complex<double> s, const std::complex<double>* __restrict arr1, std::complex<double>* __restrict arr2) {
+		for (size_t i = 0; i < len; i++)
+			arr2[i] = s * std::conj(arr1[i]);
+	}
+
+	/**
 	 * Evaluates the first derivative of an array at a specified position.
 	 * @tparam T The type of the array elements.
 	 * @param len The length of the array.
@@ -1126,9 +1153,19 @@ namespace plotting{
 	class GNUPlotter {
 	private:
 		Gnuplot gp;
+		const char* ylabel = nullptr;
+		const char* xlabel = nullptr;
 	public:
 		/// Default constructor for initializing a GNUPlotter.
 		GNUPlotter(){};
+
+		GNUPlotter(const char* xlabel, const char* ylabel) : xlabel(xlabel), ylabel(ylabel) {
+			gp << "set grid\n";
+			if (ylabel)
+				gp << "set ylabel '" << ylabel << "'\n";
+			if (xlabel)
+				gp << "set xlabel '" << xlabel << "'\n";
+		};
 
 		/**
 		 * Constructor for initializing a GNUPlotter with data.
