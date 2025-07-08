@@ -1002,10 +1002,10 @@ int testMixedGeometryHartree(){
 	sm->setKineticOperator(new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, 
 		new FDBCs::UniformHDTransparentBC(10000, 1, dx, dt),
 		new FDBCs::DirichletBC(0.0), 
-		true));
+		false));
 
 	const double* xs = sm->getX(); // WARNING: memory managed by sm
-	Densities::Density *dens = new Densities::CylindricalDensity(-20e-9, 20e-9, xs[0]);
+	Densities::Density *dens = new Densities::CylindricalDensity(-2e-9, 2e-9, xs[0]);
 	sm->setDensity(dens);
 	sm->setWeight(new Densities::UniformWeight(1e9 * PhysCon::e0 / PhysCon::qe)); // 1 V/nm
 
@@ -1026,11 +1026,12 @@ int testMixedGeometryHartree(){
 	for(size_t i = 0; i < nPts; i++)
 		h[i] = 1.0 / h[i]; // invert to get the geometry profile
 
-	sm->addMeasurer(new Measurers::DensityPlotter(nPts, sm->getX(), true, 100, false));
-	sm->addMeasurer(new Measurers::CurrentPlotter(nPts, sm->getX(), true, 100, false));
+	sm->addMeasurer(new Measurers::DensityPlotter(nPts, sm->getX(), true, 1000, false));
+	sm->addMeasurer(new Measurers::CurrentPlotter(nPts, sm->getX(), true, 1000, false));
 	sm->addPotential(new Potentials::MeasuredPotential(
-		new Potentials::MixedGeometryHartreeGhostCharge(nPts, 0, nPts-1, -1, dx, 0.0, h, sm->getRho(), sm->getCur(), 0, true),
-		new Measurers::PotentialPlotter(nPts, sm->getX(), false, 100, false),
+		//new Potentials::MixedGeometryHartreeGhostCharge(nPts, 0, nPts-1, -1, dx, 0.0, h, sm->getRho(), sm->getCur(), 0, true),
+		new Potentials::MixedGeometryHartreeShielded(nPts, 0, nPts-1, nPts/2, -(nPts/10.0*dx), dx, 1.0/(20e-9), h, sm->getRho(), sm->getCur(), 0, true),
+		new Measurers::PotentialPlotter(nPts, sm->getX(), false, 1000, false),
 		nSteps, dt*nSteps, false));
 
 	// run simulation

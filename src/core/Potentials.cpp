@@ -636,7 +636,7 @@ namespace Potentials {
 		for (size_t i = 0; i < nPts-2; i++){
 			vld[i] 		= 1.0 - (hRad[i+2] - hRad[i])/(4.0*hRad[i+1]);
 			vud[i+1] 	= 1.0 + (hRad[i+2] - hRad[i])/(4.0*hRad[i+1]);
-			vd[i+1] 	= -2.0 - mRTheta * (hRad[i+1]*hRad[i+1]);
+			vd[i+1] 	= -2.0 - dx*dx*mRTheta * mRTheta / (hRad[i+1]*hRad[i+1]);
 		}
 
 		// BCs (homogeneous, Neumann for GC side, Dirichlet for other side)
@@ -856,7 +856,7 @@ namespace Potentials {
 		for (size_t i = 0; i < nPts-2; i++){
 			vld[i] 		= 1.0 - (hRad[i+2] - hRad[i])/(4.0*hRad[i+1]);
 			vud[i+1] 	= 1.0 + (hRad[i+2] - hRad[i])/(4.0*hRad[i+1]);
-			vd[i+1] 	= -2.0 - mRTheta * (hRad[i+1]*hRad[i+1]);
+			vd[i+1] 	= -2.0 - dx*dx*mRTheta*mRTheta / (hRad[i+1]*hRad[i+1]);
 		}
 
 		if(shieldLength > 0.0){
@@ -870,8 +870,8 @@ namespace Potentials {
 			neumSide = -1;
 		}
 
-		// BCs (homogeneous, Neumann for GC side, Dirichlet for other side)
-		if(shieldLength > 0.0){
+		// BCs (homogeneous, Neumann for unshielded side, Dirichlet for other side
+		if(neumSide == 1){
 			vd[0] = 1.0; vud[0] = 0.0; // Dirichlet on left boundary
 			vd[nPts-1] = 1.0; vld[nPts-2] = -1.0; // Neumann on right boundary
 		}
