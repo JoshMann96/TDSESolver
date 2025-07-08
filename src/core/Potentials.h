@@ -342,6 +342,41 @@ namespace Potentials {
 	};
 
 	/**
+	 * Potential which takes in a sample potential and interpolates it to the simulation grid.
+	 */
+	class CustomPotential :
+		public TimeLocalPotential
+	{
+	private:
+		double * v = nullptr;
+		size_t nPts;
+	public:
+		/**
+		 * Constructor.
+		 * @param simnPts Number of points in the simulation grid.
+		 * @param simX (in) Array of positions in the simulation grid.
+		 * @param samplenPts Number of points in the sample potential.
+		 * @param sampleX (in) Array of positions in the sample potential.
+		 * @param sampleV (in) Array of potential values in the sample potential.
+		 * @param refPoint Reference point for the potential.
+		 */
+		CustomPotential(size_t simnPts, const double * simX, size_t samplenPts, const double* sampleX, const double * sampleV, size_t refPoint) : nPts(simnPts) {
+			v = (double*) sq_malloc(sizeof(double)*nPts);
+			vtls::linearInterpolate(samplenPts, sampleX, sampleV, simnPts, simX, v);
+			vtls::scaAddArray(nPts, -v[refPoint], v);
+		};
+		~CustomPotential(){if(v) sq_free(v);};
+
+		void getVBare(double t, double * targ) {
+			vtls::copyArray(nPts, v, targ);
+		};
+		void getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ) {
+			vtls::copyArray(nPts, v, targ);
+		};
+		Dependence getDependence() const {return Dependence::NONE;};
+	};
+
+	/**
 	 * Potential which models a bias field.
 	 * The field is zero outside of the bias region.
 	 * The field is linearly ramped up from zero to the bias field strength over a buffer region.

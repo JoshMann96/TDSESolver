@@ -14,6 +14,7 @@ set -e
 # Cuda                      [-DUSE_CUDA=ON|OFF]
 # Disable Python bindings   [--disablePython]
 # Debugging comp. flags     [-DDEBUG=ON|OFF]
+# Build directory           [-BUILD_DIR=path/to/build/dir]
 
 original_params=("$@")
 echo "${original_params[@]}"

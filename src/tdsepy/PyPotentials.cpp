@@ -162,6 +162,29 @@ void init_Potentials(py::module &m) {
             FilePotential)V0G0N",
             "sim"_a, "offset"_a, "fil"_a, "refPoint"_a);
 
+    py::class_<CustomPotential, Potential>(m, "CustomPotential")
+        .def(py::init([](SimulationManager* sim, const std::vector<double>& x, const std::vector<double>& v, double refPoint){
+            return std::unique_ptr<CustomPotential>(new CustomPotential(
+                sim->getNumPoints(), sim->getX(), x.size(), x.data(), v.data(), sim->findXIdx(refPoint)
+            ));
+        }), R"V0G0N(
+            Static potential defined by a custom set of positions and values.
+
+            Parameters
+            ----------
+            sim : Simulation
+                Associated simulation.
+            x : list of float
+                Positions at which the potential is defined.
+            v : list of float
+                Values of the potential at the specified positions.
+            refPoint : float
+                Potential reference point.
+
+            Returns
+            -------
+            CustomPotential)V0G0N",
+            "sim"_a, "x"_a, "v"_a, "refPoint"_a);
 
     py::class_<JelliumPotentialBacked, Potential>(m, "JelliumPotentialBacked")
         .def(py::init([](SimulationManager* sim, double center, double ef, double w, double backStart, double backWidth, double refPoint){

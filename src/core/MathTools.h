@@ -793,7 +793,7 @@ namespace vtls {
 	void linearInterpolate(size_t l1, const double* __restrict x1, const T* __restrict y1, size_t l2, const double* __restrict x2, T* __restrict y2) {
 		size_t curPos = 0;
 		for (size_t i = 0; i < l2; i++) {
-			while (x2[i] > x1[curPos] && curPos < l1)
+			while (curPos < l1 && x2[i] > x1[curPos])
 				curPos++;
 			if (curPos > 0 && curPos < l1)
 				y2[i] = y1[curPos - 1] + (y1[curPos] - y1[curPos - 1]) * (x2[i] - x1[curPos - 1]) / (x1[curPos] - x1[curPos - 1]);
