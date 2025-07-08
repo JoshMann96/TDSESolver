@@ -18,7 +18,10 @@ set -e
 original_params=("$@")
 echo "${original_params[@]}"
 
+# manage python bindings and build directory
+
 PYTHON_BINDINGS=TRUE
+BUILD_DIR="build"
 
 while test $# -gt 0
 do
@@ -26,6 +29,22 @@ do
         --disablePython) 
             PYTHON_BINDINGS=FALSE
             echo "Disabling Python bindings"
+            ;;
+    esac
+    case "$1" in
+        -BUILD_DIR=*)
+            BUILD_DIR="${1#-BUILD_DIR=}"
+            echo "Setting build directory to $BUILD_DIR"
+            ;;
+        -BUILD_DIR)
+            shift
+            if test $# -gt 0; then
+                BUILD_DIR="$1"
+                echo "Using build directory: $BUILD_DIR"
+            else
+                echo "Error: -BUILD_DIR requires a directory name."
+                exit 1
+            fi
             ;;
     esac
     shift
@@ -44,12 +63,6 @@ if [ "$PYTHON_BINDINGS" = TRUE ]
     pip3 install -r requirements.txt
     fi
 
-if [ -d build ];
-then echo "build folder already exists."
-else
-mkdir build
-fi
-
 filtered_params=()
 for param in "${original_params[@]}"; do
     if [[ $param == -D* ]]; then
@@ -57,8 +70,8 @@ for param in "${original_params[@]}"; do
     fi
 done
 
-cmake -S . -B build "${filtered_params[@]}" -DPYTHON_BINDINGS=$PYTHON_BINDINGS
-cd build
+cmake -S . -B "$BUILD_DIR" "${filtered_params[@]}" -DPYTHON_BINDINGS=$PYTHON_BINDINGS
+cd "$BUILD_DIR"
 make -j 8
 
 if [ "$PYTHON_BINDINGS" = TRUE ]
@@ -70,7 +83,7 @@ if [ "$PYTHON_BINDINGS" = TRUE ]
     echo "BUILD COMPLETE"
     echo "To install to a custom venv"
     echo "    1. source the desired venv"
-    echo "    2. cd to build/lib/tdsepy"
+    echo "    2. cd to $BUILD_DIR/lib/tdsepy"
     echo "    3. run 'pip install .'"
 
     deactivate

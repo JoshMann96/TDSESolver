@@ -243,7 +243,7 @@ namespace Potentials {
 	/// Enum for potential's dependence on the physical system.
 	enum Dependence{
 		/// the potential is a constant, only needs to be evaluated once
-		STATIC = 0U, 
+		NONE = 0U, 
 		/// the potential depends explicitly with time
 		EXPLICIT_TIME_DEPENDENT = 	1U<<0, 
 		/// the potential depends on the wavefunction
@@ -338,7 +338,7 @@ namespace Potentials {
 		~FilePotential();
 		void getVBare(double t, double * targ);
 		void getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ);
-		Dependence getDependence() const {return Dependence::STATIC;};
+		Dependence getDependence() const {return Dependence::NONE;};
 	};
 
 	/**
@@ -369,7 +369,7 @@ namespace Potentials {
 		~BiasFieldPotential();
 		void getVBare(double t, double * targ);
 		void getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ);
-		Dependence getDependence() const {return Dependence::STATIC;};
+		Dependence getDependence() const {return Dependence::NONE;};
 	};
 
 	/// Potential offset for the entire domain.
@@ -392,7 +392,7 @@ namespace Potentials {
 		~UniformPotential(){if(v) sq_free(v);};
 		void getVBare(double t, double * targ){ vtls::copyArray(nPts, v, targ); };
 		void getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ){ getVBare(t, targ); };
-		Dependence getDependence() const {return Dependence::STATIC;};
+		Dependence getDependence() const {return Dependence::NONE;};
 	};
 
 	/// Potentials which takes in another potential and applies a sinusoidal scalar product to it.
@@ -452,7 +452,7 @@ namespace Potentials {
 		~CoulombPotential();
 		void getVBare(double t, double * targ);
 		void getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ);
-		Dependence getDependence() const {return Dependence::STATIC;};
+		Dependence getDependence() const {return Dependence::NONE;};
 	};
 
 	/**
@@ -479,7 +479,7 @@ namespace Potentials {
 		~FiniteBox();
 		void getVBare(double t, double * targ);
 		void getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ);
-		Dependence getDependence() const {return Dependence::STATIC;};
+		Dependence getDependence() const {return Dependence::NONE;};
 	};
 
 	/// Wachter's Jellium potential.
@@ -504,7 +504,7 @@ namespace Potentials {
 		~JelliumPotential();
 		void getVBare(double t, double * targ);
 		void getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ);
-		Dependence getDependence() const {return Dependence::STATIC;};
+		Dependence getDependence() const {return Dependence::NONE;};
 	};
 
 	/// Jellium potential with a backing such that it smoothly returns to vacuum level on the left side.
@@ -531,7 +531,7 @@ namespace Potentials {
 		~JelliumPotentialBacked();
 		void getVBare(double t, double * targ);
 		void getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ);
-		Dependence getDependence() const {return Dependence::STATIC;};
+		Dependence getDependence() const {return Dependence::NONE;};
 	};
 
 	/// Shielded atomic potential, averaged across an infinite plane parallel to surface.
@@ -555,7 +555,7 @@ namespace Potentials {
 		~ShieldedAtomicPotential();
 		void getVBare(double t, double * targ);
 		void getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ);
-		Dependence getDependence() const {return Dependence::STATIC;};
+		Dependence getDependence() const {return Dependence::NONE;};
 	};
 
 	/// Converts an electric field profile and envelope to a potential.
@@ -741,6 +741,54 @@ namespace Potentials {
 		Dependence getDependence() const {return Dependence::DENSITY_DEPENDENT;};
 	};
 		
+	class MixedGeometryHartreeGhostCharge :
+		public Potential
+	{
+	private:
+		bool includeVectorPotential, first=true;
+		const double *hRad = nullptr;
+		double mRTheta, dx, t0 = 0.0; // m/R, transverse inverse length scale
+		size_t nPts, refPoint, minPos, maxPos, gcPos;
+		int gcSide;
+		double ghostCharge = 0.0, oldVb, oldAbDiff;
+		double *vld, *vd, *vud, *vud2, *vrhs, *ald, *ad, *aud, *aud2, *arhs, *newV, *newA, *oldV, *oldA, *aTemp, *oldVTrans, *rho0 = nullptr, *j0 = nullptr, *drho, *dcur;
+		lapack_int *vipiv, *aipiv;
+
+		void calcPot(const double* rho, const double* cur, double* targ, double t, bool virt);
+	public:
+		MixedGeometryHartreeGhostCharge(size_t nPts, size_t minPos, size_t maxPos, int ghostCharge, double dx, double mRTheta, const double* hRad, const double* rho0, const double* j0, size_t refPoint, bool includeVectorPotential=true);
+
+		~MixedGeometryHartreeGhostCharge();
+		void getVBare(double t, double* targ) { std::fill_n(targ, nPts, 0.0); };
+		void getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ) { calcPot(rho, cur, targ, t, false); };
+		void getVVirtual(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ) { calcPot(rho, cur, targ, t, true); };
+		Dependence getDependence() const {return Dependence::DENSITY_DEPENDENT | Dependence::CURRENT_DEPENDENT;};
+	};
+		
+	class MixedGeometryHartreeShielded :
+		public Potential
+	{
+	private:
+		bool includeVectorPotential, first=true;
+		const double *hRad = nullptr;
+		double mRTheta, dx, t0 = 0.0; // m/R, transverse inverse length scale
+		size_t nPts, refPoint, minPos, maxPos;
+		double oldVb, oldAbDiff;
+		double *vld, *vd, *vud, *vud2, *vrhs, *ald, *ad, *aud, *aud2, *arhs, *newV, *newA, *oldV, *oldA, *aTemp, *oldVTrans, *rho0 = nullptr, *j0 = nullptr, *drho, *dcur, *shieldProfile;
+		lapack_int *vipiv, *aipiv;
+		size_t diriEdge, neumEdge;
+		int neumSide;
+
+		void calcPot(const double* rho, const double* cur, double* targ, double t, bool virt);
+	public:
+		MixedGeometryHartreeShielded(size_t nPts, size_t minPos, size_t maxPos, size_t surfPos, double shieldLength, double dx, double mRTheta, const double* hRad, const double* rho0, const double* j0, size_t refPoint, bool includeVectorPotential=true);
+
+		~MixedGeometryHartreeShielded();
+		void getVBare(double t, double* targ) { std::fill_n(targ, nPts, 0.0); };
+		void getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ) { calcPot(rho, cur, targ, t, false); };
+		void getVVirtual(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ) { calcPot(rho, cur, targ, t, true); };
+		Dependence getDependence() const {return Dependence::DENSITY_DEPENDENT | (includeVectorPotential ? Dependence::CURRENT_DEPENDENT : Dependence::NONE);};
+	};
 
 	/// Types of local density approximation (LDA) functionals.
 	enum class LDAFunctionalType {
@@ -794,7 +842,7 @@ namespace Potentials {
 		Potential ** dynamicPots;
 		double * v0;
 		double * nv;
-		Dependence myDepend = Dependence::STATIC;
+		Dependence myDepend = Dependence::NONE;
 	public:
 		/**
 		 * Constructor.
@@ -822,7 +870,7 @@ namespace Potentials {
 		size_t nPts;
 		std::vector<Potential*> staticPots, dynamicPots;
 		CompositePotential * pot=nullptr;
-		Dependence myDepend = Dependence::STATIC;
+		Dependence myDepend = Dependence::NONE;
 		Potential ** spots = nullptr, ** dpots = nullptr;
 	public:
 		/**

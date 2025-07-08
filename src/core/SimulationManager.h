@@ -40,6 +40,14 @@ public:
 	inline cyclic_int operator+(int n) { cyclic_int c(max); c.val = (val + n) % max; return c; };
 	inline cyclic_int& operator+=(T n) { val = (val + n) % max; return *this; };
 	inline cyclic_int& operator=(T n) { val = n % max; return *this; };
+	inline cyclic_int operator-(T n) { 
+		if(n >= max) throw std::out_of_range("cyclic_int: Cannot subtract more than max value");
+		cyclic_int c(max); c.val = (val - n + max) % max; return c;
+	};
+	inline cyclic_int operator-(int n) {
+		if(n >= max) throw std::out_of_range("cyclic_int: Cannot subtract more than max value");
+		cyclic_int c(max); c.val = (val - n + max) % max; return c;
+	};
 	inline operator size_t() const { return val; };
 };
 
@@ -152,14 +160,14 @@ private:
 	 * @param virt If true, the potential is updated for a virtual step.
 	 * @return Time in microseconds taken to update the potential.
 	 */
-	size_t updatePotential(int idx, bool virt);
+	size_t updatePotential(cyclic_int<size_t> idx, bool virt);
 
 	/**
 	 * Measures the wavefunction and potential at the given index.
 	 * @param idx The index of the measurement to be made. It should be in the range [0, HISTORY_LENGTH).
 	 * @return Time in microseconds taken to perform the measurement.
 	 */
-	size_t measure(int idx);
+	size_t measure(cyclic_int<size_t> idx);
 
 	/**
 	 * Helper function for nonlinear Crank-Nicolson SCF iterations for updating the mean potential.

@@ -986,10 +986,62 @@ int testCurrentDensityCalculations(int argc, char** argv){
 	delete dens;
 	delete os;
 	delete sm;
+
+	return 0;
+}
+
+int testMixedGeometryHartree(){
+	size_t nPts = 2048*8, nSteps = 10000;
+	double dx = 0.16*PhysCon::a0/10.0;
+	double dt = 0.1*PhysCon::hbar/PhysCon::auE_ha/10.0;
+	double sigma = 10.0*PhysCon::a0;
+	double k = 2.0*PhysCon::pi/PhysCon::a0;
+
+	SimulationManager* sm = new SimulationManager(nPts, -(double)nPts*dx/2.0, dx, dt);
+
+	sm->setKineticOperator(new KineticOperators::CrankNicolson(nPts, dx, dt, 1.0, 
+		new FDBCs::UniformHDTransparentBC(10000, 1, dx, dt),
+		new FDBCs::DirichletBC(0.0), 
+		true));
+
+	const double* xs = sm->getX(); // WARNING: memory managed by sm
+	Densities::Density *dens = new Densities::CylindricalDensity(-20e-9, 20e-9, xs[0]);
+	sm->setDensity(dens);
+	sm->setWeight(new Densities::UniformWeight(1e9 * PhysCon::e0 / PhysCon::qe)); // 1 V/nm
+
+	// fill with Gaussian wavepacket
+	std::complex<double>* wf0 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>)*nPts);
+	double x;
+	for(size_t i = 0; i < nPts; i++){
+		x = xs[i];
+		wf0[i] = std::exp(-x*x/(2.0*sigma*sigma)) * std::exp(std::complex<double>(0.0, k)*x);
+	}
+	vtls::setNorm(nPts, wf0, dx, 1.0);
+	sm->setPsi(wf0);
+
+	// get geometry profile
+	double* h = (double*)sq_malloc(sizeof(double)*nPts);
+	std::fill_n(h, nPts, 1.0);
+	dens->applyProfile(nPts, 1, dx, h);
+	for(size_t i = 0; i < nPts; i++)
+		h[i] = 1.0 / h[i]; // invert to get the geometry profile
+
+	sm->addMeasurer(new Measurers::DensityPlotter(nPts, sm->getX(), true, 100, false));
+	sm->addMeasurer(new Measurers::CurrentPlotter(nPts, sm->getX(), true, 100, false));
+	sm->addPotential(new Potentials::MeasuredPotential(
+		new Potentials::MixedGeometryHartreeGhostCharge(nPts, 0, nPts-1, -1, dx, 0.0, h, sm->getRho(), sm->getCur(), 0, true),
+		new Measurers::PotentialPlotter(nPts, sm->getX(), false, 100, false),
+		nSteps, dt*nSteps, false));
+
+	// run simulation
+	sm->run(nSteps);
+
+	delete sm;
+	return 0;
 }
 
 int main(int argc, char** argv){
-	testCurrentDensityCalculations(argc, argv);
+	testMixedGeometryHartree();
 
 	// char* wisdomFile = new char[64];
 	// std::snprintf(wisdomFile, 64, "fftw_nt_%04d.wisdom", omp_get_max_threads());

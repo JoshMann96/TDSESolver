@@ -22,8 +22,8 @@ SimulationManager::SimulationManager(size_t nPts, double xMin, double dx, double
 		vs[i] = (double*) sq_malloc(sizeof(double) * nPts);
 		rhos[i] = (double*) sq_malloc(sizeof(double) * nPts);
 		curs[i] = (double*) sq_malloc(sizeof(double) * nPts);
+		ts[i] = dt * i; // initialize first few time steps
 	}
-	std::fill_n(ts, HISTORY_LENGTH, 0.0);
 
 	step = (size_t*) sq_malloc(sizeof(size_t) * HISTORY_LENGTH);
 	std::fill_n(step, HISTORY_LENGTH, 0);
@@ -243,6 +243,8 @@ void SimulationManager::setPsi(const std::complex<double>* npsi, Densities::Norm
 	if(normScheme == Densities::NormalizationScheme::NORMALIZED)
 		vtls::normalizeSqrNorm(nPts, psis[index], dx);
 
+	wavefunctionInitialized = true;
+
 	calcWeights();
 
 	if(calcDensityForPot){
@@ -256,8 +258,6 @@ void SimulationManager::setPsi(const std::complex<double>* npsi, Densities::Norm
 		kin->calcRawCurrent(psis[index], weights, curs[index], nElec);
 		dens->applyProfile(nPts, nElec, dx, curs[index]);
 	}
-
-	wavefunctionInitialized = true;
 }
 
 size_t SimulationManager::calculatePotential(double* rho, double* cur, const std::complex<double>* psi, double t, double* v, bool virt){
@@ -308,9 +308,13 @@ size_t SimulationManager::calculatePotentialFromRawRhoCur(double* rho, double* c
 	return dur.count();
 }
 
-size_t SimulationManager::updatePotential(int idx, bool virt) {return calculatePotential(rhos[idx], curs[idx], psis[idx], ts[idx], vs[idx], virt);}
+size_t SimulationManager::updatePotential(cyclic_int<size_t> idx, bool virt) {
+	if (ts[idx] <= ts[idx-1])
+		ts[idx] = ts[idx-1] + dt; // ensure time is monotonically increasing, in the simulation hasn't advanced here yet
+	return calculatePotential(rhos[idx], curs[idx], psis[idx], ts[idx], vs[idx], virt);
+}
 
-size_t SimulationManager::measure(int idx) {
+size_t SimulationManager::measure(cyclic_int<size_t> idx) {
 	if(calcDensityForMeas && !calcDensityForPot) { // if density is measured but it wasn't already calculated for potential
 		if(dens == nullptr)
 			throw std::runtime_error("SimulationManager::measure: Density not set!");

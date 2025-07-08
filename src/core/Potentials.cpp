@@ -614,6 +614,449 @@ namespace Potentials {
 	}
 
 
+	MixedGeometryHartreeGhostCharge::MixedGeometryHartreeGhostCharge(size_t nPts, size_t minPos, size_t maxPos, int gcSide, double dx, double mRTheta, const double* hRad, const double* rho0, const double* j0, size_t refPoint, bool includeVectorPotential) :
+		nPts(nPts), minPos(minPos), maxPos(maxPos), gcSide(gcSide), dx(dx), mRTheta(mRTheta), refPoint(refPoint), includeVectorPotential(includeVectorPotential) 
+	{
+		assert(gcSide == 1 || gcSide == -1); // ghost charge must be either 1 or -1 here
+		assert(nPts <= LAPACK_INT_MAX);
+
+		gcPos = gcSide > 0 ? maxPos - 2 : minPos + 2;
+
+		vld = (double*) sq_malloc(sizeof(double)*(nPts-1));
+		vd  = (double*) sq_malloc(sizeof(double)*nPts);
+		vud = (double*) sq_malloc(sizeof(double)*(nPts-1));
+		vud2= (double*) sq_malloc(sizeof(double)*(nPts-2));
+		vipiv=(lapack_int*) sq_malloc(sizeof(lapack_int)*nPts);
+		vrhs= (double*) sq_malloc(sizeof(double)*nPts);
+		newV= (double*) sq_malloc(sizeof(double)*nPts);
+		drho= (double*) sq_malloc(sizeof(double)*nPts);
+		dcur= (double*) sq_malloc(sizeof(double)*nPts);
+
+		// fill matrix elements
+		for (size_t i = 0; i < nPts-2; i++){
+			vld[i] 		= 1.0 - (hRad[i+2] - hRad[i])/(4.0*hRad[i+1]);
+			vud[i+1] 	= 1.0 + (hRad[i+2] - hRad[i])/(4.0*hRad[i+1]);
+			vd[i+1] 	= -2.0 - mRTheta * (hRad[i+1]*hRad[i+1]);
+		}
+
+		// BCs (homogeneous, Neumann for GC side, Dirichlet for other side)
+		if(gcSide == 1){
+			vd[0] = 1.0; vud[0] = 0.0; // Dirichlet on left boundary
+			vd[nPts-1] = 1.0; vld[nPts-2] = -1.0; // Neumann on right boundary
+		}
+		else{
+			vd[0] = -1.0; vud[0] = 1.0; // Neumann on left boundary
+			vd[nPts-1] = 1.0; vld[nPts-2] = 0.0; // Dirichlet on right boundary
+		}
+
+		// perform factorization (only needs to be done once! :) )
+		lapack_int info;
+		lapack_int nPtsL = static_cast<lapack_int>(nPts);
+		LAPACK_dgttrf(&nPtsL, vld, vd, vud, vud2, vipiv, &info);
+		if(info != 0)
+			throw std::runtime_error("MixedGeometryHartree: LAPACK_dgttrf for potential failed with info = " + std::to_string(info));
+
+		if(includeVectorPotential){
+			ald = (double*) sq_malloc(sizeof(double)*(nPts-1));
+			ad  = (double*) sq_malloc(sizeof(double)*nPts);
+			aud = (double*) sq_malloc(sizeof(double)*(nPts-1));
+			aud2= (double*) sq_malloc(sizeof(double)*(nPts-2));
+			aipiv=(lapack_int*) sq_malloc(sizeof(lapack_int)*nPts);
+			arhs= (double*) sq_malloc(sizeof(double)*nPts);
+			newA= (double*) sq_malloc(sizeof(double)*nPts);
+			oldV= (double*) sq_malloc(sizeof(double)*nPts);
+			oldA= (double*) sq_malloc(sizeof(double)*nPts);
+			aTemp= (double*) sq_malloc(sizeof(double)*nPts);
+			oldVTrans = (double*) sq_malloc(sizeof(double)*nPts);
+
+			// fill matrix elements (within simulation box, they are the same, only differ by BCs)
+			for (size_t i = 0; i < nPts-2; i++){
+				ald[i] = vld[i];
+				aud[i+1] = vud[i+1];
+				ad[i+1] = vd[i+1];
+			}
+
+			// BCs (always Neumann, but RHS will vary)
+			ad[0] = -1.0; aud[0] = 1.0;
+			ad[nPts-1] = 1.0; ald[nPts-2] = -1.0;
+
+			// factor
+			LAPACK_dgttrf(&nPtsL, ald, ad, aud, aud2, aipiv, &info);
+			if(info != 0)
+				throw std::runtime_error("MixedGeometryHartree: LAPACK_dgttrf for current failed with info = " + std::to_string(info));
+		}
+
+		if(rho0 != nullptr){ // include offset potential
+			this->rho0 = (double*) sq_malloc(sizeof(double)*nPts);
+			vtls::copyArray(nPts, rho0, this->rho0);
+		}
+		if(j0 != nullptr && includeVectorPotential){
+			this->j0 = (double*) sq_malloc(sizeof(double)*nPts);
+			vtls::copyArray(nPts, j0, this->j0);
+		}
+	}
+
+	void MixedGeometryHartreeGhostCharge::calcPot(const double* rho, const double* cur, double* targ, double t, bool virt) {
+		double dt = t - t0;
+
+		// calculate differences if intial provided
+		if(rho0)
+			vtls::scaMulAddArrays(nPts, -1.0, rho0, rho, drho);
+		else
+			vtls::copyArray(nPts, rho, drho);
+
+		if(j0)
+			vtls::scaMulAddArrays(nPts, -1.0, j0, cur, dcur);
+		else
+			vtls::copyArray(nPts, cur, dcur);
+
+		// electrostatic potential (newV will ultimately contain the preliminary result)
+		// rhs
+		vtls::scaMulArray(nPts, -PhysCon::qe * PhysCon::qe * dx * dx / PhysCon::e0, drho, newV);
+		// set charge outside of system to zero
+		std::fill_n(newV, minPos, 0.0);
+		std::fill_n(&newV[maxPos+1], nPts-maxPos-1, 0.0);
+		// add ghost charge
+		newV[gcPos] += (ghostCharge + gcSide * dcur[gcPos]*dt) * (-PhysCon::qe * PhysCon::qe * dx / PhysCon::e0);
+		newV[gcPos + gcSide * 1] = 0.0;
+		newV[gcPos + gcSide * 2] = 0.0;
+		// homogeneous BCs
+		newV[0] = 0.0;
+		newV[nPts-1] = 0.0;
+
+		// solve
+		lapack_int info, one=1;
+		lapack_int nPtsL = static_cast<lapack_int>(nPts);
+		LAPACK_dgttrs("N", &nPtsL, &one, vld, vd, vud, vud2, vipiv, newV, &nPtsL, &info);
+		if(info != 0)
+			throw std::runtime_error("MixedGeometryHartree: LAPACK_dgttrs for potential failed with info = " + std::to_string(info));
+
+		// vector potential
+		if(includeVectorPotential){
+			size_t gcEdge = (gcSide == 1 ? maxPos : minPos);
+			size_t diriEdge = (gcSide == 1 ? minPos : maxPos);
+
+			vtls::scaMulArray(nPts, -PhysCon::qe * PhysCon::qe * dx * dx * PhysCon::mu0, dcur, newA);
+			// set current outside of system to zero
+			std::fill_n(newA, minPos, 0.0);
+			std::fill_n(&newA[maxPos+1], nPts-maxPos-1, 0.0);
+
+			// set BCs
+			newA[diriEdge] = 0.0;
+			if(!first)
+				newA[gcEdge] = -oldAbDiff + gcSide * 2.0*dx/dt/PhysCon::c/PhysCon::c * (newV[gcEdge] - oldVb);
+			else
+				newA[gcEdge] = 0.0;
+
+			// solve
+			LAPACK_dgttrs("N", &nPtsL, &one, ald, ad, aud, aud2, aipiv, newA, &nPtsL, &info);
+			if(info != 0)
+				throw std::runtime_error("MixedGeometryHartree: LAPACK_dgttrs for current failed with info = " + std::to_string(info));
+
+			// record new values for next iteration before gauge transformation
+			if(!virt){
+				oldVb = newV[gcEdge];
+				oldAbDiff = newA[gcEdge] - newA[gcEdge - gcSide];
+			}
+
+			// apply gauge transformation, removing vector potential
+			if(!first){
+				vtlsInt::cumIntTrapz(nPts, newA, 2.0*dx/dt, targ);
+				vtlsInt::cumIntTrapz(nPts, oldA,-2.0*dx/dt, aTemp);
+				vtls::addArrays(nPts, aTemp, targ);
+				vtls::addArrays(nPts, newV, targ);
+				vtls::addArrays(nPts, oldV, targ);
+				vtls::scaMulAddArrays(nPts, -1.0, oldVTrans, targ);
+			}
+			else{ // first step, no time derivative, gauge transformation is trivial
+				vtls::copyArray(nPts, newV, targ);
+			}
+
+			// record whole potentials if not virtual step
+			if(!virt){
+				vtls::copyArray(nPts, newV, oldV);
+				vtls::copyArray(nPts, newA, oldA);
+				vtls::copyArray(nPts, targ, oldVTrans);
+			}
+		}
+		else{
+			vtls::copyArray(nPts, newV, targ);
+		}
+
+		// offset by reference point
+		double ref = targ[refPoint];
+		vtls::scaAddArray(nPts, -ref, targ);
+		
+		if(!virt){
+			ghostCharge += gcSide * dcur[gcPos] * dt;
+			first = false;
+			t0 = t;
+		}
+
+		//vtlsPrnt::printArray(nPts, targ);
+	}
+
+	MixedGeometryHartreeGhostCharge::~MixedGeometryHartreeGhostCharge(){
+		sq_free(vld);
+		sq_free(vd);
+		sq_free(vud);
+		sq_free(vud2);
+		sq_free(vipiv);
+		sq_free(vrhs);
+		sq_free(newV);
+		if(rho0)
+			sq_free(rho0);
+		if(j0)
+			sq_free(j0);
+		sq_free(drho);
+		sq_free(dcur);
+		if(includeVectorPotential){
+			sq_free(ald);
+			sq_free(ad);
+			sq_free(aud);
+			sq_free(aud2);
+			sq_free(aipiv);
+			sq_free(arhs);
+			sq_free(newA);
+			sq_free(oldV);
+			sq_free(oldA);
+			sq_free(aTemp);
+			sq_free(oldVTrans);
+		}
+	}
+
+
+
+	MixedGeometryHartreeShielded::MixedGeometryHartreeShielded(size_t nPts, size_t minPos, size_t maxPos, size_t surfPos, double shieldLength, double dx, double mRTheta, const double* hRad, const double* rho0, const double* j0, size_t refPoint, bool includeVectorPotential) :
+		nPts(nPts), minPos(minPos), maxPos(maxPos), dx(dx), mRTheta(mRTheta), refPoint(refPoint), includeVectorPotential(includeVectorPotential) 
+	{
+		assert(nPts <= LAPACK_INT_MAX);
+
+		vld = (double*) sq_malloc(sizeof(double)*(nPts-1));
+		vd  = (double*) sq_malloc(sizeof(double)*nPts);
+		vud = (double*) sq_malloc(sizeof(double)*(nPts-1));
+		vud2= (double*) sq_malloc(sizeof(double)*(nPts-2));
+		vipiv=(lapack_int*) sq_malloc(sizeof(lapack_int)*nPts);
+		vrhs= (double*) sq_malloc(sizeof(double)*nPts);
+		newV= (double*) sq_malloc(sizeof(double)*nPts);
+		drho= (double*) sq_malloc(sizeof(double)*nPts);
+		dcur= (double*) sq_malloc(sizeof(double)*nPts);
+		shieldProfile = (double*) sq_malloc(sizeof(double)*nPts);
+
+		// build shield profile, decay to left for negative shieldLength, to right for positive shieldLength
+		std::fill_n(shieldProfile, nPts, 1.0);
+		if(shieldLength < 0.0)
+			for(size_t i = 0; i < surfPos; i++)
+				shieldProfile[i] = std::exp((surfPos - i) * dx / shieldLength);
+		else if(shieldLength > 0.0)
+			for(size_t i = surfPos; i < nPts; i++)
+				shieldProfile[i] = std::exp((surfPos - i) * dx / shieldLength);
+
+		// fill matrix elements
+		for (size_t i = 0; i < nPts-2; i++){
+			vld[i] 		= 1.0 - (hRad[i+2] - hRad[i])/(4.0*hRad[i+1]);
+			vud[i+1] 	= 1.0 + (hRad[i+2] - hRad[i])/(4.0*hRad[i+1]);
+			vd[i+1] 	= -2.0 - mRTheta * (hRad[i+1]*hRad[i+1]);
+		}
+
+		if(shieldLength > 0.0){
+			diriEdge = 0;
+			neumEdge = nPts - 1;
+			neumSide = 1;
+		}
+		else{
+			diriEdge = nPts - 1;
+			neumEdge = 0;
+			neumSide = -1;
+		}
+
+		// BCs (homogeneous, Neumann for GC side, Dirichlet for other side)
+		if(shieldLength > 0.0){
+			vd[0] = 1.0; vud[0] = 0.0; // Dirichlet on left boundary
+			vd[nPts-1] = 1.0; vld[nPts-2] = -1.0; // Neumann on right boundary
+		}
+		else{
+			vd[0] = -1.0; vud[0] = 1.0; // Neumann on left boundary
+			vd[nPts-1] = 1.0; vld[nPts-2] = 0.0; // Dirichlet on right boundary
+		}
+
+		// perform factorization (only needs to be done once! :) )
+		lapack_int info;
+		lapack_int nPtsL = static_cast<lapack_int>(nPts);
+		LAPACK_dgttrf(&nPtsL, vld, vd, vud, vud2, vipiv, &info);
+		if(info != 0)
+			throw std::runtime_error("MixedGeometryHartree: LAPACK_dgttrf for potential failed with info = " + std::to_string(info));
+
+		if(includeVectorPotential){
+			ald = (double*) sq_malloc(sizeof(double)*(nPts-1));
+			ad  = (double*) sq_malloc(sizeof(double)*nPts);
+			aud = (double*) sq_malloc(sizeof(double)*(nPts-1));
+			aud2= (double*) sq_malloc(sizeof(double)*(nPts-2));
+			aipiv=(lapack_int*) sq_malloc(sizeof(lapack_int)*nPts);
+			arhs= (double*) sq_malloc(sizeof(double)*nPts);
+			newA= (double*) sq_malloc(sizeof(double)*nPts);
+			oldV= (double*) sq_malloc(sizeof(double)*nPts);
+			oldA= (double*) sq_malloc(sizeof(double)*nPts);
+			aTemp= (double*) sq_malloc(sizeof(double)*nPts);
+			oldVTrans = (double*) sq_malloc(sizeof(double)*nPts);
+
+			// fill matrix elements (within simulation box, they are the same, only differ by BCs)
+			for (size_t i = 0; i < nPts-2; i++){
+				ald[i] = vld[i];
+				aud[i+1] = vud[i+1];
+				ad[i+1] = vd[i+1];
+			}
+
+			// BCs (always Neumann, but RHS will vary)
+			ad[0] = -1.0; aud[0] = 1.0;
+			ad[nPts-1] = 1.0; ald[nPts-2] = -1.0;
+
+			// factor
+			LAPACK_dgttrf(&nPtsL, ald, ad, aud, aud2, aipiv, &info);
+			if(info != 0)
+				throw std::runtime_error("MixedGeometryHartree: LAPACK_dgttrf for current failed with info = " + std::to_string(info));
+		}
+
+		if(rho0 != nullptr){ // include offset potential
+			this->rho0 = (double*) sq_malloc(sizeof(double)*nPts);
+			vtls::copyArray(nPts, rho0, this->rho0);
+		}
+		if(j0 != nullptr && includeVectorPotential){
+			this->j0 = (double*) sq_malloc(sizeof(double)*nPts);
+			vtls::copyArray(nPts, j0, this->j0);
+		}
+	}
+
+	void MixedGeometryHartreeShielded::calcPot(const double* rho, const double* cur, double* targ, double t, bool virt) {
+		double dt = t - t0;
+
+		// calculate differences if intial provided
+		if(rho0)
+			vtls::scaMulAddArrays(nPts, -1.0, rho0, rho, drho);
+		else
+			vtls::copyArray(nPts, rho, drho);
+
+		if(j0 && includeVectorPotential)
+			vtls::scaMulAddArrays(nPts, -1.0, j0, cur, dcur);
+		else if(includeVectorPotential)
+			vtls::copyArray(nPts, cur, dcur);
+		
+		// apply shield profile
+		vtls::seqMulArrays(nPts, shieldProfile, drho);
+		if(includeVectorPotential)
+			vtls::seqMulArrays(nPts, shieldProfile, dcur);
+
+		// electrostatic potential (newV will ultimately contain the preliminary result)
+		// rhs
+		vtls::scaMulArray(nPts, -PhysCon::qe * PhysCon::qe * dx * dx / PhysCon::e0, drho, newV);
+		// set charge outside of system to zero
+		std::fill_n(newV, minPos, 0.0);
+		std::fill_n(&newV[maxPos+1], nPts-maxPos-1, 0.0);
+		// homogeneous BCs
+		newV[0] = 0.0;
+		newV[nPts-1] = 0.0;
+
+		// solve
+		lapack_int info, one=1;
+		lapack_int nPtsL = static_cast<lapack_int>(nPts);
+		LAPACK_dgttrs("N", &nPtsL, &one, vld, vd, vud, vud2, vipiv, newV, &nPtsL, &info);
+		if(info != 0)
+			throw std::runtime_error("MixedGeometryHartree: LAPACK_dgttrs for potential failed with info = " + std::to_string(info));
+
+		// vector potential
+		if(includeVectorPotential){
+
+			vtls::scaMulArray(nPts, -PhysCon::qe * PhysCon::qe * dx * dx * PhysCon::mu0, dcur, newA);
+			// set current outside of system to zero
+			std::fill_n(newA, minPos, 0.0);
+			std::fill_n(&newA[maxPos+1], nPts-maxPos-1, 0.0);
+
+			// set BCs
+			newA[diriEdge] = 0.0;
+			if(!first)
+				newA[neumEdge] = -oldAbDiff + neumSide * 2.0*dx/dt/PhysCon::c/PhysCon::c * (newV[neumEdge] - oldVb);
+			else
+				newA[neumEdge] = 0.0;
+
+			// solve
+			LAPACK_dgttrs("N", &nPtsL, &one, ald, ad, aud, aud2, aipiv, newA, &nPtsL, &info);
+			if(info != 0)
+				throw std::runtime_error("MixedGeometryHartree: LAPACK_dgttrs for current failed with info = " + std::to_string(info));
+
+			// record new values for next iteration before gauge transformation
+			if(!virt){
+				oldVb = newV[neumEdge];
+				oldAbDiff = newA[neumEdge] - newA[neumEdge - neumSide];
+			}
+
+			// apply gauge transformation, removing vector potential
+			if(!first){
+				vtlsInt::cumIntTrapz(nPts, newA, 2.0*dx/dt, targ);
+				vtlsInt::cumIntTrapz(nPts, oldA,-2.0*dx/dt, aTemp);
+				vtls::addArrays(nPts, aTemp, targ);
+				vtls::addArrays(nPts, newV, targ);
+				vtls::addArrays(nPts, oldV, targ);
+				vtls::scaMulAddArrays(nPts, -1.0, oldVTrans, targ);
+			}
+			else{ // first step, no time derivative, gauge transformation is trivial
+				vtls::copyArray(nPts, newV, targ);
+			}
+
+			// record whole potentials if not virtual step
+			if(!virt){
+				vtls::copyArray(nPts, newV, oldV);
+				vtls::copyArray(nPts, newA, oldA);
+				vtls::copyArray(nPts, targ, oldVTrans);
+			}
+		}
+		else{
+			vtls::copyArray(nPts, newV, targ);
+		}
+
+		// offset by reference point
+		double ref = targ[refPoint];
+		vtls::scaAddArray(nPts, -ref, targ);
+		
+		if(!virt){
+			first = false;
+			t0 = t;
+		}
+
+		//vtlsPrnt::printArray(nPts, targ);
+	}
+
+	MixedGeometryHartreeShielded::~MixedGeometryHartreeShielded(){
+		sq_free(vld);
+		sq_free(vd);
+		sq_free(vud);
+		sq_free(vud2);
+		sq_free(vipiv);
+		sq_free(vrhs);
+		sq_free(newV);
+		sq_free(shieldProfile);
+		if(rho0)
+			sq_free(rho0);
+		if(j0)
+			sq_free(j0);
+		sq_free(drho);
+		sq_free(dcur);
+		if(includeVectorPotential){
+			sq_free(ald);
+			sq_free(ad);
+			sq_free(aud);
+			sq_free(aud2);
+			sq_free(aipiv);
+			sq_free(arhs);
+			sq_free(newA);
+			sq_free(oldV);
+			sq_free(oldA);
+			sq_free(aTemp);
+			sq_free(oldVTrans);
+		}
+	}
+
+
+
 	LDAFunctional::LDAFunctional(LDAFunctionalType typ, size_t nPts, double dx, const double* rho0, size_t refPoint)
 	: typ(typ), nPts(nPts), dx(dx), refPoint(refPoint) {
 		origPot = (double*) sq_malloc(sizeof(double)*nPts);
@@ -736,7 +1179,7 @@ namespace Potentials {
 
 	void PotentialManager::addPotential(Potential * pot) {
 		compositeRefreshed = false;
-		if (pot -> getDependence() == Dependence::STATIC)
+		if (pot -> getDependence() == Dependence::NONE)
 			staticPots.push_back(pot);
 		else{
 			dynamicPots.push_back(pot);

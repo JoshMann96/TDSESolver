@@ -181,6 +181,37 @@ void LAPACK_zgtrfs_base(
     #define LAPACK_zgtrfs(...) LAPACK_zgtrfs_base(__VA_ARGS__)
 #endif
 
+#define LAPACK_dgttrf LAPACK_GLOBAL(dgttrf,DGTTRF)
+void LAPACK_dgttrf(
+    lapack_int const* n,
+    double* DL,
+    double* D,
+    double* DU,
+    double* DU2, lapack_int* ipiv,
+    lapack_int* info );
+
+#define LAPACK_dgttrs_base LAPACK_GLOBAL(dgttrs,DGTTRS)
+void LAPACK_dgttrs_base(
+    char const* trans,
+    lapack_int const* n, lapack_int const* nrhs,
+    double const* DL,
+    double const* D,
+    double const* DU,
+    double const* DU2, lapack_int const* ipiv,
+    double* B, lapack_int const* ldb,
+    lapack_int* info
+#ifdef LAPACK_FORTRAN_STRLEN_END
+    , FORTRAN_STRLEN
+#endif
+);
+#ifdef LAPACK_FORTRAN_STRLEN_END
+    #define LAPACK_dgttrs(...) LAPACK_dgttrs_base(__VA_ARGS__, 1)
+#else
+    #define LAPACK_dgttrs(...) LAPACK_dgttrs_base(__VA_ARGS__)
+#endif
+
+
+
 //selected from cblas.h
 extern void cblas_zscal(const int N, const void *alpha, void *X, const int incX);
 extern void cblas_dscal(const int N, const double alpha, double *X, const int incX);
