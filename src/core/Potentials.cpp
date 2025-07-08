@@ -844,13 +844,18 @@ namespace Potentials {
 		shieldProfile = (double*) sq_malloc(sizeof(double)*nPts);
 
 		// build shield profile, decay to left for negative shieldLength, to right for positive shieldLength
-		std::fill_n(shieldProfile, nPts, 1.0);
-		if(shieldLength < 0.0)
-			for(size_t i = 0; i < surfPos; i++)
-				shieldProfile[i] = std::exp((surfPos - i) * dx / shieldLength);
-		else if(shieldLength > 0.0)
-			for(size_t i = surfPos; i < nPts; i++)
-				shieldProfile[i] = std::exp((surfPos - i) * dx / shieldLength);
+		if(isnan(shieldLength) || isinf(shieldLength) || shieldLength == 0.0)
+			useShielding = false;
+		else{
+			std::fill_n(shieldProfile, nPts, 1.0);
+			if(shieldLength < 0.0)
+				for(size_t i = 0; i < surfPos; i++)
+					shieldProfile[i] = std::exp((surfPos - i) * dx / shieldLength);
+			else if(shieldLength > 0.0)
+				for(size_t i = surfPos; i < nPts; i++)
+					shieldProfile[i] = std::exp((surfPos - i) * dx / shieldLength);
+			useShielding = true;
+		}
 
 		// fill matrix elements
 		for (size_t i = 0; i < nPts-2; i++){
@@ -1008,10 +1013,12 @@ namespace Potentials {
 			vtls::copyArray(nPts, newV, targ);
 		}
 
-		// apply shield profile to derivative
-		vtls::firstDerivative(nPts, targ, aTemp, 1.0);
-		vtls::seqMulArrays(nPts, shieldProfile, aTemp);
-		vtlsInt::cumIntTrapz(nPts, aTemp, 1.0, targ);
+		// apply shield profile to derivative if needed
+		if(useShielding){
+			vtls::firstDerivative(nPts, targ, aTemp, 1.0);
+			vtls::seqMulArrays(nPts, shieldProfile, aTemp);
+			vtlsInt::cumIntTrapz(nPts, aTemp, 1.0, targ);
+	}
 
 		// offset by reference point
 		double ref = targ[refPoint];

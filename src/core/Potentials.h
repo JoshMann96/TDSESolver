@@ -778,6 +778,7 @@ namespace Potentials {
 		lapack_int *vipiv, *aipiv;
 		size_t diriEdge, neumEdge;
 		int neumSide;
+		bool useShielding;
 
 		void calcPot(const double* rho, const double* cur, double* targ, double t, bool virt);
 	public:
