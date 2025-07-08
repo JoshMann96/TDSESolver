@@ -112,8 +112,8 @@ def get1DStateFluxSpectrum(fol:str, vdNum:int = 0, minE:float = 0, maxE:float = 
         minE (float, optional) [J]: Minimum signed kinetic energy. Defaults to 0.
         maxE (float, optional) [J]: Maximum signed kinetic energy. Defaults to 500 eV.
     Returns:
-        es [eV]: Signed kinetic energy, shape (nSamp).
-        yld [ 1 / m^2 eV ]: Weighed bidirectional flux spectrum, shape (nElec, nSamp).
+        es [J]: Signed kinetic energy, shape (nSamp).
+        yld [ 1 / m^2 J ]: Weighed bidirectional flux spectrum, shape (nElec, nSamp).
     """
     nes, momenta, psik = getFluxSpecVD(fol, vdNum)[:3]
     wghts,_ = getWghts(fol)
@@ -124,7 +124,7 @@ def get1DStateFluxSpectrum(fol:str, vdNum:int = 0, minE:float = 0, maxE:float = 
     es = nes[(nes < maxE) & (nes > minE)]
     yld = interp1d(nes, yld, axis=-1)(es)*np.broadcast_to(wghts[:,None], (len(wghts), len(es)))
 
-    return es/cons.e, yld
+    return es, yld
    
 def get1DTotalFluxSpectrum(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0, maxE:float = 500*cons.e) -> tuple[np.ndarray, np.ndarray]:
     """Gets the bidirectional density flux spectrum with respect to the signed kinetic energy (sgn(E) = sgn(k)) summed over all states.
@@ -136,8 +136,8 @@ def get1DTotalFluxSpectrum(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0,
         minE (float, optional) [J]: Minimum signed kinetic energy. Defaults to 0.
         maxE (float, optional) [J]: Maximum signed kinetic energy. Defaults to 500 eV.
     Returns:
-        es [eV]: Signed kinetic energy, shape (nSamp).
-        yld [ 1 / m^2 eV ]: Weighed bidirectional flux spectrum, shape (nSamp).
+        es [J]: Signed kinetic energy, shape (nSamp).
+        yld [ 1 / m^2 J ]: Weighed bidirectional flux spectrum, shape (nSamp).
     """
     
     es, spc = get1DStateFluxSpectrum(fol, vdNum, minE, maxE)
@@ -179,7 +179,7 @@ def plot1DFluxSpectrum(fol:str, vdNum:int = 0, elecNum = -1, minE:float = 0, max
     if ax is None:
         fig, ax = plt.subplots()
     
-    im = ax.semilogy(es, spc)
+    im = ax.semilogy(es/cons.e, spc*cons.e)
     ax.set_xlabel(r"$E$ (eV)")
     ax.set_ylabel(r"$n(E)$ (1/m$^2$ eV)")
     

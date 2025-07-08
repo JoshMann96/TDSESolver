@@ -827,8 +827,8 @@ namespace Potentials {
 
 
 
-	MixedGeometryHartreeShielded::MixedGeometryHartreeShielded(size_t nPts, size_t minPos, size_t maxPos, size_t surfPos, double shieldLength, double dx, double mRTheta, const double* hRad, const double* rho0, const double* j0, size_t refPoint, bool includeVectorPotential) :
-		nPts(nPts), minPos(minPos), maxPos(maxPos), dx(dx), mRTheta(mRTheta), refPoint(refPoint), includeVectorPotential(includeVectorPotential) 
+	MixedGeometryHartreeShielded::MixedGeometryHartreeShielded(size_t nPts, size_t minPos, size_t maxPos, size_t surfPos, double shieldLength, int neumannSide, double dx, double mRTheta, const double* hRad, const double* rho0, const double* j0, size_t refPoint, bool includeVectorPotential) :
+		nPts(nPts), minPos(minPos), maxPos(maxPos), dx(dx), mRTheta(mRTheta), refPoint(refPoint), includeVectorPotential(includeVectorPotential), neumSide(neumannSide)
 	{
 		assert(nPts <= LAPACK_INT_MAX);
 
@@ -859,7 +859,7 @@ namespace Potentials {
 			vd[i+1] 	= -2.0 - dx*dx*mRTheta*mRTheta / (hRad[i+1]*hRad[i+1]);
 		}
 
-		if(shieldLength > 0.0){
+		if(neumSide > 0){
 			diriEdge = 0;
 			neumEdge = nPts - 1;
 			neumSide = 1;
@@ -940,11 +940,6 @@ namespace Potentials {
 			vtls::scaMulAddArrays(nPts, -1.0, j0, cur, dcur);
 		else if(includeVectorPotential)
 			vtls::copyArray(nPts, cur, dcur);
-		
-		// apply shield profile
-		vtls::seqMulArrays(nPts, shieldProfile, drho);
-		if(includeVectorPotential)
-			vtls::seqMulArrays(nPts, shieldProfile, dcur);
 
 		// electrostatic potential (newV will ultimately contain the preliminary result)
 		// rhs
@@ -1012,6 +1007,11 @@ namespace Potentials {
 		else{
 			vtls::copyArray(nPts, newV, targ);
 		}
+
+		// apply shield profile to derivative
+		vtls::firstDerivative(nPts, targ, aTemp, 1.0);
+		vtls::seqMulArrays(nPts, shieldProfile, aTemp);
+		vtlsInt::cumIntTrapz(nPts, aTemp, 1.0, targ);
 
 		// offset by reference point
 		double ref = targ[refPoint];

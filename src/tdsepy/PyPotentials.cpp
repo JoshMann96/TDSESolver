@@ -420,7 +420,7 @@ void init_Potentials(py::module &m) {
             "sim"_a, "ghostCharge"_a, "posMin"_a, "posMax"_a, "mRTheta"_a, "dens"_a, "refPoint"_a, "includeVectorPotential"_a = true);
     
     py::class_<MixedGeometryHartreeShielded, Potential>(m, "MixedGeometryHartreeShieldedPotential")
-        .def(py::init([](SimulationManager* sim, double posMin, double posMax, double surfPos, double shieldLength, double mRTheta, Densities::Density* dens, double refPoint, bool includeVectorPotential){
+        .def(py::init([](SimulationManager* sim, double posMin, double posMax, double surfPos, double shieldLength, int neumannSide, double mRTheta, Densities::Density* dens, double refPoint, bool includeVectorPotential){
             
             // get geometry profile from passed density calculator
             std::unique_ptr<double*> hRad = std::make_unique<double*>(new double[sim->getNumPoints()]);
@@ -430,7 +430,7 @@ void init_Potentials(py::module &m) {
                 (*hRad)[i] = 1.0 / (*hRad)[i]; // invert to get the geometry profile
 
             return std::unique_ptr<MixedGeometryHartreeShielded>(new MixedGeometryHartreeShielded(
-                sim->getNumPoints(), sim->findXIdx(posMin), sim->findXIdx(posMax), sim->findXIdx(surfPos), shieldLength, sim->getDX(), mRTheta, *hRad, 
+                sim->getNumPoints(), sim->findXIdx(posMin), sim->findXIdx(posMax), sim->findXIdx(surfPos), shieldLength, neumannSide, sim->getDX(), mRTheta, *hRad, 
                 sim->wavefunctionIsInitialized() ? sim->getRho() : nullptr,
                 (sim->wavefunctionIsInitialized() && includeVectorPotential) ? sim->getCur() : nullptr, 
                 sim->findXIdx(refPoint), includeVectorPotential
@@ -456,7 +456,8 @@ void init_Potentials(py::module &m) {
             shieldLength : float
                 Lengthscale over which the potential is shielded.
                 Negative values indicate shielding to the left, positive values indicate shielding to the right.
-                A homogeneous Neumann BC is applied on the shielded side.
+            neumannSide : int
+                Side of the Neumann boundary condition. -1 for left, 1 for right. The other boundary is Dirichlet.
             mRTheta : float
                 Transverse lengthscale for the geometry profile. e.g., for radius of curvature R and angular mode 1, mRTheta = 1.0/R.
             dens : Density
@@ -470,7 +471,7 @@ void init_Potentials(py::module &m) {
             Returns
             -------
             MixedGeometryHartreeShieldedPotential)V0G0N",
-            "sim"_a, "posMin"_a, "posMax"_a, "surfPos"_a, "shieldLength"_a, "mRTheta"_a, "dens"_a, "refPoint"_a, "includeVectorPotential"_a = true);
+            "sim"_a, "posMin"_a, "posMax"_a, "surfPos"_a, "shieldLength"_a, "neumannSide"_a, "mRTheta"_a, "dens"_a, "refPoint"_a, "includeVectorPotential"_a = true);
 
     py::class_<LDAFunctional, Potential>(m, "LDAFunctional")
         .def(py::init([](SimulationManager* sim, LDAFunctionalType typ, double refPoint){

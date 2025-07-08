@@ -781,7 +781,7 @@ namespace Potentials {
 
 		void calcPot(const double* rho, const double* cur, double* targ, double t, bool virt);
 	public:
-		MixedGeometryHartreeShielded(size_t nPts, size_t minPos, size_t maxPos, size_t surfPos, double shieldLength, double dx, double mRTheta, const double* hRad, const double* rho0, const double* j0, size_t refPoint, bool includeVectorPotential=true);
+		MixedGeometryHartreeShielded(size_t nPts, size_t minPos, size_t maxPos, size_t surfPos, double shieldLength, int neumannSide, double dx, double mRTheta, const double* hRad, const double* rho0, const double* j0, size_t refPoint, bool includeVectorPotential=true);
 
 		~MixedGeometryHartreeShielded();
 		void getVBare(double t, double* targ) { std::fill_n(targ, nPts, 0.0); };

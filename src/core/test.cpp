@@ -1030,7 +1030,7 @@ int testMixedGeometryHartree(){
 	sm->addMeasurer(new Measurers::CurrentPlotter(nPts, sm->getX(), true, 1000, false));
 	sm->addPotential(new Potentials::MeasuredPotential(
 		//new Potentials::MixedGeometryHartreeGhostCharge(nPts, 0, nPts-1, -1, dx, 0.0, h, sm->getRho(), sm->getCur(), 0, true),
-		new Potentials::MixedGeometryHartreeShielded(nPts, 0, nPts-1, nPts/2, -(nPts/10.0*dx), dx, 1.0/(20e-9), h, sm->getRho(), sm->getCur(), 0, true),
+		new Potentials::MixedGeometryHartreeShielded(nPts, 0, nPts-1, nPts/2, -2e-9, 1, dx, 1.0/(20e-9), h, sm->getRho(), sm->getCur(), 0, true),
 		new Measurers::PotentialPlotter(nPts, sm->getX(), false, 1000, false),
 		nSteps, dt*nSteps, false));
 
