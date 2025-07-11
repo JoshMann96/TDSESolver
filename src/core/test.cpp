@@ -1079,7 +1079,15 @@ int testOrthonormalization(){
 	}
 
 	std::cout << "Orthonormalizing..." << std::endl;
-	vtls::orthonormalize(nPts, nWfs, psi);
+
+	// static
+	//vtls::Orthonormalizer::orthonormalize(nPts, nWfs, psi);
+
+	// dynamic
+	vtls::Orthonormalizer *orth = new vtls::Orthonormalizer(nPts, nWfs);
+	orth->orthonormalize(psi);
+	delete orth;
+
 	plotting::GNUPlotter* plotter2 = new plotting::GNUPlotter(nPts, std::min(nWfs, 4), psi);
 
 	std::cout << "Checking orthonormality..." << std::endl;

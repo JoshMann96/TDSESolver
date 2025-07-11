@@ -115,40 +115,61 @@ namespace vtls {
 		return mask;
 	}
 
-	void orthonormalize(size_t len, size_t nVecs, double* __restrict vecs) {
-		assert(len * nVecs < LAPACK_INT_MAX); // ensure we don't overflow lapack_int
-		
-		lapack_int info;
-		lapack_int len_int = static_cast<lapack_int>(len);
-		lapack_int nVecs_int = static_cast<lapack_int>(nVecs);
 
-		double* tau  = (double*)sq_malloc(len * sizeof(double));
 
-		// get optimal size of work (why on Earth do they have me pass a double to be interpreted as an int???)
-		lapack_int lwork = -1;
+	Orthonormalizer::Orthonormalizer(size_t nPts, size_t nVecs) : nPts(static_cast<lapack_int>(nPts)), nVecs(static_cast<lapack_int>(nVecs)) {
+		assert(nPts * nVecs < LAPACK_INT_MAX); // ensure we don't overflow lapack_int
+		tau = (double*) sq_malloc(nPts * sizeof(double));
+		getlwork(this->nPts, this->nVecs, &lwork);
+		work = (double*) sq_malloc(lwork * sizeof(double));
+	}
+
+	Orthonormalizer::~Orthonormalizer() {
+		if (work) sq_free(work);
+		if (tau) sq_free(tau);
+	}
+
+	void Orthonormalizer::getlwork(lapack_int nPts, lapack_int nVecs, lapack_int* lwork) {
 		double workSize;
-		LAPACK_dgeqrf(&len_int, &nVecs_int, vecs, &len_int, tau, &workSize, &lwork, &info);
+		lapack_int info;
+		*lwork = -1;
+		LAPACK_dgeqrf(&nPts, &nVecs, nullptr, &nPts, nullptr, &workSize, lwork, &info);
 		if (info != 0) {
-			sq_free(tau);
 			throw std::runtime_error("Error in LAPACK_dgeqrf (query): " + std::to_string(info));
 		}
-		lwork = static_cast<lapack_int>(workSize);
-		if (lwork < 1) lwork = 1; // ensure lwork is at least 1
-		double* work = (double*)sq_malloc(lwork * sizeof(double));
+		if (workSize < 1) workSize = 1;
+		*lwork = static_cast<lapack_int>(workSize);
+	}
 
-		LAPACK_dgeqrf(&len_int, &nVecs_int, vecs, &len_int, tau, work, &lwork, &info);
+	void Orthonormalizer::orthonormalize(size_t nPts, size_t nVecs, double* __restrict vecs) {
+		assert(nPts * nVecs < LAPACK_INT_MAX); // ensure we don't overflow lapack_int
+
+		lapack_int nPts_int = static_cast<lapack_int>(nPts);
+		lapack_int nVecs_int = static_cast<lapack_int>(nVecs);
+		lapack_int lwork;
+		getlwork(nPts_int, nVecs_int, &lwork);
+		
+		double* work = (double*) sq_malloc(lwork * sizeof(double));
+		double* tau = (double*) sq_malloc(nPts * sizeof(double));
+
+		orthonormalize(nPts_int, nVecs_int, vecs, tau, work, lwork);
+
+		sq_free(work);
+		sq_free(tau);
+	}
+
+	void Orthonormalizer::orthonormalize(lapack_int nPts, lapack_int nVecs, double* __restrict vecs, double* __restrict tau, double* __restrict work, lapack_int lwork){
+		lapack_int info;
+		LAPACK_dgeqrf(&nPts, &nVecs, vecs, &nPts, tau, work, &lwork, &info);
 		if (info != 0) {
 			sq_free(work);
 			throw std::runtime_error("Error in LAPACK_dgeqrf: " + std::to_string(info));
 		}
-		LAPACK_dorgqr(&len_int, &nVecs_int, &nVecs_int, vecs, &len_int, tau, work, &lwork, &info);
+		LAPACK_dorgqr(&nPts, &nVecs, &nVecs, vecs, &nPts, tau, work, &lwork, &info);
 		if (info != 0) {
 			sq_free(work);
 			throw std::runtime_error("Error in LAPACK_dorgqr: " + std::to_string(info));
 		}
-
-		sq_free(work);
-		sq_free(tau);
 	}
 }
 
