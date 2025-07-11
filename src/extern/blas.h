@@ -210,7 +210,21 @@ void LAPACK_dgttrs_base(
     #define LAPACK_dgttrs(...) LAPACK_dgttrs_base(__VA_ARGS__)
 #endif
 
+#define LAPACK_dgeqrf LAPACK_GLOBAL(dgeqrf,DGEQRF)
+void LAPACK_dgeqrf(
+    lapack_int const* m, lapack_int const* n,
+    double* A, lapack_int const* lda,
+    double* tau,
+    double* work, lapack_int const* lwork,
+    lapack_int* info );
 
+#define LAPACK_dorgqr LAPACK_GLOBAL(dorgqr,DORGQR)
+void LAPACK_dorgqr(
+    lapack_int const* m, lapack_int const* n, lapack_int const* k,
+    double* A, lapack_int const* lda,
+    double const* tau,
+    double* work, lapack_int const* lwork,
+    lapack_int* info );
 
 //selected from cblas.h
 extern void cblas_zscal(const int N, const void *alpha, void *X, const int incX);

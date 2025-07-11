@@ -114,6 +114,42 @@ namespace vtls {
 		}
 		return mask;
 	}
+
+	void orthonormalize(size_t len, size_t nVecs, double* __restrict vecs) {
+		assert(len * nVecs < LAPACK_INT_MAX); // ensure we don't overflow lapack_int
+		
+		lapack_int info;
+		lapack_int len_int = static_cast<lapack_int>(len);
+		lapack_int nVecs_int = static_cast<lapack_int>(nVecs);
+
+		double* tau  = (double*)sq_malloc(len * sizeof(double));
+
+		// get optimal size of work (why on Earth do they have me pass a double to be interpreted as an int???)
+		lapack_int lwork = -1;
+		double workSize;
+		LAPACK_dgeqrf(&len_int, &nVecs_int, vecs, &len_int, tau, &workSize, &lwork, &info);
+		if (info != 0) {
+			sq_free(tau);
+			throw std::runtime_error("Error in LAPACK_dgeqrf (query): " + std::to_string(info));
+		}
+		lwork = static_cast<lapack_int>(workSize);
+		if (lwork < 1) lwork = 1; // ensure lwork is at least 1
+		double* work = (double*)sq_malloc(lwork * sizeof(double));
+
+		LAPACK_dgeqrf(&len_int, &nVecs_int, vecs, &len_int, tau, work, &lwork, &info);
+		if (info != 0) {
+			sq_free(work);
+			throw std::runtime_error("Error in LAPACK_dgeqrf: " + std::to_string(info));
+		}
+		LAPACK_dorgqr(&len_int, &nVecs_int, &nVecs_int, vecs, &len_int, tau, work, &lwork, &info);
+		if (info != 0) {
+			sq_free(work);
+			throw std::runtime_error("Error in LAPACK_dorgqr: " + std::to_string(info));
+		}
+
+		sq_free(work);
+		sq_free(tau);
+	}
 }
 
 namespace vtlsPrnt {

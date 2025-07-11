@@ -1041,8 +1041,77 @@ int testMixedGeometryHartree(){
 	return 0;
 }
 
+int testOrthonormalization(){
+	int nPts = 32768;
+	int nWfs = 4;
+
+	// generate some simple real vectors to be treated as eigenvectors
+	double* psi0 = (double*)sq_malloc(sizeof(double)*nPts*nWfs);
+	double* psi  = (double*)sq_malloc(sizeof(double)*nPts*nWfs);
+
+	std::cout << "Generating " << nWfs << " wavefunctions with " << nPts << " points..." << std::endl;
+	// gaussian * planewave
+	double x, sig, k;
+	for(int n = 0; n < nWfs; n++){
+		sig = 0.1 + 0.1*n;
+		k = 10.0 + 10.0*n;
+		for(int i = 0; i < nPts; i++){
+			x = ((double)(i-nPts/2))/(double)nPts;
+			psi0[n*nPts+i] = std::exp(-x*x/(2.0*sig*sig)) * std::cos(k*x);
+		}
+	}
+	vtls::copyArray(nPts*nWfs, psi0, psi);
+	plotting::GNUPlotter* plotter1 = new plotting::GNUPlotter(nPts, std::min(nWfs, 4), psi0);
+
+	std::cout << "Calculating overlap matrix..." << std::endl;
+	double* ovlp = (double*)sq_malloc(sizeof(double)*nWfs*nWfs);
+	for(int i = 0; i < nWfs; i++){
+		for(int j = 0; j < nWfs; j++){
+			ovlp[i*nWfs+j] = vtlsInt::innerProduct(nPts, psi+i*nPts, psi+j*nPts, 1.0);
+		}
+	}
+	std::cout << "Overlap matrix:" << std::endl;
+	for(int i = 0; i < nWfs; i++){
+		for(int j = 0; j < nWfs; j++){
+			std::cout << ovlp[i*nWfs+j] << "\t";
+		}
+		std::cout << std::endl;
+	}
+
+	std::cout << "Orthonormalizing..." << std::endl;
+	vtls::orthonormalize(nPts, nWfs, psi);
+	plotting::GNUPlotter* plotter2 = new plotting::GNUPlotter(nPts, std::min(nWfs, 4), psi);
+
+	std::cout << "Checking orthonormality..." << std::endl;
+	ovlp = (double*)sq_malloc(sizeof(double)*nWfs*nWfs);
+	for(int i = 0; i < nWfs; i++){
+		for(int j = 0; j < nWfs; j++){
+			ovlp[i*nWfs+j] = vtlsInt::innerProduct(nPts, psi+i*nPts, psi+j*nPts, 1.0);
+		}
+	}
+	std::cout << "Overlap matrix:" << std::endl;
+	for(int i = 0; i < nWfs; i++){
+		for(int j = 0; j < nWfs; j++){
+			std::cout << ovlp[i*nWfs+j] << "\t";
+		}
+		std::cout << std::endl;
+	}
+	sq_free(ovlp);
+
+	std::cout << "Results plotted. Press enter to continue..." << std::endl;
+	std::cin.get();
+
+	delete plotter1;
+	delete plotter2;
+
+	sq_free(psi0);
+	sq_free(psi);
+
+	return 0;
+}
+
 int main(int argc, char** argv){
-	testMixedGeometryHartree();
+	testOrthonormalization();
 
 	// char* wisdomFile = new char[64];
 	// std::snprintf(wisdomFile, 64, "fftw_nt_%04d.wisdom", omp_get_max_threads());

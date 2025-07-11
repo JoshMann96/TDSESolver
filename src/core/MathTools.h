@@ -1088,6 +1088,14 @@ namespace vtls {
 	 * @return A unique_ptr to an array of doubles representing the smoothed decay mask.
 	*/
 	std::unique_ptr<double[]> getPolynomialSmoothBoundary(size_t len, size_t inner, size_t outer, double rate);
+
+	/**
+	 * Orthonormalizes a set of vectors using QR factorization via Lapack's dgeqrf and dorgqr routines.
+	 * @param len The length of each vector.
+	 * @param nVecs The number of vectors to orthonormalize.
+	 * @param vecs (in/out) The array of vectors to orthonormalize. The vectors are stored in a 1D array in row-major order.
+	 */
+	void orthonormalize(size_t len, size_t nVecs, double* __restrict vecs);
 };
 
 /**
