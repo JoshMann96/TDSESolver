@@ -1157,7 +1157,7 @@ namespace vtls {
 		 * @param stepFraction The fraction of the step to extrapolate. For example, 1.0 extrapolates to the next step, 0.5 extrapolates to the middle of the next step. 0.0 would return the last point.
 		 * @param initialVector (in) An optional initial vector to use for the first extrapolation. If not provided, the first extrapolation will be zero.
 		 */
-		PolynomialExtrapolator(size_t nPts, size_t order, double stepFraction = 1.0, const double* __restrict initialVector = nullptr);
+		PolynomialExtrapolator(size_t nPts, size_t order, double stepFraction, const double* __restrict initialVector = nullptr);
 
 		~PolynomialExtrapolator(){
 			if (extrapStenc) sq_free(extrapStenc);
@@ -1169,6 +1169,12 @@ namespace vtls {
 		 * @param vec (in) The vector to push onto the history.
 		 */
 		void pushHistory(const double* __restrict vec);
+
+		/**
+		 * Fills the history with a vector, overwriting all previous history.
+		 * @param vec (in) The vector to fill the history with.
+		 */
+		void fillHistory(const double* __restrict vec);
 
 		/**
 		 * Extrapolates the next vector using the history and the polynomial coefficients.

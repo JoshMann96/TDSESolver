@@ -179,8 +179,7 @@ namespace vtls {
 
 		// initialize history
 		if (initialVector)
-			for (size_t i = 0; i < order; i++)
-				cblas_dcopy(nPts, initialVector, 1, history + i, order);
+			fillHistory(initialVector);
 		else
 			std::fill_n(history, nPts * order, 0.0);
 
@@ -226,6 +225,11 @@ namespace vtls {
 	void PolynomialExtrapolator::pushHistory(const double* __restrict vec) {
 		cblas_dcopy(nPts, vec, 1, history + order - 1 - historyIndex, order);
 		historyIndex++;
+	}
+
+	void PolynomialExtrapolator::fillHistory(const double* __restrict vec) {
+		for (size_t i = 0; i < order; i++)
+			cblas_dcopy(nPts, vec, 1, history + i, order);
 	}
 
 	void PolynomialExtrapolator::extrapolate(double* __restrict targ) {
