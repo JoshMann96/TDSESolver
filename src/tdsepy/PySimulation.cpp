@@ -259,12 +259,15 @@ void init_Simulation(py::module &m) {
             ----------
             nSteps : uint
                 Number of steps to run the simulation for.
-            scfIts : uint, optional
+            scfIts : int, optional
                 Number of self-consistent field iterations to perform. Default is 8.
+                If 'scfIts = -m < 0' then a polynomial extrapolation of order (m-1) is used for implicitly needed potentials (Crank-Nicolson only).
+                For other values, the SCF logic is detailed below.
             scfTol : float, optional
                 Tolerance for the self-consistent field iterations. Default is 1e-6.
             
             SCF is only performed for nonlinear Crank-Nicolson calculations. The logic is as follows:
+            - If `scfIts = 0` then no SCF iterations are performed.
             - If `scfTol > 0.0` (default behavior), SCF iterations continue until $\frac{\Delta t}{\hbar}\max_j{|V_j'-V_j|} < scfTol$ or if `scfIts` is reached.
             - If `scfTol = 0.0` and `scfIts = 0`, no SCF iterations are performed.
             - If `scfTol = 0.0` and `scfIts != 0`, SCF is performed for `scfIts` iterations.
@@ -282,6 +285,9 @@ void init_Simulation(py::module &m) {
         .def("runCN_NL", &PySimulation::runCN_NL, R"V0G0N(
             Runs simulation using Crank-Nicolson method. Potential is updated between kinetic operator propagation steps.)V0G0N",
             "nSteps"_a, "scfIts"_a = 0, "scfTol"_a = 1e-6)
+        .def("runCN_P", &PySimulation::runCN_P, R"V0G0N(
+            Runs simulation using Crank-Nicolson method with polynomial extrapolation for potential estimation.)V0G0N",
+            "nSteps"_a, "order"_a = 3)
         .def("setNumCallbackCalls", &PySimulation::setNumCallbackCalls, R"V0G0N(
             Sets the number of times throughout a run that the callback function will be called.
 

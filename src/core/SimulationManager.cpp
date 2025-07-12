@@ -598,6 +598,57 @@ void SimulationManager::runCN_NL(size_t nSteps, size_t scfIts, double scfTol){
 	progTracker.update(nSteps);
 }
 
+void SimulationManager::runCN_P(size_t nSteps, size_t order){
+	assert(wavefunctionInitialized);
+	assert(order > 0);
+	
+	KineticOperators::CrankNicolson* kin_cn = dynamic_cast<KineticOperators::CrankNicolson*>(kin);
+	if(kin_cn == nullptr)
+		throw std::runtime_error("SimulationManager::runCN_NL: Kinetic operator is not CrankNicolson!");
+	assert(nElec > 0);
+
+	auto rMeasure = &SimulationManager::measure;
+	std::future<size_t> fM;
+
+	double* midpointPot = (double*) sq_malloc(sizeof(double) * nPts);
+	vtls::PolynomialExtrapolator extrap(nPts, order, 0.5);
+
+	// initialize progress tracker
+	progTracker.reset(nSteps);
+
+	for(size_t i = 0; i < nSteps; i++){
+		// evaluate potential n, estimate potential n + 1/2
+		updatePotential(index, false);
+		if (i == 0) // need to initialize history if first step
+			extrap.fillHistory(vs[index]);
+		extrap.pushHistory(vs[index]);
+		extrap.extrapolate(midpointPot);
+
+		// step n -> n+1
+		kin_cn->step(psis[index], midpointPot, spatialDamp, psis[index + 1], nElec);
+
+		// measure step n while n+1->n+2 begins
+		if(i != 0)
+			fM.get();
+		fM = std::async(rMeasure, this, index);
+		
+		progTracker.update(i);
+
+		iterateIndex();
+	}
+
+	// collect remaining futures
+	fM.get();
+
+	// perform last measurement
+	updatePotential(index, false);
+	measure(index);
+
+	sq_free(midpointPot);
+
+	progTracker.update(nSteps);
+}
+
 void SimulationManager::updateMeanPotCNNL(KineticOperators::CrankNicolson *kin_cn, double *meanPot)
 {
     // evaluate estimated potential n+1, virtual step

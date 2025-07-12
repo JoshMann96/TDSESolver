@@ -293,6 +293,8 @@ public:
 	 * This function evaluates the type of KineticOperator and Potential and calls the appropriate run function.
 	 * @param nSteps The number of steps to run the simulation for.
 	 * @param scfIts The number of self-consistent field iterations to perform. Presently only applies to nonlinear Crank-Nicolson calculations. Default is 8.
+	 * 				 If \a scfIts = \a -n < 0, then an \a (n-1)-th order polynomial extrapolation is used for implicitly needed potentials.
+	 * 				 If \a scfIts = 0, then see below for behavior.
 	 * @param scfTol The tolerance for the self-consistent field iterations. Default is 1e-6.
 	 * @throw std::runtime_error if the kinetic operator is not a valid type.
 	 * @details If the kinetic operator is the KineticOperators::CrankNicolson method, it will call #runCN_L for linear potentials or #runCN_NL for nonlinear potentials.
@@ -300,20 +302,26 @@ public:
 	 * 
 	 * For nonlinear potentials with the Crank-Nicolson method, SCF logic is as follows:
 	 * If \a scfTol > 0.0 (default behavior) then SCF iterations continue until $\frac{\Delta t}{\hbar}\max_j{|V_j'-V_j|} < scfTol$ or if \a scfIts is reached.
-	 * If \a scfTol = 0.0 and scfIts = 0 then no SCF iterations are performed.
-	 * If \a scfTol = 0.0 and scfIts != 0 then SCF is performed for \a scfIts iterations.
+	 * If \a scfTol = 0.0 and \a scfIts = 0 then no SCF iterations are performed.
+	 * If \a scfTol = 0.0 and \a scfIts != 0 then SCF is performed for \a scfIts iterations.
 	 */
-	void run(size_t nSteps, size_t scfIts = 8, double scfTol = 1e-6) {
+	void run(size_t nSteps, long scfIts = 8, double scfTol = 1e-6) {
 		// is the kinetic operator Crank-Nicolson?
 		KineticOperators::CrankNicolson* kin_fdm = dynamic_cast<KineticOperators::CrankNicolson*>(kin);
 		if(kin_fdm != nullptr){
-			if (canAsyncCalcPot()){
-				std::cout << "SimulationManager::run: Using linear Crank-Nicolson." << std::endl;
-				runCN_L(nSteps);
+			if(scfIts < 0){
+				std::cout << "SimulationManager::run: Using Crank-Nicolson with a potential extrapolation of order " << -scfIts-1 << "." << std::endl;
+				runCN_P(nSteps, -scfIts);
 			}
 			else{
-				std::cout << "SimulationManager::run: Using nonlinear Crank-Nicolson." << std::endl;
-				runCN_NL(nSteps, scfIts, scfTol);
+				if (canAsyncCalcPot()){
+					std::cout << "SimulationManager::run: Using linear Crank-Nicolson." << std::endl;
+					runCN_L(nSteps);
+				}
+				else{
+					std::cout << "SimulationManager::run: Using nonlinear Crank-Nicolson." << std::endl;
+					runCN_NL(nSteps, scfIts, scfTol);
+				}
 			}
 			return;
 		}
@@ -376,6 +384,13 @@ public:
 	 * If \a scfTol = 0.0 and scfIts != 0 then SCF is performed for \a scfIts iterations.
 	 */
     void runCN_NL(size_t nSteps, size_t scfIts = 8, double scfTol = 1e-6);
+
+	/**
+	 * Runs \a nSteps iterations using the Crank-Nicolson method using a polynomial extrapolator to estimate the temporal-midpoint potential passed to the solver.
+	 * @param nSteps The number of steps to run the simulation for.
+	 * @param order The order of the polynomial extrapolation to be used.
+	 */
+	void runCN_P(size_t nSteps, size_t order);
 
     /**
 	 * Finds the eigenstates of the system using the given energy range.
