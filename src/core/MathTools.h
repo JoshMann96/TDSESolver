@@ -1107,24 +1107,29 @@ namespace vtls {
 		
 		/**
 		 * Calculates the optimal size of the workspace array for the QR factorization.
-		 * @param len The length of each vector.
+		 * @param nPts The length of each vector.
 		 * @param nVecs The number of vectors to orthonormalize.
 		 * @param lwork (out) The length of the workspace array.
 		 * @note This function uses Lapack's dgeqrf to determine the optimal size of the workspace array.
 		 */
-		static void getlwork(lapack_int len, lapack_int nVecs, lapack_int* lwork);
+		static void getlwork(lapack_int nPts, lapack_int nVecs, lapack_int* lwork);
 	public:
-		Orthonormalizer(size_t len, size_t nVecs);
+		/**
+		 * Constructor. Use this as opposed to the static orthonormalize function to manage working memory.
+		 * @param nPts The length of each vector.
+		 * @param nVecs The number of vectors to orthonormalize.
+		 */
+		Orthonormalizer(size_t nPts, size_t nVecs);
 		~Orthonormalizer();
 
 		/**
 		 * Orthonormalizes a set of vectors using QR factorization via Lapack's dgeqrf and dorgqr routines.
-		 * @param len The length of each vector.
+		 * @param nPts The length of each vector.
 		 * @param nVecs The number of vectors to orthonormalize.
 		 * @param vecs (in/out) The array of vectors to orthonormalize. The vectors are stored in a 1D array in row-major order.
 		 * @note This function allocates then frees working memory for the QR factorization.
 		 */
-		static void orthonormalize(size_t len, size_t nVecs, double* __restrict vecs);
+		static void orthonormalize(size_t nPts, size_t nVecs, double* __restrict vecs);
 
 		/**
 		 * Orthonormalizes a set of vectors using QR factorization via Lapack's dgeqrf and dorgqr routines.
