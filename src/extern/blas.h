@@ -226,6 +226,19 @@ void LAPACK_dorgqr(
     double* work, lapack_int const* lwork,
     lapack_int* info );
 
+#define LAPACK_dgetrf LAPACK_GLOBAL(dgetrf,DGETRF)
+void LAPACK_dgetrf(
+    lapack_int const* m, lapack_int const* n,
+    double* A, lapack_int const* lda, lapack_int* ipiv,
+    lapack_int* info );
+
+#define LAPACK_dgetri LAPACK_GLOBAL(dgetri,DGETRI)
+void LAPACK_dgetri(
+    lapack_int const* n,
+    double* A, lapack_int const* lda, lapack_int const* ipiv,
+    double* work, lapack_int const* lwork,
+    lapack_int* info );
+
 //selected from cblas.h
 extern void cblas_zscal(const int N, const void *alpha, void *X, const int incX);
 extern void cblas_dscal(const int N, const double alpha, double *X, const int incX);

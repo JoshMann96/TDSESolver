@@ -7,6 +7,7 @@
 #include "blas.h"
 #include <omp.h>
 #include <mutex>
+#include "CyclicInt.h"
 
 /**
  * @namespace vtlsInt
@@ -1138,6 +1139,48 @@ namespace vtls {
 		void orthonormalize (double* __restrict vecs) {
 			orthonormalize(nPts, nVecs, vecs, tau, work, lwork);
 		};
+	};
+
+	/// A class used for fitting an array's history to a polynomial to project (or extrapolate) to the future time.
+	/// I took this idea from Octopus, which apparently uses this method for time propagation without SCF.
+	struct PolynomialExtrapolator {
+	private:
+		size_t nPts, order;
+		double* extrapStenc = nullptr;
+		double* history = nullptr;
+		cyclic_int<size_t> historyIndex;
+	public:
+		/**
+		 * Constructor.
+		 * @param nPts The number of points in the vector to extrapolate.
+		 * @param order The order of the polynomial (minus one) to use for extrapolation. order = length of history used.
+		 * @param stepFraction The fraction of the step to extrapolate. For example, 1.0 extrapolates to the next step, 0.5 extrapolates to the middle of the next step. 0.0 would return the last point.
+		 * @param initialVector (in) An optional initial vector to use for the first extrapolation. If not provided, the first extrapolation will be zero.
+		 */
+		PolynomialExtrapolator(size_t nPts, size_t order, double stepFraction = 1.0, const double* __restrict initialVector = nullptr);
+
+		~PolynomialExtrapolator(){
+			if (extrapStenc) sq_free(extrapStenc);
+			if (history) sq_free(history);
+		};
+
+		/**
+		 * Pushes a new vector onto the history for extrapolation.
+		 * @param vec (in) The vector to push onto the history.
+		 */
+		void pushHistory(const double* __restrict vec);
+
+		/**
+		 * Extrapolates the next vector using the history and the polynomial coefficients.
+		 * @param targ (out) The target array to store the extrapolated vector.
+		 */
+		void extrapolate(double* __restrict targ);
+
+		/// Prints the history of vectors used for extrapolation.
+		void printHistory() const;
+
+		/// Prints the extrapolation stencil used for extrapolation. Each row is a permutation of the first to minimize reorganizing the vector at each step.
+		void printExtrapStenc() const;
 	};
 };
 

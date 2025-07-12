@@ -1118,22 +1118,32 @@ int testOrthonormalization(){
 	return 0;
 }
 
+void testPolynomialExtrapolator(size_t nPts, size_t order){
+    vtls::PolynomialExtrapolator ext(nPts, order, 1.0);
+
+    ext.printExtrapStenc();
+    std::cout << std::endl;
+
+    double *vec = (double *)sq_malloc(sizeof(double) * nPts);
+    double *res = (double *)sq_malloc(sizeof(double) * nPts);
+    ext.printHistory();
+    std::cout << std::endl;
+    for (size_t i = 0; i < 2 * order; i++)
+    {
+        for (size_t j = 0; j < nPts; j++)
+            vec[j] = (double)(i * nPts + j);
+        ext.pushHistory(vec);
+        ext.printHistory();
+        ext.extrapolate(res);
+        vtlsPrnt::printArray(nPts, res);
+        std::cout << std::endl;
+    }
+
+    sq_free(vec);
+    sq_free(res);
+}
+
 int main(int argc, char** argv){
-	testOrthonormalization();
-
-	// char* wisdomFile = new char[64];
-	// std::snprintf(wisdomFile, 64, "fftw_nt_%04d.wisdom", omp_get_max_threads());
-	// fftw_init_threads();
-	// fftw_import_wisdom_from_filename(wisdomFile);
-
-	// testIterationMethods(-1, 2048);
-	// testIterationMethods(-1, 4096);
-	// testIterationMethods(-1, 8192);
-	// testIterationMethods(-1, 16384);
-	// testIterationMethods(-1, 32768);
-
-	// fftw_export_wisdom_to_filename(wisdomFile);
-	// delete[] wisdomFile;
-
-	// std::cout << "Done" << std::endl;
+	size_t nPts = 3, order = 4;
+    testPolynomialExtrapolator(nPts, order);
 }

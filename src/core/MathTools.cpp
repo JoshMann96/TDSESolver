@@ -171,6 +171,77 @@ namespace vtls {
 			throw std::runtime_error("Error in LAPACK_dorgqr: " + std::to_string(info));
 		}
 	}
+
+
+	PolynomialExtrapolator::PolynomialExtrapolator(size_t nPts, size_t order, double stepFraction, const double* __restrict initialVector) : nPts(nPts), order(order), historyIndex(0, order) {
+		history = (double*) sq_malloc(sizeof(double) * nPts * order);
+		extrapStenc = (double*) sq_malloc(sizeof(double) * order * order);
+
+		// initialize history
+		if (initialVector)
+			for (size_t i = 0; i < order; i++)
+				cblas_dcopy(nPts, initialVector, 1, history + i, order);
+		else
+			std::fill_n(history, nPts * order, 0.0);
+
+		// calculate extrapolation vector
+		// fill with original matrix
+		for (size_t m = 0; m < order; m++) {
+			for (size_t q = 0; q < order; q++) {
+				extrapStenc[m*order + q] = std::pow((m+stepFraction), q);
+			}
+		}
+
+		// invert
+		lapack_int info;
+		lapack_int n = static_cast<lapack_int>(order);
+		lapack_int* ipiv = (lapack_int*) sq_malloc(sizeof(lapack_int) * order);
+		LAPACK_dgetrf(&n, &n, extrapStenc, &n, ipiv, &info);
+		if(info != 0) {
+			sq_free(ipiv);
+			sq_free(extrapStenc);
+			sq_free(history);
+			throw std::runtime_error("PolynomialExtrapolator: dgetrf failed with info = " + std::to_string(info));
+		}
+		double* work = (double*) sq_malloc(sizeof(double) * order);
+		LAPACK_dgetri(&n, extrapStenc, &n, ipiv, work, &n, &info);
+		if(info != 0) {
+			sq_free(work);
+			sq_free(ipiv);
+			sq_free(extrapStenc);
+			sq_free(history);
+			throw std::runtime_error("PolynomialExtrapolator: dgetri failed with info = " + std::to_string(info));
+		}
+		sq_free(work);
+		sq_free(ipiv);
+
+		// fill the matrix with permutations of the first row
+		for (size_t m = 1; m < order; m++) {
+			for (size_t lm = 0; lm < order; lm++) {
+				extrapStenc[m*order + ((lm + order - m) % order)] = extrapStenc[lm];
+			}
+		}
+	}
+
+	void PolynomialExtrapolator::pushHistory(const double* __restrict vec) {
+		cblas_dcopy(nPts, vec, 1, history + order - 1 - historyIndex, order);
+		historyIndex++;
+	}
+
+	void PolynomialExtrapolator::extrapolate(double* __restrict targ) {
+		for (size_t i = 0; i < nPts; i++)
+			targ[i] = cblas_ddot(order, extrapStenc + historyIndex * order, 1, history + i * order, 1);
+	}
+
+	void PolynomialExtrapolator::printExtrapStenc() const {
+		for (size_t m = 0; m < order; m++)
+			vtlsPrnt::printArray(order, extrapStenc + m * order);
+	}
+
+	void PolynomialExtrapolator::printHistory() const {
+		for (size_t m = 0; m < nPts; m++)
+			vtlsPrnt::printArray(order, history + m * order);
+	}
 }
 
 namespace vtlsPrnt {
