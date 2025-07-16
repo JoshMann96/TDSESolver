@@ -393,9 +393,9 @@ namespace Measurers {
 		
 		static constexpr const char* fname = "expectX";
 		const double* x;
-		size_t nPts, minPos, maxPos;
+		size_t nPts;
 		const size_t* nElec;
-		double* scratch;
+		double* scratch, *mask;
 		double dx;
 	public:
 		/**
@@ -407,9 +407,10 @@ namespace Measurers {
 		 * @param fol The folder to write to.
 		 * @param minPos The minimum position index to consider (inclusive). Default is 0.
 		 * @param maxPos The maximum position index to consider (exclusive). Default is SIZE_MAX (all positions).
+		 * @param maskLength Lengthscale over which the wavefunctions are masked. Default is 0.0 (simple Heaviside truncation on either side).
 		 */
 		ExpectX(size_t len, const double* xs, double dx, const size_t* nElec, const std::string fol,
-			size_t minPos = 0, size_t maxPos = SIZE_MAX);
+			size_t minPos = 0, size_t maxPos = SIZE_MAX, double maskLength = 0.0);
 		~ExpectX();
 		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
 	};
@@ -421,10 +422,11 @@ namespace Measurers {
 		std::fstream fil;
 		
 		static constexpr const char* fname = "expectP";
-		size_t nPts, minPos, maxPos;
+		size_t nPts;
 		const size_t* nElec;
 		std::complex<double> *scratch1, *scratch2;
 		double dx;
+		double* mask;
 	public:
 		/**
 		 * Constructor.
@@ -434,9 +436,10 @@ namespace Measurers {
 		 * @param fol The folder to write to.
 		 * @param minPos The minimum position index to consider (inclusive). Default is 0.
 		 * @param maxPos The maximum position index to consider (exclusive). Default is SIZE_MAX (all positions).
+		 * @param maskLength Lengthscale over which the wavefunctions are masked. Default is 0.0 (simple Heaviside truncation on either side).
 		 */
 		ExpectP(size_t len, double dx, const size_t* nElec, const std::string fol,
-			size_t minPos = 0, size_t maxPos = SIZE_MAX);
+			size_t minPos = 0, size_t maxPos = SIZE_MAX, double maskLength = 0.0);
 
 		~ExpectP();
 		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
@@ -449,9 +452,9 @@ namespace Measurers {
 		std::fstream fil;
 		
 		static constexpr const char* fname = "expectA";
-		size_t nPts, minPos, maxPos;
+		size_t nPts;
 		const size_t* nElec;
-		double *scratch1, *scratch2;
+		double *scratch1, *scratch2, *mask;
 		double dx;
 	public:
 		/**
@@ -462,9 +465,10 @@ namespace Measurers {
 		 * @param fol The folder to write to.
 		 * @param minPos The minimum position index to consider (inclusive). Default is 0.
 		 * @param maxPos The maximum position index to consider (exclusive). Default is SIZE_MAX (all positions).
+		 * @param maskLength Lengthscale over which the wavefunctions are masked. Default is 0.0 (simple Heaviside truncation on either side).
 		 */
 		ExpectA(size_t nPts, double dx, const size_t* nElec, const std::string fol,
-			size_t minPos = 0, size_t maxPos = SIZE_MAX);
+			size_t minPos = 0, size_t maxPos = SIZE_MAX, double maskLength = 0.0);
 		~ExpectA();
 		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
 	};

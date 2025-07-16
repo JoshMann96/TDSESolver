@@ -189,10 +189,12 @@ namespace Measurers {
 	}
 
 
-	ExpectX::ExpectX(size_t nPts, const double* xs, double dx, const size_t* nElec, const std::string fol, size_t minPos, size_t maxPos) :
-		nPts(nPts), dx(dx), nElec(nElec), x(xs), minPos(minPos), maxPos(std::min(maxPos, nPts)), Measurer(11, fol, fname)
+	ExpectX::ExpectX(size_t nPts, const double* xs, double dx, const size_t* nElec, const std::string fol, size_t minPos, size_t maxPos, double maskLength) :
+		nPts(nPts), dx(dx), nElec(nElec), x(xs), Measurer(11, fol, fname)
 	 {
 		scratch = (double*) sq_malloc(sizeof(double)*nPts);
+		mask = (double*) sq_malloc(sizeof(double)*nPts);
+		vtls::sigmoidMaskProfile(nPts, minPos, maxPos, maskLength/dx, mask);
 	}
 
 	ExpectX::~ExpectX() {
@@ -201,19 +203,22 @@ namespace Measurers {
 
 	MeasurerStatus ExpectX::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t) {
 		for(size_t i = 0; i < *nElec; i++){
-			vtls::normSqr(maxPos-minPos, &psi[i*nPts+minPos], scratch);
-			double ex = vtlsInt::simpsMul(maxPos-minPos, x+minPos, scratch, dx);
+			vtls::normSqr(nPts, &psi[i*nPts], scratch);
+			vtls::seqMulArrays(nPts, mask, scratch);
+			double ex = vtlsInt::simpsMul(nPts, x, scratch, dx);
 			write(&ex, sizeof(double));
 		}
 		return MeasurerStatus::SUCCESS;
 	}
 
 
-	ExpectP::ExpectP(size_t len, double dx, const size_t* nElec, const std::string fol, size_t minPos, size_t maxPos) :
-		nPts(len), dx(dx), nElec(nElec), minPos(minPos), maxPos(std::min(maxPos, nPts)), Measurer(12, fol, fname)
+	ExpectP::ExpectP(size_t len, double dx, const size_t* nElec, const std::string fol, size_t minPos, size_t maxPos, double maskLength) :
+		nPts(len), dx(dx), nElec(nElec), Measurer(12, fol, fname)
 	 {
 		scratch1 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*len);
 		scratch2 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*len);
+		mask = (double*) sq_malloc(sizeof(double)*nPts);
+		vtls::sigmoidMaskProfile(nPts, minPos, maxPos, maskLength/dx, mask);
 	}
 
 	ExpectP::~ExpectP() {
@@ -224,21 +229,24 @@ namespace Measurers {
 	MeasurerStatus ExpectP::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t) {
 		double ex;
 		for(size_t i = 0; i < *nElec; i++){
-			vtls::firstDerivative(maxPos-minPos, &psi[i*nPts+minPos], scratch1, dx);
-			for (size_t j = 0; j < maxPos-minPos; j++)
-				scratch2[j] = std::conj(psi[i*nPts + j + minPos]);
-			ex = std::imag(vtlsInt::simpsMul(maxPos-minPos, scratch2, scratch1, dx))*PhysCon::hbar;
+			vtls::firstDerivative(nPts, &psi[i*nPts], scratch1, dx);
+			vtls::seqMulArrays(nPts, mask, scratch1);
+			for (size_t j = 0; j < nPts; j++)
+				scratch2[j] = std::conj(psi[i*nPts + j]);
+			ex = std::imag(vtlsInt::simpsMul(nPts, scratch2, scratch1, dx))*PhysCon::hbar;
 			write(&ex, sizeof(double));
 		}
 		return MeasurerStatus::SUCCESS;
 	}
 
 
-	ExpectA::ExpectA(size_t nPts, double dx, const size_t* nElec, const std::string fol, size_t minPos, size_t maxPos) :
-		nPts(nPts), dx(dx), nElec(nElec), minPos(minPos), maxPos(std::min(maxPos, nPts)), Measurer(13, fol, fname)
+	ExpectA::ExpectA(size_t nPts, double dx, const size_t* nElec, const std::string fol, size_t minPos, size_t maxPos, double maskLength) :
+		nPts(nPts), dx(dx), nElec(nElec), Measurer(13, fol, fname)
 		 {
 		scratch1 = (double*) sq_malloc(sizeof(double)*nPts);
 		scratch2 = (double*) sq_malloc(sizeof(double)*nPts);
+		mask = (double*) sq_malloc(sizeof(double)*nPts);
+		vtls::sigmoidMaskProfile(nPts, minPos, maxPos, maskLength/dx, mask);
 	}
 
 	ExpectA::~ExpectA() {
@@ -248,10 +256,11 @@ namespace Measurers {
 
 	MeasurerStatus ExpectA::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t) {
 		double ex;
-		vtls::firstDerivative(maxPos-minPos, v+minPos, scratch1, dx);
+		vtls::firstDerivative(nPts, v, scratch1, dx);
 		for(size_t i = 0; i < *nElec; i++){
-			vtls::normSqr(maxPos-minPos, &psi[i*nPts+minPos], scratch2);
-			ex = vtlsInt::simpsMul(maxPos-minPos, scratch2, scratch1, dx)*(-1.0 / PhysCon::me);
+			vtls::normSqr(nPts, &psi[i*nPts], scratch2);
+			vtls::seqMulArrays(nPts, mask, scratch2);
+			ex = vtlsInt::simpsMul(nPts, scratch2, scratch1, dx)*(-1.0 / PhysCon::me);
 			write(&ex, sizeof(double));
 		}
 

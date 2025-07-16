@@ -237,11 +237,12 @@ void init_Measurers(py::module &m) {
             "sim"_a, "fol"_a);
     
     py::class_<ExpectX, Measurer, std::unique_ptr<ExpectX, py::nodelete>>(m, "ExpectX")
-        .def(py::init([](SimulationManager* sim, std::string fol, std::optional<double> minPos, std::optional<double> maxPos){
+        .def(py::init([](SimulationManager* sim, std::string fol, std::optional<double> minPos, std::optional<double> maxPos, std::optional<double> maskLength){
             return std::unique_ptr<ExpectX, py::nodelete>(new ExpectX(
                 sim->getNumPoints(), sim->getX(), sim->getDX(), sim->getNElecPtr(), fol, 
                 minPos.has_value() ? sim->findXIdx(minPos.value()) : 0,
-                maxPos.has_value() ? sim->findXIdx(maxPos.value()) : SIZE_MAX
+                maxPos.has_value() ? sim->findXIdx(maxPos.value()) : SIZE_MAX,
+                maskLength.has_value() ? maskLength.value() : 0.0
             ));
         }), R"V0G0N(
             Records expectation value of position for each state.
@@ -256,19 +257,22 @@ void init_Measurers(py::module &m) {
                 Minimum position index to consider (inclusive). Default is 0.
             maxPos : float, optional
                 Maximum position index to consider (exclusive). Default is maximum possible (all positions).
+            maskLength : float, optional
+                Lengthscale over which the source is masked. Good for truncating the system smoothly. If zero, Heaviside step functions are used. Default is 0.0.
             
 
             Returns
             -------
             ExpectX)V0G0N",
-            "sim"_a, "fol"_a, "minPos"_a=py::none(), "maxPos"_a=py::none());
+            "sim"_a, "fol"_a, "minPos"_a=py::none(), "maxPos"_a=py::none(), "maskLength"_a=py::none());
 
     py::class_<ExpectP, Measurer, std::unique_ptr<ExpectP, py::nodelete>>(m, "ExpectP")
-        .def(py::init([](SimulationManager* sim, std::string fol, std::optional<double> minPos, std::optional<double> maxPos){
+        .def(py::init([](SimulationManager* sim, std::string fol, std::optional<double> minPos, std::optional<double> maxPos, std::optional<double> maskLength){
             return std::unique_ptr<ExpectP, py::nodelete>(new ExpectP(
                 sim->getNumPoints(), sim->getDX(), sim->getNElecPtr(), fol,
                 minPos.has_value() ? sim->findXIdx(minPos.value()) : 0,
-                maxPos.has_value() ? sim->findXIdx(maxPos.value()) : SIZE_MAX
+                maxPos.has_value() ? sim->findXIdx(maxPos.value()) : SIZE_MAX,
+                maskLength.has_value() ? maskLength.value() : 0.0
             ));
         }), R"V0G0N(
             Records expectation value of momentum for each state. Note: computationally expensive.
@@ -283,18 +287,21 @@ void init_Measurers(py::module &m) {
                 Minimum position index to consider (inclusive). Default is 0.
             maxPos : float, optional
                 Maximum position index to consider (exclusive). Default is maximum possible (all positions).
+            maskLength : float, optional
+                Lengthscale over which the source is masked. Good for truncating the system smoothly. If zero, Heaviside step functions are used. Default is 0.0.
 
             Returns
             -------
             ExpectP)V0G0N",
-            "sim"_a, "fol"_a, "minPos"_a=py::none(), "maxPos"_a=py::none());
+            "sim"_a, "fol"_a, "minPos"_a=py::none(), "maxPos"_a=py::none(), "maskLength"_a=py::none());
 
     py::class_<ExpectA, Measurer, std::unique_ptr<ExpectA, py::nodelete>>(m, "ExpectA")
-        .def(py::init([](SimulationManager* sim, std::string fol, std::optional<double> minPos, std::optional<double> maxPos){
+        .def(py::init([](SimulationManager* sim, std::string fol, std::optional<double> minPos, std::optional<double> maxPos, std::optional<double> maskLength){
             return std::unique_ptr<ExpectA, py::nodelete>(new ExpectA(
                 sim->getNumPoints(), sim->getDX(), sim->getNElecPtr(), fol,
                 minPos.has_value() ? sim->findXIdx(minPos.value()) : 0,
-                maxPos.has_value() ? sim->findXIdx(maxPos.value()) : SIZE_MAX
+                maxPos.has_value() ? sim->findXIdx(maxPos.value()) : SIZE_MAX,
+                maskLength.has_value() ? maskLength.value() : 0.0
             ));
         }), R"V0G0N(
             Records expectation value of acceleration for each state.
@@ -310,11 +317,13 @@ void init_Measurers(py::module &m) {
                 Minimum position index to consider (inclusive). Default is 0.
             maxPos : float, optional
                 Maximum position index to consider (exclusive). Default is maximum possible (all positions).
+            maskLength : float, optional
+                Lengthscale over which the source is masked. Good for truncating the system smoothly. If zero, Heaviside step functions are used. Default is 0.0.
 
             Returns
             -------
             ExpectA)V0G0N",
-            "sim"_a, "fol"_a, "minPos"_a=py::none(), "maxPos"_a=py::none());
+            "sim"_a, "fol"_a, "minPos"_a=py::none(), "maxPos"_a=py::none(), "maskLength"_a=py::none());
 
     py::class_<TotProb, Measurer, std::unique_ptr<TotProb, py::nodelete>>(m, "TotProb")
         .def(py::init([](SimulationManager* sim, std::string fol){
