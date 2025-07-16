@@ -809,7 +809,7 @@ namespace Potentials {
 		double mRTheta, dx, t0 = 0.0; // m/R, transverse inverse length scale
 		size_t nPts, refPoint, minPos, maxPos;
 		double oldVb, oldAbDiff;
-		double *vld, *vd, *vud, *vud2, *vrhs, *ald, *ad, *aud, *aud2, *arhs, *newV, *newA, *oldV, *oldA, *aTemp, *oldVTrans, *rho0 = nullptr, *j0 = nullptr, *drho, *dcur, *shieldProfile;
+		double *vld, *vd, *vud, *vud2, *vrhs, *ald, *ad, *aud, *aud2, *arhs, *newV, *newA, *oldV, *oldA, *aTemp, *oldVTrans, *rho0 = nullptr, *j0 = nullptr, *drho, *dcur, *shieldProfile, *maskProfile;
 		lapack_int *vipiv, *aipiv;
 		size_t diriEdge, neumEdge;
 		int neumSide;
@@ -817,7 +817,7 @@ namespace Potentials {
 
 		void calcPot(const double* rho, const double* cur, double* targ, double t, bool virt);
 	public:
-		MixedGeometryHartreeShielded(size_t nPts, size_t minPos, size_t maxPos, size_t surfPos, double shieldLength, int neumannSide, double dx, double mRTheta, const double* hRad, const double* rho0, const double* j0, size_t refPoint, bool includeVectorPotential=true);
+		MixedGeometryHartreeShielded(size_t nPts, size_t minPos, size_t maxPos, size_t surfPos, double maskLength, double shieldLength, int neumannSide, double dx, double mRTheta, const double* hRad, const double* rho0, const double* j0, size_t refPoint, bool includeVectorPotential=true);
 
 		~MixedGeometryHartreeShielded();
 		void getVBare(double t, double* targ) { std::fill_n(targ, nPts, 0.0); };

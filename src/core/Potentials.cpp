@@ -827,7 +827,7 @@ namespace Potentials {
 
 
 
-	MixedGeometryHartreeShielded::MixedGeometryHartreeShielded(size_t nPts, size_t minPos, size_t maxPos, size_t surfPos, double shieldLength, int neumannSide, double dx, double mRTheta, const double* hRad, const double* rho0, const double* j0, size_t refPoint, bool includeVectorPotential) :
+	MixedGeometryHartreeShielded::MixedGeometryHartreeShielded(size_t nPts, size_t minPos, size_t maxPos, size_t surfPos, double maskLength, double shieldLength, int neumannSide, double dx, double mRTheta, const double* hRad, const double* rho0, const double* j0, size_t refPoint, bool includeVectorPotential) :
 		nPts(nPts), minPos(minPos), maxPos(maxPos), dx(dx), mRTheta(mRTheta), refPoint(refPoint), includeVectorPotential(includeVectorPotential), neumSide(neumannSide)
 	{
 		assert(nPts <= LAPACK_INT_MAX);
@@ -842,6 +842,10 @@ namespace Potentials {
 		drho= (double*) sq_malloc(sizeof(double)*nPts);
 		dcur= (double*) sq_malloc(sizeof(double)*nPts);
 		shieldProfile = (double*) sq_malloc(sizeof(double)*nPts);
+		maskProfile = (double*) sq_malloc(sizeof(double)*nPts);
+
+		// create mask profile, use sigmoid according to maskLength
+		vtls::sigmoidMaskProfile(nPts, minPos, maxPos, maskLength/dx, maskProfile);
 
 		// build shield profile, decay to left for negative shieldLength, to right for positive shieldLength
 		if(isnan(shieldLength) || isinf(shieldLength) || shieldLength == 0.0)
@@ -949,9 +953,13 @@ namespace Potentials {
 		// electrostatic potential (newV will ultimately contain the preliminary result)
 		// rhs
 		vtls::scaMulArray(nPts, -PhysCon::qe * PhysCon::qe * dx * dx / PhysCon::e0, drho, newV);
-		// set charge outside of system to zero
-		std::fill_n(newV, minPos, 0.0);
-		std::fill_n(&newV[maxPos+1], nPts-maxPos-1, 0.0);
+		// apply charge mask profile
+		vtls::seqMulArrays(nPts, maskProfile, newV);
+			/*
+			// set charge outside of system to zero
+			std::fill_n(newV, minPos, 0.0);
+			std::fill_n(&newV[maxPos+1], nPts-maxPos-1, 0.0);
+			*/
 		// homogeneous BCs
 		newV[0] = 0.0;
 		newV[nPts-1] = 0.0;
@@ -967,9 +975,13 @@ namespace Potentials {
 		if(includeVectorPotential){
 
 			vtls::scaMulArray(nPts, -PhysCon::qe * PhysCon::qe * dx * dx * PhysCon::mu0, dcur, newA);
+			// apply mask profile
+			vtls::seqMulArrays(nPts, maskProfile, newA);
+			/*
 			// set current outside of system to zero
 			std::fill_n(newA, minPos, 0.0);
 			std::fill_n(&newA[maxPos+1], nPts-maxPos-1, 0.0);
+			*/
 
 			// set BCs
 			newA[diriEdge] = 0.0;
@@ -1041,6 +1053,7 @@ namespace Potentials {
 		sq_free(vrhs);
 		sq_free(newV);
 		sq_free(shieldProfile);
+		sq_free(maskProfile);
 		if(rho0)
 			sq_free(rho0);
 		if(j0)
