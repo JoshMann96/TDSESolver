@@ -205,7 +205,7 @@ namespace Measurers {
 		for(size_t i = 0; i < *nElec; i++){
 			vtls::normSqr(nPts, &psi[i*nPts], scratch);
 			vtls::seqMulArrays(nPts, mask, scratch);
-			double ex = vtlsInt::simpsMul(nPts, x, scratch, dx);
+			double ex = vtlsInt::simpsMul(nPts, x, scratch, dx) / vtlsInt::simps(nPts, scratch, dx);
 			write(&ex, sizeof(double));
 		}
 		return MeasurerStatus::SUCCESS;
@@ -230,10 +230,9 @@ namespace Measurers {
 		double ex;
 		for(size_t i = 0; i < *nElec; i++){
 			vtls::firstDerivative(nPts, &psi[i*nPts], scratch1, dx);
-			vtls::seqMulArrays(nPts, mask, scratch1);
 			for (size_t j = 0; j < nPts; j++)
-				scratch2[j] = std::conj(psi[i*nPts + j]);
-			ex = std::imag(vtlsInt::simpsMul(nPts, scratch2, scratch1, dx))*PhysCon::hbar;
+				scratch2[j] = std::conj(psi[i*nPts + j]) * mask[j];
+			ex = std::imag(vtlsInt::simpsMul(nPts, scratch2, scratch1, dx))*PhysCon::hbar / vtls::getNorm(nPts, scratch2, dx);
 			write(&ex, sizeof(double));
 		}
 		return MeasurerStatus::SUCCESS;
@@ -260,7 +259,7 @@ namespace Measurers {
 		for(size_t i = 0; i < *nElec; i++){
 			vtls::normSqr(nPts, &psi[i*nPts], scratch2);
 			vtls::seqMulArrays(nPts, mask, scratch2);
-			ex = vtlsInt::simpsMul(nPts, scratch2, scratch1, dx)*(-1.0 / PhysCon::me);
+			ex = vtlsInt::simpsMul(nPts, scratch2, scratch1, dx)*(-1.0 / PhysCon::me)/vtlsInt::simps(nPts, scratch2, dx);
 			write(&ex, sizeof(double));
 		}
 
