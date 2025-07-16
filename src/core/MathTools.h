@@ -1188,6 +1188,40 @@ namespace vtls {
 		/// Prints the extrapolation stencil used for extrapolation. Each row is a permutation of the first to minimize reorganizing the vector at each step.
 		void printExtrapStenc() const;
 	};
+
+	/**
+	 * Generates a sigmoid-smoothed mask:
+	 * \f[
+	 * mask_i = \frac{1}{(1 + e^{2 \cdot \frac{minPos - i}{maskLength}}) \cdot (1 + e^{2 \cdot \frac{i - maxPos}{maskLength}})}
+	 * \f]
+	 * 
+	 * @param nPts The number of points in the mask.
+	 * @param minPos The centroid of the left-sided sigmoid.
+	 * @param maxPos The centroid of the right-sided sigmoid.
+	 * @param maskLength The sigmoid width. If zero, a simple Heaviside step function is used.
+	 * @param mask (out) The target array to store the mask values.
+	 */
+	inline void sigmoidMaskProfile(size_t nPts, size_t minPos, size_t maxPos, double maskLength, double* __restrict mask) {
+		minPos = std::clamp(minPos, (size_t)0, nPts - 1);
+		maxPos = std::clamp(maxPos, (size_t)0, nPts - 1);
+		if (minPos > maxPos){
+			size_t tmp = minPos;
+			minPos = maxPos;
+			maxPos = tmp;
+		}
+
+		if (maskLength > 0.0){
+		for (size_t i = 0; i < nPts; i++)
+			mask[i] =
+				1.0 / (1.0 + std::exp( 2.0 * ((double)minPos - (double)i) / maskLength)) // left
+				* 1.0 / (1.0 + std::exp( 2.0 * ((double)i - (double)maxPos) / maskLength)); // right
+		}
+		else{
+			std::fill_n(mask, minPos, 0.0);
+			std::fill_n(mask + minPos, maxPos - minPos, 1.0);
+			std::fill_n(mask + maxPos, nPts - maxPos, 0.0);
+		}
+	}
 };
 
 /**

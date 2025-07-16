@@ -1030,7 +1030,7 @@ int testMixedGeometryHartree(){
 	sm->addMeasurer(new Measurers::CurrentPlotter(nPts, sm->getX(), true, 1000, false));
 	sm->addPotential(new Potentials::MeasuredPotential(
 		//new Potentials::MixedGeometryHartreeGhostCharge(nPts, 0, nPts-1, -1, dx, 0.0, h, sm->getRho(), sm->getCur(), 0, true),
-		new Potentials::MixedGeometryHartreeShielded(nPts, 0, nPts-1, nPts/2, -2e-9, 1, dx, 1.0/(20e-9), h, sm->getRho(), sm->getCur(), 0, true),
+		new Potentials::MixedGeometryHartreeShielded(nPts, 0, nPts-1, nPts/2, 0.0, -2e-9, 1, dx, 1.0/(20e-9), h, sm->getRho(), sm->getCur(), 0, true),
 		new Measurers::PotentialPlotter(nPts, sm->getX(), false, 1000, false),
 		nSteps, dt*nSteps, false));
 
@@ -1144,6 +1144,29 @@ void testPolynomialExtrapolator(size_t nPts, size_t order){
 }
 
 int main(int argc, char** argv){
-	size_t nPts = 3, order = 4;
-    testPolynomialExtrapolator(nPts, order);
+	//size_t nPts = 3, order = 4;
+    //testPolynomialExtrapolator(nPts, order);
+
+	size_t nPts = 100, minPos = 10, maxPos = 90;
+	double* maskProfile = (double*) sq_malloc(sizeof(double)*nPts);
+	double dx = 1.0, maskLength = 0.0;
+
+	// create mask profile, use sigmoid according to maskLength
+	if (maskLength > 0.0){
+		for (size_t i = 0; i < nPts; i++)
+			maskProfile[i] =
+				1.0 / (1.0 + std::exp( 2.0 * ((double)minPos - (double)i) * dx / maskLength)) // left
+				* 1.0 / (1.0 + std::exp( 2.0 * ((double)i - (double)maxPos) * dx / maskLength)); // right
+	}
+	else{
+		std::fill_n(maskProfile, minPos, 0.0);
+		std::fill_n(maskProfile + minPos, maxPos - minPos, 1.0);
+		std::fill_n(maskProfile + maxPos, nPts - maxPos, 0.0);
+	}
+
+	plotting::GNUPlotter plt(nPts, 1, maskProfile);
+	std::cout << "Press enter to continue..." << std::endl;
+	std::cin.get();
+
+	sq_free(maskProfile);
 }
