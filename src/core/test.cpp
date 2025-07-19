@@ -1147,26 +1147,19 @@ int main(int argc, char** argv){
 	//size_t nPts = 3, order = 4;
     //testPolynomialExtrapolator(nPts, order);
 
-	size_t nPts = 100, minPos = 10, maxPos = 90;
-	double* maskProfile = (double*) sq_malloc(sizeof(double)*nPts);
-	double dx = 1.0, maskLength = 0.0;
+	size_t nPts = 20, minPos = 5, maxPos = 15;
+	double* maskProfiles = (double*) sq_malloc(sizeof(double)*4*nPts);
+	double maskLength = 5.0;
 
-	// create mask profile, use sigmoid according to maskLength
-	if (maskLength > 0.0){
-		for (size_t i = 0; i < nPts; i++)
-			maskProfile[i] =
-				1.0 / (1.0 + std::exp( 2.0 * ((double)minPos - (double)i) * dx / maskLength)) // left
-				* 1.0 / (1.0 + std::exp( 2.0 * ((double)i - (double)maxPos) * dx / maskLength)); // right
-	}
-	else{
-		std::fill_n(maskProfile, minPos, 0.0);
-		std::fill_n(maskProfile + minPos, maxPos - minPos, 1.0);
-		std::fill_n(maskProfile + maxPos, nPts - maxPos, 0.0);
-	}
+	vtls::masks::sigmoid(nPts, minPos, maskLength, maskProfiles);
+	vtls::masks::sigmoid(nPts, maxPos, -maskLength, maskProfiles+nPts);
+	vtls::masks::biSigmoid(nPts, minPos, maxPos, maskLength, maskProfiles+2*nPts);
+	vtls::masks::biSigmoid(nPts, minPos, maxPos, -maskLength, maskProfiles+3*nPts);
 
-	plotting::GNUPlotter plt(nPts, 1, maskProfile);
+	plotting::GNUPlotter plt;
+	plt.update(nPts, 4, maskProfiles, -0.5, 2.5);
 	std::cout << "Press enter to continue..." << std::endl;
 	std::cin.get();
 
-	sq_free(maskProfile);
+	sq_free(maskProfiles);
 }

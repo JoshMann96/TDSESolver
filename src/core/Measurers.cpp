@@ -194,7 +194,7 @@ namespace Measurers {
 	 {
 		scratch = (double*) sq_malloc(sizeof(double)*nPts);
 		mask = (double*) sq_malloc(sizeof(double)*nPts);
-		vtls::sigmoidMaskProfile(nPts, minPos, maxPos, maskLength/dx, mask);
+		vtls::masks::biSigmoid(nPts, minPos, maxPos, maskLength/dx, mask);
 	}
 
 	ExpectX::~ExpectX() {
@@ -218,7 +218,7 @@ namespace Measurers {
 		scratch1 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*len);
 		scratch2 = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>)*len);
 		mask = (double*) sq_malloc(sizeof(double)*nPts);
-		vtls::sigmoidMaskProfile(nPts, minPos, maxPos, maskLength/dx, mask);
+		vtls::masks::biSigmoid(nPts, minPos, maxPos, maskLength/dx, mask);
 	}
 
 	ExpectP::~ExpectP() {
@@ -245,7 +245,7 @@ namespace Measurers {
 		scratch1 = (double*) sq_malloc(sizeof(double)*nPts);
 		scratch2 = (double*) sq_malloc(sizeof(double)*nPts);
 		mask = (double*) sq_malloc(sizeof(double)*nPts);
-		vtls::sigmoidMaskProfile(nPts, minPos, maxPos, maskLength/dx, mask);
+		vtls::masks::biSigmoid(nPts, minPos, maxPos, maskLength/dx, mask);
 	}
 
 	ExpectA::~ExpectA() {

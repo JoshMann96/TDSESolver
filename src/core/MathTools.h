@@ -1189,39 +1189,92 @@ namespace vtls {
 		void printExtrapStenc() const;
 	};
 
-	/**
-	 * Generates a sigmoid-smoothed mask:
-	 * \f[
-	 * mask_i = \frac{1}{(1 + e^{2 \cdot \frac{minPos - i}{maskLength}}) \cdot (1 + e^{2 \cdot \frac{i - maxPos}{maskLength}})}
-	 * \f]
-	 * 
-	 * @param nPts The number of points in the mask.
-	 * @param minPos The centroid of the left-sided sigmoid.
-	 * @param maxPos The centroid of the right-sided sigmoid.
-	 * @param maskLength The sigmoid width. If zero, a simple Heaviside step function is used.
-	 * @param mask (out) The target array to store the mask values.
-	 */
-	inline void sigmoidMaskProfile(size_t nPts, size_t minPos, size_t maxPos, double maskLength, double* __restrict mask) {
-		minPos = std::clamp(minPos, (size_t)0, nPts - 1);
-		maxPos = std::clamp(maxPos, (size_t)0, nPts - 1);
-		if (minPos > maxPos){
-			size_t tmp = minPos;
-			minPos = maxPos;
-			maxPos = tmp;
-		}
+	namespace masks{
 
-		if (maskLength > 0.0){
-		for (size_t i = 0; i < nPts; i++)
-			mask[i] =
-				1.0 / (1.0 + std::exp( 2.0 * ((double)minPos - (double)i) / maskLength)) // left
-				* 1.0 / (1.0 + std::exp( 2.0 * ((double)i - (double)maxPos) / maskLength)); // right
+		struct step{
+			/**
+			 * @param nPts The number of points in the mask.
+			 * @param center The centroid of the sigmoid.
+			 * @param stepLength The sigmoid width. 
+			 * 	The sign determines the direction of the step: positive values create a step from 0 to 1, negative values create a step from 1 to 0.
+			 * 	If zero, a simple Heaviside step function is used. Using -0.0 is distinguished as a step from 1 to 0.
+			 * @param mask (out) The target array to store the mask values.
+			 */
+			virtual void operator()(size_t nPts, size_t center, double stepLength, double* __restrict mask) const = 0;
+		};
+
+		// SIGMOID
+		/**
+		 * Generates a sigmoid-smoothed step function:
+		 * \f[
+		 * mask_i = \frac{1}{1 + e^{2 \cdot \frac{i - center}{maskLength}}}
+		 * \f]
+		 * 
+		 * @copydoc step::operator()(size_t nPts, size_t center, double* __restrict mask)
+		 */
+		inline void sigmoid(size_t nPts, size_t center, double stepLength, double* __restrict mask) {
+			center = std::clamp(center, (size_t)0, nPts - 1);
+
+			if (std::abs(stepLength) > 0.0) {
+				for (size_t i = 0; i < nPts; i++) {
+					mask[i] = 1.0 / (1.0 + std::exp(-2.0 * ((double)i - (double)center) / stepLength));
+				}
+			}
+			else {
+				if ( !std::signbit(stepLength) ){ // positive, step from 0 to 1
+					std::fill_n(mask, center, 0.0);
+					std::fill_n(mask + center, nPts - center, 1.0);
+				}
+				else{ // negative, step from 1 to 0
+					std::fill_n(mask, center, 1.0);
+					std::fill_n(mask + center, nPts - center, 0.0);
+				}
+			}
 		}
-		else{
-			std::fill_n(mask, minPos, 0.0);
-			std::fill_n(mask + minPos, maxPos - minPos, 1.0);
-			std::fill_n(mask + maxPos, nPts - maxPos, 0.0);
+		struct sigmoid_c : step {
+			void operator()(size_t nPts, size_t center, double stepLength, double* __restrict mask) const override {
+				sigmoid(nPts, center, stepLength, mask);
+			}
+		};
+
+		// POLYNOMIAL SMOOTHED
+		// todo...
+
+		// BIDIRECTIONAL MASK
+		inline void biMask(size_t nPts, size_t leftCenter, size_t rightCenter, double maskLength, double* __restrict mask, step &stepFunc){
+			assert(leftCenter <= rightCenter);
+			
+			double* tempMask = (double*) sq_malloc(sizeof(double) * nPts);
+			
+			stepFunc(nPts, leftCenter, maskLength, tempMask);
+			stepFunc(nPts, rightCenter, -maskLength, mask);
+			if (!std::signbit(maskLength)) // positive, 0-1-0, multiply masks
+				vtls::seqMulArrays(nPts, tempMask, mask);
+			else // negative, 1-0-1, add masks
+				vtls::addArrays(nPts, tempMask, mask);
+
+			sq_free(tempMask);
+		} 
+
+		/**
+		 * Generates a sigmoid-smoothed mask:
+		 * \f[
+		 * mask_i = \frac{1}{(1 + e^{2 \cdot \frac{leftCenter - i}{maskLength}}) \cdot (1 + e^{2 \cdot \frac{i - rightCenter}{maskLength}})}
+		 * \f]
+		 * 
+		 * @param nPts The number of points in the mask.
+		 * @param leftCenter The centroid of the left-sided sigmoid.
+		 * @param rightCenter The centroid of the right-sided sigmoid.
+		 * @param maskLength The sigmoid width. 
+		 * 	The sign determines the shape of the mask: positive creates a mask from 0 to 1 then 0, and negative creates a mask from 1 to 0 then 1.
+		 * 	If zero, a simple Heaviside step function is used.
+		 * @param mask (out) The target array to store the mask values.
+		 */
+		inline void biSigmoid(size_t nPts, size_t leftCenter, size_t rightCenter, double maskLength, double* __restrict mask) {
+			sigmoid_c f;
+			biMask(nPts, leftCenter, rightCenter, maskLength, mask, f);
 		}
-	}
+	};
 };
 
 /**
