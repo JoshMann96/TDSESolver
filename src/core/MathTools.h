@@ -1203,6 +1203,18 @@ namespace vtls {
 			virtual void operator()(size_t nPts, size_t center, double stepLength, double* __restrict mask) const = 0;
 		};
 
+		inline void heaviside(size_t nPts, size_t center, int direction, double* __restrict mask) {
+			center = std::clamp(center, (size_t)0, nPts - 1);
+			if (direction > 0) {
+				std::fill_n(mask, center, 0.0);
+				std::fill_n(mask + center, nPts - center, 1.0);
+			}
+			else {
+				std::fill_n(mask, center, 1.0);
+				std::fill_n(mask + center, nPts - center, 0.0);
+			}
+		}
+
 		// SIGMOID
 		/**
 		 * Generates a sigmoid-smoothed step function:
@@ -1210,26 +1222,16 @@ namespace vtls {
 		 * mask_i = \frac{1}{1 + e^{2 \cdot \frac{i - center}{maskLength}}}
 		 * \f]
 		 * 
-		 * @copydoc step::operator()(size_t nPts, size_t center, double* __restrict mask)
+		 * @copydoc step::operator()(size_t nPts, size_t center, double stepLength, double* __restrict mask)
 		 */
 		inline void sigmoid(size_t nPts, size_t center, double stepLength, double* __restrict mask) {
 			center = std::clamp(center, (size_t)0, nPts - 1);
 
-			if (std::abs(stepLength) > 0.0) {
-				for (size_t i = 0; i < nPts; i++) {
+			if (std::abs(stepLength) > 0.0)
+				for (size_t i = 0; i < nPts; i++)
 					mask[i] = 1.0 / (1.0 + std::exp(-2.0 * ((double)i - (double)center) / stepLength));
-				}
-			}
-			else {
-				if ( !std::signbit(stepLength) ){ // positive, step from 0 to 1
-					std::fill_n(mask, center, 0.0);
-					std::fill_n(mask + center, nPts - center, 1.0);
-				}
-				else{ // negative, step from 1 to 0
-					std::fill_n(mask, center, 1.0);
-					std::fill_n(mask + center, nPts - center, 0.0);
-				}
-			}
+			else
+				heaviside(nPts, center, std::signbit(stepLength) ? -1 : 1, mask);
 		}
 		struct sigmoid_c : step {
 			void operator()(size_t nPts, size_t center, double stepLength, double* __restrict mask) const override {
@@ -1238,7 +1240,45 @@ namespace vtls {
 		};
 
 		// POLYNOMIAL SMOOTHED
-		// todo...
+		/**
+		 * Generates a 13th order polynomial-smoothed step function. Continuous up to 7th order at each boundary.
+		 * 
+		 * @copydoc step::operator()(size_t nPts, size_t center, double stepLength, double* __restrict mask)
+		 */
+		inline void poly13(size_t nPts, size_t center, double stepLength, double* __restrict mask) {
+			int direction = std::signbit(stepLength) ? -1 : 1;
+			size_t stepLengthA = (size_t)std::abs(stepLength);
+			stepLengthA = std::clamp(stepLengthA, (size_t)0, nPts - 1);
+			center = std::clamp(center, stepLengthA/2, nPts - 1 - stepLengthA/2);
+			size_t left = center - stepLengthA / 2;
+			size_t right = center + stepLengthA / 2;
+			
+			if (stepLengthA > 0){
+				std::fill_n(mask, left, direction == 1 ? 0.0 : 1.0);
+				std::fill_n(mask + right, nPts - right, direction == 1 ? 1.0 : 0.0);
+				double k;
+				for (size_t i = left; i < right; i++) {
+					k = (double)(i - left) / (double)(right - left);
+					k = direction == 1 ? k : 1.0 - k; // reverse k for negative stepLength
+					mask[i] = (
+							924.0*std::pow(k, 13) -
+							6006.0*std::pow(k, 12) +
+							16380.0*std::pow(k, 11) -
+							24024.0*std::pow(k, 10) +
+							20020.0*std::pow(k, 9) -
+							9009.0*std::pow(k, 8) +
+							1716.0*std::pow(k, 7)
+						);
+				}
+			}
+			else
+				heaviside(nPts, center, direction, mask);
+		}
+		struct poly13_c : step {
+			void operator()(size_t nPts, size_t center, double stepLength, double* __restrict mask) const override {
+				poly13(nPts, center, stepLength, mask);
+			}
+		};
 
 		// BIDIRECTIONAL MASK
 		inline void biMask(size_t nPts, size_t leftCenter, size_t rightCenter, double maskLength, double* __restrict mask, step &stepFunc){
@@ -1272,6 +1312,21 @@ namespace vtls {
 		 */
 		inline void biSigmoid(size_t nPts, size_t leftCenter, size_t rightCenter, double maskLength, double* __restrict mask) {
 			sigmoid_c f;
+			biMask(nPts, leftCenter, rightCenter, maskLength, mask, f);
+		}
+
+		/**
+		 * Generates a 13th order polynomial-smoothed mask. Continuous up to 7th order at each boundary.
+		 * @param nPts The number of points in the mask.
+		 * @param leftCenter The centroid of the left-sided polynomial.
+		 * @param rightCenter The centroid of the right-sided polynomial.
+		 * @param maskLength The polynomial width.
+		 * The sign determines the shape of the mask: positive creates a mask from 0 to 1 then 0, and negative creates a mask from 1 to 0 then 1.
+		 * If zero, a simple Heaviside step function is used.
+		 * @param mask (out) The target array to store the mask values.
+		 */
+		inline void biPoly13(size_t nPts, size_t leftCenter, size_t rightCenter, double maskLength, double* __restrict mask) {
+			poly13_c f;
 			biMask(nPts, leftCenter, rightCenter, maskLength, mask, f);
 		}
 	};

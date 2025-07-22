@@ -1147,14 +1147,21 @@ int main(int argc, char** argv){
 	//size_t nPts = 3, order = 4;
     //testPolynomialExtrapolator(nPts, order);
 
-	size_t nPts = 20, minPos = 5, maxPos = 15;
+	size_t nPts = 200, minPos = 50, maxPos = 150;
 	double* maskProfiles = (double*) sq_malloc(sizeof(double)*4*nPts);
-	double maskLength = 5.0;
+	double maskLength = 50.0;
 
+	/*
 	vtls::masks::sigmoid(nPts, minPos, maskLength, maskProfiles);
 	vtls::masks::sigmoid(nPts, maxPos, -maskLength, maskProfiles+nPts);
 	vtls::masks::biSigmoid(nPts, minPos, maxPos, maskLength, maskProfiles+2*nPts);
 	vtls::masks::biSigmoid(nPts, minPos, maxPos, -maskLength, maskProfiles+3*nPts);
+	*/
+
+	vtls::masks::poly13(nPts, minPos, maskLength, maskProfiles);
+	vtls::masks::poly13(nPts, maxPos, -maskLength, maskProfiles+nPts);
+	vtls::masks::biPoly13(nPts, minPos, maxPos, maskLength, maskProfiles+2*nPts);
+	vtls::masks::biPoly13(nPts, minPos, maxPos, -maskLength, maskProfiles+3*nPts);
 
 	plotting::GNUPlotter plt;
 	plt.update(nPts, 4, maskProfiles, -0.5, 2.5);

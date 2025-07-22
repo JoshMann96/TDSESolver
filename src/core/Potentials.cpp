@@ -844,8 +844,8 @@ namespace Potentials {
 		shieldProfile = (double*) sq_malloc(sizeof(double)*nPts);
 		maskProfile = (double*) sq_malloc(sizeof(double)*nPts);
 
-		// create mask profile, use sigmoid according to maskLength
-		vtls::masks::biSigmoid(nPts, minPos, maxPos, maskLength/dx, maskProfile);
+		// create mask profile, use 7th order smooth polynomial according to maskLength
+		vtls::masks::biPoly13(nPts, minPos, maxPos, maskLength/dx, maskProfile);
 
 		// build shield profile, decay to left for negative shieldLength, to right for positive shieldLength
 		if(isnan(shieldLength) || isinf(shieldLength) || shieldLength == 0.0)
