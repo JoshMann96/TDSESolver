@@ -37,11 +37,11 @@ public:
 	inline cyclic_int& operator=(T n) { val = n % max; return *this; };
 	inline cyclic_int operator-(T n) { 
 		if(n >= max) throw std::out_of_range("cyclic_int: Cannot subtract more than max value");
-		cyclic_int c(max); c.val = (val - n + max) % max; return c;
+		cyclic_int c(max); c.val = (val + max - n) % max; return c;
 	};
 	inline cyclic_int operator-(int n) {
 		if(n >= max) throw std::out_of_range("cyclic_int: Cannot subtract more than max value");
-		cyclic_int c(max); c.val = (val - n + max) % max; return c;
+		cyclic_int c(max); c.val = (val + max - n) % max; return c;
 	};
 	inline operator size_t() const { return val; };
 };

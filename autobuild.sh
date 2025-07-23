@@ -55,13 +55,16 @@ if [ "$PYTHON_BINDINGS" = TRUE ]
     then
     python3 -m venv .venv
     source .venv/bin/activate
+    CURRENT_PYTHON3=$(which python3)
+    echo "Using Python interpreter: $CURRENT_PYTHON3"
 
     python_version=$(python3 --version)
     version_numbers=(${python_version//./ })
     export PYTHON_SUBVERSION_NUMBER=${version_numbers[2]}
 
-    pip3 install --upgrade pip
-    pip3 install -r requirements.txt
+    python3 -m pip install --upgrade pip setuptools wheel
+    python3 -m pip install --upgrade pip
+    python3 -m pip install -r requirements.txt
     fi
 
 filtered_params=()
@@ -78,7 +81,7 @@ make -j 8
 if [ "$PYTHON_BINDINGS" = TRUE ]
     then
     cd lib/tdsepy
-    pip3 install .
+    python3 -m pip install .
 
     echo ""
     echo "BUILD COMPLETE"
