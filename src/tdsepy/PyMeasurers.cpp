@@ -171,7 +171,7 @@ void init_Measurers(py::module &m) {
     py::class_<Vfunct, Measurer, std::unique_ptr<Vfunct, py::nodelete>>(m, "Vfunct")
         .def(py::init([](SimulationManager* sim, size_t nx, size_t nt, size_t numSteps, std::string fol, int idx){
             return std::unique_ptr<Vfunct, py::nodelete>(new Vfunct(
-                idx, sim->getNumPoints(), nx, nt, numSteps, numSteps*sim->getDT(), sim->getX(), fol
+                idx, sim->getNumPoints(), nx, nt, numSteps, sim->getX(), fol
             ));
         }), R"V0G0N(
             Records potential, downsampling to nx spatial points and nt temporal points.
@@ -190,11 +190,64 @@ void init_Measurers(py::module &m) {
                 Directory to contain file.
             idx: int
                 Index of record, to prepend the output file. < 0 for no index, >= 0 for listed index. Defaults to -1.
+                Use this when measuring a particular potential within the simulation.
 
             Returns
             -------
             Vfunct)V0G0N",
             "sim"_a, "nx"_a, "nt"_a, "numSteps"_a, "fol"_a, "idx"_a=-1);
+    
+    py::class_<Rhofunct, Measurer, std::unique_ptr<Rhofunct, py::nodelete>>(m, "Rhofunct")
+        .def(py::init([](SimulationManager* sim, size_t nx, size_t nt, size_t numSteps, std::string fol){
+            return std::unique_ptr<Rhofunct, py::nodelete>(new Rhofunct(
+                sim->getNumPoints(), nx, nt, numSteps, sim->getX(), fol
+            ));
+        }), R"V0G0N(
+            Records density, downsampling to nx spatial points and nt temporal points.
+
+            Parameters
+            ----------
+            sim : Simulation
+                Associated simulation.
+            nx : uint
+                Number of spatial points to sample.
+            nt : uint
+                Number of temporal points to sample.
+            numSteps : uint
+                Number of time steps in the full calculation.
+            fol : str
+                Directory to contain file.
+
+            Returns
+            -------
+            Rhofunct)V0G0N",
+            "sim"_a, "nx"_a, "nt"_a, "numSteps"_a, "fol"_a);
+    
+    py::class_<Curfunct, Measurer, std::unique_ptr<Curfunct, py::nodelete>>(m, "Curfunct")
+        .def(py::init([](SimulationManager* sim, size_t nx, size_t nt, size_t numSteps, std::string fol){
+            return std::unique_ptr<Curfunct, py::nodelete>(new Curfunct(
+                sim->getNumPoints(), nx, nt, numSteps, sim->getX(), fol
+            ));
+        }), R"V0G0N(
+            Records current, downsampling to nx spatial points and nt temporal points.
+
+            Parameters
+            ----------
+            sim : Simulation
+                Associated simulation.
+            nx : uint
+                Number of spatial points to sample.
+            nt : uint
+                Number of temporal points to sample.
+            numSteps : uint
+                Number of time steps in the full calculation.
+            fol : str
+                Directory to contain file.
+
+            Returns
+            -------
+            Curfunct)V0G0N",
+            "sim"_a, "nx"_a, "nt"_a, "numSteps"_a, "fol"_a);
 
     py::class_<ExpectE, Measurer, std::unique_ptr<ExpectE, py::nodelete>>(m, "ExpectE")
         .def(py::init([](SimulationManager* sim, std::string fol){

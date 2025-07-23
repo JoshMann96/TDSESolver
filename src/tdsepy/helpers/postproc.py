@@ -7,7 +7,7 @@ from scipy import constants as cons
 from scipy.fft import fft
 from typing import Any
 
-def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=-11, vmax:float=-4, cmap="magma", ax = None, difference=False) -> tuple[plt.Figure, plt.Axes]|None:
+def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=-11, vmax:float=-4, cmap="magma", fig = None, ax = None, difference=False) -> tuple[plt.Figure, plt.Axes]|None:
     """Plots the 1-D collective electron density as a function of time for a selection of states.
     AXIS | VAR | UNIT
        x |  x  | nm
@@ -23,6 +23,7 @@ def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=-11, vmax:float=
         vmin (float, optional): Log-scale minimum value. Defaults to 20.
         vmax (float, optional): Log-scale maximum value. Defaults to 27.
         cmap (str, optional): Colormap. Defaults to "magma".
+        fig (Figure, optional): Matplotlib figure to plot on. Defaults to None.
         ax (axis, optional): Axis to plot on. Defaults to None (create own fig, ax and return).
         difference (bool, optional): Plot difference between from initial state. Defaults to False.
         
@@ -31,29 +32,43 @@ def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=-11, vmax:float=
             fig: Matplotlib figure.
             ax: Matplotlib axis.
     """
+    useOrbitalwiseDensity = (elecNum != -1 or type(elecNum) is list)
+    if elecNum == -1:
+        try:
+            rho, xs, ts, _ = getRhofunct(fol)
+        except FileNotFoundError:
+            useOrbitalwiseDensity = True
+            pass
     
-    dat, xs, ts, _ = getPsi2t(fol)
-    wghts, _ = getWghts(fol)
-    
-    #retain weight only for desired states
-    if elecNum != -1:
-        desWght = wghts[elecNum]
-        wghts *= 0
-        wghts[elecNum] = desWght
-    
-    fig = None
-    if ax is None:
+    if useOrbitalwiseDensity:
+        dat, xs, ts, _ = getPsi2t(fol)
+        wghts, _ = getWghts(fol)
+        
+        #retain weight only for desired states
+        if elecNum != -1:
+            desWght = wghts[elecNum]
+            wghts *= 0
+            wghts[elecNum] = desWght
+        
+        rho = np.tensordot(wghts, dat, (0,0))
+
+    if ax is None and fig is not None:
+        ax = fig.gca()
+    elif ax is None:
         fig, ax = plt.subplots()
     
     if difference:
-        im = ax.pcolormesh(xs*1e9, ts*1e15, (np.tensordot(wghts, dat, (0,0)) - np.tensordot(wghts, dat[:,0,:], (0,0)))*(cons.physical_constants["atomic unit of length"][0]**3), cmap=cmap, norm = colors.CenteredNorm())
+        im = ax.pcolormesh(xs*1e9, ts*1e15, (rho - rho[0,:])*(cons.physical_constants["atomic unit of length"][0]**3), cmap=cmap, norm = colors.CenteredNorm())
     else:
-        im = ax.pcolormesh(xs*1e9, ts*1e15, np.log10(np.tensordot(wghts, dat, (0,0))*(cons.physical_constants["atomic unit of length"][0]**3)), cmap=cmap, vmin=vmin, vmax=vmax)
-    
+        im = ax.pcolormesh(xs*1e9, ts*1e15, np.log10(rho*(cons.physical_constants["atomic unit of length"][0]**3)), cmap=cmap, vmin=vmin, vmax=vmax)
+
     ax.set_xlabel(r"$x$ (nm)")
     ax.set_ylabel(r"$t$ (fs)")
     ax.set_title("Electron Density")
-    cb = plt.colorbar(im, ax=ax)
+    if fig is not None:
+        cb = fig.colorbar(im, ax=ax)
+    else:
+        cb = plt.colorbar(im, ax=ax)
     if difference:
         cb.set_label(r"$\Delta n$ (1/a$_0^3$)")
     else:
@@ -64,7 +79,7 @@ def plot1DElectronDensity(fol:str, elecNum:int = -1, vmin:float=-11, vmax:float=
     else:
         return im
 
-def plotPotential(fol:str, ax = None, potIndex = -1) -> Any|tuple[Any, plt.Figure, plt.Axes]:
+def plotPotential(fol:str, fig = None, ax = None, potIndex = -1) -> Any|tuple[Any, plt.Figure, plt.Axes]:
     """Plots the potential as a function of time.
     AXIS | VAR | UNIT
        x |  x  | nm
@@ -73,6 +88,7 @@ def plotPotential(fol:str, ax = None, potIndex = -1) -> Any|tuple[Any, plt.Figur
 
     Args:
         fol (str): Folder containing data.
+        fig (Figure, optional): Matplotlib figure to plot on. Defaults to None.
         ax (axis, optional): Axis to plot on. Defaults to None (create own fig, ax and return).
         potIndex (int, optional): Index of potential file. Defaults to -1 (no index).
     
@@ -86,22 +102,66 @@ def plotPotential(fol:str, ax = None, potIndex = -1) -> Any|tuple[Any, plt.Figur
     """
     dat, xs, ts, _ = getVfunct(fol, potIndex)
     
-    fig = None
-    if ax is None:
+    if ax is None and fig is not None:
+        ax = fig.gca()
+    elif ax is None:
         fig, ax = plt.subplots()
         
     im = ax.pcolormesh(xs*1e9, ts*1e15, dat/cons.eV)
     ax.set_xlabel(r"$x$ (nm)")
     ax.set_ylabel(r"$t$ (fs)")
     ax.set_title("Potential")
-    cb = plt.colorbar(im, ax=ax)
+    if fig is not None:
+        cb = fig.colorbar(im, ax=ax)
+    else:
+        cb = plt.colorbar(im, ax=ax)
     cb.set_label(r"$V$ (eV)")
     
     if fig is not None:
         return im, fig, ax
     else:
         return im
+
+def plotCurrent(fol:str, fig = None, ax = None) -> Any|tuple[Any, plt.Figure, plt.Axes]:
+    """Plots the current as a function of time.
+    AXIS | VAR | UNIT
+       x |  x  | nm
+       y |  t  | fs
+       z |  J  | A/m^2
+
+    Args:
+        fol (str): Folder containing data.
+        ax (axis, optional): Axis to plot on. Defaults to None (create own fig, ax and return).
     
+    Returns:
+        if plot is None:
+            im: Matplotlib pcolormesh object.
+            fig: Matplotlib figure.
+            ax: Matplotlib axis.
+        else:
+            im: Matplotlib pcolormesh object.
+    """
+    dat, xs, ts, _ = getCurfunct(fol)
+    
+    if ax is None and fig is not None:
+        ax = fig.gca()
+    elif ax is None:
+        fig, ax = plt.subplots()
+        
+    im = ax.pcolormesh(xs*1e9, ts*1e15, dat*(cons.physical_constants["atomic unit of length"][0]**2 / cons.physical_constants["atomic unit of time"][0])),
+    ax.set_xlabel(r"$x$ (nm)")
+    ax.set_ylabel(r"$t$ (fs)")
+    ax.set_title("Current Density")
+    if fig is not None:
+        cb = fig.colorbar(im, ax=ax)
+    else:
+        cb = plt.colorbar(im, ax=ax)
+    cb.set_label(r"$J$ (a.u.)")
+    
+    if fig is not None:
+        return im, fig, ax
+    else:
+        return im
     
 def get1DStateFluxSpectrum(fol:str, vdNum:int = 0, minE:float = 0, maxE:float = 500*cons.e) -> tuple[np.ndarray, np.ndarray]:
     """Gets the bidirectional density flux spectrum with respect to the signed kinetic energy (sgn(E) = sgn(k)) for each state.

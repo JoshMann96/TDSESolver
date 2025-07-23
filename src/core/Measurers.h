@@ -821,23 +821,39 @@ namespace Measurers {
 		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
 	};
 
-	/// Records the potential, downsampling in both space and time. Output file is vfunct.dat.
-	class Vfunct :
-		public Measurer
-	{
+	class DownsampleMeasurer :
+		public Measurer {
 	private:
 		std::fstream fil;
-		
-		size_t nPts;
-		size_t nx;
-		double maxT;
-		size_t nt;
+		size_t nPts, nx, nt, numSteps;
 		size_t curIdx;
-		size_t* measSteps;
-		double * vs;
-		double * xs;
-		double * ts;
-		static constexpr const char* fname = "Vfunct";
+		double *data;
+		double *xs, *ts;
+		size_t *measSteps;
+	public:
+		/**
+		 * Constructor.
+		 * @param nPts The number of spatial points.
+		 * @param nx The number of spatial points to downsample to.
+		 * @param nt The number of time points to downsample to.
+		 * @param numSteps The number of time steps.
+		 * @param x (in) The array of spatial positions.
+		 * @param measIndex The index of the measurer.
+		 * @param fname The name of the file to write to.
+		 * @param fol The folder to write to.
+		 */
+		DownsampleMeasurer(size_t nPts, size_t nx, size_t nt, size_t numSteps, const double* x, int measIndex, const std::string fname, const std::string fol);
+
+		virtual ~DownsampleMeasurer();
+		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
+
+		virtual const double* dataSource(const double * rho, const double* cur, const double* v) = 0; // This function should return the data source for the measurement (rho, cur, or v) depending on implementation
+	};
+
+	/// Records the potential, downsampling in both space and time. Output file is Vfunct.dat.
+	class Vfunct :
+		public DownsampleMeasurer
+	{
 	public:
 		/**
 		 * Constructor.
@@ -846,14 +862,67 @@ namespace Measurers {
 		 * @param nx The number of spatial points to downsample to.
 		 * @param nt The number of time points to downsample to.
 		 * @param numSteps The number of time steps.
-		 * @param maxT The maximum time.
 		 * @param x (in) The array of spatial positions.
 		 * @param fol The folder to write to.
 		 */
-		Vfunct(int potNum, size_t nPts, size_t nx, size_t nt, size_t numSteps, double maxT, const double * x, const std::string fol);
+		Vfunct(int potNum, size_t nPts, size_t nx, size_t nt, size_t numSteps, const double * x, const std::string fol) :
+			DownsampleMeasurer(nPts, nx, nt, numSteps, x, 17, (potNum < 0 ? std::string("") : std::to_string(potNum)) + "Vfunct", fol) {}
 
-		~Vfunct();
-		MeasurerStatus measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t);
+		const double* dataSource(const double * rho, const double* cur, const double* v) override {
+			return v; // The potential is the data source for this measurer
+		}
+	};
+
+	/// Records the density and current, downsampling in both space and time. Output file is Rhofunct.dat.
+	class Rhofunct :
+		public DownsampleMeasurer
+	{
+	public:
+		/**
+		 * Constructor.
+		 * @param nPts The number of spatial points.
+		 * @param nx The number of spatial points to downsample to.
+		 * @param nt The number of time points to downsample to.
+		 * @param numSteps The number of time steps.
+		 * @param x (in) The array of spatial positions.
+		 * @param fol The folder to write to.
+		 */
+		Rhofunct(size_t nPts, size_t nx, size_t nt, size_t numSteps, const double * x, const std::string fol) :
+			DownsampleMeasurer(nPts, nx, nt, numSteps, x, 18, "Rhofunct", fol) {}
+
+		const double* dataSource(const double * rho, const double* cur, const double* v) override {
+			return rho; // The density is the data source for this measurer
+		}
+
+		bool needsDensity() const override {
+			return true; // This measurer needs the density to be calculated
+		}
+	};
+
+	/// Records the current, downsampling in both space and time. Output file is Curfunct.dat.
+	class Curfunct :
+		public DownsampleMeasurer
+	{
+	public:
+		/**
+		 * Constructor.
+		 * @param nPts The number of spatial points.
+		 * @param nx The number of spatial points to downsample to.
+		 * @param nt The number of time points to downsample to.
+		 * @param numSteps The number of time steps.
+		 * @param x (in) The array of spatial positions.
+		 * @param fol The folder to write to.
+		 */
+		Curfunct(size_t nPts, size_t nx, size_t nt, size_t numSteps, const double * x, const std::string fol) :
+			DownsampleMeasurer(nPts, nx, nt, numSteps, x, 19, "Curfunct", fol) {}
+
+		const double* dataSource(const double * rho, const double* cur, const double* v) override {
+			return cur; // The current is the data source for this measurer
+		}
+
+		bool needsCurrent() const override {
+			return true; // This measurer needs the current to be calculated
+		}
 	};
 
 	/// Records the total number of wavefunctions (electrons) in the simulation. Output file is nElec.dat.

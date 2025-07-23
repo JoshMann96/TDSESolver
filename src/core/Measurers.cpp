@@ -723,8 +723,9 @@ namespace Measurers {
 		return MeasurerStatus::SUCCESS;
 	}
 
-	Vfunct::Vfunct(int potNum, size_t nPts, size_t nx, size_t nt, size_t numSteps, double maxT, const double * x, const std::string fol) :
-		nPts(nPts), nx(nx), nt(nt), maxT(maxT), curIdx(0), Measurer(17, fol, (potNum < 0 ? std::string("") : std::to_string(potNum)) + fname)
+	
+	DownsampleMeasurer::DownsampleMeasurer(size_t nPts, size_t nx, size_t nt, size_t numSteps, const double* x, int measIndex, const std::string fname, const std::string fol) : 
+		nPts(nPts), nx(nx), nt(nt), numSteps(numSteps), Measurer(measIndex, fol, fname)
 	{
 		measSteps = (size_t*) sq_malloc(sizeof(size_t)*nt);
 		vtls::linspace(nt, (size_t)0, (size_t)numSteps, measSteps);
@@ -732,22 +733,20 @@ namespace Measurers {
 		xs = (double*) sq_malloc(sizeof(double)*nx);
 		vtls::linearInterpolateEdge(nPts, x, nx, xs);
 		ts = (double*) sq_malloc(sizeof(double)*nt);
-		vs = (double*) sq_malloc(sizeof(double)*nx);
-
-		vtls::linspace(nt, 0.0, maxT, ts);
+		data = (double*) sq_malloc(sizeof(double)*nx);
 
 		write(&nx, sizeof(size_t));
 		write(&nt, sizeof(size_t));
 	}
 
-	Vfunct::~Vfunct() {
+	DownsampleMeasurer::~DownsampleMeasurer() {
 		if(curIdx < nt){
-			std::cerr << "Warning: Vfunct measurer terminated before all measurements were made. Expected " << nt << " measurements, but only " << curIdx << " were made." << std::endl;
+			std::cerr << "Warning: DownsampleMeasurer terminated before all measurements were made. Expected " << nt << " measurements, but only " << curIdx << " were made." << std::endl;
 			std::cerr << "\t Padding with zeros." << std::endl;
 
-			std::fill_n(vs, nx, 0.0);
+			std::fill_n(data, nx, 0.0);
 			while(curIdx < nt){
-				write(vs, sizeof(double)*nx);
+				write(data, sizeof(double)*nx);
 				ts[curIdx] = 0.0;
 				curIdx++;
 			}
@@ -756,17 +755,19 @@ namespace Measurers {
 		write(xs, sizeof(double)*nx);
 		write(ts, sizeof(double)*nt);
 
-		sq_free(vs);
+		sq_free(data);
 		sq_free(xs);
 		sq_free(ts);
 		sq_free(measSteps);
 	}
 
-	MeasurerStatus Vfunct::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t) {
+	MeasurerStatus DownsampleMeasurer::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t) {
+		const double* source = dataSource(rho, cur, v);
 		while(step >= measSteps[curIdx]){
-			vtls::linearInterpolateEdge(nPts, v, nx, vs);
-			write(vs, sizeof(double)*nx);
-			
+			vtls::linearInterpolateEdge(nPts, source, nx, data);
+			write(data, sizeof(double)*nx);
+
+			ts[curIdx] = t;
 			curIdx++;
 			if(curIdx >= nt)
 				return MeasurerStatus::ALL_DONE;

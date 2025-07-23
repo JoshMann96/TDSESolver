@@ -107,19 +107,19 @@ def getPsi2t(fol:str) -> tuple[np.ndarray, np.ndarray, np.ndarray, int]:
             ts = np.linspace(0,dat.shape[-2] / nt, dat.shape[-2])
     return dat, xs, ts, typ
 
-def getVfunct(fol:str, index:int = -1) -> tuple[np.ndarray, np.ndarray, np.ndarray, int]:
+def getDownsampledData(fol:str, filename:str) -> tuple[np.ndarray, np.ndarray, np.ndarray, int]:
     """
-    Reads the potential vs time data from a Vfunct.dat file.
+    Reads downsampled data from a .dat file.
     Args:
-        fol (str): Folder where the Vfunct.dat file is located.
-        index (int, optional): Index of the potential to read. If -1, reads Vfunct.dat. Defaults to -1.
+        fol (str): Folder where the .dat file is located.
+        filename (str): Name of the file to read, without extension.
     Returns:
-        dat (np.ndarray): Potential data with shape (nt, nx).
+        dat (np.ndarray): Downsampled data with shape (nt, nx).
         xs (np.ndarray): Spatial grid points.
         ts (np.ndarray): Temporal grid points.
         typ (int): Index identifier of the measurer type.
     """
-    with open(os.path.join(fol, "Vfunct.dat" if index < 0 else f"{index:d}Vfunct.dat"), 'rb') as fil:
+    with open(os.path.join(fol, f"{filename}.dat"), 'rb') as fil:
         INT_SIZE = readData(fil, 'int32')
         typ = readData(fil, 'int32')
         nx = readData(fil, "int", INT_SIZE=INT_SIZE)
@@ -132,6 +132,46 @@ def getVfunct(fol:str, index:int = -1) -> tuple[np.ndarray, np.ndarray, np.ndarr
             xs = np.linspace(0,dat.shape[-1] / nx, dat.shape[-1])
             ts = np.linspace(0,dat.shape[-2] / nt, dat.shape[-2])
     return dat, xs, ts, typ
+
+def getVfunct(fol:str, index:int = -1) -> tuple[np.ndarray, np.ndarray, np.ndarray, int]:
+    """
+    Reads the potential vs time data from a Vfunct.dat file.
+    Args:
+        fol (str): Folder where the Vfunct.dat file is located.
+        index (int, optional): Index of the potential to read. If -1, reads Vfunct.dat. Defaults to -1.
+    Returns:
+        dat (np.ndarray): Potential data with shape (nt, nx).
+        xs (np.ndarray): Spatial grid points.
+        ts (np.ndarray): Temporal grid points.
+        typ (int): Index identifier of the measurer type.
+    """
+    return getDownsampledData(fol, f"{index:d}Vfunct" if index >= 0 else "Vfunct")
+
+def getRhofunct(fol:str) -> tuple[np.ndarray, np.ndarray, np.ndarray, int]:
+    """
+    Reads the particle density vs time data from a Rhofunct.dat file.
+    Args:
+        fol (str): Folder where the Rhofunct.dat file is located.
+    Returns:
+        dat (np.ndarray): Particle density data with shape (nt, nx).
+        xs (np.ndarray): Spatial grid points.
+        ts (np.ndarray): Temporal grid points.
+        typ (int): Index identifier of the measurer type.
+    """
+    return getDownsampledData(fol, "Rhofunct")
+
+def getCurfunct(fol:str) -> tuple[np.ndarray, np.ndarray, np.ndarray, int]:
+    """
+    Reads the current density vs time data from a Curfunct.dat file.
+    Args:
+        fol (str): Folder where the Curfunct.dat file is located.
+    Returns:
+        dat (np.ndarray): Current density data with shape (nt, nx).
+        xs (np.ndarray): Spatial grid points.
+        ts (np.ndarray): Temporal grid points.
+        typ (int): Index identifier of the measurer type.
+    """
+    return getDownsampledData(fol, "Curfunct")
 
 def getWghts(fol:str) -> tuple[np.ndarray, int]:
     """
