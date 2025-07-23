@@ -776,31 +776,7 @@ namespace Potentials {
 		Dependence getDependence() const {return Dependence::DENSITY_DEPENDENT;};
 	};
 		
-	class MixedGeometryHartreeGhostCharge :
-		public Potential
-	{
-	private:
-		bool includeVectorPotential, first=true;
-		const double *hRad = nullptr;
-		double mRTheta, dx, t0 = 0.0; // m/R, transverse inverse length scale
-		size_t nPts, refPoint, minPos, maxPos, gcPos;
-		int gcSide;
-		double ghostCharge = 0.0, oldVb, oldAbDiff;
-		double *vld, *vd, *vud, *vud2, *vrhs, *ald, *ad, *aud, *aud2, *arhs, *newV, *newA, *oldV, *oldA, *aTemp, *oldVTrans, *rho0 = nullptr, *j0 = nullptr, *drho, *dcur;
-		lapack_int *vipiv, *aipiv;
-
-		void calcPot(const double* rho, const double* cur, double* targ, double t, bool virt);
-	public:
-		MixedGeometryHartreeGhostCharge(size_t nPts, size_t minPos, size_t maxPos, int ghostCharge, double dx, double mRTheta, const double* hRad, const double* rho0, const double* j0, size_t refPoint, bool includeVectorPotential=true);
-
-		~MixedGeometryHartreeGhostCharge();
-		void getVBare(double t, double* targ) { std::fill_n(targ, nPts, 0.0); };
-		void getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ) { calcPot(rho, cur, targ, t, false); };
-		void getVVirtual(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ) { calcPot(rho, cur, targ, t, true); };
-		Dependence getDependence() const {return Dependence::DENSITY_DEPENDENT | Dependence::CURRENT_DEPENDENT;};
-	};
-		
-	class MixedGeometryHartreeShielded :
+	class MixedGeometryHartree :
 		public Potential
 	{
 	private:
@@ -809,7 +785,7 @@ namespace Potentials {
 		double mRTheta, dx, t0 = 0.0; // m/R, transverse inverse length scale
 		size_t nPts, refPoint, minPos, maxPos;
 		double oldVb, oldAbDiff;
-		double *vld, *vd, *vud, *vud2, *vrhs, *ald, *ad, *aud, *aud2, *arhs, *newV, *newA, *oldV, *oldA, *aTemp, *oldVTrans, *rho0 = nullptr, *j0 = nullptr, *drho, *dcur, *shieldProfile, *maskProfile;
+		double *vld, *vd, *vud, *vud2, *vrhs, *ald, *ad, *aud, *aud2, *arhs, *newV, *newA, *oldV, *oldA, *aTemp, *oldVTrans, *rho0 = nullptr, *j0 = nullptr, *drho, *dcur, *shieldProfile, *maskProfile, *maskGradient, *lostCharge, *lcTemp;
 		lapack_int *vipiv, *aipiv;
 		size_t diriEdge, neumEdge;
 		int neumSide;
@@ -817,13 +793,13 @@ namespace Potentials {
 
 		void calcPot(const double* rho, const double* cur, double* targ, double t, bool virt);
 	public:
-		MixedGeometryHartreeShielded(size_t nPts, size_t minPos, size_t maxPos, size_t surfPos, double maskLength, double shieldLength, int neumannSide, double dx, double mRTheta, const double* hRad, const double* rho0, const double* j0, size_t refPoint, bool includeVectorPotential=true);
+		MixedGeometryHartree(size_t nPts, size_t minPos, size_t maxPos, size_t surfPos, double maskLength, double shieldLength, int neumannSide, double dx, double mRTheta, const double* hRad, const double* rho0, const double* j0, size_t refPoint, bool includeVectorPotential=true);
 
-		~MixedGeometryHartreeShielded();
+		~MixedGeometryHartree();
 		void getVBare(double t, double* targ) { std::fill_n(targ, nPts, 0.0); };
 		void getV(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ) { calcPot(rho, cur, targ, t, false); };
 		void getVVirtual(const double* rho, const double* cur, const std::complex<double>* psi, double t, double* targ) { calcPot(rho, cur, targ, t, true); };
-		Dependence getDependence() const {return Dependence::DENSITY_DEPENDENT | (includeVectorPotential ? Dependence::CURRENT_DEPENDENT : Dependence::NONE);};
+		Dependence getDependence() const {return Dependence::DENSITY_DEPENDENT | Dependence::CURRENT_DEPENDENT;};
 	};
 
 	/// Types of local density approximation (LDA) functionals.

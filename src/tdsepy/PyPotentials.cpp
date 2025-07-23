@@ -393,56 +393,7 @@ void init_Potentials(py::module &m) {
             PlanarHartreePotential)V0G0N",
             "sim"_a, "refPoint"_a);
     
-    py::class_<MixedGeometryHartreeGhostCharge, Potential>(m, "MixedGeometryHartreeGhostChargePotential")
-        .def(py::init([](SimulationManager* sim, int ghostCharge, double posMin, double posMax, double mRTheta, Densities::Density* dens, double refPoint, bool includeVectorPotential){
-            
-            // get geometry profile from passed density calculator
-            std::unique_ptr<double*> hRad = std::make_unique<double*>(new double[sim->getNumPoints()]);
-            std::fill_n(*hRad, sim->getNumPoints(), 1.0);
-            dens->applyProfile(sim->getNumPoints(), sim->getNElec(), sim->getDX(), *hRad);
-            for(size_t i = 0; i < sim->getNumPoints(); i++)
-                (*hRad)[i] = 1.0 / (*hRad)[i]; // invert to get the geometry profile
-
-            return std::unique_ptr<MixedGeometryHartreeGhostCharge>(new MixedGeometryHartreeGhostCharge(
-                sim->getNumPoints(), sim->findXIdx(posMin), sim->findXIdx(posMax), ghostCharge, sim->getDX(), mRTheta, *hRad, 
-                sim->wavefunctionIsInitialized() ? sim->getRho() : nullptr,
-                sim->wavefunctionIsInitialized() ? sim->getCur() : nullptr, 
-                sim->findXIdx(refPoint), includeVectorPotential
-            ));
-        }), R"V0G0N(
-            Hartree potential assuming charge is distributed on a mixed geometry defined by the passed Density calculator.
-            Includes a "ghost charge" which leaves a ghost of charge that passes through the left (ghostCharge=-1) or right (+1) boundary to preserve total charge.
-            If the wavefunction has not yet been initialized, the calculated potential will be returned as-is (with reference to refPoint).
-            If the wavefunction has been initialized, then the potential will be returned as the change in potential with respect to the initial density.
-            The transverse lengthscale may be included via mRTheta. e.g., for radius of curvature R and angular mode 1, mRTheta = 1.0/R.
-            Includes a calculation of the vector potential followed by a gauge transformation to include it in the electrostatic potential. Applicable for high electron energies or quickly changing distributions.
-
-            Parameters
-            ----------
-            sim : Simulation
-                Associated simulation.
-            ghostCharge : int
-                -1 or 1. If -1, the ghost charge is on the left boundary, if 1, the ghost charge is on the right boundary.
-            posMin : float
-                Minimum position where density is included.
-            posMax : float
-                Maximum position where density is included.
-            mRTheta : float
-                Transverse lengthscale for the geometry profile. e.g., for radius of curvature R and angular mode 1, mRTheta = 1.0/R.
-            dens : Density
-                Density calculator to use for the geometry profile.
-            refPoint : float
-                Potential reference point.
-            includeVectorPotential : bool
-                If true, the vector potential is calculated and included in the electrostatic potential via a gauge transformation which preserves the electric field.
-                Defaults to true.
-            
-            Returns
-            -------
-            MixedGeometryHartreePotential)V0G0N",
-            "sim"_a, "ghostCharge"_a, "posMin"_a, "posMax"_a, "mRTheta"_a, "dens"_a, "refPoint"_a, "includeVectorPotential"_a = true);
-    
-    py::class_<MixedGeometryHartreeShielded, Potential>(m, "MixedGeometryHartreeShieldedPotential")
+    py::class_<MixedGeometryHartree, Potential>(m, "MixedGeometryHartreePotential")
         .def(py::init([](SimulationManager* sim, double posMin, double posMax, double surfPos, double maskLength, double shieldLength, int neumannSide, double mRTheta, Densities::Density* dens, double refPoint, bool includeVectorPotential){
             
             // get geometry profile from passed density calculator
@@ -452,7 +403,7 @@ void init_Potentials(py::module &m) {
             for(size_t i = 0; i < sim->getNumPoints(); i++)
                 (*hRad)[i] = 1.0 / (*hRad)[i]; // invert to get the geometry profile
 
-            return std::unique_ptr<MixedGeometryHartreeShielded>(new MixedGeometryHartreeShielded(
+            return std::unique_ptr<MixedGeometryHartree>(new MixedGeometryHartree(
                 sim->getNumPoints(), sim->findXIdx(posMin), sim->findXIdx(posMax), sim->findXIdx(surfPos), maskLength, shieldLength, neumannSide, sim->getDX(), mRTheta, *hRad, 
                 sim->wavefunctionIsInitialized() ? sim->getRho() : nullptr,
                 (sim->wavefunctionIsInitialized() && includeVectorPotential) ? sim->getCur() : nullptr, 
@@ -495,7 +446,7 @@ void init_Potentials(py::module &m) {
             
             Returns
             -------
-            MixedGeometryHartreeShieldedPotential)V0G0N",
+            MixedGeometryHartreePotential)V0G0N",
             "sim"_a, "posMin"_a, "posMax"_a, "surfPos"_a, "maskLength"_a, "shieldLength"_a, "neumannSide"_a, "mRTheta"_a, "dens"_a, "refPoint"_a, "includeVectorPotential"_a = true);
 
     py::class_<LDAFunctional, Potential>(m, "LDAFunctional")
