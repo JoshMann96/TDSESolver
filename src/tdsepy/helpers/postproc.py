@@ -148,7 +148,7 @@ def plotCurrent(fol:str, fig = None, ax = None) -> Any|tuple[Any, plt.Figure, pl
     elif ax is None:
         fig, ax = plt.subplots()
         
-    im = ax.pcolormesh(xs*1e9, ts*1e15, dat*(cons.physical_constants["atomic unit of length"][0]**2 / cons.physical_constants["atomic unit of time"][0])),
+    im = ax.pcolormesh(xs*1e9, ts*1e15, dat*(cons.physical_constants["atomic unit of length"][0]**2 / cons.physical_constants["atomic unit of time"][0]))
     ax.set_xlabel(r"$x$ (nm)")
     ax.set_ylabel(r"$t$ (fs)")
     ax.set_title("Current Density")
