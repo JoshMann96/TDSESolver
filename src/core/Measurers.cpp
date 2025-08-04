@@ -725,7 +725,7 @@ namespace Measurers {
 
 	
 	DownsampleMeasurer::DownsampleMeasurer(size_t nPts, size_t nx, size_t nt, size_t numSteps, const double* x, int measIndex, const std::string fname, const std::string fol) : 
-		nPts(nPts), nx(nx), nt(nt), numSteps(numSteps), Measurer(measIndex, fol, fname)
+		nPts(nPts), nx(nx), nt(nt), numSteps(numSteps), curIdx(0), Measurer(measIndex, fol, fname)
 	{
 		measSteps = (size_t*) sq_malloc(sizeof(size_t)*nt);
 		vtls::linspace(nt, (size_t)0, (size_t)numSteps, measSteps);
