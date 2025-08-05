@@ -159,7 +159,7 @@ void init_Kinetics(py::module &m) {
             "bc"_a, "side"_a);
 
     py::class_<KineticOperators::GenDisp_PSM_FreeElec, KineticOperators::KineticOperator_PSM>(m, "PSM_FreeElec")
-        .def(py::init([](SimulationManager* sim, double meff, uint fftwPolicy = FFTW_PATIENT){
+        .def(py::init([](SimulationManager* sim, double meff, uint fftwPolicy){
             return std::unique_ptr<KineticOperators::GenDisp_PSM_FreeElec>(new KineticOperators::GenDisp_PSM_FreeElec(sim->getNumPoints(), sim->getDX(), sim->getDT(), meff, fftwPolicy));
         }), R"V0G0N(
             Free electron dispersion relation with uniform effective mass using pseudospectral derivatives.

@@ -126,7 +126,7 @@ namespace KineticOperators {
 	}
 
 	void GenDisp_PSM::initializeAllFFT(size_t nElec) {
-		if (firstStepAll || this->plan_nElec != nElec) {
+		if (firstStepAll || plan_nElec != nElec) {
 			plan_nElec = nElec;
 			/*DftiCreateDescriptor(&dftiHandle, DFTI_DOUBLE, DFTI_COMPLEX, 1, nPts);
 			DftiSetValue(dftiHandle, DFTI_NUMBER_OF_TRANSFORMS, nElec);
@@ -215,7 +215,7 @@ namespace KineticOperators {
 	void GenDisp_PSM::executeAllFFTBackward(std::complex<double>* targ){
 		fftw_execute_dft(fftwAllBackward, reinterpret_cast<fftw_complex*>(targ), reinterpret_cast<fftw_complex*>(targ));
 #pragma omp parallel for
-		for(size_t i = 0; i < nElec; i++)
+		for(size_t i = 0; i < plan_nElec; i++)
 			vtls::scaMulArray(nPts, 1.0/nPts, &targ[i*nPts]);
 	}
 
