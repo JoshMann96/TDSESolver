@@ -52,33 +52,19 @@ namespace vtls {
 	}
 
 	//idxs should be initialized by user
-	void insertSort_idxs(size_t len, double *__restrict arr, size_t *__restrict idxs) {
+	void sort_idxs(size_t len, double *__restrict arr, size_t *__restrict idxs) {
+		IndexDoublePair* pairs = new IndexDoublePair[len];
+		for (size_t i = 0; i < len; i++)
+			pairs[i] = IndexDoublePair(i, arr[i]);
+		
+		std::sort(pairs, pairs+len);
 
-		size_t i = 1, j;
-		double tempA, tempI;
-
-		while (i < len) {
-
-			j = i;
-
-			while (j > 0 && arr[j - 1] > arr[j]) {
-
-				tempA = arr[j];
-				tempI = idxs[j];
-
-				arr[j] = arr[j - 1];
-				idxs[j] = idxs[j - 1];
-
-				arr[j - 1] = tempA;
-				idxs[j - 1] = tempI;
-
-				j--;
-
-			}
-
-			i++;
-
+		for (size_t i = 0; i < len; i++) {
+			arr[i] = pairs[i].val;
+			idxs[i] = pairs[i].idx;
 		}
+
+		delete[] pairs;
 	}
 
 	std::unique_ptr<double[]> getPolynomialSmoothBoundary(size_t len, size_t inner, size_t outer, double rate) {

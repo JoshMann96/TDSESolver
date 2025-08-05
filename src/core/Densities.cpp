@@ -99,7 +99,7 @@ namespace Densities {
 
 		for (size_t i = 0; i < nElec; i++)
 			idx[i] = i;
-		vtls::insertSort_idxs(nElec, sortedEnergies, idx);
+		vtls::sort_idxs(nElec, sortedEnergies, idx);
 
 		//represented energies are half-way between adjacent energies
 		//eg, if we have energy states E = 0, 1, 3, then the state of energy 1 represents energies 2 <- 0.5

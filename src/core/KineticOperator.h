@@ -202,7 +202,7 @@ namespace KineticOperators {
 		//DFTI_DESCRIPTOR_HANDLE dftiHandle = 0, dftiHandleMat = 0, dftiHandleKin = 0;
 		fftw_plan fftwAllForward=NULL, fftwAllBackward=NULL, fftwOneForward=NULL, fftwOneBackward=NULL;
 
-		size_t nPts, nElec;
+		size_t nPts, nElec, plan_nElec;
 		std::complex<double> *osKineticPhase = nullptr, * osPotentialPhase = nullptr, *opMat = nullptr;
 		std::complex<double>* osKineticEnergy = nullptr;
 		std::complex<double>* groupVel = nullptr, *psik=nullptr;

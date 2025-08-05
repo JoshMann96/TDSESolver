@@ -6,10 +6,23 @@
 #include <pybind11/pytypes.h>
 #include "PySimulation.h"
 
+enum fftw_policy {
+    patient = FFTW_ESTIMATE,
+    exhaustive = FFTW_EXHAUSTIVE,
+    estimate = FFTW_ESTIMATE,
+    measure = FFTW_MEASURE
+};
+
 void init_Kinetics(py::module &m) {
     py::enum_<FDBCs::BCSide>(m, "BCSide")
         .value("LEFT", FDBCs::BCSide::LEFT)
         .value("RIGHT", FDBCs::BCSide::RIGHT);
+
+    py::enum_<fftw_policy>(m, "FFTWPolicy")
+        .value("PATIENT", fftw_policy::patient)
+        .value("EXHAUSTIVE", fftw_policy::exhaustive)
+        .value("ESTIMATE", fftw_policy::estimate)
+        .value("MEASURE", fftw_policy::measure);
 
     py::class_<FDBCs::BoundaryCondition>(m, "BoundaryCondition");
 
@@ -146,8 +159,8 @@ void init_Kinetics(py::module &m) {
             "bc"_a, "side"_a);
 
     py::class_<KineticOperators::GenDisp_PSM_FreeElec, KineticOperators::KineticOperator_PSM>(m, "PSM_FreeElec")
-        .def(py::init([](SimulationManager* sim, double meff){
-            return std::unique_ptr<KineticOperators::GenDisp_PSM_FreeElec>(new KineticOperators::GenDisp_PSM_FreeElec(sim->getNumPoints(), sim->getDX(), sim->getDT(), meff));
+        .def(py::init([](SimulationManager* sim, double meff, uint fftwPolicy = FFTW_PATIENT){
+            return std::unique_ptr<KineticOperators::GenDisp_PSM_FreeElec>(new KineticOperators::GenDisp_PSM_FreeElec(sim->getNumPoints(), sim->getDX(), sim->getDT(), meff, fftwPolicy));
         }), R"V0G0N(
             Free electron dispersion relation with uniform effective mass using pseudospectral derivatives.
 
@@ -157,11 +170,17 @@ void init_Kinetics(py::module &m) {
                 Associated simulation.
             meff : float
                 Effective mass (1.0 = free electron).
+            fftwPolicy : FFTWPolicy
+                Policy for FFTW. Determines how the FFTW plans are created.
+                PATIENT: Use a patient plan, which is slower but more accurate.
+                EXHAUSTIVE: Use an exhaustive plan, which is the slowest but most accurate.
+                ESTIMATE: Use an estimate plan, which is fast but less accurate.
+                MEASURE: Use a measure plan, which is slower than ESTIMATE but more accurate.
 
             Returns
             -------
             PSM_FreeElec)V0G0N",
-            "sim"_a, "meff"_a);
+            "sim"_a, "meff"_a, "fftwPolicy"_a);
     
     py::class_<KineticOperators::CrankNicolson, KineticOperators::KineticOperator_FDM>(m, "CrankNicolson")
         .def(py::init([](SimulationManager* sim, double meff, FDBCs::BoundaryCondition* leftBC, FDBCs::BoundaryCondition* rightBC, bool useCuda){

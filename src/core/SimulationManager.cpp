@@ -208,12 +208,12 @@ void SimulationManager::findGroundState(size_t maxStates, double emax) {
 	calcWeights();
 	if(calcDensityForPot){
 		if(dens == nullptr)
-			throw std::runtime_error("SimulationManager::findEigenStates: Density not set!");
+			throw std::runtime_error("SimulationManager::findGroundState: Density not set!");
 		dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
 	}
 	if(calcCurrentForPot){
 		if(dens == nullptr)
-			throw std::runtime_error("SimulationManager::findEigenStates: Density not set!");
+			throw std::runtime_error("SimulationManager::findGroundState: Density not set!");
 		kin->calcRawCurrent(psis[index], weights, curs[index], nElec);
 		dens->applyProfile(nPts, nElec, dx, curs[index]);
 	}

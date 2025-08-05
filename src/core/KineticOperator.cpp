@@ -126,8 +126,8 @@ namespace KineticOperators {
 	}
 
 	void GenDisp_PSM::initializeAllFFT(size_t nElec) {
-		if (firstStepAll || GenDisp_PSM::nElec != nElec) {
-			GenDisp_PSM::nElec = nElec;
+		if (firstStepAll || this->plan_nElec != nElec) {
+			plan_nElec = nElec;
 			/*DftiCreateDescriptor(&dftiHandle, DFTI_DOUBLE, DFTI_COMPLEX, 1, nPts);
 			DftiSetValue(dftiHandle, DFTI_NUMBER_OF_TRANSFORMS, nElec);
 			DftiSetValue(dftiHandle, DFTI_INPUT_DISTANCE, nPts);
@@ -302,8 +302,10 @@ namespace KineticOperators {
 	void GenDisp_PSM::findGroundState(const double* v, size_t maxStates, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs) {
 		initializeAllFFT(maxStates);
 
-		double stop_thresh = 1e-6;
-		double conv_thresh = 1e-8;
+		double stop_thresh = 1e-8;
+		double conv_thresh = 1e-10;
+		size_t max_its = 1000;
+		size_t its = 0;
 
 		std::complex<double> *vecs = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nPts * maxStates);
 		vtls::Orthonormalizer<lapack_complex_double> ortho(nPts, maxStates);
@@ -327,12 +329,10 @@ namespace KineticOperators {
 		maxEnergy = std::max(vtls::max(maxStates, energies), std::abs(vtls::min(maxStates, energies)));
 		my_dt = dt;
 
-		plotting::GNUPlotter plt;
 		double* dens = (double*)sq_malloc(sizeof(double) * nPts);
 		double* temp = (double*)sq_malloc(sizeof(double) * nPts);
-		size_t plotcount = 0;
 
-		while(relconv > stop_thresh) {
+		while(relconv > stop_thresh && its < max_its) {
 			// calculate imaginary propagators
 			for (size_t i = 0; i < nPts; i++) {
 				vProp[i] = std::exp(- 0.5 * my_dt / PhysCon::hbar * v[i]);
@@ -377,28 +377,21 @@ namespace KineticOperators {
 			maxEnergy = std::max(vtls::max(maxStates, energies), std::abs(vtls::min(maxStates, energies)));
 			// calculate relative convergence
 			relconv = rms / maxEnergy;
-			// new time step
-			my_dt = std::min((100.0*std::log(relconv/conv_thresh) + 1.0) * dt, PhysCon::hbar/maxEnergy);
-			
-			// plotting
-			if (plotcount % 10 == 0) {
-				std::fill_n(dens, nPts, 0.0);
-				for(size_t i = 0; i < maxStates; i++){
-					vtls::normSqr(nPts, &vecs[i * nPts], temp);
-					vtls::addArrays(nPts, temp, dens);
-				}
-				for(size_t i = 0; i < nPts; i++)
-					dens[i] = std::log(dens[i]);
-				plt.update(nPts, 1, dens);
-			}
-			plotcount++;
+			// new time step (TODO: THIS NEEDS MORE WORK FOR BETTER/FASTER CONVERGENCE)
+			if (its < max_its / 2)
+				my_dt = std::min((100.0*std::log(relconv/conv_thresh) + 1.0) * dt, PhysCon::hbar/maxEnergy);
+			else
+				my_dt = dt;
 
-			std::cout << "Current relative RMS energy error: " << relconv << std::endl;
+			its++;
+
+			if (its % 50 == 0)
+				std::cout << "\tIteration " << its << "/" << max_its << "\n\t\tRMS <H> error: " << relconv << std::endl;
 		}
 
 		// order states by energy
 		size_t *idxs = (size_t*)sq_malloc(sizeof(size_t) * maxStates);
-		vtls::insertSort_idxs(maxStates, energies, idxs);
+		vtls::sort_idxs(maxStates, energies, idxs);
 		// find num eigenstates according to emax
 		*nEigs = maxStates;
 		for (size_t i = 0; i < maxStates; i++){
@@ -407,17 +400,18 @@ namespace KineticOperators {
 				break;
 			}
 		}
+
+		this->nElec = *nEigs;
 		if (*nEigs == maxStates)
 			std::cout << "Found " << *nEigs << " eigenstates with energy below " << emax << ", no states above." << std::endl;
 		else
 			std::cout << "Found " << *nEigs << " eigenstates with energy below " << emax << std::endl;
 
-		vtlsPrnt::printArray(*nEigs, energies);
-
 		// copy results
 		*states = (std::complex<double>*)allocator(sizeof(std::complex<double>) * nPts * (*nEigs));
+
 		for (size_t i = 0; i < *nEigs; i++)
-			vtls::copyArray(nPts, &vecs[idxs[i] * nPts], &(*states)[i * nPts]);
+			vtls::copyArray(nPts, &(vecs[idxs[i] * nPts]), &((*states)[i * nPts]));
 
 		sq_free(dens);
 		sq_free(temp);

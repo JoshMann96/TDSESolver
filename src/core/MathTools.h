@@ -987,13 +987,25 @@ namespace vtls {
 	 */
 	size_t findValue(size_t len, const double* __restrict arr, double val);
 
+	struct IndexDoublePair {
+		size_t idx;
+		double val;
+
+		IndexDoublePair(size_t i, double v) : idx(i), val(v) {}
+		IndexDoublePair() : idx(0), val(0.0) {}
+
+		bool operator<(const IndexDoublePair& other) const {
+			return val < other.val;
+		}
+	};
+
 	/**
-	 * Sorts the input array in ascending order using insertion sort.
+	 * Sorts the input array in ascending order and returns the indices of the sorted values.
 	 * @param len The length of the array.
 	 * @param arr (in/out) The array to sort, which will be modified to store the sorted values.
 	 * @param idxs (out) The target array to store the indices of the sorted values.
 	 */
-	void insertSort_idxs(size_t len, double* __restrict arr, size_t* __restrict idxs);
+	void sort_idxs(size_t len, double* __restrict arr, size_t* __restrict idxs);
 
 	/**
 	 * Finds the maximum value in an array.
