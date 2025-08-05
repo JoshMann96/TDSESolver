@@ -135,7 +135,7 @@ void SimulationManager::calcWeights(){
 	weightsCalculated = true;
 }
 
-void SimulationManager::findEigenStates(double emin, double emax) {
+int SimulationManager::findEigenStates(double emin, double emax) {
 	assert(wavefunctionInitialized == false);
 
 	normScheme = Densities::NormalizationScheme::NORMALIZED;
@@ -144,7 +144,9 @@ void SimulationManager::findEigenStates(double emin, double emax) {
 
 	std::complex<double>* states;
 
-	kin->findEigenStates(vs[index], emin, emax, &states, &sq_malloc, &nElec);
+	int res = kin->findEigenStates(vs[index], emin, emax, &states, &sq_malloc, &nElec);
+	if (res != 0)
+		return res;
 
 	freePsis();
 	psis[0] = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nElec);
@@ -175,6 +177,8 @@ void SimulationManager::findEigenStates(double emin, double emax) {
 		kin->calcRawCurrent(psis[index], weights, curs[index], nElec);
 		dens->applyProfile(nPts, nElec, dx, curs[index]);
 	}
+
+	return 0;
 }
 
 void SimulationManager::findGroundState(size_t maxStates, double emax) {

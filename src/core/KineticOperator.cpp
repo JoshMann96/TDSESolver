@@ -257,8 +257,9 @@ namespace KineticOperators {
 		}
 	}
 
-	void GenDisp_PSM::findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs) {
-		assert(nPts <= std::sqrt(LAPACK_INT_MAX));
+	int GenDisp_PSM::findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs) {
+		if (nPts > std::sqrt(LAPACK_INT_MAX))
+			return -1; // LAPACK_INT_MAX is the maximum value for lapack_int, which is used in LAPACK functions
 			
 		calcOpMat();
 		for (size_t i = 0; i < nPts; i++)
@@ -297,6 +298,8 @@ namespace KineticOperators {
 		sq_free(iwork3);
 		sq_free(eigs);
 		sq_free(ifail);
+
+		return 0;
 	}
 
 	void GenDisp_PSM::findGroundState(const double* v, size_t maxStates, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs) {
@@ -893,7 +896,7 @@ namespace KineticOperators {
 		}
 	}
 
-	void NonUnifGenDisp_PSM::findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs) {
+	int NonUnifGenDisp_PSM::findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs) {
 		calcOpMat();
 		for (size_t i = 0; i < nPts; i++)
 			opMat[(i * (i + 3)) / 2] += v[i];
@@ -934,6 +937,8 @@ namespace KineticOperators {
 			sq_free(eigs); eigs = nullptr;
 		if (ifail)
 			sq_free(ifail); ifail = nullptr;
+
+		return 0;
 	}
 
 	double NonUnifGenDisp_PSM::evaluateEnergy(const std::complex<double>* psi, const double* v) {
@@ -1231,7 +1236,7 @@ namespace KineticOperators {
 		//std::cout << "Time taken for LAPACK_zgtsvx: " << std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() << " us" << std::endl;
 	}
 
-	void CrankNicolson::findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs){
+	int CrankNicolson::findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs){
 		double* hd = (double*)sq_malloc(sizeof(double)*nPts);
 		double* hod= (double*)sq_malloc(sizeof(double)*(nPts-1));
 		lapack_int  nSplit;
@@ -1288,6 +1293,8 @@ namespace KineticOperators {
 		sq_free(eigs);
 		sq_free(statesTemp);
 		sq_free(ifail);
+
+		return 0;
 	}
 
 	void CrankNicolson::findInhomogeneousEigenStates(const double* v, const double* es, std::complex<double>* states, size_t nElec){

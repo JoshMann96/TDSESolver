@@ -247,7 +247,14 @@ void init_Simulation(py::module &m) {
             minE : float
                 Eigenvalue lower bound.
             maxE : float
-                Eigenvalue upper bound)V0G0N",
+                Eigenvalue upper bound
+                
+            Raises
+            ------
+            py::value_error
+                If the number of grid points exceeds LAPACK_INT_MAX, which is the maximum size for LAPACK integer types.
+                In this case, it is recommended to fall back on findGroundState.
+            )V0G0N",
             "minE"_a, "maxE"_a)
         .def("findGroundState", &PySimulation::findGroundState, R"V0G0N(
             Finds the ground state of the system using the given max energy and max number of states.

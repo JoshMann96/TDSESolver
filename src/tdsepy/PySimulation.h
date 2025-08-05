@@ -54,6 +54,12 @@ class PySimulation
         void addLeftAbsBdy(double rate, double width){addSpatialDamp(vtls::getPolynomialSmoothBoundary(getNumPoints(), findXIdx(getX()[0]+width), 0, rate*getDT()).get());}
         void addRightAbsBdy(double rate, double width){addSpatialDamp(vtls::getPolynomialSmoothBoundary(getNumPoints(), findXIdx(getX()[getNumPoints()-1]-width), getNumPoints()-1, rate*getDT()).get());}
 
+        void findEigenStates(double emin, double emax){
+            int res = SimulationManager::findEigenStates(emin, emax);
+            if (res != 0)
+                throw py::value_error("Failed to find eigenstates: nPts > LAPACK_INT_MAX.");
+        }
+
         void findInhomogeneousEigenStates(size_t nElec, const py::array_t<double, py::array::c_style | py::array::forcecast> energies){
             SimulationManager::findInhomogeneousEigenStates(nElec, energies.data());
         }

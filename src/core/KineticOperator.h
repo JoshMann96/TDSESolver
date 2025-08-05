@@ -50,7 +50,7 @@ namespace KineticOperators {
 		 * @param allocator (in) A pointer to the allocator to be used.
 		 * @param nEigs (out) The number of eigenstates found
 		 */
-		virtual void findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs) = 0;
+		virtual int findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs) = 0;
 	
 		/**
 		 * Find the ground state of the system using this kinetic operator's basis.
@@ -169,7 +169,7 @@ namespace KineticOperators {
 
 		/// @copydoc KineticOperator::findEigenStates
 		/// \a states will have \a nPts*nPts elements.
-		void findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs);
+		int findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs);
 
 		/// @copydoc KineticOperator::findGroundState
 		/// \a states will have \a nPts*(*nEigs) elements.
@@ -346,7 +346,7 @@ namespace KineticOperators {
 
 		/// @copydoc KineticOperator::findEigenStates
 		/// \a states will have \a nPts*nPts elements.
-		void findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs);
+		int findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs);
 
 		/// @copydoc KineticOperator::findGroundState
 		void findGroundState(const double* v, size_t maxStates, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs) {
@@ -682,7 +682,7 @@ namespace KineticOperators {
 		 * @note This uses the tridiagonal representation of the Hamiltonian associated with the three-point stencil of the laplacian.
 		 * Because it only finds eigenstates of the Hamiltonian within the closed system, it is not suitable for open (specifically, inhomogeneous) systems.
 		 */
-		void findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs);
+		int findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs);
 
 		/// @copydoc KineticOperator::findGroundState
 		void findGroundState(const double* v, size_t maxStates, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs){

@@ -399,7 +399,7 @@ public:
 	 * @param emax The maximum energy of the eigenstates to be found.
 	 * @warning If a pseudospectral method is used, the corresponding Hamiltonian is dense and the resulting calculation takes a lot of memory and time.
 	 */
-	void findEigenStates(double emin, double emax);
+	int findEigenStates(double emin, double emax);
 
 	/**
 	 * Finds the ground state of the system using the given max energy and max number of states.
