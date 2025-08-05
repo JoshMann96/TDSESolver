@@ -274,20 +274,21 @@ void SimulationManager::setPsi(const std::complex<double>* npsi, size_t nElec, D
 	assert(wavefunctionInitialized == false);
 	
 	normScheme = norm;
-
 	this->nElec = nElec;
 	freePsis();
 	for (size_t i = 0; i < HISTORY_LENGTH; i++) {
 		psis[i] = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nElec);
 		vtls::copyArray(nPts * nElec, npsi, psis[i]);
+		
+		if (normScheme == Densities::NormalizationScheme::NORMALIZED) {
+			for (size_t j = 0; j < nElec; j++)
+				vtls::normalizeSqrNorm(nPts, &psis[i][j * nPts], dx);
+		}
 	}
-
-	if(normScheme == Densities::NormalizationScheme::NORMALIZED)
-		for (size_t i = 0; i < nElec; i++)
-			vtls::normalizeSqrNorm(nPts, &psis[index][i*nPts], dx);
 
 	wavefunctionInitialized = true;
 
+	pot->getVBare(0.0, vs[index]);
 	calcWeights();
 
 	if(calcDensityForPot){
