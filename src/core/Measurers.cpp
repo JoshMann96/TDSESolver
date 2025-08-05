@@ -150,6 +150,8 @@ namespace Measurers {
 	}
 
 	MeasurerStatus Psi2t::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t) {
+		if(curIdx >= nt)
+			return MeasurerStatus::ALL_DONE;
 		while(step >= measSteps[curIdx]){
 			for(size_t i = 0; i < *nElec; i++){
 				vtls::normSqr(nPts, &psi[i*nPts], psi2b);
@@ -251,6 +253,7 @@ namespace Measurers {
 	ExpectA::~ExpectA() {
 		sq_free(scratch1);
 		sq_free(scratch2);
+		sq_free(mask);
 	}
 
 	MeasurerStatus ExpectA::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t) {
@@ -762,6 +765,8 @@ namespace Measurers {
 	}
 
 	MeasurerStatus DownsampleMeasurer::measure(size_t step, const std::complex<double> * psi, const double * rho, const double* cur, const double* v, double t) {
+		if(curIdx >= nt)
+			return MeasurerStatus::ALL_DONE;
 		const double* source = dataSource(rho, cur, v);
 		while(step >= measSteps[curIdx]){
 			vtls::linearInterpolateEdge(nPts, source, nx, data);

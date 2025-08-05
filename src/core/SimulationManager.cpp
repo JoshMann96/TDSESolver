@@ -486,6 +486,7 @@ void SimulationManager::runEPS_UW2TUW(size_t nSteps) {
 	progTracker.update(nSteps);
 
 	sq_free(tpsi);
+	sq_free(tcur);
 	sq_free(trho);
 	sq_free(tv);
 }
