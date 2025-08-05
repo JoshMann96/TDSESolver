@@ -177,6 +177,48 @@ void SimulationManager::findEigenStates(double emin, double emax) {
 	}
 }
 
+void SimulationManager::findGroundState(size_t maxStates, double emax) {
+	assert(wavefunctionInitialized == false);
+
+	normScheme = Densities::NormalizationScheme::NORMALIZED;
+	
+	pot->getVBare(0.0, vs[index]);
+
+	std::complex<double>* states;
+
+	kin->findGroundState(vs[index], maxStates, emax, &states, &sq_malloc, &nElec);
+
+	freePsis();
+	psis[0] = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nElec);
+
+	vtls::copyArray(nPts * nElec, states, psis[0]);
+
+	sq_free(states);
+
+	for (size_t i = 0; i < nElec; i++)
+		vtls::normalizeSqrNorm(nPts, &psis[0][i * nPts], dx);
+
+	for (size_t i = 1; i < HISTORY_LENGTH; i++) {
+		psis[i] = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nElec);
+		vtls::copyArray(nPts * nElec, psis[0], psis[i]);
+	}
+
+	wavefunctionInitialized = true;
+
+	calcWeights();
+	if(calcDensityForPot){
+		if(dens == nullptr)
+			throw std::runtime_error("SimulationManager::findEigenStates: Density not set!");
+		dens->calcRho(nPts, nElec, dx, weights, psis[index], rhos[index]);
+	}
+	if(calcCurrentForPot){
+		if(dens == nullptr)
+			throw std::runtime_error("SimulationManager::findEigenStates: Density not set!");
+		kin->calcRawCurrent(psis[index], weights, curs[index], nElec);
+		dens->applyProfile(nPts, nElec, dx, curs[index]);
+	}
+}
+
 void SimulationManager::findInhomogeneousEigenStates(size_t nElec, const double* energies){
 	assert(wavefunctionInitialized == false);
 

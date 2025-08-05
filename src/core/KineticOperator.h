@@ -53,6 +53,18 @@ namespace KineticOperators {
 		virtual void findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs) = 0;
 	
 		/**
+		 * Find the ground state of the system using this kinetic operator's basis.
+		 * Final states are orthonormal and ordered by energy.
+		 * @param v (in) The potential to use for the calculation, \a nPts elements
+		 * @param maxStates The maximum number of states to find
+		 * @param emax The maximum energy to search for eigenstates
+		 * @param states (out) The eigenstates found. Memory is allocated by the function and must be freed by the user. See implementation notes for element count.
+		 * @param allocator (in) A pointer to the allocator to be used.
+		 * @param nEigs (out) The number of eigenstates found
+		 */
+		virtual void findGroundState(const double* v, size_t maxStates, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs) = 0;
+
+		/**
 		 * Calculate the raw probability current for a wavefunction.
 		 * @param psi (in) The wavefunction for which to calculate the current, \a nPts*nElec elements
 		 * @param weights (in) The weights to use for the calculation, \a nEigs elements
@@ -159,6 +171,12 @@ namespace KineticOperators {
 		/// \a states will have \a nPts*nPts elements.
 		void findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs);
 
+		/// @copydoc KineticOperator::findGroundState
+		/// \a states will have \a nPts*(*nEigs) elements.
+		/// @details This implementation uses imaginary time propagation interspersed with orthonormalization until convergence is reached.
+		/// 	Convergence is defined as the RMS expectation value of the energy, sqrt((<\psi|H^2|\psi> - <\psi|H|\psi>^2)/N) / max |<\psi|H|\psi>|, being less than a threshold.
+		void findGroundState(const double* v, size_t maxStates, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs);
+
 		/// @copydoc KineticOperator::evaluateEnergy
 		double evaluateEnergy(const std::complex<double>* psi, const double* v);
 
@@ -177,6 +195,8 @@ namespace KineticOperators {
 				groupVel[i] = (kinIn[i + 1] - kinIn[i - 1]) / (2.0 * dp);
 			groupVel[nPts - 1] = (kinIn[0] - kinIn[nPts - 2]) / (2.0 * dp);
 		}
+
+		double evaluateEnergySquared(const std::complex<double>* psi, const double* v);
 	private:
 		bool firstStepAll = true, firstStepOne = true, needMat = true;
 		//DFTI_DESCRIPTOR_HANDLE dftiHandle = 0, dftiHandleMat = 0, dftiHandleKin = 0;
@@ -186,7 +206,7 @@ namespace KineticOperators {
 		std::complex<double> *osKineticPhase = nullptr, * osPotentialPhase = nullptr, *opMat = nullptr;
 		std::complex<double>* osKineticEnergy = nullptr;
 		std::complex<double>* groupVel = nullptr, *psik=nullptr;
-		std::complex<double> *temp1 = nullptr, *temp2 = nullptr;
+		std::complex<double> *temp1 = nullptr, *temp2 = nullptr, *temp3 = nullptr;
 		double dx, dt;
 
 		/// Allocates and calculates the full kinetic part of the Hamiltonian (a dense matrix).
@@ -327,6 +347,11 @@ namespace KineticOperators {
 		/// @copydoc KineticOperator::findEigenStates
 		/// \a states will have \a nPts*nPts elements.
 		void findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs);
+
+		/// @copydoc KineticOperator::findGroundState
+		void findGroundState(const double* v, size_t maxStates, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs) {
+			throw std::runtime_error("NonUnifGenDisp_PSM does not support finding ground states yet.");
+		}
 
 		/// @copydoc KineticOperator::evaluateEnergy
 		double evaluateEnergy(const std::complex<double>* psi, const double* v);
@@ -658,6 +683,11 @@ namespace KineticOperators {
 		 * Because it only finds eigenstates of the Hamiltonian within the closed system, it is not suitable for open (specifically, inhomogeneous) systems.
 		 */
 		void findEigenStates(const double* v, double emin, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs);
+
+		/// @copydoc KineticOperator::findGroundState
+		void findGroundState(const double* v, size_t maxStates, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs){
+			throw std::runtime_error("CrankNicolson does not support finding ground states yet. Consider using findEigenStates or findInhomogeneousEigenStates instead.");
+		}
 
 		/// @copydoc KineticOperator_FDM::findInhomogeneousEigenStates
         void findInhomogeneousEigenStates(const double *v, const double *es, std::complex<double> *states, size_t nElec);

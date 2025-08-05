@@ -249,6 +249,17 @@ void init_Simulation(py::module &m) {
             maxE : float
                 Eigenvalue upper bound)V0G0N",
             "minE"_a, "maxE"_a)
+        .def("findGroundState", &PySimulation::findGroundState, R"V0G0N(
+            Finds the ground state of the system using the given max energy and max number of states.
+            Nonlinear potentials assume a neutral charge distribution -- this function does not find a self-consistent solution.
+
+            Parameters
+            ----------
+            maxStates : uint
+                Maximum number of states to be found.
+            emax : float
+                Maximum energy of the eigenstates to be found.)V0G0N",
+            "maxStates"_a, "emax"_a)
         .def("findInhomogeneousEigenStates", &PySimulation::findInhomogeneousEigenStates, R"V0G0N(
             Finds eigenstates of current system, with inhomogeneous boundary conditions.
             This is only intended to work for finite difference schemes with supported boundary conditions.

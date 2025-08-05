@@ -22,6 +22,8 @@ namespace KineticOperators {
 			sq_free(temp1);
 		if (temp2)
 			sq_free(temp2);
+		if (temp3)
+			sq_free(temp3);
 		if (groupVel)
 			sq_free(groupVel);
 		if (psik)
@@ -297,6 +299,137 @@ namespace KineticOperators {
 		sq_free(ifail);
 	}
 
+	void GenDisp_PSM::findGroundState(const double* v, size_t maxStates, double emax, std::complex<double>** states, void* (*allocator)(size_t), size_t* nEigs) {
+		initializeAllFFT(maxStates);
+
+		double stop_thresh = 1e-6;
+		double conv_thresh = 1e-8;
+
+		std::complex<double> *vecs = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nPts * maxStates);
+		vtls::Orthonormalizer<lapack_complex_double> ortho(nPts, maxStates);
+
+		double *energies = (double*)sq_malloc(sizeof(double) * maxStates);
+		double *energysqr = (double*)sq_malloc(sizeof(double) * maxStates);
+		double *vProp = (double*)sq_malloc(sizeof(double) * nPts);
+		double *kProp = (double*)sq_malloc(sizeof(double) * nPts);
+		double my_dt, maxEnergy;
+		double relconv = 10.0*stop_thresh;
+
+		// fill with noise in reciprocal space
+		for (size_t i = 0; i < nPts * maxStates; i++)
+			vecs[i] = (std::rand()/(double)RAND_MAX)-0.5;
+		executeAllFFTBackward(vecs);
+		ortho.orthonormalize(reinterpret_cast<lapack_complex_double*>(vecs));
+		for (size_t i = 0; i < maxStates; i++)
+			energies[i] = evaluateEnergy(&vecs[i*nPts], v);
+
+		// get max energy, calculate dt
+		maxEnergy = std::max(vtls::max(maxStates, energies), std::abs(vtls::min(maxStates, energies)));
+		my_dt = dt;
+
+		plotting::GNUPlotter plt;
+		double* dens = (double*)sq_malloc(sizeof(double) * nPts);
+		double* temp = (double*)sq_malloc(sizeof(double) * nPts);
+		size_t plotcount = 0;
+
+		while(relconv > stop_thresh) {
+			// calculate imaginary propagators
+			for (size_t i = 0; i < nPts; i++) {
+				vProp[i] = std::exp(- 0.5 * my_dt / PhysCon::hbar * v[i]);
+				kProp[i] = std::exp(- my_dt / PhysCon::hbar * osKineticEnergy[i].real());
+			}
+
+			// propagate 10 times
+			for (size_t j = 0; j < 10; j++) {
+				// 1/2 potential
+		#pragma omp parallel for
+				for (size_t i = 0; i < maxStates; i++)
+					vtls::seqMulArrays(nPts, vProp, &vecs[i * nPts]);
+				
+				// kinetic
+				executeAllFFTForward(vecs);
+		#pragma omp parallel for
+				for (size_t i = 0; i < maxStates; i++)
+					vtls::seqMulArrays(nPts, kProp, &vecs[i * nPts]);
+				executeAllFFTBackward(vecs);
+
+				// 1/2 potential
+		#pragma omp parallel for
+				for (size_t i = 0; i < maxStates; i++)
+					vtls::seqMulArrays(nPts, vProp, &vecs[i * nPts]);
+			}
+
+			// orthonormalize
+			ortho.orthonormalize(reinterpret_cast<lapack_complex_double*>(vecs));
+
+			// calculate new energies
+			for (size_t i = 0; i < maxStates; i++)
+				energies[i] = evaluateEnergy(&vecs[i*nPts], v);
+			for (size_t i = 0; i < maxStates; i++)
+				energysqr[i] = evaluateEnergySquared(&vecs[i*nPts], v);
+			// RMS
+			double rms = 0.0;
+			for (size_t i = 0; i < maxStates; i++)
+				rms += std::abs(energysqr[i] - energies[i] * energies[i]);
+			rms = std::sqrt(rms / maxStates);
+
+			// get max energy, calculate dt
+			maxEnergy = std::max(vtls::max(maxStates, energies), std::abs(vtls::min(maxStates, energies)));
+			// calculate relative convergence
+			relconv = rms / maxEnergy;
+			// new time step
+			my_dt = std::min((100.0*std::log(relconv/conv_thresh) + 1.0) * dt, PhysCon::hbar/maxEnergy);
+			
+			// plotting
+			if (plotcount % 10 == 0) {
+				std::fill_n(dens, nPts, 0.0);
+				for(size_t i = 0; i < maxStates; i++){
+					vtls::normSqr(nPts, &vecs[i * nPts], temp);
+					vtls::addArrays(nPts, temp, dens);
+				}
+				for(size_t i = 0; i < nPts; i++)
+					dens[i] = std::log(dens[i]);
+				plt.update(nPts, 1, dens);
+			}
+			plotcount++;
+
+			std::cout << "Current relative RMS energy error: " << relconv << std::endl;
+		}
+
+		// order states by energy
+		size_t *idxs = (size_t*)sq_malloc(sizeof(size_t) * maxStates);
+		vtls::insertSort_idxs(maxStates, energies, idxs);
+		// find num eigenstates according to emax
+		*nEigs = maxStates;
+		for (size_t i = 0; i < maxStates; i++){
+			if (energies[i] > emax) {
+				*nEigs = i;
+				break;
+			}
+		}
+		if (*nEigs == maxStates)
+			std::cout << "Found " << *nEigs << " eigenstates with energy below " << emax << ", no states above." << std::endl;
+		else
+			std::cout << "Found " << *nEigs << " eigenstates with energy below " << emax << std::endl;
+
+		vtlsPrnt::printArray(*nEigs, energies);
+
+		// copy results
+		*states = (std::complex<double>*)allocator(sizeof(std::complex<double>) * nPts * (*nEigs));
+		for (size_t i = 0; i < *nEigs; i++)
+			vtls::copyArray(nPts, &vecs[idxs[i] * nPts], &(*states)[i * nPts]);
+
+		sq_free(dens);
+		sq_free(temp);
+
+		sq_free(idxs);
+		sq_free(vecs);
+		sq_free(energies);
+		sq_free(energysqr);
+		sq_free(vProp);
+		sq_free(kProp);
+	}
+
 	double GenDisp_PSM::evaluateEnergy(const std::complex<double>* psi, const double* v) {
 		initializeOneFFT();
 
@@ -318,6 +451,43 @@ namespace KineticOperators {
 		// potential energy
 		vtls::seqMulArrays(nPts, v, psi, temp1);
 		res += std::real(vtlsInt::conjugateInnerProduct(nPts, psi, temp1, 1.0) / vtls::getNorm(nPts, psi, 1.0));
+
+		return res;
+	}
+
+	double GenDisp_PSM::evaluateEnergySquared(const std::complex<double>* psi, const double* v) {
+		initializeOneFFT();
+
+		if(!temp1)
+			temp1 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nPts);
+		if(!temp2)
+			temp2 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nPts);
+		if(!temp3)
+			temp3 = (std::complex<double>*)sq_malloc(sizeof(std::complex<double>) * nPts);
+
+		// calculate \psi* (T+V)(T+V) \psi
+		// T \psi
+		vtls::copyArray(nPts, psi, temp1);
+		executeOneFFTForward(temp1);
+		vtls::seqMulArrays(nPts, osKineticEnergy, temp1);
+		executeOneFFTBackward(temp1);
+		// V \psi
+		vtls::seqMulArrays(nPts, v, psi, temp2);
+		vtls::addArrays(nPts, temp2, temp1);
+
+		// temp1 = (T+V)\psi
+		// T (T+V) \psi
+		vtls::copyArray(nPts, temp1, temp2);
+		executeOneFFTForward(temp2);
+		vtls::seqMulArrays(nPts, osKineticEnergy, temp2);
+		executeOneFFTBackward(temp2);
+		// V (T+V) \psi
+		vtls::seqMulArrays(nPts, v, temp1, temp3);
+		vtls::addArrays(nPts, temp3, temp2);
+
+		// temp2 = (T+V)(T+V) \psi
+
+		double res = std::real(vtlsInt::conjugateInnerProduct(nPts, psi, temp2, 1.0) / vtls::getNorm(nPts, psi, 1.0));
 
 		return res;
 	}

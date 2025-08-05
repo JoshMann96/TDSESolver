@@ -402,6 +402,14 @@ public:
 	void findEigenStates(double emin, double emax);
 
 	/**
+	 * Finds the ground state of the system using the given max energy and max number of states.
+	 * Nonlinear potentials assume a neutral charge distribution -- this function does not find a self-consistent solution.
+	 * @param maxStates The maximum number of states to be found.
+	 * @param emax The maximum energy of the eigenstates to be found.
+	 */
+	void findGroundState(size_t maxStates, double emax);
+
+	/**
 	 * Finds the eigenstates of the system assuming inhomogeneous boundary conditions are in place.
 	 * This is only intended to work for finite difference schemes with supported boundary conditions.
 	 * @param nElec The number of electrons in the system.

@@ -226,6 +226,22 @@ void LAPACK_dorgqr(
     double* work, lapack_int const* lwork,
     lapack_int* info );
 
+#define LAPACK_zgeqrf LAPACK_GLOBAL(zgeqrf,ZGEQRF)
+void LAPACK_zgeqrf(
+    lapack_int const* m, lapack_int const* n,
+    lapack_complex_double* A, lapack_int const* lda,
+    lapack_complex_double const* tau,
+    lapack_complex_double* work, lapack_int const* lwork,
+    lapack_int* info );
+
+#define LAPACK_zungqr LAPACK_GLOBAL(zungqr,ZUNGQR)
+void LAPACK_zungqr(
+    lapack_int const* m, lapack_int const* n, lapack_int const* k,
+    lapack_complex_double* A, lapack_int const* lda,
+    lapack_complex_double const* tau,
+    lapack_complex_double* work, lapack_int const* lwork,
+    lapack_int* info );
+
 #define LAPACK_dgetrf LAPACK_GLOBAL(dgetrf,DGETRF)
 void LAPACK_dgetrf(
     lapack_int const* m, lapack_int const* n,

@@ -54,10 +54,6 @@ class PySimulation
         void addLeftAbsBdy(double rate, double width){addSpatialDamp(vtls::getPolynomialSmoothBoundary(getNumPoints(), findXIdx(getX()[0]+width), 0, rate*getDT()).get());}
         void addRightAbsBdy(double rate, double width){addSpatialDamp(vtls::getPolynomialSmoothBoundary(getNumPoints(), findXIdx(getX()[getNumPoints()-1]-width), getNumPoints()-1, rate*getDT()).get());}
 
-        void findEigenStates(double minE, double maxE){
-            SimulationManager::findEigenStates(minE, maxE);
-        }
-
         void findInhomogeneousEigenStates(size_t nElec, const py::array_t<double, py::array::c_style | py::array::forcecast> energies){
             SimulationManager::findInhomogeneousEigenStates(nElec, energies.data());
         }

@@ -1090,13 +1090,14 @@ namespace vtls {
 	*/
 	std::unique_ptr<double[]> getPolynomialSmoothBoundary(size_t len, size_t inner, size_t outer, double rate);
 
+	template <class T>
 	struct Orthonormalizer {
 	private:
-		double *tau = nullptr, *work = nullptr;
+		T *tau = nullptr, *work = nullptr;
 		lapack_int nPts, nVecs, lwork;
 
 		/**
-		 * Orthonormalizes a set of vectors using QR factorization via Lapack's dgeqrf and dorgqr routines.
+		 * Orthonormalizes a set of vectors using QR factorization via Lapack's ?geqrf and ?(or/un)gqr routines.
 		 * @param nPts The length of each vector.
 		 * @param nVecs The number of vectors to orthonormalize.
 		 * @param vecs (in/out) The array of vectors to orthonormalize. The vectors are stored in a 1D array in row-major order.
@@ -1104,14 +1105,14 @@ namespace vtls {
 		 * @param work (out) The workspace array for the QR factorization.
 		 * @param lwork The length of the workspace array.
 		 */
-		static void orthonormalize(lapack_int nPts, lapack_int nVecs, double* __restrict vecs, double* __restrict tau, double* __restrict work, lapack_int lwork);
+		static void orthonormalize(lapack_int nPts, lapack_int nVecs, T* __restrict vecs, T* __restrict tau, T* __restrict work, lapack_int lwork);
 		
 		/**
 		 * Calculates the optimal size of the workspace array for the QR factorization.
 		 * @param nPts The length of each vector.
 		 * @param nVecs The number of vectors to orthonormalize.
 		 * @param lwork (out) The length of the workspace array.
-		 * @note This function uses Lapack's dgeqrf to determine the optimal size of the workspace array.
+		 * @note This function uses Lapack's ?geqrf to determine the optimal size of the workspace array.
 		 */
 		static void getlwork(lapack_int nPts, lapack_int nVecs, lapack_int* lwork);
 	public:
@@ -1124,19 +1125,19 @@ namespace vtls {
 		~Orthonormalizer();
 
 		/**
-		 * Orthonormalizes a set of vectors using QR factorization via Lapack's dgeqrf and dorgqr routines.
+		 * Orthonormalizes a set of vectors using QR factorization via Lapack's ?geqrf and ?(or/un)gqr routines.
 		 * @param nPts The length of each vector.
 		 * @param nVecs The number of vectors to orthonormalize.
 		 * @param vecs (in/out) The array of vectors to orthonormalize. The vectors are stored in a 1D array in row-major order.
 		 * @note This function allocates then frees working memory for the QR factorization.
 		 */
-		static void orthonormalize(size_t nPts, size_t nVecs, double* __restrict vecs);
+		static void orthonormalize(size_t nPts, size_t nVecs, T* __restrict vecs);
 
 		/**
-		 * Orthonormalizes a set of vectors using QR factorization via Lapack's dgeqrf and dorgqr routines.
+		 * Orthonormalizes a set of vectors using QR factorization via Lapack's ?geqrf and ?(or/un)gqr routines.
 		 * @param vecs (in/out) The array of vectors to orthonormalize. The vectors are stored in a 1D array in row-major order.
 		 */
-		void orthonormalize (double* __restrict vecs) {
+		void orthonormalize (T* __restrict vecs) {
 			orthonormalize(nPts, nVecs, vecs, tau, work, lwork);
 		};
 	};
