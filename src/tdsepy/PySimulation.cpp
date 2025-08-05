@@ -11,6 +11,10 @@ void init_Simulation(py::module &m) {
         DO NOT USE DIRECTLY. C++ class for managing TDSE simulations.
     )V0G0N");
 
+    py::enum_<Densities::NormalizationScheme>(m, "NormalizationScheme")
+        .value("UNNORMALIZED", Densities::UNNORMALIZED)
+        .value("NORMALIZED", Densities::NORMALIZED);
+
     py::class_<PySimulation, SimulationManager>(m, "Simulation")
         .def(py::init<double, double, double, double, const std::optional<std::function<void(double)>>, std::optional<size_t>, std::optional<std::string>>(), R"V0G0N(
             Manages TDSE simulations.
@@ -195,13 +199,18 @@ void init_Simulation(py::module &m) {
         .def("setPsi", &PySimulation::setPsi, R"V0G0N(
             Sets the wavefunction for the simulation.
             The wavefunction must be of size nPts, where nPts is the number of grid points.
-            It is assumed that there is only one state.
 
             Parameters
             ----------
             psi : complex array
-                Wavefunction to be set.)V0G0N",
-            "psi"_a)
+                Wavefunction to be set.
+            nElec : uint
+                Number of electrons in the system. Default is 1.   
+            norm : NormalizationScheme
+                Normalization scheme to use for the wavefunction. Default is UNNORMALIZED.
+                If NORMALIZED, the wavefunction will be normalized such that the integral of |psi|^2 over the entire simulation space equals 1.
+                If UNNORMALIZED, the wavefunction is unnormalized, typically for inhomogeneous/open systems.)V0G0N",
+            "psi"_a, "nElec"_a = 1, "norm"_a = Densities::UNNORMALIZED)
         .def("addLeftAbsBdy", &PySimulation::addLeftAbsBdy, R"V0G0N(
             Adds absorptive boundary to left side of simulation.
             Decay is applied by multiplying states near boundary by a number of magnitude less than one.

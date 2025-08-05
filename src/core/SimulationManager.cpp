@@ -228,20 +228,21 @@ void SimulationManager::findInhomogeneousEigenStates(size_t nElec, const double*
 	normScheme = Densities::NormalizationScheme::UNNORMALIZED;
 }
 
-void SimulationManager::setPsi(const std::complex<double>* npsi, Densities::NormalizationScheme norm) {
+void SimulationManager::setPsi(const std::complex<double>* npsi, size_t nElec, Densities::NormalizationScheme norm) {
 	assert(wavefunctionInitialized == false);
 	
 	normScheme = norm;
 
-	nElec = 1;
+	this->nElec = nElec;
 	freePsis();
 	for (size_t i = 0; i < HISTORY_LENGTH; i++) {
-		psis[i] = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts);
-		vtls::copyArray(nPts, npsi, psis[i]);
+		psis[i] = (std::complex<double>*) sq_malloc(sizeof(std::complex<double>) * nPts * nElec);
+		vtls::copyArray(nPts * nElec, npsi, psis[i]);
 	}
 
 	if(normScheme == Densities::NormalizationScheme::NORMALIZED)
-		vtls::normalizeSqrNorm(nPts, psis[index], dx);
+		for (size_t i = 0; i < nElec; i++)
+			vtls::normalizeSqrNorm(nPts, &psis[index][i*nPts], dx);
 
 	wavefunctionInitialized = true;
 

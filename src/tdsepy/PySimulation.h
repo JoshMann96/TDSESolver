@@ -88,11 +88,11 @@ class PySimulation
             }
         }
 
-        void setPsi(const py::array_t<std::complex<double>, py::array::c_style | py::array::forcecast> &psi){
-            if (psi.size() != getNumPoints()) {
+        void setPsi(const py::array_t<std::complex<double>, py::array::c_style | py::array::forcecast> &psi, size_t nElec = 1, Densities::NormalizationScheme norm = Densities::UNNORMALIZED) {
+            if (psi.size() != getNumPoints() * nElec) {
                 throw py::value_error("Wavefunction size does not match the number of grid points and states.");
             }
-            SimulationManager::setPsi(psi.data());
+            SimulationManager::setPsi(psi.data(), nElec, norm);
         }
 
         std::vector<double> getV(){

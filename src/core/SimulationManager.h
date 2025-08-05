@@ -412,11 +412,12 @@ public:
 	void findInhomogeneousEigenStates(size_t nElec, const double* energies);
 
 	/**
-	 * Sets the wavefunction to be used in the simulation. If nElec is not set, it will assume there is only 1 state.
+	 * Sets the wavefunction to be used in the simulation.
 	 * @param npsi The wavefunction to be used in the simulation.
+	 * @param nElec The number of electrons in the simulation.
 	 * @param norm The normalization scheme to be used for the wavefunction. Default is Densities::UNNORMALIZED.
 	 */
-	void setPsi(const std::complex<double>* npsi, Densities::NormalizationScheme norm = Densities::UNNORMALIZED);
+	void setPsi(const std::complex<double>* npsi, size_t nElec, Densities::NormalizationScheme norm = Densities::UNNORMALIZED);
 
 	/// Iterates the simulation index.
 	void iterateIndex();

@@ -968,7 +968,7 @@ int testCurrentDensityCalculations(int argc, char** argv){
 		x = xs[i];
 		wf0[i] = std::exp(-x*x/(2.0*sigma*sigma)) * std::exp(std::complex<double>(0.0, k)*x);
 	}
-	sm->setPsi(wf0);
+	sm->setPsi(wf0, 1);
 
 	Measurers::Measurer* m1 = new Measurers::DensityPlotter(nPts, xs, false, 100, false);
 	Measurers::Measurer* m2 = new Measurers::CurrentPlotter(nPts, xs, false, 100, true);
@@ -1017,7 +1017,7 @@ int testMixedGeometryHartree(){
 		wf0[i] = std::exp(-x*x/(2.0*sigma*sigma)) * std::exp(std::complex<double>(0.0, k)*x);
 	}
 	vtls::setNorm(nPts, wf0, dx, 1.0);
-	sm->setPsi(wf0);
+	sm->setPsi(wf0, 1);
 
 	// get geometry profile
 	double* h = (double*)sq_malloc(sizeof(double)*nPts);
@@ -1084,7 +1084,7 @@ int testOrthonormalization(){
 	//vtls::Orthonormalizer::orthonormalize(nPts, nWfs, psi);
 
 	// dynamic
-	vtls::Orthonormalizer *orth = new vtls::Orthonormalizer(nPts, nWfs);
+	vtls::Orthonormalizer<double> *orth = new vtls::Orthonormalizer<double>(nPts, nWfs);
 	orth->orthonormalize(psi);
 	delete orth;
 
